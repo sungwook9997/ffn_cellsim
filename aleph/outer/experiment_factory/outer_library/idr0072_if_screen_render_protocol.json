@@ -1,0 +1,52 @@
+{
+  "schema": "aleph.outer_library.idr0072_if_screen_render_protocol.v6",
+  "frozen_after_full_xml_metadata_audit_but_before_any_pixel_array_access_or_prediction": true,
+  "scientific_role": "schema-optics-path-and-render-informed independent-provider domain-shift diagnostic; not a pristine source-selection holdout",
+  "current_program_objective": "independent_external_biophysical_inference_network",
+  "future_aleph_adapter_required_for_completion": false,
+  "base_corrected_source_protocol": {
+    "path": "idr0072_if_corrected_source_protocol.json",
+    "model_preprocessing_endpoints_and_authority_inherited_unchanged": true
+  },
+  "metadata_audit": {
+    "report": "results/idr0072_if_full_xml_audit.json",
+    "files_scanned": 2594,
+    "pixel_arrays_loaded": 0,
+    "model_predictions_made": 0,
+    "metadata_parse_failures": 0,
+    "two_channel_sublayouts": 2593,
+    "three_channel_sublayouts_to_refuse": 1
+  },
+  "screen_render_channel_contract": {
+    "repository_commit": "85d154650a26f011b57f13f91e4be11d1f9dde12",
+    "selected_field_rule": "parse one-based Field number from frozen IDR image name and select the equal integer FLEX Sublayout",
+    "channel_order_rule": "sort selected-sublayout Image elements by integer BufferNo; require exactly two; map first and second using the official screen render YAML",
+    "2952": {
+      "screen": "screenA",
+      "render_path": "screenA/idr0072-screenA-render.yml",
+      "render_sha256": "d8a9ca2c7a3e9222d84265a5ef3bc235a77f00dee32b0d41cdf030545463d4b9",
+      "ordered_roles": ["nucleus", "target_protein"]
+    },
+    "2953": {
+      "screen": "screenB",
+      "render_path": "screenB/idr0072-screenB-render.yml",
+      "render_sha256": "4fa2e60c3a109dce569a4386fe40e48984b31148f8cd60862579dbd29be2716b",
+      "ordered_roles": ["target_protein", "nucleus"]
+    },
+    "non_two_channel_action": "refuse affected image before pixel access or prediction"
+  },
+  "post_refusal_minimums": {
+    "images": 240,
+    "canonical_classes": 6,
+    "landmark_proteins": 10
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_diagnostic_if_endpoints_pass": true,
+    "pristine_holdout_authority": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  }
+}

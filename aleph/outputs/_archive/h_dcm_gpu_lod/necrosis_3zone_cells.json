@@ -1,0 +1,3636 @@
+{
+  "summary": {
+    "n_cells": 300,
+    "steps": 2000,
+    "dt_s": 1e-09,
+    "r_cell_um": 22.0,
+    "device": "CPU",
+    "N_particles": 12600,
+    "finite": true,
+    "R_spheroid_um": 195.28346008487662,
+    "cluster_centroid_um": [
+      -2.9473566270738617e-05,
+      5.4925676619305804e-05,
+      182.4214266191454
+    ],
+    "rim_depth_um": 40.0,
+    "necrotic_depth_um": 150.0,
+    "zone_counts": {
+      "rim": 150,
+      "quiescent": 146,
+      "necrotic": 4
+    },
+    "mean_r_necrotic_um": 32.00396905845573,
+    "mean_r_rim_um": 175.47597920207843,
+    "core_central": true,
+    "t_sim_s": 2.0000000000000003e-06,
+    "accel_factor": 600000.0,
+    "t_real_s": 1.2000000000000002,
+    "t_sim_human": "2 \u00b5s",
+    "t_real_human": "1.2 s",
+    "realtime_basis": "spreading_front",
+    "realtime_detail": "real-time equiv. via spreading-front accel S=6\u00d710\u2075 (v_sim/v_real; v_real~0.1-12.0 \u00b5m/min). MAPPING not a native real-time integration."
+  },
+  "cells": [
+    {
+      "cell": 0,
+      "centroid_um": [
+        -13.311069095164047,
+        -17.326875641832164,
+        164.6362206239724
+      ],
+      "r_from_centroid_um": 28.173034110470827,
+      "depth_um": 167.1104259744058,
+      "zone": 2,
+      "zone_name": "necrotic core"
+    },
+    {
+      "cell": 1,
+      "centroid_um": [
+        -13.296965060292269,
+        19.283217284108858,
+        201.3069753464134
+      ],
+      "r_from_centroid_um": 30.088416330362293,
+      "depth_um": 165.1950437545143,
+      "zone": 2,
+      "zone_name": "necrotic core"
+    },
+    {
+      "cell": 2,
+      "centroid_um": [
+        23.34391334744995,
+        -17.307860725230743,
+        201.2975205129152
+      ],
+      "r_from_centroid_um": 34.65271318809269,
+      "depth_um": 160.63074689678393,
+      "zone": 2,
+      "zone_name": "necrotic core"
+    },
+    {
+      "cell": 3,
+      "centroid_um": [
+        23.34449513065357,
+        19.27326725868901,
+        164.65328982412979
+      ],
+      "r_from_centroid_um": 35.10171260489712,
+      "depth_um": 160.1817474799795,
+      "zone": 2,
+      "zone_name": "necrotic core"
+    },
+    {
+      "cell": 4,
+      "centroid_um": [
+        -50.015514912448474,
+        -17.351259243072953,
+        201.31002295209564
+      ],
+      "r_from_centroid_um": 56.208504325402835,
+      "depth_um": 139.07495575947377,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 5,
+      "centroid_um": [
+        -49.99958859437068,
+        19.27371593728419,
+        164.64106930401744
+      ],
+      "r_from_centroid_um": 56.45857797818505,
+      "depth_um": 138.82488210669158,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 6,
+      "centroid_um": [
+        -13.344959769045403,
+        -53.977193641835875,
+        201.30320164770058
+      ],
+      "r_from_centroid_um": 58.720966917611264,
+      "depth_um": 136.56249316726533,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 7,
+      "centroid_um": [
+        -13.30533636531011,
+        19.254032650987355,
+        127.88217265872692
+      ],
+      "r_from_centroid_um": 59.34877481708674,
+      "depth_um": 135.9346852677899,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 8,
+      "centroid_um": [
+        -13.321132885924667,
+        -17.329923800243712,
+        237.9788183837389
+      ],
+      "r_from_centroid_um": 59.702627567370286,
+      "depth_um": 135.5808325175063,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 9,
+      "centroid_um": [
+        -13.307630044399353,
+        55.913119169543506,
+        164.6598792087012
+      ],
+      "r_from_centroid_um": 60.156758161532274,
+      "depth_um": 135.12670192334434,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 10,
+      "centroid_um": [
+        23.365679404898895,
+        -53.96844221845955,
+        164.61117519576374
+      ],
+      "r_from_centroid_um": 61.44721385997813,
+      "depth_um": 133.83624622489847,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 11,
+      "centroid_um": [
+        23.36523286581063,
+        -17.337093395938723,
+        127.85620560862523
+      ],
+      "r_from_centroid_um": 61.837492996082105,
+      "depth_um": 133.4459670887945,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 12,
+      "centroid_um": [
+        23.416232806962512,
+        19.34689814526772,
+        238.024864279161
+      ],
+      "r_from_centroid_um": 63.35900852574317,
+      "depth_um": 131.92445155913347,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 13,
+      "centroid_um": [
+        23.417140951935195,
+        55.97877698752717,
+        201.37226914155934
+      ],
+      "r_from_centroid_um": 63.569769755161346,
+      "depth_um": 131.71369032971526,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 14,
+      "centroid_um": [
+        60.05793837755009,
+        -17.35737038367718,
+        164.6069745116841
+      ],
+      "r_from_centroid_um": 65.0045722981434,
+      "depth_um": 130.2788877867332,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 15,
+      "centroid_um": [
+        60.069510759501384,
+        19.347690187878907,
+        201.3684657963994
+      ],
+      "r_from_centroid_um": 65.8913571543017,
+      "depth_um": 129.3921029305749,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 16,
+      "centroid_um": [
+        -50.0663696737273,
+        -54.04163519689438,
+        164.6151114399128
+      ],
+      "r_from_centroid_um": 75.79055054955344,
+      "depth_um": 119.49290953532316,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 17,
+      "centroid_um": [
+        -50.02990441390879,
+        -17.372822769891147,
+        127.85452200313223
+      ],
+      "r_from_centroid_um": 76.04178026154139,
+      "depth_um": 119.24167982333523,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 18,
+      "centroid_um": [
+        -50.05708797505799,
+        19.315094913256047,
+        238.02380729490412
+      ],
+      "r_from_centroid_um": 77.26839335948138,
+      "depth_um": 118.01506672539524,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 19,
+      "centroid_um": [
+        -50.046850878147524,
+        55.97872029319069,
+        201.35069946516705
+      ],
+      "r_from_centroid_um": 77.43779877753052,
+      "depth_um": 117.8456613073461,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 20,
+      "centroid_um": [
+        -13.346604981983551,
+        -53.991841454038806,
+        127.84674995901962
+      ],
+      "r_from_centroid_um": 77.92080136290365,
+      "depth_um": 117.36265872197296,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 21,
+      "centroid_um": [
+        -13.285715497556666,
+        56.0088473083152,
+        238.05931376287356
+      ],
+      "r_from_centroid_um": 80.05665970491025,
+      "depth_um": 115.22680037996638,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 22,
+      "centroid_um": [
+        23.368704054460707,
+        -53.992301808042264,
+        238.0344830814448
+      ],
+      "r_from_centroid_um": 80.95729949451125,
+      "depth_um": 114.32616059036536,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 23,
+      "centroid_um": [
+        23.377483498388024,
+        55.922338762557594,
+        127.88091863078546
+      ],
+      "r_from_centroid_um": 81.53819322204119,
+      "depth_um": 113.74526686283544,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 24,
+      "centroid_um": [
+        60.11934720943549,
+        -54.01668920772041,
+        201.30092675151326
+      ],
+      "r_from_centroid_um": 82.99749167760203,
+      "depth_um": 112.2859684072746,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 25,
+      "centroid_um": [
+        60.08537694914638,
+        19.259428926123327,
+        127.83840120142077
+      ],
+      "r_from_centroid_um": 83.42952843941774,
+      "depth_um": 111.85393164545887,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 26,
+      "centroid_um": [
+        60.135386439291366,
+        -17.29477790482933,
+        238.07944028250986
+      ],
+      "r_from_centroid_um": 83.7448146131973,
+      "depth_um": 111.5386454716793,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 27,
+      "centroid_um": [
+        60.11654656005277,
+        56.02388496059929,
+        164.690539685253
+      ],
+      "r_from_centroid_um": 84.06578731713799,
+      "depth_um": 111.21767276773863,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 28,
+      "centroid_um": [
+        -86.84058767537731,
+        -17.375878513272458,
+        164.63999550776884
+      ],
+      "r_from_centroid_um": 90.32931364759476,
+      "depth_um": 104.95414643728185,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 29,
+      "centroid_um": [
+        -86.84788015580341,
+        19.29522242305615,
+        201.328844158105
+      ],
+      "r_from_centroid_um": 90.95242214954283,
+      "depth_um": 104.3310379353338,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 30,
+      "centroid_um": [
+        -50.10245027829289,
+        -54.066230703163235,
+        238.03980730048406
+      ],
+      "r_from_centroid_um": 92.34078233265899,
+      "depth_um": 102.94267775221763,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 31,
+      "centroid_um": [
+        -50.050437033609875,
+        55.946562120939106,
+        127.88975293985324
+      ],
+      "r_from_centroid_um": 92.78339505827986,
+      "depth_um": 102.50006502659674,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 32,
+      "centroid_um": [
+        -13.363262788998457,
+        -90.77148534520727,
+        164.6281686648025
+      ],
+      "r_from_centroid_um": 93.4593417290169,
+      "depth_um": 101.82411835585972,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 33,
+      "centroid_um": [
+        -13.30065411408314,
+        -17.332785999277824,
+        90.80846719755462
+      ],
+      "r_from_centroid_um": 94.1821019320536,
+      "depth_um": 101.10135815282301,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 34,
+      "centroid_um": [
+        -13.291487001640482,
+        19.328932274658875,
+        274.78327779050426
+      ],
+      "r_from_centroid_um": 95.29417555440021,
+      "depth_um": 99.98928453047641,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 35,
+      "centroid_um": [
+        -13.284140064846289,
+        92.72453773418461,
+        201.368606486868
+      ],
+      "r_from_centroid_um": 95.56826320095223,
+      "depth_um": 99.71519688392438,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 36,
+      "centroid_um": [
+        23.344076609408365,
+        -90.76089782398638,
+        201.29972623084475
+      ],
+      "r_from_centroid_um": 95.59753150091703,
+      "depth_um": 99.68592858395958,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 37,
+      "centroid_um": [
+        23.384661283843137,
+        19.225474657020857,
+        90.7709126517025
+      ],
+      "r_from_centroid_um": 96.52086425308505,
+      "depth_um": 98.76259583179157,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 38,
+      "centroid_um": [
+        23.468466929628082,
+        -17.2998089317291,
+        274.86544206881615
+      ],
+      "r_from_centroid_um": 96.9327168987359,
+      "depth_um": 98.35074318614072,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 39,
+      "centroid_um": [
+        23.47367199344039,
+        92.78234666956068,
+        164.70503395652491
+      ],
+      "r_from_centroid_um": 97.33159245992803,
+      "depth_um": 97.95186762494858,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 40,
+      "centroid_um": [
+        60.23607087436934,
+        -54.06728263413449,
+        127.7940272110186
+      ],
+      "r_from_centroid_um": 97.65151070018395,
+      "depth_um": 97.63194938469267,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 41,
+      "centroid_um": [
+        60.27264680058998,
+        56.18179317288286,
+        238.22472837016076
+      ],
+      "r_from_centroid_um": 99.51478133444152,
+      "depth_um": 95.7686787504351,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 42,
+      "centroid_um": [
+        96.9161782623736,
+        19.362623166315547,
+        164.59100410756315
+      ],
+      "r_from_centroid_um": 100.42701000094941,
+      "depth_um": 94.85645008392721,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 43,
+      "centroid_um": [
+        96.93315027984073,
+        -17.393733485407502,
+        201.40284435333754
+      ],
+      "r_from_centroid_um": 100.29396508063576,
+      "depth_um": 94.98949500424087,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 44,
+      "centroid_um": [
+        -87.06718533084972,
+        -54.15707184657487,
+        201.46415271038308
+      ],
+      "r_from_centroid_um": 104.28954610260853,
+      "depth_um": 90.99391398226808,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 45,
+      "centroid_um": [
+        -87.00887168321262,
+        19.383968382385902,
+        127.79712804936204
+      ],
+      "r_from_centroid_um": 104.5470646063349,
+      "depth_um": 90.73639547854171,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 46,
+      "centroid_um": [
+        -87.04664259112944,
+        56.06553544081135,
+        164.5187639048922
+      ],
+      "r_from_centroid_um": 105.07595487499499,
+      "depth_um": 90.20750520988163,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 47,
+      "centroid_um": [
+        -87.06326077527287,
+        -17.484696951694705,
+        238.14007371837738
+      ],
+      "r_from_centroid_um": 104.83458602711443,
+      "depth_um": 90.44887405776218,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 48,
+      "centroid_um": [
+        -50.21027200934314,
+        -91.00715472890973,
+        201.4387966089858
+      ],
+      "r_from_centroid_um": 105.66475772908323,
+      "depth_um": 89.61870235579337,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 49,
+      "centroid_um": [
+        -50.031608698783415,
+        19.339927932381865,
+        90.74464796557068
+      ],
+      "r_from_centroid_um": 106.21591854322588,
+      "depth_um": 89.06754154165074,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 50,
+      "centroid_um": [
+        -50.17191034222296,
+        92.9129480672326,
+        164.55283934794267
+      ],
+      "r_from_centroid_um": 107.09486333574299,
+      "depth_um": 88.18859674913364,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 51,
+      "centroid_um": [
+        -50.17019886953738,
+        -17.495550355125985,
+        274.9852569942572
+      ],
+      "r_from_centroid_um": 106.72958725243228,
+      "depth_um": 88.55387283244433,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 52,
+      "centroid_um": [
+        -13.520647153562452,
+        -90.99190054901953,
+        238.11756997126918
+      ],
+      "r_from_centroid_um": 107.53791632655914,
+      "depth_um": 87.74554375831747,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 53,
+      "centroid_um": [
+        -13.377302590634686,
+        55.92924137112818,
+        90.75920764743337
+      ],
+      "r_from_centroid_um": 108.20807603555663,
+      "depth_um": 87.07538404932,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 54,
+      "centroid_um": [
+        -13.46188519310489,
+        -54.136428108311605,
+        274.98952699589313
+      ],
+      "r_from_centroid_um": 108.07790505955698,
+      "depth_um": 87.20555502531964,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 55,
+      "centroid_um": [
+        -13.454352708881851,
+        92.8728482366256,
+        127.84805762438342
+      ],
+      "r_from_centroid_um": 108.55702259428935,
+      "depth_um": 86.72643749058726,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 56,
+      "centroid_um": [
+        23.451452422259617,
+        -53.99370139536225,
+        90.75629447325004
+      ],
+      "r_from_centroid_um": 108.9394059837414,
+      "depth_um": 86.34405410113521,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 57,
+      "centroid_um": [
+        23.5160518026512,
+        -90.91631443752203,
+        127.80905414387666
+      ],
+      "r_from_centroid_um": 108.63380470255436,
+      "depth_um": 86.64965538232225,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 58,
+      "centroid_um": [
+        60.36432761339571,
+        -90.97492621466509,
+        164.42324915715997
+      ],
+      "r_from_centroid_um": 110.6536813303602,
+      "depth_um": 84.62977875451642,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 59,
+      "centroid_um": [
+        23.663189369348792,
+        93.01055916259271,
+        238.2840983412119
+      ],
+      "r_from_centroid_um": 111.04746695148181,
+      "depth_um": 84.23599313339481,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 60,
+      "centroid_um": [
+        23.65969423024145,
+        56.26756034530317,
+        275.0304583165536
+      ],
+      "r_from_centroid_um": 110.91549686053696,
+      "depth_um": 84.36796322433966,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 61,
+      "centroid_um": [
+        60.22472794204463,
+        -17.42637445696373,
+        90.60685301631794
+      ],
+      "r_from_centroid_um": 111.17831520879578,
+      "depth_um": 84.10514487608084,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 62,
+      "centroid_um": [
+        60.393198383846894,
+        19.48795716932813,
+        275.1848294890277
+      ],
+      "r_from_centroid_um": 112.39292333993116,
+      "depth_um": 82.89053674494546,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 63,
+      "centroid_um": [
+        60.459804603506065,
+        93.08149613846926,
+        201.53533792375472
+      ],
+      "r_from_centroid_um": 112.62720737121276,
+      "depth_um": 82.65625271366386,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 64,
+      "centroid_um": [
+        97.19958498994201,
+        -54.28809727420324,
+        164.48921095465175
+      ],
+      "r_from_centroid_um": 112.76760563109373,
+      "depth_um": 82.5158544537829,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 65,
+      "centroid_um": [
+        97.10391485085718,
+        -17.50482825703098,
+        127.55918368983907
+      ],
+      "r_from_centroid_um": 112.89580434114984,
+      "depth_um": 82.38765574372677,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 66,
+      "centroid_um": [
+        97.16854113791275,
+        56.29634589761166,
+        201.5206615567954
+      ],
+      "r_from_centroid_um": 113.91129999731507,
+      "depth_um": 81.37216008756155,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 67,
+      "centroid_um": [
+        97.1286886491203,
+        19.496888222490977,
+        238.4164450988679
+      ],
+      "r_from_centroid_um": 113.79611806781698,
+      "depth_um": 81.48734201705965,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 68,
+      "centroid_um": [
+        -87.02348854212045,
+        -54.32966307748799,
+        127.62018695792015
+      ],
+      "r_from_centroid_um": 116.3098300014524,
+      "depth_um": 78.97363008342421,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 69,
+      "centroid_um": [
+        -87.04957372725305,
+        56.26948352929905,
+        238.32868460198551
+      ],
+      "r_from_centroid_um": 117.7688127023134,
+      "depth_um": 77.51464738256323,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 70,
+      "centroid_um": [
+        -50.36879983671016,
+        -90.96654350383145,
+        127.63128887118563
+      ],
+      "r_from_centroid_um": 117.53252423125653,
+      "depth_um": 77.75093585362008,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 71,
+      "centroid_um": [
+        -50.239876218822566,
+        -54.23482754127185,
+        90.7563466315939
+      ],
+      "r_from_centroid_um": 117.76226715852054,
+      "depth_um": 77.52119292635608,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 72,
+      "centroid_um": [
+        -50.323060565926326,
+        56.29089871457914,
+        274.98455398845675
+      ],
+      "r_from_centroid_um": 119.4529158337151,
+      "depth_um": 75.83054425116153,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 73,
+      "centroid_um": [
+        -50.33292967391479,
+        92.9315488059627,
+        238.3297849267545
+      ],
+      "r_from_centroid_um": 119.5634054635945,
+      "depth_um": 75.7200546212821,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 74,
+      "centroid_um": [
+        60.355764525873774,
+        -90.90580718337985,
+        238.26561362517518
+      ],
+      "r_from_centroid_um": 122.57761156694993,
+      "depth_um": 72.70584851792668,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 75,
+      "centroid_um": [
+        60.25521373056486,
+        56.00898004157626,
+        90.74367161415515
+      ],
+      "r_from_centroid_um": 123.17672178209023,
+      "depth_um": 72.1067383027864,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 76,
+      "centroid_um": [
+        60.39786112690328,
+        -54.13152637983765,
+        275.09464546662355
+      ],
+      "r_from_centroid_um": 123.15217730586158,
+      "depth_um": 72.13128277901504,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 77,
+      "centroid_um": [
+        60.41432775119724,
+        92.95434658776009,
+        127.82404552114343
+      ],
+      "r_from_centroid_um": 123.57697568738877,
+      "depth_um": 71.70648439748786,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 78,
+      "centroid_um": [
+        97.22040520842002,
+        -54.19814519559927,
+        238.27739465363706
+      ],
+      "r_from_centroid_um": 124.53572572242226,
+      "depth_um": 70.74773436245435,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 79,
+      "centroid_um": [
+        97.15970988063796,
+        56.16378730321047,
+        127.72316753864506
+      ],
+      "r_from_centroid_um": 124.84502125591426,
+      "depth_um": 70.43843882896235,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 80,
+      "centroid_um": [
+        -124.07077944950434,
+        19.407118062493105,
+        164.56719330770557
+      ],
+      "r_from_centroid_um": 126.84225930787989,
+      "depth_um": 68.44120077699674,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 81,
+      "centroid_um": [
+        -124.08356540299879,
+        -17.49722260502309,
+        201.4255840002064
+      ],
+      "r_from_centroid_um": 126.7439805572684,
+      "depth_um": 68.53947952760822,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 82,
+      "centroid_um": [
+        -87.164763778983,
+        -91.07376146785674,
+        164.60220492075882
+      ],
+      "r_from_centroid_um": 127.31714574617658,
+      "depth_um": 67.96631433870004,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 83,
+      "centroid_um": [
+        -86.94515911043828,
+        -17.42442600420014,
+        90.73824450078969
+      ],
+      "r_from_centroid_um": 127.54949622243004,
+      "depth_um": 67.73396386244659,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 84,
+      "centroid_um": [
+        -87.15301079388149,
+        92.99239165925998,
+        201.39373402625623
+      ],
+      "r_from_centroid_um": 128.85327039909106,
+      "depth_um": 66.43018968578555,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 85,
+      "centroid_um": [
+        -87.11903158734175,
+        19.3491542487036,
+        275.085784786733
+      ],
+      "r_from_centroid_um": 128.64987931795093,
+      "depth_um": 66.63358076692568,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 86,
+      "centroid_um": [
+        -13.394552089936981,
+        -90.90375749771368,
+        90.77710793214953
+      ],
+      "r_from_centroid_um": 129.77518058870524,
+      "depth_um": 65.50827949617138,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 87,
+      "centroid_um": [
+        -13.492322502380269,
+        -127.99692880908006,
+        201.44687869386226
+      ],
+      "r_from_centroid_um": 130.104717989081,
+      "depth_um": 65.17874209579561,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 88,
+      "centroid_um": [
+        -13.365630396963368,
+        19.261463455356015,
+        53.267843200299424
+      ],
+      "r_from_centroid_um": 131.26419639993048,
+      "depth_um": 64.01926368494613,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 89,
+      "centroid_um": [
+        23.527307836347763,
+        -17.305368244453536,
+        53.251234721248004
+      ],
+      "r_from_centroid_um": 132.430931986947,
+      "depth_um": 62.85252809792961,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 90,
+      "centroid_um": [
+        23.425447927953535,
+        -127.9414008695807,
+        164.5192677508399
+      ],
+      "r_from_centroid_um": 131.29454061249064,
+      "depth_um": 63.98891947238599,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 91,
+      "centroid_um": [
+        -13.437889886258482,
+        -17.439257805874185,
+        311.97190767801493
+      ],
+      "r_from_centroid_um": 131.4078873721222,
+      "depth_um": 63.87557271275444,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 92,
+      "centroid_um": [
+        -13.415722932589471,
+        129.90164692066855,
+        164.5671674243692
+      ],
+      "r_from_centroid_um": 131.80735565670867,
+      "depth_um": 63.476104428167964,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 93,
+      "centroid_um": [
+        23.359140741569885,
+        -91.03564056309503,
+        275.0511631669944
+      ],
+      "r_from_centroid_um": 131.9599059532401,
+      "depth_um": 63.32355413163649,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 94,
+      "centroid_um": [
+        -13.212361831269744,
+        93.0476596650453,
+        275.1169281873663
+      ],
+      "r_from_centroid_um": 132.003327552938,
+      "depth_um": 63.280132531938605,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 95,
+      "centroid_um": [
+        23.35411781360487,
+        92.80361495353837,
+        90.83548326092853
+      ],
+      "r_from_centroid_um": 132.46094507503082,
+      "depth_um": 62.82251500984581,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 96,
+      "centroid_um": [
+        23.61991342545318,
+        129.92299220074432,
+        201.4123213262379
+      ],
+      "r_from_centroid_um": 133.41111428404304,
+      "depth_um": 61.872345800833585,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 97,
+      "centroid_um": [
+        23.617906502733018,
+        19.394020841102463,
+        312.00467939964676
+      ],
+      "r_from_centroid_um": 133.13809452926907,
+      "depth_um": 62.14536555560756,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 98,
+      "centroid_um": [
+        97.26772296630882,
+        -90.98257604620429,
+        201.19452994295392
+      ],
+      "r_from_centroid_um": 134.50384459812548,
+      "depth_um": 60.77961548675115,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 99,
+      "centroid_um": [
+        96.9908672901358,
+        19.13732990242502,
+        90.72063614766489
+      ],
+      "r_from_centroid_um": 134.842516743263,
+      "depth_um": 60.44094334161363,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 100,
+      "centroid_um": [
+        97.20364106359494,
+        93.03199978209452,
+        164.82472005756753
+      ],
+      "r_from_centroid_um": 135.6950272172081,
+      "depth_um": 59.58843286766854,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 101,
+      "centroid_um": [
+        97.13391334396098,
+        -17.19678069056838,
+        275.2093592742651
+      ],
+      "r_from_centroid_um": 135.42649094214119,
+      "depth_um": 59.856969142735444,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 102,
+      "centroid_um": [
+        133.97030975436925,
+        19.426156957354582,
+        201.51877476046974
+      ],
+      "r_from_centroid_um": 136.7118646607683,
+      "depth_um": 58.57159542410831,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 103,
+      "centroid_um": [
+        133.980466251708,
+        -17.47834215298386,
+        164.48980898552063
+      ],
+      "r_from_centroid_um": 136.30044207627535,
+      "depth_um": 58.983018008601256,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 104,
+      "centroid_um": [
+        -123.97074149498175,
+        -54.14308239940748,
+        164.73103357633875
+      ],
+      "r_from_centroid_um": 136.43008013084443,
+      "depth_um": 58.8533799540322,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 105,
+      "centroid_um": [
+        -123.93938335180478,
+        -17.29438736503235,
+        127.90100598768623
+      ],
+      "r_from_centroid_um": 136.50105288873465,
+      "depth_um": 58.78240719614197,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 106,
+      "centroid_um": [
+        -123.97354644076194,
+        56.05583157301727,
+        201.26743167507527
+      ],
+      "r_from_centroid_um": 137.35667042892467,
+      "depth_um": 57.92678965595196,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 107,
+      "centroid_um": [
+        -123.97821059449528,
+        19.205390116417057,
+        238.0781814285729
+      ],
+      "r_from_centroid_um": 137.2483466194012,
+      "depth_um": 58.03511346547541,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 108,
+      "centroid_um": [
+        -87.06469786005881,
+        -91.0086255138004,
+        238.10366774793837
+      ],
+      "r_from_centroid_um": 137.70747392102507,
+      "depth_um": 57.57598616385154,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 109,
+      "centroid_um": [
+        -87.06018393970592,
+        -54.137748186179174,
+        274.9728826596649
+      ],
+      "r_from_centroid_um": 138.1164155220746,
+      "depth_um": 57.16704456280202,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 110,
+      "centroid_um": [
+        -86.93778789860754,
+        55.95780775885322,
+        90.9665621164368
+      ],
+      "r_from_centroid_um": 138.0341848359257,
+      "depth_um": 57.2492752489509,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 111,
+      "centroid_um": [
+        -50.15360105724863,
+        -127.9003518345878,
+        164.74355333884546
+      ],
+      "r_from_centroid_um": 138.5149883433377,
+      "depth_um": 56.76847174153891,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 112,
+      "centroid_um": [
+        -87.02805535902868,
+        92.89434437968458,
+        127.8864619067297
+      ],
+      "r_from_centroid_um": 138.48208793511944,
+      "depth_um": 56.80137214975718,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 113,
+      "centroid_um": [
+        -50.05240531189078,
+        -17.27821069004342,
+        53.41728381582563
+      ],
+      "r_from_centroid_um": 139.4483691197842,
+      "depth_um": 55.83509096509243,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 114,
+      "centroid_um": [
+        -50.08259691202025,
+        92.77459239909,
+        90.97118876475562
+      ],
+      "r_from_centroid_um": 139.5654841580021,
+      "depth_um": 55.717975926874516,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 115,
+      "centroid_um": [
+        -50.18243641998589,
+        -90.99918292708786,
+        274.97136437839464
+      ],
+      "r_from_centroid_um": 139.1568404210191,
+      "depth_um": 56.12661966385751,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 116,
+      "centroid_um": [
+        -13.286289846206005,
+        -53.875507547498046,
+        53.41633649172962
+      ],
+      "r_from_centroid_um": 140.43295277559744,
+      "depth_um": 54.85050730927917,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 117,
+      "centroid_um": [
+        -13.32006005218757,
+        -127.84623877264595,
+        127.86738312165676
+      ],
+      "r_from_centroid_um": 139.63610453224138,
+      "depth_um": 55.64735555263525,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 118,
+      "centroid_um": [
+        -50.142963793671385,
+        19.231946603447078,
+        311.86989615016734
+      ],
+      "r_from_centroid_um": 140.14665812519326,
+      "depth_um": 55.136801959683375,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 119,
+      "centroid_um": [
+        -50.11635075954003,
+        129.8124067030389,
+        201.26547601066383
+      ],
+      "r_from_centroid_um": 140.4207624629584,
+      "depth_um": 54.862697621918215,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 120,
+      "centroid_um": [
+        23.346945078278658,
+        55.70402332340408,
+        53.37787024710287
+      ],
+      "r_from_centroid_um": 142.47895548860552,
+      "depth_um": 52.80450459627109,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 121,
+      "centroid_um": [
+        -13.180223062054415,
+        56.09162092361461,
+        311.8275340565657
+      ],
+      "r_from_centroid_um": 141.6542336862412,
+      "depth_um": 53.6292263986354,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 122,
+      "centroid_um": [
+        23.204917133558407,
+        -127.86816563437544,
+        238.08647159487083
+      ],
+      "r_from_centroid_um": 141.3766197374345,
+      "depth_um": 53.9068403474421,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 123,
+      "centroid_um": [
+        23.33851130346593,
+        -53.98397696691307,
+        311.9560767790392
+      ],
+      "r_from_centroid_um": 142.26098824705045,
+      "depth_um": 53.02247183782617,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 124,
+      "centroid_um": [
+        -13.179555065234654,
+        129.76218497834702,
+        238.17617249513754
+      ],
+      "r_from_centroid_um": 141.84675526188133,
+      "depth_um": 53.43670482299529,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 125,
+      "centroid_um": [
+        60.28118222807076,
+        -90.76339758266292,
+        91.04587185099193
+      ],
+      "r_from_centroid_um": 142.20169058291467,
+      "depth_um": 53.08176950196195,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 126,
+      "centroid_um": [
+        60.47658512614254,
+        19.099304273862426,
+        52.98802116450858
+      ],
+      "r_from_centroid_um": 144.13607697828567,
+      "depth_um": 51.147383106590944,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 127,
+      "centroid_um": [
+        60.11965758747549,
+        -127.79801893325545,
+        201.14921092002066
+      ],
+      "r_from_centroid_um": 142.4691347597463,
+      "depth_um": 52.81432532513032,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 128,
+      "centroid_um": [
+        23.356021629510206,
+        129.8170637178193,
+        128.0492643733739
+      ],
+      "r_from_centroid_um": 142.66847206776018,
+      "depth_um": 52.614988017116424,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 129,
+      "centroid_um": [
+        97.55987313246463,
+        -53.99072154935133,
+        90.25743995499859
+      ],
+      "r_from_centroid_um": 144.66215461793627,
+      "depth_um": 50.621305466940356,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 130,
+      "centroid_um": [
+        97.85991589385738,
+        -91.40202985704376,
+        127.8461772720334
+      ],
+      "r_from_centroid_um": 144.60071870928647,
+      "depth_um": 50.68274137559015,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 131,
+      "centroid_um": [
+        60.82088890842058,
+        -17.17232258361573,
+        312.6455915461898
+      ],
+      "r_from_centroid_um": 144.74946560556285,
+      "depth_um": 50.53399447931377,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 132,
+      "centroid_um": [
+        60.37338033339419,
+        93.65552054124382,
+        275.4947655915659
+      ],
+      "r_from_centroid_um": 145.1858852604583,
+      "depth_um": 50.097574824418324,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 133,
+      "centroid_um": [
+        61.08672138076093,
+        130.35543510579103,
+        164.8575597499988
+      ],
+      "r_from_centroid_um": 145.02622415010987,
+      "depth_um": 50.25723593476673,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 134,
+      "centroid_um": [
+        97.71665403328966,
+        93.46320447462945,
+        238.22010795131447
+      ],
+      "r_from_centroid_um": 146.2785131097453,
+      "depth_um": 49.00494697513132,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 135,
+      "centroid_um": [
+        97.50202263243139,
+        56.1727054865514,
+        275.73993321298803
+      ],
+      "r_from_centroid_um": 146.18604758601242,
+      "depth_um": 49.0974124988642,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 136,
+      "centroid_um": [
+        134.60627662269704,
+        -54.67745133797768,
+        201.33594760447383
+      ],
+      "r_from_centroid_um": 146.5136390790882,
+      "depth_um": 48.769821005788415,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 137,
+      "centroid_um": [
+        134.36474819489754,
+        19.243364069166592,
+        127.02464274061862
+      ],
+      "r_from_centroid_um": 146.60491836487563,
+      "depth_um": 48.67854172000099,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 138,
+      "centroid_um": [
+        134.39479740095865,
+        -17.30355419654623,
+        238.98055887272128
+      ],
+      "r_from_centroid_um": 146.83432780029912,
+      "depth_um": 48.449132284577495,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 139,
+      "centroid_um": [
+        134.55992250352998,
+        56.63679866527198,
+        164.67846232892893
+      ],
+      "r_from_centroid_um": 147.06771977326275,
+      "depth_um": 48.21574031161388,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 140,
+      "centroid_um": [
+        -125.23800627719137,
+        -54.53603045466137,
+        238.82837239974518
+      ],
+      "r_from_centroid_um": 147.78524613361233,
+      "depth_um": 47.4982139512643,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 141,
+      "centroid_um": [
+        -125.20553528153053,
+        56.431249025767976,
+        127.16533168300056
+      ],
+      "r_from_centroid_um": 148.0342338102326,
+      "depth_um": 47.24922627464404,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 142,
+      "centroid_um": [
+        -50.566659796948215,
+        -54.85037059005104,
+        313.1306313281447
+      ],
+      "r_from_centroid_um": 150.5006627134148,
+      "depth_um": 44.78279737146179,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 143,
+      "centroid_um": [
+        -50.91462247629399,
+        -129.16483484398952,
+        238.49392341824029
+      ],
+      "r_from_centroid_um": 149.73306056822562,
+      "depth_um": 45.550399516650984,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 144,
+      "centroid_um": [
+        -50.32466104536854,
+        56.285241343510776,
+        52.541542856433374
+      ],
+      "r_from_centroid_um": 150.23107188309467,
+      "depth_um": 45.05238820178193,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 145,
+      "centroid_um": [
+        -50.87318294088678,
+        131.03618214734098,
+        127.50897725745628
+      ],
+      "r_from_centroid_um": 150.91030937567461,
+      "depth_um": 44.373150709202015,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 146,
+      "centroid_um": [
+        60.96931431503835,
+        -128.90354122848473,
+        127.54502104089603
+      ],
+      "r_from_centroid_um": 152.79011051987854,
+      "depth_um": 42.49334956499807,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 147,
+      "centroid_um": [
+        60.53172804725015,
+        -54.18829338188802,
+        52.715890899511294
+      ],
+      "r_from_centroid_um": 153.04900116360818,
+      "depth_um": 42.234458921268434,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 148,
+      "centroid_um": [
+        60.7456628137236,
+        56.75379188536849,
+        312.8638547054988
+      ],
+      "r_from_centroid_um": 154.6811327713095,
+      "depth_um": 40.60232731356711,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 149,
+      "centroid_um": [
+        61.01571736849509,
+        130.83031639377492,
+        238.58044470808764
+      ],
+      "r_from_centroid_um": 154.89775334464872,
+      "depth_um": 40.3857067402279,
+      "zone": 1,
+      "zone_name": "quiescent middle"
+    },
+    {
+      "cell": 150,
+      "centroid_um": [
+        134.84789922504493,
+        -54.613487514654906,
+        127.13130882229096
+      ],
+      "r_from_centroid_um": 155.63932670818667,
+      "depth_um": 39.64413337668996,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 151,
+      "centroid_um": [
+        134.79333493051823,
+        56.59015009291068,
+        238.8767078774954
+      ],
+      "r_from_centroid_um": 156.71275870320304,
+      "depth_um": 38.57070138167359,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 152,
+      "centroid_um": [
+        -124.8586724584571,
+        -91.2404470947072,
+        202.25252378415942
+      ],
+      "r_from_centroid_um": 155.90953258774243,
+      "depth_um": 39.37392749713418,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 153,
+      "centroid_um": [
+        -124.7391618563208,
+        19.86612295222974,
+        90.5145920117533
+      ],
+      "r_from_centroid_um": 156.20940449918027,
+      "depth_um": 39.074055585696364,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 154,
+      "centroid_um": [
+        -124.84998319759556,
+        93.14708623300967,
+        163.7550066528114
+      ],
+      "r_from_centroid_um": 156.88312726555745,
+      "depth_um": 38.40033281931918,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 155,
+      "centroid_um": [
+        -124.83433069106621,
+        -17.986850301025527,
+        275.4448865648032
+      ],
+      "r_from_centroid_um": 156.71788545139728,
+      "depth_um": 38.56557463347934,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 156,
+      "centroid_um": [
+        -87.53763314974867,
+        -128.76974176153473,
+        201.94698966025206
+      ],
+      "r_from_centroid_um": 156.92590674680315,
+      "depth_um": 38.35755333807348,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 157,
+      "centroid_um": [
+        -88.09388223639671,
+        -92.02084427282828,
+        89.8460774450995
+      ],
+      "r_from_centroid_um": 157.47561099610687,
+      "depth_um": 37.80784908876975,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 158,
+      "centroid_um": [
+        -87.00799758344772,
+        19.831057853992018,
+        52.9832491898931
+      ],
+      "r_from_centroid_um": 157.21926398491883,
+      "depth_um": 38.06419609995778,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 159,
+      "centroid_um": [
+        -87.28940103151879,
+        -18.28848580737575,
+        312.75798434011443
+      ],
+      "r_from_centroid_um": 157.92885546244645,
+      "depth_um": 37.35460462243016,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 160,
+      "centroid_um": [
+        -87.51976258043707,
+        130.66845737690133,
+        164.06300638117784
+      ],
+      "r_from_centroid_um": 158.33814030702442,
+      "depth_um": 36.945319777852205,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 161,
+      "centroid_um": [
+        -88.15820644925027,
+        94.02883912272318,
+        276.08333929141577
+      ],
+      "r_from_centroid_um": 159.32931403441984,
+      "depth_um": 35.95414605045679,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 162,
+      "centroid_um": [
+        -13.724833253136397,
+        92.81151464118085,
+        52.97863958887498
+      ],
+      "r_from_centroid_um": 159.8679843104125,
+      "depth_um": 35.415475774464106,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 163,
+      "centroid_um": [
+        -14.008258250512474,
+        -91.43888895211771,
+        312.72389146599454
+      ],
+      "r_from_centroid_um": 159.8000102506819,
+      "depth_um": 35.483449834194715,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 164,
+      "centroid_um": [
+        24.20193124041268,
+        -128.59406236979694,
+        90.78217084249431
+      ],
+      "r_from_centroid_um": 159.74960126617364,
+      "depth_um": 35.533858818702974,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 165,
+      "centroid_um": [
+        -14.335044949221581,
+        -128.7750368929021,
+        275.19858564449623
+      ],
+      "r_from_centroid_um": 159.36159568222794,
+      "depth_um": 35.92186440264867,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 166,
+      "centroid_um": [
+        23.686589894851405,
+        -90.86386760358349,
+        53.03129776893495
+      ],
+      "r_from_centroid_um": 159.87217956349295,
+      "depth_um": 35.41128052138366,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 167,
+      "centroid_um": [
+        -14.273341977339564,
+        130.56969198551516,
+        90.7819306604379
+      ],
+      "r_from_centroid_um": 160.15603264109131,
+      "depth_um": 35.127427443785315,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 168,
+      "centroid_um": [
+        24.912460449567686,
+        93.87826319148401,
+        312.6890494722238
+      ],
+      "r_from_centroid_um": 162.49124193371293,
+      "depth_um": 32.79221815116369,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 169,
+      "centroid_um": [
+        97.71057439260267,
+        -17.898068610204408,
+        52.78701086475218
+      ],
+      "r_from_centroid_um": 163.31805375395555,
+      "depth_um": 31.96540633092107,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 170,
+      "centroid_um": [
+        24.893576162452312,
+        130.58144080539057,
+        276.0118595406586
+      ],
+      "r_from_centroid_um": 162.57416484258695,
+      "depth_um": 32.70929524228967,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 171,
+      "centroid_um": [
+        98.02151844622504,
+        -128.6149452526114,
+        163.17774783600618
+      ],
+      "r_from_centroid_um": 162.85073319012602,
+      "depth_um": 32.4327268947506,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 172,
+      "centroid_um": [
+        98.0884396697495,
+        -91.8333450087336,
+        275.97839935727797
+      ],
+      "r_from_centroid_um": 163.73035231842698,
+      "depth_um": 31.553107766449628,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 173,
+      "centroid_um": [
+        97.96326631024094,
+        93.74569990641301,
+        90.08736594167998
+      ],
+      "r_from_centroid_um": 164.0446037968632,
+      "depth_um": 31.238856288013398,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 174,
+      "centroid_um": [
+        135.08146323743162,
+        -18.15376873169931,
+        90.03078409634767
+      ],
+      "r_from_centroid_um": 164.65904716167245,
+      "depth_um": 30.624412923204158,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 175,
+      "centroid_um": [
+        135.1573293072372,
+        -91.98453734886942,
+        163.94353656354608
+      ],
+      "r_from_centroid_um": 164.52996465514764,
+      "depth_um": 30.75349542972899,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 176,
+      "centroid_um": [
+        98.0596079413799,
+        19.961011844432633,
+        313.0624132535446
+      ],
+      "r_from_centroid_um": 164.56366451884946,
+      "depth_um": 30.719795566027162,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 177,
+      "centroid_um": [
+        97.91567333594651,
+        131.1554879895129,
+        202.16339105025924
+      ],
+      "r_from_centroid_um": 164.86047931036302,
+      "depth_um": 30.422980774513608,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 178,
+      "centroid_um": [
+        134.9519210065066,
+        94.02518947851917,
+        202.00160277596547
+      ],
+      "r_from_centroid_um": 165.63857692092233,
+      "depth_um": 29.644883163954297,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 179,
+      "centroid_um": [
+        135.10645651592299,
+        20.11358073970865,
+        275.95345490833637
+      ],
+      "r_from_centroid_um": 165.5492579052827,
+      "depth_um": 29.734202179593904,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 180,
+      "centroid_um": [
+        -162.52821854787143,
+        -17.264409817521127,
+        164.83850776209056
+      ],
+      "r_from_centroid_um": 164.3856229181128,
+      "depth_um": 30.897837166763807,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 181,
+      "centroid_um": [
+        -162.5349231798917,
+        19.17356100814295,
+        201.16792585738673
+      ],
+      "r_from_centroid_um": 164.73204375988985,
+      "depth_um": 30.55141632498677,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 182,
+      "centroid_um": [
+        -124.4687480024645,
+        -91.93518333346553,
+        126.65182309520203
+      ],
+      "r_from_centroid_um": 164.48342957030403,
+      "depth_um": 30.8000305145726,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 183,
+      "centroid_um": [
+        -87.63977220074119,
+        -55.0198935105633,
+        53.376584014924774
+      ],
+      "r_from_centroid_um": 165.41006811545657,
+      "depth_um": 29.87339196942006,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 184,
+      "centroid_um": [
+        -87.88297247682988,
+        -128.4286461889094,
+        126.62953341791142
+      ],
+      "r_from_centroid_um": 165.31811240112935,
+      "depth_um": 29.96534768374726,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 185,
+      "centroid_um": [
+        -124.43583580550569,
+        -55.358371367726704,
+        90.15032418869816
+      ],
+      "r_from_centroid_um": 164.5076946616546,
+      "depth_um": 30.775765423222012,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 186,
+      "centroid_um": [
+        -124.51397782501053,
+        57.31805216897747,
+        275.80547152711034
+      ],
+      "r_from_centroid_um": 165.86035085403017,
+      "depth_um": 29.423109230846446,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 187,
+      "centroid_um": [
+        -124.4827501600761,
+        93.86005212907038,
+        239.34858246633024
+      ],
+      "r_from_centroid_um": 165.970924855489,
+      "depth_um": 29.312535229387617,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 188,
+      "centroid_um": [
+        -51.11822517351383,
+        -91.3366669398577,
+        53.343151709910515
+      ],
+      "r_from_centroid_um": 166.18263370853202,
+      "depth_um": 29.100826376344582,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 189,
+      "centroid_um": [
+        -51.389026357508854,
+        -128.30377489469439,
+        90.0432228456128
+      ],
+      "r_from_centroid_um": 166.24209539023772,
+      "depth_um": 29.041364694638904,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 190,
+      "centroid_um": [
+        -87.88214380309587,
+        130.35320379942561,
+        239.370238288673
+      ],
+      "r_from_centroid_um": 167.2075853270467,
+      "depth_um": 28.07587475782991,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 191,
+      "centroid_um": [
+        -87.99343872544883,
+        57.29209489485809,
+        312.3801876458943
+      ],
+      "r_from_centroid_um": 167.07632232966827,
+      "depth_um": 28.207137755208347,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 192,
+      "centroid_um": [
+        -13.248254650907066,
+        -166.4312905594482,
+        164.77780247584218
+      ],
+      "r_from_centroid_um": 167.8874792926758,
+      "depth_um": 27.39598079220081,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 193,
+      "centroid_um": [
+        -51.39869910741232,
+        93.73639849284312,
+        312.3740748153127
+      ],
+      "r_from_centroid_um": 168.2736346510289,
+      "depth_um": 27.009825433847695,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 194,
+      "centroid_um": [
+        -13.249245630038901,
+        -17.159892870690953,
+        11.23958387235698
+      ],
+      "r_from_centroid_um": 172.5492069623074,
+      "depth_um": 22.734253122569214,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 195,
+      "centroid_um": [
+        -51.37764665962253,
+        130.29338308550982,
+        275.90623541943097
+      ],
+      "r_from_centroid_um": 168.39067785096918,
+      "depth_um": 26.892782233907436,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 196,
+      "centroid_um": [
+        23.094736123500862,
+        -166.40436596070205,
+        201.20224477871747
+      ],
+      "r_from_centroid_um": 169.0459068397027,
+      "depth_um": 26.23755324517393,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 197,
+      "centroid_um": [
+        23.4118173859933,
+        19.055661083017103,
+        11.287666113063722
+      ],
+      "r_from_centroid_um": 173.7757022266118,
+      "depth_um": 21.507757858264814,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 198,
+      "centroid_um": [
+        -13.217885819754681,
+        19.11778631608272,
+        350.3379638885748
+      ],
+      "r_from_centroid_um": 169.51744119252115,
+      "depth_um": 25.766018892355465,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 199,
+      "centroid_um": [
+        23.403829065239,
+        -17.16096805778724,
+        350.15653640469714
+      ],
+      "r_from_centroid_um": 170.2272256694401,
+      "depth_um": 25.056234415436524,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 200,
+      "centroid_um": [
+        -13.176508787470617,
+        168.25853567330304,
+        201.23262727656478
+      ],
+      "r_from_centroid_um": 169.81871869962634,
+      "depth_um": 25.46474138525028,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 201,
+      "centroid_um": [
+        61.01015592057553,
+        93.12656102859464,
+        53.39955554570305
+      ],
+      "r_from_centroid_um": 170.41546900459582,
+      "depth_um": 24.86799108028081,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 202,
+      "centroid_um": [
+        61.273634874100836,
+        -128.32972704561865,
+        275.8703334679893
+      ],
+      "r_from_centroid_um": 170.16372432053393,
+      "depth_um": 25.119735764342696,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 203,
+      "centroid_um": [
+        61.38125967408982,
+        -91.6374365657107,
+        312.3986448306204
+      ],
+      "r_from_centroid_um": 170.46750352561523,
+      "depth_um": 24.815956559261377,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 204,
+      "centroid_um": [
+        23.283388086768205,
+        168.06390352276188,
+        164.82584851368904
+      ],
+      "r_from_centroid_um": 170.57895270934836,
+      "depth_um": 24.70450737552827,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 205,
+      "centroid_um": [
+        97.81904788418613,
+        -128.2245506329279,
+        239.21366951020062
+      ],
+      "r_from_centroid_um": 170.98385952591627,
+      "depth_um": 24.299600558960343,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 206,
+      "centroid_um": [
+        61.29242500037705,
+        130.1984250362599,
+        90.26727619006283
+      ],
+      "r_from_centroid_um": 170.8823220704787,
+      "depth_um": 24.401138014397908,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 207,
+      "centroid_um": [
+        97.4899017419771,
+        56.13666234268012,
+        53.172751609216434
+      ],
+      "r_from_centroid_um": 171.35000838203771,
+      "depth_um": 23.933451702838912,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 208,
+      "centroid_um": [
+        97.88199684633506,
+        -54.349425991463235,
+        312.7289998024931
+      ],
+      "r_from_centroid_um": 171.79877991821107,
+      "depth_um": 23.48468016666555,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 209,
+      "centroid_um": [
+        134.8473207811176,
+        -91.67309577520989,
+        238.52154079866847
+      ],
+      "r_from_centroid_um": 172.4383867968277,
+      "depth_um": 22.845073288048905,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 210,
+      "centroid_um": [
+        97.73818579424497,
+        130.74211603552837,
+        127.49753870923855
+      ],
+      "r_from_centroid_um": 172.22914599489027,
+      "depth_um": 23.054314089986335,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 211,
+      "centroid_um": [
+        134.77776606320262,
+        -54.60634284113643,
+        275.6539140251092
+      ],
+      "r_from_centroid_um": 172.740295110092,
+      "depth_um": 22.5431649747846,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 212,
+      "centroid_um": [
+        134.6999451642506,
+        56.51987248542803,
+        90.35943675458728
+      ],
+      "r_from_centroid_um": 172.6672607133098,
+      "depth_um": 22.616199371566825,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 213,
+      "centroid_um": [
+        134.65013851554522,
+        93.68994065405597,
+        127.59089685696625
+      ],
+      "r_from_centroid_um": 172.9590975383889,
+      "depth_um": 22.324362546487702,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 214,
+      "centroid_um": [
+        171.70286841578184,
+        -17.39053403523071,
+        201.27371161456486
+      ],
+      "r_from_centroid_um": 173.60796749445475,
+      "depth_um": 21.675492590421875,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 215,
+      "centroid_um": [
+        171.69090566366123,
+        19.31448772104052,
+        164.74257329048936
+      ],
+      "r_from_centroid_um": 173.6760385819484,
+      "depth_um": 21.607421502928222,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 216,
+      "centroid_um": [
+        -161.8776599872082,
+        -54.48793472325392,
+        201.96047387328468
+      ],
+      "r_from_centroid_um": 171.9159173674521,
+      "depth_um": 23.367542717424516,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 217,
+      "centroid_um": [
+        -161.9231809436981,
+        20.07026927469863,
+        127.83226918288456
+      ],
+      "r_from_centroid_um": 172.05201712167113,
+      "depth_um": 23.2314429632055,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 218,
+      "centroid_um": [
+        -161.94136351092052,
+        -18.167927803028913,
+        238.17405319167392
+      ],
+      "r_from_centroid_um": 172.2307366179577,
+      "depth_um": 23.052723466918938,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 219,
+      "centroid_um": [
+        -161.87271706410317,
+        56.39303203748266,
+        164.05071037137103
+      ],
+      "r_from_centroid_um": 172.39610804995706,
+      "depth_um": 22.88735203491955,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 220,
+      "centroid_um": [
+        -50.268420314183764,
+        -165.86498750431005,
+        202.12679987218135
+      ],
+      "r_from_centroid_um": 174.4317206045042,
+      "depth_um": 20.851739480372423,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 221,
+      "centroid_um": [
+        -50.49169409676856,
+        19.84972763536817,
+        11.485725085148992
+      ],
+      "r_from_centroid_um": 179.33887409600658,
+      "depth_um": 15.944585988870026,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 222,
+      "centroid_um": [
+        -50.51431245193319,
+        -17.98898018793151,
+        349.74828397610486
+      ],
+      "r_from_centroid_um": 175.708779980095,
+      "depth_um": 19.574680104781642,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 223,
+      "centroid_um": [
+        -14.051285229351471,
+        -165.79540107953565,
+        238.4407711974661
+      ],
+      "r_from_centroid_um": 175.5669045898896,
+      "depth_um": 19.71655549498703,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 224,
+      "centroid_um": [
+        -14.083549496915913,
+        55.97349320363996,
+        11.480268837123987
+      ],
+      "r_from_centroid_um": 180.42242308749485,
+      "depth_um": 14.861036997381767,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 225,
+      "centroid_um": [
+        -50.245959291495296,
+        167.74604162558805,
+        163.89254263133643
+      ],
+      "r_from_centroid_um": 176.08716324317567,
+      "depth_um": 19.196296841700956,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 226,
+      "centroid_um": [
+        24.098144615323942,
+        -54.01118923777367,
+        11.524271229071887
+      ],
+      "r_from_centroid_um": 180.84184861619067,
+      "depth_um": 14.441611468685954,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 227,
+      "centroid_um": [
+        23.89275396154676,
+        -165.72526955671023,
+        127.57228478545694
+      ],
+      "r_from_centroid_um": 176.1935771671649,
+      "depth_um": 19.089882917711726,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 228,
+      "centroid_um": [
+        -14.157322105547923,
+        -54.17119149347594,
+        349.7844528881584
+      ],
+      "r_from_centroid_um": 176.48041091065733,
+      "depth_um": 18.803049174219293,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 229,
+      "centroid_um": [
+        -13.99883703873743,
+        167.63155070855316,
+        127.59751105342028
+      ],
+      "r_from_centroid_um": 176.92356177063868,
+      "depth_um": 18.359898314237928,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 230,
+      "centroid_um": [
+        61.12621799559274,
+        -17.191501880223704,
+        11.655985232553443
+      ],
+      "r_from_centroid_um": 182.18892317325148,
+      "depth_um": 13.094536911625138,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 231,
+      "centroid_um": [
+        60.19555227088559,
+        -165.69081610378953,
+        163.8396216424955
+      ],
+      "r_from_centroid_um": 177.2632400703722,
+      "depth_um": 18.02022001450441,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 232,
+      "centroid_um": [
+        24.205735341767173,
+        56.149432529185,
+        349.5725726617369
+      ],
+      "r_from_centroid_um": 177.98364329035508,
+      "depth_um": 17.29981679452153,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 233,
+      "centroid_um": [
+        24.01359966229578,
+        167.41952608675,
+        238.44444974436885
+      ],
+      "r_from_centroid_um": 178.16989877141856,
+      "depth_um": 17.11356131345806,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 234,
+      "centroid_um": [
+        61.16343926233652,
+        19.244979324801545,
+        349.21618096603703
+      ],
+      "r_from_centroid_um": 178.6947875584952,
+      "depth_um": 16.588672526381426,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 235,
+      "centroid_um": [
+        60.83809722323713,
+        167.4407204035952,
+        201.30406303737234
+      ],
+      "r_from_centroid_um": 179.14856425259873,
+      "depth_um": 16.134895832277884,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 236,
+      "centroid_um": [
+        171.25046597581013,
+        -17.3581516234284,
+        127.18669917745251
+      ],
+      "r_from_centroid_um": 180.7731026503013,
+      "depth_um": 14.510357434575313,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 237,
+      "centroid_um": [
+        171.02333561392413,
+        -55.11594328020865,
+        164.70153943554075
+      ],
+      "r_from_centroid_um": 180.5568028789828,
+      "depth_um": 14.7266572058938,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 238,
+      "centroid_um": [
+        170.98102492811933,
+        57.04456511077192,
+        201.3087368975994
+      ],
+      "r_from_centroid_um": 181.23279944900762,
+      "depth_um": 14.050660635868997,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 239,
+      "centroid_um": [
+        171.24427595208536,
+        19.283635082309683,
+        238.82282029242305
+      ],
+      "r_from_centroid_um": 181.32177423756693,
+      "depth_um": 13.961685847309688,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 240,
+      "centroid_um": [
+        -161.3685818630427,
+        -54.45319513438417,
+        127.81177956399983
+      ],
+      "r_from_centroid_um": 178.84960076518558,
+      "depth_um": 16.43385931969103,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 241,
+      "centroid_um": [
+        -124.27804781423934,
+        -128.45752750668487,
+        164.80282379886756
+      ],
+      "r_from_centroid_um": 179.60175804370715,
+      "depth_um": 15.681702041169476,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 242,
+      "centroid_um": [
+        -161.3820293003419,
+        56.36922577613657,
+        238.19541859443115
+      ],
+      "r_from_centroid_um": 179.81204484493526,
+      "depth_um": 15.471415239941365,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 243,
+      "centroid_um": [
+        -124.13826091025159,
+        -17.20497655499915,
+        53.71500049703828
+      ],
+      "r_from_centroid_um": 179.64313996811708,
+      "depth_um": 15.640320116759522,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 244,
+      "centroid_um": [
+        -124.52074997209428,
+        19.157043547204555,
+        312.1812176164247
+      ],
+      "r_from_centroid_um": 180.85907056649245,
+      "depth_um": 14.424389518384178,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 245,
+      "centroid_um": [
+        -125.04612970106746,
+        92.75226268184072,
+        91.55436512176625
+      ],
+      "r_from_centroid_um": 180.26736280014023,
+      "depth_um": 15.016097284736386,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 246,
+      "centroid_um": [
+        -125.07598899289435,
+        -90.8701137015645,
+        274.45338133693076
+      ],
+      "r_from_centroid_um": 179.92015975204205,
+      "depth_um": 15.363300332834566,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 247,
+      "centroid_um": [
+        -50.28129644087366,
+        -165.29059170294974,
+        127.58465961363983
+      ],
+      "r_from_centroid_um": 181.26299866868354,
+      "depth_um": 14.020461416193074,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 248,
+      "centroid_um": [
+        -86.8137032061867,
+        92.30439420077275,
+        53.07178642237957
+      ],
+      "r_from_centroid_um": 181.07466530411892,
+      "depth_um": 14.208794780757684,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 249,
+      "centroid_um": [
+        -86.55131421408393,
+        -129.00787853036547,
+        274.8330646877743
+      ],
+      "r_from_centroid_um": 180.75973731824246,
+      "depth_um": 14.52372276663415,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 250,
+      "centroid_um": [
+        -86.9290728197551,
+        -90.48723165850343,
+        312.970674396669
+      ],
+      "r_from_centroid_um": 181.07377973005467,
+      "depth_um": 14.209680354821959,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 251,
+      "centroid_um": [
+        -124.27800159617088,
+        130.36455438079446,
+        201.20904944986543
+      ],
+      "r_from_centroid_um": 181.0880775885583,
+      "depth_um": 14.195382496318333,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 252,
+      "centroid_um": [
+        -50.42199011708711,
+        -54.09566026533381,
+        11.783373529800066
+      ],
+      "r_from_centroid_um": 185.97329291940255,
+      "depth_um": 9.310167165474066,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 253,
+      "centroid_um": [
+        -86.51688411063245,
+        130.88196864124222,
+        91.17737353897576
+      ],
+      "r_from_centroid_um": 181.49578148441032,
+      "depth_um": 13.787678600466288,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 254,
+      "centroid_um": [
+        -13.273933098263806,
+        -127.79494033273716,
+        53.47293702724897
+      ],
+      "r_from_centroid_um": 182.03150908171688,
+      "depth_um": 13.251951003159752,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 255,
+      "centroid_um": [
+        -50.47503503794775,
+        56.14438680824788,
+        349.23600046425395
+      ],
+      "r_from_centroid_um": 183.1038345758762,
+      "depth_um": 12.179625509000438,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 256,
+      "centroid_um": [
+        -13.08305172117903,
+        130.0073153130475,
+        312.2335508129304
+      ],
+      "r_from_centroid_um": 184.18534364130025,
+      "depth_um": 11.098116443576373,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 257,
+      "centroid_um": [
+        23.12365412322044,
+        129.68555506948272,
+        53.50740808818355
+      ],
+      "r_from_centroid_um": 184.31456226905843,
+      "depth_um": 10.968897815818199,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 258,
+      "centroid_um": [
+        -50.25609511067406,
+        167.17510969141193,
+        238.42217455650874
+      ],
+      "r_from_centroid_um": 183.3282707025624,
+      "depth_um": 11.95518938231421,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 259,
+      "centroid_um": [
+        23.11675766328703,
+        -128.16943718751725,
+        312.396755123299
+      ],
+      "r_from_centroid_um": 183.99834394865434,
+      "depth_um": 11.285116136222287,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 260,
+      "centroid_um": [
+        60.11294046471576,
+        -165.23839287694597,
+        238.37489125343092
+      ],
+      "r_from_centroid_um": 184.52128330249892,
+      "depth_um": 10.762176782377708,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 261,
+      "centroid_um": [
+        96.94655527774508,
+        -128.77930760659177,
+        92.02068184944697
+      ],
+      "r_from_centroid_um": 184.81087404175318,
+      "depth_um": 10.47258604312343,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 262,
+      "centroid_um": [
+        61.02822061381145,
+        -53.43576350695171,
+        348.8980698363542
+      ],
+      "r_from_centroid_um": 185.1872207717427,
+      "depth_um": 10.096239313133918,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 263,
+      "centroid_um": [
+        97.2442721843119,
+        -89.687706425465,
+        53.53865876932704
+      ],
+      "r_from_centroid_um": 184.6919505277312,
+      "depth_um": 10.591509557145429,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 264,
+      "centroid_um": [
+        60.90909222544579,
+        55.18796030178615,
+        11.885144168973175
+      ],
+      "r_from_centroid_um": 189.30993010899454,
+      "depth_um": 5.973529975882074,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 265,
+      "centroid_um": [
+        134.45710400370612,
+        -90.50524581343181,
+        91.7601949077212
+      ],
+      "r_from_centroid_um": 185.7131905391592,
+      "depth_um": 9.570269545717403,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 266,
+      "centroid_um": [
+        60.753040529929535,
+        167.00461720933907,
+        128.54214738712446
+      ],
+      "r_from_centroid_um": 185.69985478984478,
+      "depth_um": 9.583605295031836,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 267,
+      "centroid_um": [
+        96.4952036809771,
+        92.2414492033748,
+        312.4540912685669
+      ],
+      "r_from_centroid_um": 186.3553023545946,
+      "depth_um": 8.928157730281994,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 268,
+      "centroid_um": [
+        133.96770540091106,
+        18.957110006959255,
+        54.453186077910864
+      ],
+      "r_from_centroid_um": 186.23263546428237,
+      "depth_um": 9.05082462059425,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 269,
+      "centroid_um": [
+        134.45624062454908,
+        -127.52082790791538,
+        201.0016857836131
+      ],
+      "r_from_centroid_um": 186.23987263197648,
+      "depth_um": 9.043587452900129,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 270,
+      "centroid_um": [
+        96.23798129060685,
+        130.41371073642134,
+        274.5536652145602
+      ],
+      "r_from_centroid_um": 186.43450787440332,
+      "depth_um": 8.848952210473307,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 271,
+      "centroid_um": [
+        133.47106685119093,
+        130.096834715349,
+        165.0122617699115
+      ],
+      "r_from_centroid_um": 187.19718129962033,
+      "depth_um": 8.086278785256278,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 272,
+      "centroid_um": [
+        134.0593222439842,
+        -17.035688435463953,
+        311.5781622288636
+      ],
+      "r_from_centroid_um": 186.93204296790643,
+      "depth_um": 8.351417116970197,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 273,
+      "centroid_um": [
+        134.31804831900203,
+        92.48687541213722,
+        274.2885038975897
+      ],
+      "r_from_centroid_um": 187.17563375949575,
+      "depth_um": 8.107826325380877,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 274,
+      "centroid_um": [
+        170.6335518706596,
+        -54.20264366734958,
+        238.05493557798948
+      ],
+      "r_from_centroid_um": 187.48023612156237,
+      "depth_um": 7.80322396331425,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 275,
+      "centroid_um": [
+        170.59561658712983,
+        56.12447812221078,
+        127.9693480212832
+      ],
+      "r_from_centroid_um": 187.66420595744336,
+      "depth_um": 7.619254127433258,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 276,
+      "centroid_um": [
+        -160.927631486242,
+        -17.199696836111467,
+        91.15010614012033
+      ],
+      "r_from_centroid_um": 185.8062929294974,
+      "depth_um": 9.477167155379224,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 277,
+      "centroid_um": [
+        -160.74206433969246,
+        -91.18606123780964,
+        164.91679762214997
+      ],
+      "r_from_centroid_um": 185.63222131463655,
+      "depth_um": 9.651238770240077,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 278,
+      "centroid_um": [
+        -160.74381727230576,
+        93.09689615707092,
+        201.09706626432472
+      ],
+      "r_from_centroid_um": 186.69324218971136,
+      "depth_um": 8.59021789516526,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 279,
+      "centroid_um": [
+        -160.96441173577153,
+        19.113727206361364,
+        274.84487814471663
+      ],
+      "r_from_centroid_um": 186.5930309979619,
+      "depth_um": 8.690429086914708,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 280,
+      "centroid_um": [
+        -86.9401455613921,
+        -164.8944729560742,
+        164.84649694775842
+      ],
+      "r_from_centroid_um": 187.23692815164515,
+      "depth_um": 8.046531933231481,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 281,
+      "centroid_um": [
+        -124.2367317197866,
+        55.42221726320344,
+        54.30104408210609
+      ],
+      "r_from_centroid_um": 186.872166693225,
+      "depth_um": 8.411293391651602,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 282,
+      "centroid_um": [
+        -123.83613429029378,
+        -128.27675517424706,
+        237.5424074874274
+      ],
+      "r_from_centroid_um": 186.62433763438494,
+      "depth_um": 8.659122450491667,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 283,
+      "centroid_um": [
+        -124.3379883979639,
+        -53.57947931139538,
+        311.73530697037023
+      ],
+      "r_from_centroid_um": 187.22386111294057,
+      "depth_um": 8.059598971936055,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 284,
+      "centroid_um": [
+        -87.15480873495183,
+        -17.103114024085553,
+        12.058936691385925
+      ],
+      "r_from_centroid_um": 192.12457393735681,
+      "depth_um": 3.1588861475197962,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 285,
+      "centroid_um": [
+        -123.82783716845678,
+        130.1728743476563,
+        128.4713252032132
+      ],
+      "r_from_centroid_um": 187.58705263844698,
+      "depth_um": 7.696407446429639,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 286,
+      "centroid_um": [
+        -49.530942507627564,
+        129.59386474163134,
+        53.803823658012995
+      ],
+      "r_from_centroid_um": 189.18338901729476,
+      "depth_um": 6.100071067581872,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 287,
+      "centroid_um": [
+        -87.24061933904858,
+        19.045709831763833,
+        348.6336124130603
+      ],
+      "r_from_centroid_um": 188.68001536270327,
+      "depth_um": 6.603444722173331,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 288,
+      "centroid_um": [
+        -13.208024768470729,
+        -90.6127952027923,
+        11.959030347522669
+      ],
+      "r_from_centroid_um": 193.50082245504365,
+      "depth_um": 1.7826376298329711,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 289,
+      "centroid_um": [
+        -13.180291267251393,
+        -164.5986231715368,
+        90.8573275552487
+      ],
+      "r_from_centroid_um": 188.81321026263825,
+      "depth_um": 6.470249822238373,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 290,
+      "centroid_um": [
+        -49.63543129719934,
+        -127.76895992959635,
+        312.2337456458083
+      ],
+      "r_from_centroid_um": 188.7851488924926,
+      "depth_um": 6.498311192384027,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 291,
+      "centroid_um": [
+        -86.9333501050468,
+        166.79428669355883,
+        201.16756507257205
+      ],
+      "r_from_centroid_um": 189.02152177455577,
+      "depth_um": 6.261938310320853,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 292,
+      "centroid_um": [
+        22.991736141816432,
+        -164.6538652059192,
+        275.13414199429207
+      ],
+      "r_from_centroid_um": 190.3554104643406,
+      "depth_um": 4.928049620536024,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 293,
+      "centroid_um": [
+        23.12508567419903,
+        92.45714299125798,
+        11.973353298976932
+      ],
+      "r_from_centroid_um": 195.28346008487662,
+      "depth_um": 0.0,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 294,
+      "centroid_um": [
+        23.132256090207676,
+        -90.78866065190013,
+        348.77588148999564
+      ],
+      "r_from_centroid_um": 190.92275445060983,
+      "depth_um": 4.360705634266776,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 295,
+      "centroid_um": [
+        59.45382692418286,
+        -127.55785832904321,
+        53.97944432540871
+      ],
+      "r_from_centroid_um": 190.5337898904217,
+      "depth_um": 4.74967019445491,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 296,
+      "centroid_um": [
+        -13.073791191046443,
+        92.80991217608172,
+        348.6288070897493
+      ],
+      "r_from_centroid_um": 190.81269918741282,
+      "depth_um": 4.470760897463786,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 297,
+      "centroid_um": [
+        23.0495322683914,
+        166.45409748251012,
+        90.96918259943332
+      ],
+      "r_from_centroid_um": 191.31582139553808,
+      "depth_um": 3.967638689338543,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 298,
+      "centroid_um": [
+        -13.060598370074649,
+        166.45067351854453,
+        275.1456274790313
+      ],
+      "r_from_centroid_um": 190.9821046981976,
+      "depth_um": 4.3013553866790275,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    },
+    {
+      "cell": 299,
+      "centroid_um": [
+        96.83168307237655,
+        -164.60078748010153,
+        200.99508779341798
+      ],
+      "r_from_centroid_um": 191.87182900230195,
+      "depth_um": 3.4116310825746647,
+      "zone": 0,
+      "zone_name": "proliferating rim"
+    }
+  ]
+}

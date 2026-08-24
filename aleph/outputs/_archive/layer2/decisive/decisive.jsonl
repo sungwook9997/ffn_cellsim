@@ -1,0 +1,6 @@
+{"arm": "baseline", "n": 4000, "seed": 0, "device": "gpu", "f_active_nN": 0.0, "dt_factor": 1, "R0_um": 153.3, "aa0_core": 1.317, "aa0_raw": 1.286, "n_final": 6183, "ejected": false, "capped": false, "wall_s": 275.3}
+{"arm": "armA_wholecell", "n": 4000, "seed": 0, "device": "gpu", "f_active_nN": 1.6, "dt_factor": 1, "R0_um": 153.3, "aa0_core": 1.352, "aa0_raw": 1.317, "n_final": 6298, "ejected": false, "capped": false, "wall_s": 302.0}
+{"arm": "armB_protrusion", "n": 4000, "seed": 0, "device": "gpu", "f_active_nN": 9.4, "dt_factor": 5, "R0_um": 156.5, "aa0_core": 1.448, "aa0_raw": 1.431, "n_final": 5602, "ejected": true, "capped": false, "wall_s": 712.1}
+{"arm": "baseline", "n": 4000, "seed": 1, "device": "gpu", "f_active_nN": 0.0, "dt_factor": 1, "R0_um": 153.5, "aa0_core": 1.337, "aa0_raw": 1.275, "n_final": 6143, "ejected": false, "capped": false, "wall_s": 291.3}
+{"arm": "armA_wholecell", "n": 4000, "seed": 1, "device": "gpu", "f_active_nN": 1.6, "dt_factor": 1, "R0_um": 153.5, "aa0_core": 1.365, "aa0_raw": 1.313, "n_final": 6245, "ejected": false, "capped": false, "wall_s": 308.1}
+{"arm": "armB_protrusion", "n": 4000, "seed": 1, "device": "gpu", "f_active_nN": 9.4, "dt_factor": 5, "R0_um": 156.3, "aa0_core": 1.546, "aa0_raw": 1.547, "n_final": 5777, "ejected": true, "capped": false, "wall_s": 697.9}

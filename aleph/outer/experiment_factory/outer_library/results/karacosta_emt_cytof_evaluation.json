@@ -1,0 +1,262 @@
+{
+  "OOD_refusal_validated": false,
+  "aleph_authority": "none",
+  "author_transformed_state_relation": {
+    "E_state_unweighted_mean_of_author_state_means": {
+      "CD324": 4.749140531470804,
+      "Vimentin": 1.5116765592506392
+    },
+    "M_minus_E_direction": {
+      "CD324": "decrease",
+      "Vimentin": "increase"
+    },
+    "M_state_mean": {
+      "CD324": 0.8051618754480259,
+      "Vimentin": 8.411389244869403
+    },
+    "epithelial_state_pool": [
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "mesenchymal_state": "M"
+  },
+  "cross_lab_common_marker_direction": {
+    "cell_type_shift": "A549_to_HCC827",
+    "dataset_and_lab_disjoint": true,
+    "discovery_dataset": "figshare-26500210-exif-a549-emt-4plex",
+    "discovery_lab": "Lock_Lab_UNSW_Sydney",
+    "external_dataset": "nature-2019-karacosta-hcc827-emt-cytof",
+    "external_lab": "Plevritis_Bendall_Labs_Stanford",
+    "independent_lab_common_marker_direction_reproduced": true,
+    "modality_shift": "fixed_IF_to_CyTOF",
+    "numeric_scale_transfer_permitted": false,
+    "rows": [
+      {
+        "ExIF_A549_fixed_IF_control_to_48h_TGFB_direction": "decrease",
+        "Karacosta_HCC827_CyTOF_0d_to_10d_TGFB_direction": "decrease",
+        "absolute_intensity_transfer_permitted": false,
+        "directions_agree": true,
+        "protein_observable": "E_cadherin"
+      },
+      {
+        "ExIF_A549_fixed_IF_control_to_48h_TGFB_direction": "increase",
+        "Karacosta_HCC827_CyTOF_0d_to_10d_TGFB_direction": "increase",
+        "absolute_intensity_transfer_permitted": false,
+        "directions_agree": true,
+        "protein_observable": "Vimentin"
+      }
+    ]
+  },
+  "design_audit": {
+    "author_states_were_derived_from_the_same_six_marker_features": true,
+    "cell_state_classifier_on_these_features_is_label_circular_and_forbidden": true,
+    "mandatory_split_groups": 1,
+    "raw_single_cell_events": 90066,
+    "released_biological_replicate_identifiers": false,
+    "single_cells_are_not_independent_biological_replicates": true,
+    "timepoints_are_not_independent_biological_replicates": true,
+    "transformed_state_subset_cells": 29066
+  },
+  "directional_bridge_eligible": true,
+  "independent_dataset_direction_holdout": true,
+  "independent_lab_direction_holdout": true,
+  "independent_lab_inferential_holdout": false,
+  "limitations": [
+    "the released Source Data exposes one primary biological experiment and no replicate identifier",
+    "90,066 cells improve representation but do not increase biological n above one",
+    "CyTOF and IF share protein identity but not an absolute intensity scale",
+    "CCAST state labels were constructed from the same six markers and cannot validate a classifier trained on them",
+    "independent-lab direction transfer rejects incompatible states but cannot emit a numeric Aleph range"
+  ],
+  "may_select_aleph_parameter": false,
+  "observable_evidence_eligible": false,
+  "pre_sweep_role": {
+    "candidate_mechanism_families": [
+      "cell_cell_adhesion",
+      "intermediate_filament_remodelling",
+      "growth_factor_conditioned_state",
+      "EMT_MET_hysteresis"
+    ],
+    "may_emit_sweep_axis": false,
+    "newly_supported_action": "reject EMT-state candidates that require E-cadherin increase or Vimentin decrease during progressive TGF-beta EMT",
+    "numeric_range": null,
+    "required_Aleph_operators": [
+      "E_cadherin_observation_bridge_or_declared_unavailable",
+      "Vimentin_observation_bridge_or_declared_unavailable",
+      "cell_cell_contact_and_dispersion_observables"
+    ],
+    "required_before_numeric_promotion": [
+      "replicate-complete aligned external EMT experiment",
+      "cross-modality uncertainty calibration and semantic OOD refusal",
+      "Aleph observation operators with exact declared semantics",
+      "monotonic forward sensitivity for candidate parameter axes"
+    ],
+    "role": "independent_lab_EMT_direction_filter_before_bounded_Aleph_sweep"
+  },
+  "progressive_EMT_0d_to_10d_TGFB": {
+    "E_cadherin_down_Vimentin_up_reproduced": true,
+    "inferential_test_permitted": false,
+    "rows": [
+      {
+        "10d_TGFB_median": 1.5489795805000002,
+        "10d_TGFB_minus_control": -40.4472457745,
+        "control_median": 41.996225355,
+        "direction": "decrease",
+        "marker": "E_cadherin"
+      },
+      {
+        "10d_TGFB_median": 2877.258789,
+        "10d_TGFB_minus_control": 2875.1225672335,
+        "control_median": 2.1362217665000003,
+        "direction": "increase",
+        "marker": "Vimentin"
+      }
+    ]
+  },
+  "raw_timepoint_descriptive_statistics": {
+    "0d_control": {
+      "CD324": {
+        "mean_nontransformed_intensity": 69.87696584998625,
+        "median_nontransformed_intensity": 41.996225355,
+        "n_single_cell_events_descriptive_only": 12792,
+        "q25": 15.481036905,
+        "q75": 89.5356369
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 79.19609127132036,
+        "median_nontransformed_intensity": 2.1362217665000003,
+        "n_single_cell_events_descriptive_only": 12792,
+        "q25": 0.913669512,
+        "q75": 4.2107770445
+      }
+    },
+    "10d_TGFB": {
+      "CD324": {
+        "mean_nontransformed_intensity": 34.26271976083009,
+        "median_nontransformed_intensity": 1.5489795805000002,
+        "n_single_cell_events_descriptive_only": 12936,
+        "q25": 0.0,
+        "q75": 6.590427041
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 3007.3043978042974,
+        "median_nontransformed_intensity": 2877.258789,
+        "n_single_cell_events_descriptive_only": 12936,
+        "q25": 1868.856018,
+        "q75": 4020.8066405
+      }
+    },
+    "10d_withdrawal": {
+      "CD324": {
+        "mean_nontransformed_intensity": 55.55175659098852,
+        "median_nontransformed_intensity": 15.31029081,
+        "n_single_cell_events_descriptive_only": 12978,
+        "q25": 1.3309547899999998,
+        "q75": 84.0865783725
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 1195.8517838143307,
+        "median_nontransformed_intensity": 604.69171145,
+        "n_single_cell_events_descriptive_only": 12978,
+        "q25": 3.31984430525,
+        "q75": 2131.35375975
+      }
+    },
+    "2d_TGFB": {
+      "CD324": {
+        "mean_nontransformed_intensity": 300.2225915032098,
+        "median_nontransformed_intensity": 222.0645142,
+        "n_single_cell_events_descriptive_only": 12861,
+        "q25": 91.72545624,
+        "q75": 422.5965271
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 664.4630403199042,
+        "median_nontransformed_intensity": 142.5966644,
+        "n_single_cell_events_descriptive_only": 12861,
+        "q25": 7.469920635,
+        "q75": 828.7028809
+      }
+    },
+    "2d_withdrawal": {
+      "CD324": {
+        "mean_nontransformed_intensity": 20.176061731006232,
+        "median_nontransformed_intensity": 1.713457346,
+        "n_single_cell_events_descriptive_only": 12835,
+        "q25": 0.054031933000000004,
+        "q75": 8.585125923
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 2426.1188833434862,
+        "median_nontransformed_intensity": 2289.691895,
+        "n_single_cell_events_descriptive_only": 12835,
+        "q25": 1320.928223,
+        "q75": 3335.18042
+      }
+    },
+    "6d_TGFB": {
+      "CD324": {
+        "mean_nontransformed_intensity": 76.86725757384063,
+        "median_nontransformed_intensity": 6.774657726,
+        "n_single_cell_events_descriptive_only": 12700,
+        "q25": 0.781998321,
+        "q75": 83.90735054000001
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 2362.4153867658815,
+        "median_nontransformed_intensity": 2227.3260495000004,
+        "n_single_cell_events_descriptive_only": 12700,
+        "q25": 1098.2136535,
+        "q75": 3376.3086550000003
+      }
+    },
+    "6d_withdrawal": {
+      "CD324": {
+        "mean_nontransformed_intensity": 49.93327207303564,
+        "median_nontransformed_intensity": 2.9963777064999997,
+        "n_single_cell_events_descriptive_only": 12964,
+        "q25": 0.403059997,
+        "q75": 62.16116905
+      },
+      "Vimentin": {
+        "mean_nontransformed_intensity": 1771.9091808310532,
+        "median_nontransformed_intensity": 1533.6236574999998,
+        "n_single_cell_events_descriptive_only": 12964,
+        "q25": 365.3479843,
+        "q75": 2793.52941875
+      }
+    }
+  },
+  "representation_training_eligible": true,
+  "schema": "aleph.outer_library.karacosta_emt_cytof_evaluation.v1",
+  "source": {
+    "dataset_id": "nature-2019-karacosta-hcc827-emt-cytof",
+    "lab_group": "Plevritis_Bendall_Labs_Stanford",
+    "paper_doi": "10.1038/s41467-019-13441-6",
+    "source_sha256": "bd6e239008b40cb91b722f16a43c81f43f043adc34f6807a74d094746bfaadfa"
+  },
+  "state_axis": "EMT_epithelial_partial_mesenchymal_MET_state",
+  "task": "independent_lab_common_protein_EMT_direction_and_state_bridge",
+  "uncertainty_holdout_passed": false,
+  "withdrawal_10d_TGFB_to_10dW": {
+    "inferential_test_permitted": false,
+    "partial_marker_reversal_reproduced": true,
+    "rows": [
+      {
+        "10d_TGFB_median": 1.5489795805000002,
+        "10d_withdrawal_median": 15.31029081,
+        "direction": "increase",
+        "marker": "E_cadherin",
+        "withdrawal_minus_10d_TGFB": 13.761311229499999
+      },
+      {
+        "10d_TGFB_median": 2877.258789,
+        "10d_withdrawal_median": 604.69171145,
+        "direction": "decrease",
+        "marker": "Vimentin",
+        "withdrawal_minus_10d_TGFB": -2272.5670775500002
+      }
+    ]
+  }
+}

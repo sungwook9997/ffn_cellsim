@@ -1,0 +1,75 @@
+{
+  "schema": "aleph.outer_library.preregistered_emt_holdout.v1",
+  "frozen_at": "2026-08-06T23:58:24+09:00",
+  "frozen_before_expression_file_download_or_inspection": true,
+  "accession": "GSE325309",
+  "dataset_role": "pristine_outcome_blind_external_direction_holdout",
+  "source_metadata": {
+    "provider": "NCBI Gene Expression Omnibus",
+    "official_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE325309",
+    "paper_doi": "10.1038/s42003-026-10033-1",
+    "lab_group": "Lv_Huang_Jiang_Labs_Sun_Yat_sen_University",
+    "cell_line": "A549",
+    "control_biological_replicates": [
+      "GSM9600356",
+      "GSM9600357",
+      "GSM9600358"
+    ],
+    "TGFB1_biological_replicates": [
+      "GSM9600359",
+      "GSM9600360",
+      "GSM9600361"
+    ],
+    "treatment": "10 ng/mL TGF-beta-1 for 48 hours",
+    "author_processed_unit": "FPKM",
+    "expected_processed_filename": "GSE325309_processed_data.xlsx"
+  },
+  "frozen_feature_contract": {
+    "gene_symbols": [
+      "CDH1",
+      "VIM"
+    ],
+    "gene_match": "case_sensitive_exact_symbol",
+    "duplicate_gene_rows": "refuse",
+    "missing_gene_rows": "refuse",
+    "sample_exclusion": "none",
+    "missing_or_nonfinite_sample_value": "refuse",
+    "transform": "log2(FPKM + 1)",
+    "expected_directions": {
+      "CDH1": "decrease",
+      "VIM": "increase"
+    }
+  },
+  "frozen_primary_test": {
+    "unit": "biological_replicate",
+    "group_sizes": {
+      "control": 3,
+      "TGFB1": 3
+    },
+    "gene_effect": "TGFB1_mean_minus_control_mean_on_log2_FPKM_plus_1",
+    "oriented_standardized_effect": "negative_CDH1_Cohen_d_plus_positive_VIM_Cohen_d",
+    "null_distribution": "exact_all_20_assignments_of_3_of_6_samples_to_TGFB1",
+    "tail": "one_sided_greater_or_equal",
+    "finite_sample_p_value": "count_null_scores_greater_or_equal_observed_divided_by_20",
+    "pass_rule": "both_gene_mean_directions_expected_and_exact_composite_p_at_most_0.05",
+    "alpha": 0.05
+  },
+  "frozen_secondary_diagnostics": {
+    "all_nine_between_group_pairwise_differences_expected_per_gene": true,
+    "bootstrap": {
+      "resamples": 10000,
+      "seed": 325309,
+      "unit": "biological_replicate_within_group",
+      "interval": "percentile_95"
+    },
+    "secondary_diagnostics_cannot_override_primary_failure": true
+  },
+  "authority_contract": {
+    "RNA_protein_absolute_scale_transfer_permitted": false,
+    "cross_platform_absolute_scale_transfer_permitted": false,
+    "numeric_Aleph_range_permitted": false,
+    "may_emit_sweep_axis": false,
+    "may_select_Aleph_parameter": false,
+    "OOD_validation_claim_permitted": false
+  }
+}

@@ -1,0 +1,532 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "fullcell_contribution_census",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "stamp": {
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "python": "3.13.14",
+  "device": "cuda:0"
+ },
+ "n_nodes": 511114,
+ "populations": [
+  {
+   "name": "actin",
+   "lo": 0,
+   "hi": 494802,
+   "count": 494802
+  },
+  {
+   "name": "myosin",
+   "lo": 494802,
+   "hi": 509830,
+   "count": 15028
+  },
+  {
+   "name": "nucleus",
+   "lo": 509830,
+   "hi": 510472,
+   "count": 642
+  },
+  {
+   "name": "membrane",
+   "lo": 510472,
+   "hi": 511114,
+   "count": 642
+  }
+ ],
+ "channels_counted": {
+  "cell.barbed_node_d": {
+   "class": "topology",
+   "shape": [
+    70686
+   ],
+   "n_elements": 70686,
+   "min": 6,
+   "max": 494801,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 70686,
+   "population_pairs": {
+    "actin": 70686
+   },
+   "spans_populations": false
+  },
+  "cell.tri_d": {
+   "class": "topology",
+   "shape": [
+    353430,
+    3
+   ],
+   "n_elements": 353430,
+   "min": 0,
+   "max": 494801,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 494802,
+   "population_pairs": {
+    "actin": 353430
+   },
+   "spans_populations": false
+  },
+  "cell.xl_d": {
+   "class": "topology",
+   "shape": [
+    1413720,
+    2
+   ],
+   "n_elements": 1413720,
+   "min": 0,
+   "max": 494801,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 491876,
+   "population_pairs": {
+    "actin": 1413720
+   },
+   "spans_populations": false
+  },
+  "membrane.erm_c_d": {
+   "class": "topology",
+   "shape": [
+    642
+   ],
+   "n_elements": 642,
+   "min": 131,
+   "max": 494757,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "actin": 642
+   },
+   "spans_populations": false
+  },
+  "membrane.erm_m_d": {
+   "class": "topology",
+   "shape": [
+    642
+   ],
+   "n_elements": 642,
+   "min": 510472,
+   "max": 511113,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "membrane": 642
+   },
+   "spans_populations": false
+  },
+  "membrane.faces_d": {
+   "class": "topology",
+   "shape": [
+    1280,
+    3
+   ],
+   "n_elements": 1280,
+   "min": 510472,
+   "max": 511113,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "membrane": 1280
+   },
+   "spans_populations": false
+  },
+  "membrane.hinges_d": {
+   "class": "topology",
+   "shape": [
+    1920,
+    4
+   ],
+   "n_elements": 1920,
+   "min": 510472,
+   "max": 511113,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "membrane": 1920
+   },
+   "spans_populations": false
+  },
+  "myosin.backbone_bonds": {
+   "class": "topology",
+   "shape": [
+    5746,
+    2
+   ],
+   "n_elements": 5746,
+   "min": 494802,
+   "max": 509809,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 6188,
+   "population_pairs": {
+    "myosin": 5746
+   },
+   "spans_populations": false
+  },
+  "myosin.head_arm_angles": {
+   "class": "topology",
+   "shape": [
+    8840,
+    3
+   ],
+   "n_elements": 8840,
+   "min": 494802,
+   "max": 509829,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 15028,
+   "population_pairs": {
+    "myosin": 8840
+   },
+   "spans_populations": false
+  },
+  "myosin.head_bonds": {
+   "class": "topology",
+   "shape": [
+    8840,
+    2
+   ],
+   "n_elements": 8840,
+   "min": 494802,
+   "max": 509829,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 15028,
+   "population_pairs": {
+    "myosin": 8840
+   },
+   "spans_populations": false
+  },
+  "myosin.head_node": {
+   "class": "topology",
+   "shape": [
+    8840
+   ],
+   "n_elements": 8840,
+   "min": 494816,
+   "max": 509829,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 8840,
+   "population_pairs": {
+    "myosin": 8840
+   },
+   "spans_populations": false
+  },
+  "nucleus.faces_d": {
+   "class": "topology",
+   "shape": [
+    1280,
+    3
+   ],
+   "n_elements": 1280,
+   "min": 509830,
+   "max": 510471,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "nucleus": 1280
+   },
+   "spans_populations": false
+  },
+  "nucleus.hinges_d": {
+   "class": "topology",
+   "shape": [
+    1920,
+    4
+   ],
+   "n_elements": 1920,
+   "min": 509830,
+   "max": 510471,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "nucleus": 1920
+   },
+   "spans_populations": false
+  },
+  "nucleus.linc_a_d": {
+   "class": "topology",
+   "shape": [
+    642
+   ],
+   "n_elements": 642,
+   "min": 645,
+   "max": 493924,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "actin": 642
+   },
+   "spans_populations": false
+  },
+  "nucleus.linc_n_d": {
+   "class": "topology",
+   "shape": [
+    642
+   ],
+   "n_elements": 642,
+   "min": 509830,
+   "max": 510471,
+   "n_sentinel_negative": 0,
+   "n_distinct_nodes_touched": 642,
+   "population_pairs": {
+    "nucleus": 642
+   },
+   "spans_populations": false
+  }
+ },
+ "arrays_excluded": {
+  "cell.foff_d": {
+   "class": "offset",
+   "shape": [
+    70687
+   ],
+   "n_elements": 70687,
+   "min": 0,
+   "max": 494802
+  },
+  "cell.node_fiber_d": {
+   "class": "offset",
+   "shape": [
+    494802
+   ],
+   "n_elements": 494802,
+   "min": 0,
+   "max": 70685
+  },
+  "cell.soff_d": {
+   "class": "offset",
+   "shape": [
+    70687
+   ],
+   "n_elements": 70687,
+   "min": 0,
+   "max": 424116
+  },
+  "cell.toff_d": {
+   "class": "offset",
+   "shape": [
+    70687
+   ],
+   "n_elements": 70687,
+   "min": 0,
+   "max": 353430
+  },
+  "grid.mask": {
+   "class": "flag_or_mask",
+   "shape": [
+    43,
+    43,
+    43
+   ],
+   "n_elements": 43,
+   "min": 0,
+   "max": 2
+  },
+  "membrane.erm_attach_events_d": {
+   "class": "counter",
+   "shape": [
+    1
+   ],
+   "n_elements": 1,
+   "min": 0,
+   "max": 0
+  },
+  "membrane.erm_bound_d": {
+   "class": "flag_or_mask",
+   "shape": [
+    642
+   ],
+   "n_elements": 642,
+   "min": 1,
+   "max": 1
+  },
+  "membrane.erm_detach_events_d": {
+   "class": "counter",
+   "shape": [
+    1
+   ],
+   "n_elements": 1,
+   "min": 0,
+   "max": 0
+  },
+  "membrane.erm_rng_epoch_d": {
+   "class": "counter",
+   "shape": [
+    1
+   ],
+   "n_elements": 1,
+   "min": 0,
+   "max": 0
+  },
+  "membrane_bc.unresolved_faces_d": {
+   "class": "counter",
+   "shape": [
+    1
+   ],
+   "n_elements": 1,
+   "min": 0,
+   "max": 0
+  },
+  "membrane_pressure.unresolved_faces_d": {
+   "class": "counter",
+   "shape": [
+    1
+   ],
+   "n_elements": 1,
+   "min": 0,
+   "max": 0
+  },
+  "nucleus.ruptured_d": {
+   "class": "offset",
+   "shape": [
+    1280
+   ],
+   "n_elements": 1280,
+   "min": 0,
+   "max": 0
+  },
+  "steric.fiber_id": {
+   "class": "out_of_range",
+   "shape": [
+    511114
+   ],
+   "n_elements": 511114,
+   "min": -4,
+   "max": 70685
+  }
+ },
+ "per_node_arrays": {
+  "cell.solid_active_d": {
+   "class": "per_node",
+   "shape": [
+    511114
+   ],
+   "n_elements": 511114,
+   "min": -1,
+   "max": 0,
+   "n_negative": 16312,
+   "n_zero": 494802
+  },
+  "steric.active": {
+   "class": "per_node",
+   "shape": [
+    511114
+   ],
+   "n_elements": 511114,
+   "min": -1,
+   "max": 0,
+   "n_negative": 16312,
+   "n_zero": 494802
+  }
+ },
+ "cross_population_coupling": {
+  "arrays_that_span_a_boundary": 0,
+  "connector_candidates_from_split_endpoint_arrays": [
+   {
+    "endpoint_arrays": [
+     "membrane.erm_c_d",
+     "membrane.erm_m_d"
+    ],
+    "populations": [
+     "actin",
+     "membrane"
+    ],
+    "n_bonds": 642,
+    "visible_to_per_array_test": false
+   },
+   {
+    "endpoint_arrays": [
+     "nucleus.linc_a_d",
+     "nucleus.linc_n_d"
+    ],
+    "populations": [
+     "actin",
+     "nucleus"
+    ],
+    "n_bonds": 642,
+    "visible_to_per_array_test": false
+   }
+  ],
+  "reading": "NO single topology array spans a population boundary, and that is a fact about the arrays rather than about the physics: the cross-population connectors this cell carries are stored as split parallel endpoint arrays, so each half lies wholly inside one population. The coupling is real and lives in the PAIRING, which no array declares.",
+  "couplings_with_no_stored_topology": [
+   {
+    "populations": [
+     "actin",
+     "myosin"
+    ],
+    "mechanism": "myosin crossbridge head -> actin segment",
+    "evidence": "assemble.py ledger: myosin_attachment_primitive POINT_TO_SEGMENT_BARYCENTRIC, myosin_anchor_mode POINT_TO_SEGMENT_DYNAMIC; every myosin.* topology array counted here lies wholly inside the myosin range",
+    "recoverable_structurally": false
+   },
+   {
+    "populations": [
+     "actin",
+     "actin"
+    ],
+    "mechanism": "steric excluded volume, neighbour query per step",
+    "evidence": "steric.active marks the 16,312 non-actin nodes dormant, so it acts within actin only",
+    "recoverable_structurally": false
+   }
+  ],
+  "three_levels_of_invisibility": "The audit question 'does any topology array span a population boundary?' returns 0 on this cell, and the cell has at least three cross-population couplings. They differ in how hidden they are: ERM and LINC are stored, but SPLIT across two endpoint arrays, so they are recoverable structurally (same owner, equal length, disjoint populations) -- this pass recovers both. The myosin crossbridge is not stored at all: it is formed per step by a point-to-segment query, so no structural pass can ever see it. A coupling audit that reads topology is therefore necessary and NOT sufficient, and the sufficient version has to be a force measurement rather than a census."
+ },
+ "channels_not_reachable_from_the_built_cell": {
+  "actin_axial_segments_nf2007": "segment node pairs are built in assemble.py and consumed by the solver constraint; `AssembledCell` exposes only the offset/rest ledgers (`soff_d`, `srest_d`), so the pair list is not reachable here",
+  "steric_excluded_volume": "pairs are formed per step from a neighbour query, not stored as a topology; `steric.active` marks the same 16,312 non-actin nodes dormant, so it acts on actin only",
+  "why_this_does_not_weaken_Q1": "the zero-contribution set is already EMPTY over the counted channels, and adding a channel can only ADD coverage. So the answer is monotone in the missing channels and stays 0."
+ },
+ "zero_contribution": {
+  "total": 0,
+  "fraction": 0.0,
+  "by_population": {
+   "actin": {
+    "n_nodes": 494802,
+    "n_zero_contribution": 0,
+    "fraction": 0.0
+   },
+   "myosin": {
+    "n_nodes": 15028,
+    "n_zero_contribution": 0,
+    "fraction": 0.0
+   },
+   "nucleus": {
+    "n_nodes": 642,
+    "n_zero_contribution": 0,
+    "fraction": 0.0
+   },
+   "membrane": {
+    "n_nodes": 642,
+    "n_zero_contribution": 0,
+    "fraction": 0.0
+   }
+  }
+ },
+ "hits_histogram": {
+  "1": 384,
+  "2": 3186,
+  "3": 20586,
+  "4": 27199,
+  "5": 47616,
+  "6": 67242,
+  "7": 74451,
+  "8": 71113,
+  "9": 62188,
+  "10": 48979,
+  "11": 34912,
+  "12": 22839,
+  "13": 13805,
+  "14": 7734,
+  "15": 4064,
+  "16": 2057,
+  "17": 879,
+  "18": 365,
+  "19": 1417,
+  "20": 59,
+  "21": 24,
+  "22": 10,
+  "23": 2,
+  "24": 3
+ },
+ "supersedes": "the 16,312 figure recorded but not interpreted in aleph/outputs/ac/arena_force_parity \u2014 that count bound TWO channels; this binds every channel the built cell carries",
+ "figures": [
+  "population_coupling.png"
+ ]
+}

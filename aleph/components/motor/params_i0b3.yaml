@@ -1,0 +1,337 @@
+# I0-B3 parameter gate — I3 head-resolved NMII minifilament (Stam-Hocky, Warp)
+# ============================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §3(I3) + §4B (I0-Bn cross-cutting conflicts)
+# + AC_PARALLEL_SESSIONS_2026-07-16.md §3 Session D.
+# Format mirrors ac/fluid/params_i0b1.yaml: claim ID · evidence status · owner ·
+# provisional policy · blocking gate.
+#
+# GOVERNING RULE (§1.6 + §4B, HARD): any value whose literature grounding is NOT closed is
+#   value: null  +  evidence_status: "GAP — PI"
+# and is surfaced to PI. Provisional PI-authored values carry owner + expiry_trigger and are
+# NEVER tuned to pass a gate or to lift the native gamma-floor (§6.2 report-not-tune).
+#
+# ANALYTIC-BUILD UNBLOCKED: every I3 analytic gate (Hill FV shape, Bell monotonicity, per-head
+# Newton closure residual, ensemble-stall EMERGENCE, ATP/step work sign, force-free-at-v0,
+# topology/count invariants) is MAGNITUDE-INDEPENDENT — it sweeps these parameters as oracle
+# variables. The magnitudes below are therefore NOT needed to author + green the CPU oracle suite.
+# The native gamma-floor MAGNITUDE gate (lead, gbook) is INVALID until the GAP rows close.
+# ============================================================================
+
+meta:
+  increment: I3
+  gate: I0-B3
+  track: motor-nmii
+  owner_session: "Session D (motor-nmii)"
+  decided_by: PI                                # every GAP below awaits PI source-audit
+  drafted_on: "2026-07-16"
+  pi_decision_2026_07_21:                        # DECISION RECORD (not a tuned value)
+    first_baseline_paralog: "NM2B (pure)"        # PI 2026-07-21: fewest-gap direction
+    rationale: >
+      NM2B leaves the fewest open GAPs: Nagy 2013 (JBC, 10.1074/jbc.M112.424671) directly measures duty,
+      detachment/ADP rate, power stroke, and dimers-per-side at single-molecule level; Melli 2018 (eLife,
+      10.7554/eLife.32871) gives the backbone length. NM2A lacks single-molecule k_off0/d_step; heterotypic
+      additionally needs sourced population weights. MCF7 is multi-isoform (Dey 2017) so this is a first-baseline
+      simplification to be revisited, not an NM2B-only claim.
+    selected_sources_pending_audit:             # value insertion still awaits SE->Claim->Parameter audit (step 5)
+      L_bb: "0.323 um (323+/-24 nm), Melli2018_eLife"
+      N_side: "~14 dimers/side (~28 heads), Nagy2013_JBC — retire AFINES-10 claim_a"
+      duty: "0.20-0.25, Nagy2013_JBC (cross-check only; engaged fraction stays emergent)"
+      k_off0: "0.4 /s detachment (NOT the 0.35 ADP-release), Nagy2013_JBC — fixes the mislabel below"
+      d_step: "~6 nm, Nagy2013_JBC — retire 11 nm muscle value"
+    still_gap_under_nm2b: [F_stall_head, v0, kappa_hill, k_xb, k_on, r0_head, L_p_backbone, nm2b_bare_zone, cortical_minifilament_density]
+    packet: "outputs/ac/motor-nmii/PARAMETER_GAP_DECISION_2026-07-21.md"
+    note: "Values remain null here until the SourceEvidence rows are registered + audited and TAG refreshed."
+  native_run_blocked_on: [F_stall_head, N_side, v0, kappa_hill, k_xb]   # magnitude gate INVALID until these close
+  analytic_build_unblocked: true               # shape/invariant gates need no physiological magnitude
+  units_convention: "SI in the note text; engine runtime is um-pN-s (convert at load)"
+  primitive: >
+    ONE head-resolved multi-particle Stam-Hocky bipolar minifilament: explicit backbone beads +
+    explicit heads on both anti-parallel sides + per-head actin attachment (crossbridge spring k_xb),
+    per-head Hill force-velocity stepping, per-head Bell slip detachment. NO lumped f_myo and NO
+    imposed N_side*F_head single-link substitute anywhere in the final engine (P2).
+
+# ============================================================================
+# CONFLICTED — do NOT choose (§4B). value: null until PI source-audits BOTH claims and selects
+# by NMII isoform / assay. Both competing claims are recorded so the audit is non-vacuous.
+# ============================================================================
+parameters:
+
+  F_stall_head:
+    title: "per-head isometric stall force"
+    symbol: "F_head"
+    value: null
+    unit: "pN"
+    evidence_status: "GAP — PI"
+    claim_a:
+      value: 0.5
+      source: "AFINES (Freedman 2017 PLoS Comput Biol); Kovacs 2003; Tam 2021; ff/hand_kmc NMIIA preset"
+      note: "small per-head stall; 'small relative to 3-4 pN cardiac' (AFINES_ALGORITHM_NOTES L516)"
+    claim_b:
+      value: 2.0
+      source: "Billington structural interpretation; ff/myosin_linear.F_HEAD_PN=2.0 (KB-3.18 ~2 pN)"
+      note: "higher per-head stall; used by the RETIRED aggregate linear kernel"
+    conflict: "§4B — 0.5 pN attribution not yet an audited SourceEvidence row; 2.0 pN/Billington also not closed for head-level use"
+    owner: PI
+    expiry_trigger: "PI source-audits both rows, selects by NMII isoform/assay"
+    policy: "select by isoform/assay, NEVER to lift gamma. Enters ensemble stall via emergent engaged fraction, not as an imposed product."
+
+  N_side:
+    title: "explicit motor heads per anti-parallel half-filament"
+    symbol: "N_side"
+    value: null
+    unit: "count"
+    evidence_status: "GAP — PI"
+    claim_a:
+      value: 10
+      source: "AFINES minifilament model (Freedman 2017)"
+    claim_b:
+      value: 28                                 # range 28-30
+      range: [28, 30]
+      source: "Billington 2013 JBC / Niederman-Pollard 1975 EM (~28-30 molecules/minifilament); archived mcf7_baseline.yaml:54 production override n_heads_per_side=28"
+    conflict: "§4B — 10 (AFINES model) vs 28-30 (Billington structural). Archived cortex used 10 (dev) / 28 (production)."
+    legacy_note: "ff/myosin_linear used N_HEADS=60 => N_side=30 (claim_b); archived cortex/myosin.py dev=10, production mcf7=28. NOT ratified for I3."
+    owner: PI
+    expiry_trigger: "PI binds explicit heads-per-side to the selected NMII isoform/topology"
+    policy: "sets the explicit head count per side of the Warp minifilament; drives topology counts."
+
+  v0:
+    title: "unloaded (zero-load) head stepping velocity"
+    symbol: "v0"
+    value: null
+    unit: "um/s"
+    evidence_status: "GAP — PI"
+    claim_a:
+      value: 0.12
+      source: "KB-PIV-4 v_u=120 nm/s; ff/myosin_linear.V0_UM_S=0.120"
+    claim_b:
+      value: 0.2
+      source: "Kovacs 2003 (ff/hand_kmc NMIIA v_max=0.2 um/s)"
+    conflict: "§4B — 0.12 vs 0.2 um/s differ by assay temperature / load definition / isoform"
+    owner: PI
+    expiry_trigger: "PI binds assay temperature + load definition + isoform to the value"
+    policy: "the v(F=0) intercept of the per-head Hill FV; force-free at this velocity."
+
+  kappa_hill:
+    title: "Hill force-velocity curvature a/F0 (dimensionless) for the per-head stepping law"
+    symbol: "kappa = a/F0 (== archived a_over_F_stall)"
+    value: null
+    unit: "dimensionless"
+    evidence_status: "GAP — PI (⚠ THREE-way muscle vs non-muscle FV-form conflict)"
+    claim_a:
+      value: 0.25
+      source: "Hill 1938 Proc R Soc B 126:136 (skeletal/cardiac MUSCLE hyperbola a/F0~0.25)"
+      note: "the I0-A / CLAUDE.md mandated 'Hill force-velocity' primitive; classic muscle curvature"
+    claim_b:
+      value: 0.5
+      source: "Kovacs 2003 JBC 278:38132 (NMIIA single-molecule); retired HOOMD cortex/myosin.py (deleted 1a9ded66, in git history) a_over_F_stall=0.5 (configs/phase1_h3.yaml:356, h4.yaml:104)"
+      note: "the ARCHIVED head-resolved NMII code DID use a Hill curvature (0.5), non-muscle — NOT linear. This is my form's kappa exactly (their v0(Fs-F)/(Fs+F/a) == v0(1-f)/(1+f/kappa) with kappa=a_over_F_stall)."
+    claim_c:
+      value: .inf
+      source: "PI 2026-07-07 ratification (ff/myosin_linear docstring): non-muscle NMII aggregate FV is LINEAR (Freedman 2017 AFINES; Cytosim; Tam 2021) — 'a Hill hyperbola does NOT exist in the NMII literature; a/F0~=0.25 is muscle-only'"
+      note: "kappa -> infinity is EXACTLY the linear law v0*(1 - F/Fs); the kappa->inf LIMIT of the Hill form, not a different model"
+    conflict: >
+      THREE positions. (a) Hill-1938 muscle kappa=0.25 (I0-A mandate). (b) Kovacs-2003 NMIIA kappa=0.5 — the
+      value the ARCHIVED Stam-Hocky port actually used (so a non-muscle Hill curvature IS sourced, contradicting
+      'muscle-only'). (c) PI 2026-07-07: non-muscle aggregate FV is LINEAR (kappa->inf). RECONCILIATION adopted:
+      the per-head stepping law is the general Hill hyperbola v(F)=v0*(1-F/Fs)/(1+(F/Fs)/kappa); kappa=0.5 is the
+      archived NMII value, kappa=0.25 muscle, kappa->inf the 2026-07-07 linear limit. The Hill MACHINERY is built
+      (mandated); the CURVATURE kappa is left this GAP so PI reconciles Kovacs-0.5 vs Freedman/Tam-linear for the
+      HEAD-level (not aggregate) law — NOT chosen here.
+    owner: PI
+    expiry_trigger: "PI reconciles Kovacs-2003 head-level a/F0=0.5 against the 2026-07-07 aggregate-linear finding"
+    policy: "oracle-swept in the analytic Hill gate; all three (0.25, 0.5, inf) are gated. NOT chosen to fit any outcome."
+
+  k_xb:
+    title: "per-head crossbridge (head->actin link) compliance stiffness"
+    symbol: "k_xb"
+    value: null
+    unit: "pN/um"
+    evidence_status: "GAP — PI (⚠ MASTER FORCE KNOB)"
+    physical_range: [100.0, 1000.0]             # ~0.1-1 pN/nm crossbridge stiffness
+    warning: >
+      ⚠ MASTER force knob. Physical crossbridge stiffness is ~0.1-1 pN/nm = 100-1000 pN/um (working-stroke
+      strain F_stall/k_xb ~ 0.5-20 nm, physiological). The LEGACY ff/hand_kmc NMIIA link_k = 1.0 pN/um and
+      ff/myosin_linear link_k=1 are the BROKEN AFINES-soft surrogate: at 1 pN/um the F_stall~0.5-2 pN strain
+      is ~0.5-2 um, larger than the whole minifilament -> stall geometry collapses ('1 pN/um breaks stall',
+      Session-D prompt; cf. the 4.5e6x-too-soft AFINES crosslink surrogate in ff/hand_kmc L133).
+    demonstrated_by: "ac/motor/minifilament_topology.head_newton_residual — the working-stroke strain = F_stall/k_xb gate flags 1 pN/um as unphysical"
+    owner: PI
+    expiry_trigger: "PI sources a per-head crossbridge stiffness by isoform/assay in the 100-1000 pN/um band"
+    policy: "sets the head strain at load; NEVER tuned to hit a force/gamma band. The Newton closure gate certifies the strain is physical."
+
+  r0_head:
+    title: "rest length of the head<->BACKBONE arm link (the perpendicular head offset)"
+    symbol: "r0_head (head_rest_length; head<->backbone arm ONLY)"
+    value: null
+    unit: "um"
+    evidence_status: "GAP — PI"
+    reference_band: [0.0, 0.21]                  # archived head_rest_length=200 nm perp offset
+    archived_value: "0.200 um head<->backbone offset (phase1_h3.yaml:333)"
+    derived_from_geometry: "= MinifilamentTopology.head_offset_um (the head is built at this perpendicular offset from its backbone bead, so the arm bond rests at zero strain at construction — no pre-stress)"
+    owner: PI
+    expiry_trigger: "PI sources the myosin head reach / arm rest length"
+    policy: >
+      zero-strain length of the head<->backbone ARM spring (k_head_spring). ⚠ SPLIT 2026-07-16: this is NO
+      longer overloaded as the crossbridge rest — the head<->actin crossbridge has its own r0_xb (~0) below.
+      The DEFECT it fixed: using r0_head (0.2 um) as the crossbridge rest pre-stressed every freshly-bound head
+      by k_xb*0.2 um (~20-200 pN spurious). The arm bond uses this; the crossbridge uses r0_xb.
+
+  r0_xb:
+    title: "rest length of the head<->ACTIN crossbridge link"
+    symbol: "r0_xb (crossbridge rest)"
+    value: 0.0
+    unit: "um"
+    evidence_status: "grounded — physical (not an I0-B3 magnitude GAP)"
+    source: "a bound myosin head sits ON its actin binding site: the crossbridge zero-strain length is ~0 (params_i0b3.yaml r0_head note 'head<->actin r0~0'; grip_walk). Consistent with minifilament_topology.head_newton_residual, tested at r0_head=0.0."
+    owner: Lead
+    policy: >
+      zero-strain length of the head<->actin crossbridge spring (k_xb). NOT tuned — it is the physical statement
+      that a bound head is at the actin site. Crossbridge force is k_xb*(|x_att - head| - r0_xb) with the
+      attachment point x_att = anchor + abscissa*walk_dir ADVANCED by the power stroke (the P2 active root). If a
+      future isoform needs a nonzero binding offset, PI sources it — do NOT tune it to a force band.
+
+  walk_dir:
+    title: "per-head barbed-end / walk direction along the bound actin (polarity)"
+    symbol: "walk_dir"
+    value: null
+    unit: "unit vector (dimensionless)"
+    evidence_status: "geometry input — NOT an I0-B3 magnitude (per-head, set from actin polarity)"
+    source: >
+      the direction the head walks = the bound actin filament's barbed-end polarity. It is DATA supplied per
+      head, not a scalar to source. For the I3 SOURCE, build_minifilament_nodes derives a bipolar-geometry
+      default (outward along the backbone axis so the reaction drags both actins toward the minifilament centre
+      = contraction). The production engine (I4-weave) OVERWRITES it per head from the true actin barbed-end
+      direction on (re)binding.
+    owner: "Lead (geometry default) / I4-weave (production, from actin polarity)"
+    policy: >
+      enters the crossbridge attachment point x_att = anchor + abscissa*walk_dir. A ZERO walk_dir makes the head
+      passive (no directed force) — the OFF/regression default only; production MUST set it (physiological
+      baseline: additive-off is not a license to run the motor unpolarised). NOT a tunable magnitude.
+
+  L_bb:
+    title: "bipolar minifilament backbone contour length"
+    symbol: "L_bb (backbone_length)"
+    value: null
+    unit: "um"
+    reference_band: [0.28, 0.32]                 # Billington 2013 EM NMIIA contour 301 +/- 24 nm
+    archived_value: "0.700 um dev (phase1_h3.yaml:332) -> 0.301 um production (mcf7_baseline.yaml:57, Billington 2013)"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI ratifies the minifilament backbone length by isoform (301 nm NMIIA candidate)"
+    policy: >
+      sets backbone bead spacing L_bb/(n_bb-1). ⚠ the archived model has NO explicit bare-zone gap (flag):
+      bipolarity is by axial half-split (motor.py: beads 0..6 vs 7..13) or lateral offset + a runtime bipolar
+      gate (myosin.py). A real Stam-Hocky central bare zone is a PI topology decision.
+
+  n_bb:
+    title: "explicit backbone beads per minifilament"
+    symbol: "n_bb (n_backbone)"
+    value: null
+    unit: "count"
+    reference_value: 14                          # archived n_backbone=14 (phase1_h3.yaml:330); segment r0=L_bb/13
+    evidence_status: "GAP — PI (topology-discretization decision)"
+    note: "Stam-Hocky/Hocky-group bead-chain backbone (AFINES_ALGORITHM_NOTES L559 Option B), archived n_backbone=14. Rigid-rod via stiff harmonic bonds (k_backbone=10*k_head_spring); NO angle/bending potential. Bead count discretizes L_bb; must be grid-invariant (Magic-Number Block) once L_bb, k_backbone close."
+    owner: PI
+    expiry_trigger: "PI + resolution-convergence study on L_bb"
+    policy: "topology sizing; the count-invariant gate holds for ANY n_bb>=2, this fixes the resolved number."
+
+  k_backbone_factor:
+    title: "backbone bond stiffness multiplier (rigid-rod approximation)"
+    symbol: "k_backbone / k_xb"
+    value: 10.0
+    unit: "dimensionless"
+    archived_value: "10.0 (phase1_h3.yaml:335); k_backbone = 10 * k_head_spring"
+    evidence_status: "numerical (rigid-rod stiffening), NOT a literature constant"
+    owner: Lead
+    policy: "the backbone is a STIFF harmonic rod (no bending potential); factor asserted large enough that the rod stays straight, grid-invariant per Magic-Number Block. Enters CFL (kmax) with k_xb."
+
+  k_on:
+    title: "per-head actin attachment rate (in-capture-range)"
+    symbol: "k_on"
+    value: null
+    unit: "1/s"
+    evidence_status: "GAP — PI"
+    provisional_claim:
+      value: 50.0
+      source: "ff/hand_kmc NMIIA preset k_on=50/s (configs/phase1_h3.yaml myosin block)"
+      status: "config-chosen, NOT an audited head-level SourceEvidence row"
+    owner: PI
+    expiry_trigger: "PI audits a head-level NMIIA attachment rate"
+    policy: "with k_off0 sets the emergent engaged fraction phi_b=k_on/(k_on+k_off); NOT a duty ratio imposed directly."
+
+# ============================================================================
+# PROVISIONAL — literature-anchored Bell/kinetics inputs (draft; feed the SHAPE gates as oracle
+# variables). Labeled provisional; not tuned. Used for the analytic sweeps only until PI closes.
+# ============================================================================
+  k_off0:
+    title: "per-head zero-force detachment rate (Bell prefactor)"
+    symbol: "k_off0 = p0"
+    value: 0.35
+    unit: "1/s"
+    kb_claim: "KB-3.18"
+    source: "Stam-Hocky 2015 / Tam 2021 (ff/hand_kmc NMIIA p0=0.35/s)"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    policy: "Bell slip prefactor p_off=k_off0*exp(|f|/f0). Provisional; drives detachment monotonicity gate (shape, not magnitude)."
+
+  x_beta:
+    title: "Bell characteristic bond length (head-actin)"
+    symbol: "x_beta"
+    value: 0.6e-3
+    unit: "um"                                   # 0.6 nm
+    kb_claim: "KB-3.18"
+    source: "Veigel 2002 (ff/hand_kmc NMIIA x_beta=0.6 nm -> f0=kT/x_beta ~= 7.1 pN)"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    derived: "f0 = kBT / x_beta  (Bell characteristic force ~7.1 pN at kBT=4.28e-3 pN*um)"
+    policy: "sets Bell slip sensitivity f0; provisional; shape gate only."
+
+  duty:
+    title: "non-muscle IIA duty ratio (fraction of cycle bound, unloaded)"
+    symbol: "r_duty"
+    value: 0.1
+    range: [0.1, 0.3]
+    unit: "dimensionless"
+    source: "Kovacs 2003"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    policy: >
+      cross-check ONLY. The engaged fraction is EMERGENT from k_on/k_off (P2 'Bell-emergent engaged fraction'),
+      NOT imposed as this duty. duty is the unloaded consistency check phi_b(f=0) ~ duty, never a runtime input.
+
+# ============================================================================
+# PHYSICAL CONSTANTS (not literature-conflicted)
+# ============================================================================
+  kBT:
+    title: "thermal energy at 37 C"
+    symbol: "kBT"
+    value: 4.28e-3
+    unit: "pN*um"                                # = 4.28 pN*nm ~ kB*310K
+    evidence_status: "physical constant"
+    owner: Lead
+    policy: "Bell/Boltzmann scale; f0 = kBT/x_beta."
+
+  d_step:
+    title: "myosin working-stroke / per-ATP step size (mechanical displacement)"
+    symbol: "d_step"
+    value: null
+    unit: "um"
+    reference_band: [0.005, 0.010]               # ~5-10 nm power stroke
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI sources the NMIIA working-stroke displacement"
+    policy: "per-step mechanical displacement; used ONLY in the ATP/step work-sign gate (efficiency eta=F*d/dG_ATP<1, a sign/inequality check, magnitude-independent for the sign)."
+
+  dG_atp:
+    title: "free energy per ATP hydrolysis (physiological)"
+    symbol: "dG_ATP"
+    value: null
+    unit: "pN*um"
+    reference_band: [0.08, 0.10]                 # ~20-25 kBT ~ 80-100 pN*nm
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI sources cellular ATP free energy"
+    policy: "the work-sign gate checks 0 <= F*d_step < dG_ATP (2nd law, eta<1); a sign/inequality, not a tuned magnitude."

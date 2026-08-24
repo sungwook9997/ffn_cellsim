@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 1 item
+
+ffn_sim/tests/validation/test_ku130.py .
+
+======================== 1 passed in 241.55s (0:04:01) =========================

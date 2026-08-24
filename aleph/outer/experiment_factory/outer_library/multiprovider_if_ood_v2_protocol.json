@@ -1,0 +1,118 @@
+{
+  "schema": "aleph.outer_library.multiprovider_if_ood_v2_protocol.v1",
+  "frozen_before_v2_corruption_generation_feature_extraction_or_optimization": true,
+  "reason_for_new_protocol": "the frozen v1 gate failed because unmapped author annotation strings were treated as image OOD even when their morphology was inside the coarse ontology; the v1 failure remains frozen and is not reinterpreted as a pass",
+  "problem_separation": {
+    "semantic_novelty": "an author label outside the frozen ontology; report as unmapped_semantic_label when metadata is present and never infer image OOD solely from that string",
+    "imaging_OOD": "an input that violates the two-channel imaging contract or destroys nucleus-target spatial coherence",
+    "semantic_novelty_identifiable_from_image_alone": false,
+    "v1_semantic_OOD_gate_remains_failed": true
+  },
+  "source_contract": {
+    "localization_checkpoint_sha256": "c63c124813f800742f5bc55672e449cab61be787ff168041b8361fd65bbc8e1c",
+    "localization_model_report_sha256": "2367a63eb1f613597c76ab4c88b5c9bbf30667466217d0fa71bc9d0e1899808b",
+    "v1_failure_diagnostic_sha256": "fcb63f9afaad1a1e61dff12e8555ed3e19421c06c5466fb6bc633371ca6ccc62",
+    "hpa_tensor_sha256": "88cac80d6504904b7f47c8b84bbe3b6dc7ebf418998938f7bff988e936932ae9",
+    "opencell_tensor_sha256": "c2b82622984bfcf3c84dd7eea28f867c07a00c7759d7a62114d3eb3b470ed22c",
+    "localization_checkpoint_may_be_updated": false,
+    "localization_thresholds_or_calibration_may_be_updated": false,
+    "new_external_provider_pixels_accessed_before_freeze": 0
+  },
+  "development_unit_contract": {
+    "source_role": "localization train units only for OOD-head fit/selection/calibration; frozen localization selection units are reserved as the final v2 development test",
+    "HPA_unit": "gene-antibody component with one image",
+    "OpenCell_unit": "target with one projection selected by ascending sha256(selection_salt|'projection'|projection_key)",
+    "selection_salt": "aleph-multiprovider-if-imaging-ood-v2-20260807",
+    "role_assignment": "sha256(selection_salt|'role'|provider|unit_id) modulo 20: 0-2 OOD calibration, 3-5 OOD hyperparameter selection, 6-19 OOD fit",
+    "maximum_units_per_provider_role": {
+      "OOD_fit": 512,
+      "OOD_selection": 160,
+      "OOD_calibration": 160
+    },
+    "within_role_selection": "ascending sha256(selection_salt|'unit'|provider|unit_id)",
+    "cross_role_unit_overlap_allowed": false,
+    "final_development_test": "every original HPA and OpenCell localization-selection unit; OpenCell projection logits and embeddings are aggregated by target only for localization, while OOD quality is evaluated on the frozen selected projection"
+  },
+  "deterministic_corruption_families": [
+    {
+      "id": "zero_nucleus",
+      "definition": "replace the nucleus channel with uint8 zero and preserve target"
+    },
+    {
+      "id": "zero_target",
+      "definition": "replace the target channel with uint8 zero and preserve nucleus"
+    },
+    {
+      "id": "saturated_both",
+      "definition": "replace both channels with uint8 255"
+    },
+    {
+      "id": "channel_swap",
+      "definition": "exchange nucleus and target channels"
+    },
+    {
+      "id": "target_pixel_permutation",
+      "definition": "permute all 16384 target pixels with numpy PCG64 seeded by the first 64 bits of sha256(selection_salt|'pixel'|provider|unit_id)"
+    },
+    {
+      "id": "target_tile_permutation",
+      "definition": "partition target into an 8x8 grid of 16x16 tiles and permute the 64 tiles with numpy PCG64 seeded by the first 64 bits of sha256(selection_salt|'tile'|provider|unit_id)"
+    },
+    {
+      "id": "cross_unit_target_mismatch",
+      "definition": "preserve the unit nucleus and replace target with the target channel of the next unit in ascending sha256(selection_salt|'mismatch'|provider|unit_id) cyclic order within provider and role"
+    }
+  ],
+  "feature_contract": {
+    "frozen_localizer_inference_mode": true,
+    "per_channel_QC_features_in_order": [
+      "mean", "standard_deviation", "p01", "median", "p99",
+      "fraction_exact_zero", "fraction_exact_one", "mean_absolute_dx", "mean_absolute_dy"
+    ],
+    "cross_channel_features_in_order": ["Pearson_correlation_with_zero_variance_returning_zero"],
+    "localizer_features_in_order": ["nine_raw_logits", "64d_L2_normalized_embedding"],
+    "total_feature_count": 92,
+    "feature_standardization": "OOD-fit weighted mean and standard deviation with floor 1e-6",
+    "absolute_intensity_biological_claim": false
+  },
+  "quality_head_contract": {
+    "family": "L2_regularized_logistic_regression",
+    "output": "probability_input_violates_imaging_contract",
+    "training_rows_per_unit": "one clean plus one per each of seven corruption families",
+    "sample_weighting": "equal total weight per provider; within provider 0.5 clean and 0.5 corrupted; corrupted weight divided equally across seven families; normalize all weights to mean one",
+    "L2_lambda_candidates": [0.01, 0.1, 1.0, 10.0],
+    "optimizer": "scipy L-BFGS-B, analytic gradient, maximum 500 iterations, ftol 1e-12, gtol 1e-8",
+    "hyperparameter_selection": "maximize the minimum provider-by-corruption-family AUROC on OOD-selection units; ties choose the larger L2 lambda",
+    "clean_refusal_threshold": "maximum of the provider-specific 95th percentile quality probabilities on clean OOD-calibration units using numpy quantile method=higher"
+  },
+  "final_v2_development_test_gates": {
+    "test_unit_role": "original localization selection only; never OOD-head fit, selection, or threshold calibration",
+    "minimum_provider_by_corruption_family_AUROC": 0.75,
+    "macro_provider_by_corruption_family_AUROC": 0.90,
+    "maximum_clean_false_refusal_rate_each_provider": 0.10,
+    "all_seven_corruption_families_present_each_provider": true,
+    "finite_features_probabilities_and_coefficients": true,
+    "all_gates_must_pass": true
+  },
+  "external_confirmation_open_policy": {
+    "v1_failure_is_not_erased": true,
+    "v2_pass_allows_preregistration_and_single_use_opening_of_a_replacement_provider": true,
+    "v2_pass_grants_external_OOD_authority": false,
+    "replacement_confirmation_must_test_clean_provider_transfer": true,
+    "replacement_confirmation_must_include_real_incompatible_or_corrupted_input_refusal": true,
+    "replacement_confirmation_pixels_before_v2_model_and_threshold_freeze": 0
+  },
+  "authority_contract": {
+    "production_eligible": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "external_OOD_authority": false,
+    "Aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_remove_sweep_axis": false
+  },
+  "failure_policy": {
+    "any_v2_development_gate_failure": "freeze the failed quality head and report, keep replacement external pixels sealed, and do not tune on the final v2 development test",
+    "posthoc_corruption_family_threshold_or_gate_change": "forbidden"
+  }
+}

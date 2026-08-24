@@ -1,0 +1,68 @@
+{
+  "aleph_dependency": false,
+  "all_checks_passed": true,
+  "checks": {
+    "invalid_domains_return_typed_refusal": true,
+    "persistent_walk_long_time_is_diffusive": true,
+    "persistent_walk_short_time_is_ballistic": true,
+    "registry_has_no_Aleph_dependency": true,
+    "single_mode_relaxation_equation_residual_below_1e-12": true,
+    "tether_decomposition_ambiguity_is_exact": true,
+    "tether_roundtrip_relative_residual_below_1e-12": true
+  },
+  "equation_residuals": {
+    "persistent_walk_long_diffusive_ratio": 0.99983,
+    "persistent_walk_short_ballistic_ratio": 0.9999999794870548,
+    "single_mode_relaxation_max_absolute": 0.0,
+    "tether_ambiguity_sum_max_absolute": 3.552713678800501e-15,
+    "tether_roundtrip_max_relative": 5.100520763058451e-16
+  },
+  "implemented_expert_count": 3,
+  "may_emit_Aleph_parameter": false,
+  "measured_tether_conditional_inference_example": {
+    "ambiguity_point_count": 101,
+    "ambiguity_relation": "sigma_app = sigma_bilayer + membrane_cortex_attachment_energy_density",
+    "apparent_tension_pn_per_um": 53.99565994043127,
+    "assumed_not_measured_bending_rigidity_pn_um": 0.082,
+    "may_choose_bilayer_vs_attachment_decomposition": false,
+    "measured_force_pn": 18.6974
+  },
+  "planned_expert_count": 2,
+  "schema": "outer.biophysics.theory_runtime_evaluation.v1",
+  "synthetic_or_equation_pass_grants_real_evidence_authority": false,
+  "typed_refusal_examples": {
+    "negative_tension": {
+      "code": "OUTSIDE_DOMAIN",
+      "detail": {
+        "apparent_tension_pn_per_um": -1.0,
+        "bending_rigidity_pn_um": 0.08
+      },
+      "reason": "requires kappa>0 and sigma_app>=0",
+      "refused": true,
+      "theory_id": "membrane_tether_quasistatic"
+    },
+    "negative_time": {
+      "code": "OUTSIDE_DOMAIN",
+      "detail": {
+        "minimum_time_s": -1.0,
+        "relaxation_time_s": 1.0
+      },
+      "reason": "requires finite time>=0 and tau>0",
+      "refused": true,
+      "theory_id": "standard_linear_solid_single_mode"
+    },
+    "unimplemented_expert": {
+      "code": "EXPERT_NOT_IMPLEMENTED",
+      "detail": {
+        "available": [
+          "membrane_tether_quasistatic",
+          "standard_linear_solid_single_mode",
+          "persistent_random_walk_2d"
+        ]
+      },
+      "reason": "theory is not an executable expert",
+      "refused": true,
+      "theory_id": "molecular_clutch_family"
+    }
+  }
+}

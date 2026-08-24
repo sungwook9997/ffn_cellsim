@@ -1,0 +1,272 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+.venv-collab/
+venv/
+env/
+
+# Run artifacts (CLAUDE.md mandates per-run config + git hash capture, but the
+# bulk frame data should NOT enter version control)
+logs/
+results/
+*.h5
+*.hdf5
+frames/
+
+# Layer-2 B2 native-N GPU sweep output (per-(N0,seed) JSON-lines run records). These are
+# run-artifact data synced via Syncthing/outputs, not source; provenance is stamped INSIDE
+# each line (commit + cfg hash), so the data belongs to outputs, not version control.
+aleph/outputs/layer2/b2_gpu/*.jsonl
+
+# PI experimental imaging input (V2-1 contract input — symlinks to local
+# disk path, see docs/v2_layer_1_imaging_input_contract*.md). Bulk imaging
+# data (mask PNG, raw stacks, ND2/CZI/TIFF) MUST NOT enter version control.
+data/experimental/imaging/
+*.tif
+*.tiff
+*.ome.tif
+*.nd2
+*.czi
+*.lif
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Taichi caches
+.taichi/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Claude Code local session settings + per-host worktrees
+.claude/settings.local.json
+.claude/worktrees/
+
+# Syncthing folder marker
+.stfolder/
+
+# Syncthing / editor conflict byproducts (never project state)
+*.sync-conflict-*
+.syncthing.*.tmp
+~$*
+
+# acs-collab MCP ledger — append-only mirror of the message queue, shared via
+# Syncthing (not git). Every send rewrites it, so tracking it would generate
+# noisy diffs without adding history beyond what the SQLite DB already stores.
+docs/claude_codex_log.md
+
+# Local code-review-graph SQLite cache. Rebuild with:
+#   .venv-collab/bin/code-review-graph build --repo .
+.code-review-graph/
+
+# Notion export token (never commit) + Obsidian vault internals
+**/.notion_token
+aleph/.obsidian/
+aleph/outputs/.obsidian/
+.baoab_probe.json
+
+# Obsidian RAG export — vault is regeneratable from the scripts (do not commit)
+aleph/outputs/obsidian_rag_full/vault/
+# The 2026-06-01 demo vault was archived 2026-07-29 (outputs/_historical/); its builder
+# still writes ./vault beside itself if re-run, so the pattern follows the script.
+aleph/outputs/_historical/vault/
+
+# TAG (Table-Augmented Generation) backend — kb.duckdb regenerable via refresh.sh
+aleph/outputs/tag_kb/kb.duckdb
+aleph/outputs/tag_kb/pass2_dossiers.json
+# presentation HTML — regenerable from KB_PRESENTATION.md + figs via export_html.py
+# (base64-embeds the committed PNGs; don't double-store them in git)
+aleph/outputs/tag_kb/presentation/KB_PRESENTATION.html
+
+# Reference PDF corpus — large binaries, synced via Syncthing not git
+# (the lightweight index tag_corpus.json + analysis/_manifest.json stay tracked)
+aleph/references/*.pdf
+aleph/references/**/*.pdf
+aleph/references/*.zip
+aleph/references/**/*.bak_*
+
+# PI experimental data (poster A/A0 exports) — overlay-only, kept LOCAL (hard rule: PI
+# experimental data is not committed; lives in ~/ActiveCellSim/data/experimental). Used by
+# the A2 overlay at comparison time; figures (the sanctioned overlay) ARE committed.
+aleph/references/260313_*.csv
+
+# Layer-2 production run artifacts (Syncthing/outputs, provenance-stamped)
+aleph/outputs/layer2/prod_rlaw/*.jsonl
+aleph/outputs/layer2/prod_rlaw/*.log
+aleph/outputs/layer2/prod_rlaw/*.err
+aleph/outputs/layer2/prod_rlaw/*.progress
+aleph/outputs/layer2/prod_rlaw/*.out
+
+aleph/outputs/layer2/decisive/*.jsonl
+aleph/outputs/layer2/decisive/*.log
+aleph/outputs/layer2/decisive/*.err
+aleph/outputs/layer2/decisive/*.progress
+
+aleph/outputs/layer2/daxis*/*.jsonl
+aleph/outputs/layer2/daxis*/*.err
+aleph/outputs/layer2/daxis*/*.progress
+
+# KU-3.5 driver checkpoints (run state, not artifacts)
+aleph/outputs/h3/production/ku35_active/ckpt/
+aleph/outputs/layer2/morphology_frames.npz
+
+# Production bulk trajectories / frame dumps. Curated REPORT.md, PNG figures,
+# and selected JSON/NPZ summaries remain visible for explicit commit decisions.
+aleph/outputs/**/*.log
+aleph/outputs/**/*.err
+aleph/outputs/**/*.progress
+aleph/outputs/**/*.out
+aleph/outputs/**/*.bak_*
+aleph/outputs/**/production/**/*.gsd
+# All production .npz are bulk trajectory/state dumps (14-15 MB each); curated
+# summaries live as .json/.md and stay visible. Keep ALL production .npz out of git.
+aleph/outputs/**/production/*.npz
+aleph/outputs/**/production/**/*.npz
+
+# Production run-state markers + local session config (not project deliverables;
+# curated summaries/figures are committed explicitly).
+aleph/outputs/**/*.status
+.claude/
+
+# CuPy/CUDA on-disk compilation cache (build artifact, regenerated on demand).
+aleph/outputs/cupy_cache/
+
+# DCM lamellipodium-viz render cache (regenerable from the sim; do not commit)
+aleph/outputs/**/_lamel_cache_*.pkl
+
+# two-stage / dt-sweep / blow-up-capture data pickles (regenerable; large gbook
+# outputs — frames behind the committed figures, not source).
+aleph/outputs/h_dcm_two_stage/*.pkl
+
+# stray sim scratch (Cytosim/force dumps) — never commit
+force.txt
+messages.cmo
+*.cmo
+
+# --- 2026-07-06 outputs cleanup (PI: "모두 정리 + github 새로 정리") ---
+# Raw run-output frame data under outputs/ (regenerable; NOT source). Parity-oracle
+# fixtures under aleph/dcm/fixtures/*.npz and already-tracked curated outputs npz
+# stay tracked (git keeps tracked files); this only stops NEW multi-GB raw dumps.
+aleph/outputs/**/*.npz
+# Oversized full-frame HTML viewers (>80MB — exceed GitHub's 100MB hard file limit;
+# regenerable from npz). The lightweight INTERACTIVE / curated viewers ARE committed.
+aleph/outputs/warp_decohesion/figs/n1000_divfix_ipc_24h.html
+aleph/outputs/warp_decohesion/figs/n100_divfix_24h.html
+aleph/outputs/warp_decohesion/figs/n100_realistic_24h.html
+
+# --- 2026-07-13 FF native full-res HTML viewers + scratch (working-tree cleanup) ---
+# FF cell/ECM HTML viewers under outputs/ff/figs/ are native full-res — 264-485 MB each
+# (5.8 GB untracked total). Regenerable from the run; the committed record is the PNG
+# figures + curves + JSON data (PI native-viewer rule). Large morphology viewers are
+# release-uploaded for the gh-pages gallery, not git; lightweight demo HTMLs here are
+# dev scratch. The 14 already-tracked HTMLs stay tracked — this only stops NEW ones.
+aleph/outputs/ff/figs/*.html
+# underscore-prefixed scratch/diagnostic dumps (convention) + TAG query scratch txt
+aleph/outputs/ff/figs/_*
+aleph/outputs/tag_kb/_*.txt
+
+# --- 2026-07-06 secret hardening (repo is public) — never commit credentials ---
+*.env
+.env.*
+**/.notion_token
+*.notion_token
+*_token
+*.key
+*.pem
+*.p12
+id_rsa
+id_ed25519
+secrets.*
+credentials.*
+*.secret
+
+# --- 2026-07-13 local-only deliverables + personal file (PI: keep local, do not distribute) ---
+# Personal portfolio (public repo — never commit) + project/biology report deliverables
+# kept LOCAL only: not committed to git and not gallery-distributed (PI 2026-07-13 decision).
+/sungwook_portfolio.pdf
+/ffn_cellsim_report.pdf
+aleph/docs/ffn_cellsim_10week_report.html
+aleph/docs/bio_reports/
+
+# Large interactive 3D viewers (regenerate from scripts; too big for git).
+#
+# ⚠ This rule and CLAUDE.md's "every run writes its own figures beside its record, COMMITTED with the
+# data" contradicted each other, and it was raised as PI decision 14 (2026-08-21) with a narrow
+# exception proposed for the PHASE 1 render. The exception is NOT taken, because the conflict
+# resolved a better way in the meantime: aleph/viz/cell_app.py renders the full cell natively and
+# writes 1.5 MB PNGs instead of 78-124 MB pages. Those PNGs ARE committed, beside their record, so
+# the charter is satisfied by the figures existing in a form worth committing rather than by an
+# exemption for a format we stopped using. See aleph/outputs/ac/world_phase1/views/.
+#
+# The .alephcell binary stays ignored for the same reason as the HTML: it is 94 MB and it regenerates
+# deterministically from world_export_cell.py given the same build, so it is DERIVED rather than
+# evidence. The run record that IS evidence is committed.
+aleph/outputs/mech_hier/figs/*_3d.html
+aleph/outputs/mech_hier/figs/*_load_3d.html
+aleph/outputs/mech_hier/figs/s3_nucleus_compression_3d.html
+aleph/outputs/mech_hier/figs/s3_nucleus_incompressible_3d.html
+aleph/outputs/**/*.html
+aleph/outputs/**/*.alephcell
+
+# polyscope viewer window-state (local UI state, never project state)
+.polyscope.ini
+
+# Outer-library built artifacts (decision A4 / stage 4 migration, 2026-08-09).
+# They are outputs, and this tree's rule for outputs a pipeline can rebuild is the KB's rule: the
+# source of truth is the thing that makes them, never the artifact. Provenance and rebuild
+# instructions: aleph/outputs/outer/PROVENANCE.md
+aleph/outputs/outer/**/*.npz
+aleph/outputs/outer/**/*.jsonl
+aleph/outputs/outer/**/*.jsonl.gz
+aleph/outputs/outer/**/*.pt
+
+# ── outer/ results are records, not build junk ────────────────────────────────────────────────
+# Line 18's bare `results/` was written for this tree's own scratch output and it silently ate 218
+# files from the external-training corpus on 2026-08-09 — 174 manifest/receipt JSONs and, worse,
+# seven trained `.pt` checkpoints. They were TRACKED in the source repository; a pattern written for
+# one meaning of a directory name deleted them under another.
+!aleph/outer/**/results/
+!aleph/outer/**/results/**
+aleph/outer/**/__pycache__/
+aleph/outer/**/*.pyc
+
+# ── the 14 built artifacts that live where the code writes them ───────────────────────────────
+# Relocating these to `aleph/outputs/outer/` on 2026-08-09 was undone the same day: every module
+# reads its own `results/` via `Path(__file__).parent`, so moving the payload out of the package
+# did not make the pipeline read from two roots, it made it read a directory with holes. The
+# coverage audit then reported 1,024 observation rows instead of 329,303 and 14 tests failed — an
+# audit that counts absent files as a small number rather than refusing.
+#
+# So they sit where they are produced and are ignored here instead. **Listed by exact path, not by
+# extension**: 26 `.jsonl` and 16 `.npz` under `aleph/outer/` are legitimately tracked evidence,
+# and `model/combined_content/weights_title_only.npz` is tracked while
+# `model/oa_content/weights_title_only.npz` is an artifact — same basename, opposite answer. Any
+# glob wide enough to catch one silently untracks the other.
+aleph/outer/acquisition/europe_pmc_oa_2026-08-05.jsonl
+aleph/outer/acquisition/second_pass/candidates_2026-08-05.jsonl
+aleph/outer/acquisition/second_pass/receipts_2026-08-05.jsonl
+aleph/outer/experiment_factory/extraction/results/article_index.jsonl
+aleph/outer/experiment_factory/extraction/results/figure_join_index.jsonl
+aleph/outer/experiment_factory/learning/results/source_projection.jsonl
+aleph/outer/experiment_factory/visual/results/asset_receipts.jsonl
+aleph/outer/experiment_factory/visual/results/experiment_links.jsonl.gz
+aleph/outer/experiment_factory/visual/results/visual_index.jsonl.gz
+aleph/outer/model/combined_content/weights_combined_content.npz
+aleph/outer/model/oa_content/weights_title_only.npz
+aleph/outer/retrieval/combined/index.jsonl
+aleph/outer/review_oa/results/article_screen_index.jsonl
+aleph/outer/review_oa/second_pass/results/article_screen_index.jsonl
+
+# C-1 setup-verification field dumps: mid-plane slices at full resolution, ~60 MB.
+# The RENDER built from them is committed; the raw slices are reproducible from the driver.
+aleph/outputs/ac/c1_*/verify_record.json

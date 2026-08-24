@@ -1,0 +1,191 @@
+{
+  "aleph_authority": "none",
+  "continuous_biomarker_heads": {
+    "HMGB1": {
+      "bio1_image_group_counts": {
+        "calibration": 6,
+        "selection": 5,
+        "train": 17
+      },
+      "calibration_interval_90_radius_log1p": 0.15358383206420467,
+      "frozen_repeat_evaluation": {
+        "Bio2": {
+          "interval_90_coverage": 0.9591346153846154,
+          "mae_log1p": 0.06303506036138573,
+          "pearson_r": 0.6998398159810777,
+          "r2": 0.4089326874645187,
+          "row_count": 416,
+          "same_provider_frozen_repeat": true
+        },
+        "Bio3": {
+          "interval_90_coverage": 0.4088050314465409,
+          "mae_log1p": 0.16743816444969944,
+          "pearson_r": 0.426094172941887,
+          "r2": -2.7853604948853805,
+          "row_count": 318,
+          "same_provider_frozen_repeat": true
+        }
+      },
+      "selected_ridge_penalty": 100.0,
+      "target_transform": "log1p"
+    },
+    "LMNB1": {
+      "bio1_image_group_counts": {
+        "calibration": 6,
+        "selection": 5,
+        "train": 17
+      },
+      "calibration_interval_90_radius_log1p": 0.058544289168664804,
+      "frozen_repeat_evaluation": {
+        "Bio2": {
+          "interval_90_coverage": 0.8373101952277657,
+          "mae_log1p": 0.03403489108812119,
+          "pearson_r": 0.6167424122450412,
+          "r2": 0.35418851192021283,
+          "row_count": 461,
+          "same_provider_frozen_repeat": true
+        },
+        "Bio3": {
+          "interval_90_coverage": 0.2564102564102564,
+          "mae_log1p": 0.08277671794780594,
+          "pearson_r": 0.40945855177537077,
+          "r2": -9.649838525905208,
+          "row_count": 273,
+          "same_provider_frozen_repeat": true
+        }
+      },
+      "selected_ridge_penalty": 100.0,
+      "target_transform": "log1p"
+    },
+    "P16": {
+      "bio1_image_group_counts": {
+        "calibration": 6,
+        "selection": 5,
+        "train": 17
+      },
+      "calibration_interval_90_radius_log1p": 0.7206019795539165,
+      "frozen_repeat_evaluation": {
+        "Bio2": {
+          "interval_90_coverage": 0.8408551068883611,
+          "mae_log1p": 0.4329986317372657,
+          "pearson_r": 0.7696171749522043,
+          "r2": 0.34675820261280765,
+          "row_count": 421,
+          "same_provider_frozen_repeat": true
+        },
+        "Bio3": {
+          "interval_90_coverage": 0.9138461538461539,
+          "mae_log1p": 0.3282067021626922,
+          "pearson_r": 0.8078559740836498,
+          "r2": 0.6332634557059916,
+          "row_count": 325,
+          "same_provider_frozen_repeat": true
+        }
+      },
+      "selected_ridge_penalty": 100.0,
+      "target_transform": "log1p"
+    },
+    "P21": {
+      "bio1_image_group_counts": {
+        "calibration": 17,
+        "selection": 17,
+        "train": 50
+      },
+      "calibration_interval_90_radius_log1p": 0.12337182534919466,
+      "frozen_repeat_evaluation": {
+        "Bio2": {
+          "interval_90_coverage": 0.559322033898305,
+          "mae_log1p": 0.12014941517645363,
+          "pearson_r": 0.6281197726568017,
+          "r2": -0.36888673781528825,
+          "row_count": 1298,
+          "same_provider_frozen_repeat": true
+        },
+        "Bio3": {
+          "interval_90_coverage": 0.6007306889352818,
+          "mae_log1p": 0.11372807374052278,
+          "pearson_r": 0.6884653841984868,
+          "r2": -0.5842502075153777,
+          "row_count": 1916,
+          "same_provider_frozen_repeat": true
+        }
+      },
+      "selected_ridge_penalty": 100.0,
+      "target_transform": "log1p"
+    }
+  },
+  "direct_bgal_head": {
+    "Bio2_cell_level_nonindependent_diagnostic": {
+      "accuracy": 0.6445623342175066,
+      "balanced_accuracy": 0.659004360911492,
+      "brier": 0.2865818433941538,
+      "f1": 0.5864197530864198,
+      "predicted_prevalence": 0.5215101104770578,
+      "row_count": 377,
+      "true_prevalence": 0.35543766578249336
+    },
+    "Bio2_image_group_prevalence": {
+      "calibration_image_group_count": 6,
+      "conformal_90_coverage": 0.4444444444444444,
+      "conformal_90_radius": 0.1604206780826743,
+      "image_group_count": 36,
+      "mae": 0.2170450487395977,
+      "pearson_r": 0.5407157255920046
+    },
+    "family": "class_weighted_logistic_regression",
+    "selected_l2": 0.0001,
+    "selection_epoch": 540,
+    "temperature_selected_on_Bio1_calibration_groups": 0.5499999999999999
+  },
+  "eventual_sweep_role": "candidate_observable_encoder_pending_external_dataset_lab_validation_and_Aleph_operator_sensitivity",
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "input": {
+    "feature_count": 87,
+    "feature_source": "author_curated_morphology_panel",
+    "target_or_author_cluster_features_used": false,
+    "transform": "signed_log1p_then_Bio1_train_only_standardization"
+  },
+  "limitations": [
+    "Bio1, Bio2, and Bio3 are repeats from one SenSCOUT source rather than independent laboratories",
+    "cells within an image group are correlated; cell-level metrics are diagnostic only",
+    "BGAL labels are mixed within many image groups, so group prevalence is the inference-unit evaluation",
+    "Bio3 substitutes BGAL_FLUOR for categorical BGAL and therefore supplies shift diagnostics, not direct-label confirmation",
+    "biomarker heads predict separately sampled marker rows and do not imply same-cell multimodal pairing"
+  ],
+  "may_select_aleph_parameter": false,
+  "production_eligible": false,
+  "repeat_shift_diagnostic": {
+    "authority": "diagnostic_only",
+    "calibration_source": "Bio1_disjoint_calibration_rows",
+    "repeat_results": {
+      "Bio2": {
+        "median_standardized_rms_distance": 0.8080966472625732,
+        "rejection_fraction": 0.06528835690968444,
+        "row_count": 1838
+      },
+      "Bio3": {
+        "median_standardized_rms_distance": 0.8800222873687744,
+        "rejection_fraction": 0.10960334029227557,
+        "row_count": 1916
+      }
+    },
+    "threshold": 1.4837586879730225
+  },
+  "schema": "aleph.outer_library.senscout_morphology_model.v1",
+  "split": {
+    "bio1_group_counts": {
+      "calibration": 6,
+      "selection": 6,
+      "train": 19
+    },
+    "cells_treated_as_independent_biological_replicates": false,
+    "cross_split_image_group_overlap_count": 0,
+    "fit_repeat": "Bio1",
+    "frozen_shift_diagnostic_repeat": "Bio3",
+    "sealed_same_provider_test_repeat": "Bio2",
+    "unit": "image_group"
+  },
+  "status": "training_only_same_provider_biorepeat_holdout",
+  "task": "morphology_to_senescence_biomarker_state"
+}

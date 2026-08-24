@@ -1,0 +1,87 @@
+# Layer-2 CBM spheroid — acceptance bands (the gate contract, written BEFORE the run).
+#
+# Sanity gates for the multicellular spheroid line. Bands are expressed as DIMENSIONLESS
+# RATIOS wherever possible so the gate is invariant to the (PI-ratification-pending) D_e
+# magnitude and to the cell-size point value within its band. No gate may be loosened
+# inline — a wrong gate goes to the PI for a contract change (CLAUDE.md hard rule).
+#
+# Companion runtime config: aleph/configs/layer2_cbm.yaml
+# Brief: aleph/docs/LAYER2_MULTICELL_DESIGN.md  (phases L2.1–L2.6, gates G1–G6)
+
+spheroid:
+
+  acceptance:
+
+    # ---- G1 stable-aggregate gate (phase L2.1) ----
+    # A loose initial blob of cells, run overdamped with adhesion + excluded volume and
+    # NO motility, must settle into a stable aggregate: it neither disperses (adhesion
+    # holds it) nor collapses (excluded volume resists). Tests the force balance, NOT any
+    # absolute energy — hence ratios.
+    g1:
+      # equilibrium nearest-neighbour spacing as a fraction of the Morse rest separation
+      # (= cell diameter). Within [0.9, 1.2] = settled to contact, not collapsed/dispersed.
+      nn_median_over_r0: [0.90, 1.20]
+      # gas-like detached-cell fraction (Herold 2023 criterion) must stay near zero.
+      detached_fraction_max: 0.02
+      # radius of gyration must not run away: Rg(final)/Rg(after first settle) bounded.
+      rg_growth_factor_max: 1.50
+      # detached-fraction thresholds (as multiples of rest separation r0) for the metric:
+      detached_d_crit_over_r0: 3.0        # > 3 cell-diameters from centre
+      detached_neighbor_radius_over_r0: 1.5  # and no neighbour within 1.5 r0
+
+    # ---- G3 A/A0 spreading-law gate (phase L2.3) ----
+    # The R0 sweep must yield a spreading curve fittable by A/A0 = a + b/R + c/R² with the
+    # 1/R, 1/R² terms emerging from the edge/bulk cell ratio (no hard-coded term). The PI
+    # poster A/A0 is OVERLAID, never fit to (overlay-only).
+    g3:
+      aa0_fit_r_squared_min: 0.95         # the novel form must fit the emergent curve
+      n_radii_min: 5                      # >= 5 distinct R0 to constrain (a,b,c) + dof
+
+    # ---- G4 contact-inhibited proliferation gate (phase L2.4) ----
+    # Proliferation is the size-dependent spreading driver the minimal (cohesion-locked) CBM
+    # lacks. The mechanism is validated by STRUCTURE, not a tuned amount: (a) division must
+    # be RIM-localised — a buried bulk cell (first shell ≈ kissing number) is contact-
+    # inhibited, so the fraction of divisions occurring at above-median radial position must
+    # be high; (b) the dilute limit (an isolated cell, no neighbours) must double every cycle
+    # (exponential), confirming the timer; (c) a populated aggregate must grow SUB-
+    # exponentially (surface-limited), the signature that the bulk is inhibited. Bands are
+    # ratios / fractions (invariant to D_e magnitude), written before the run.
+    g4:
+      # ≥ this fraction of divisions happen on the rim (radial >= population median). A
+      # purely surface-limited divider → 1.0; we allow slack for thermal rim roughness.
+      rim_division_fraction_min: 0.70
+      # dilute-limit doubling: an isolated cell over n cycles must reach ~2^n (allow a
+      # ±1-cycle timing/CV tolerance band on the count).
+      dilute_doubling_rel_tol: 0.25
+      # populated growth must be SUB-exponential: realised growth factor over the run must be
+      # strictly below the contact-inhibition-free exponential 2^(t/τ) (bulk is quiescent).
+      subexponential: true
+
+    # ---- G5 cadherin catch-bond gate (phase L2.5, mechanistic cohesion upgrade) ----
+    # The static Morse well is replaced by the faithful Rakshit-2012 sliding-rebinding catch
+    # bond (validation/cadherin_sliding_rebinding.py), applied as an adiabatic force-dependent
+    # cohesion (spheroid/cadherin_bonds.py). The catch SIGNATURE and the cohesion scale validate:
+    g5:
+      # the effective cohesion holding force must PEAK at the per-cadherin catch force f0 (the
+      # force-strengthening signature) — within this tolerance of f0=29.2 pN.
+      catch_peak_force_tol_pN: 3.0
+      # peak holding force as a fraction of the measured de-adhesion force (Iturri 6.5 nN):
+      # a substantial fraction (force-strengthened), not the full SCFS peak (adiabatic duty cycle).
+      peak_cohesion_frac_band: [0.3, 1.0]
+      # catch cohesion must still settle a STABLE aggregate (G1 bands) and be at least as
+      # fragmentation-resistant as the static Morse over a seed ensemble (research finding,
+      # logged not hard-asserted — fragmentation is stochastic and rare in the pooled path).
+      g1_bands_apply: true
+      # FUTURE (needs multi-cell-type): emergent MCF7>T47D>MDA de-adhesion ranking (Omidvar 2014).
+
+    # ---- G6 substrate-confinement gate (phase L2.6, quasi-2D wetting) ----
+    # A z=0 adhesive Morse wall (spheroid/substrate.py) pins the spheroid to the substrate so
+    # the projected area is a real footprint. MCF7 is cohesive (low-invasion) → a 3D CAP with a
+    # finite contact angle, NOT a flat monolayer (passive adhesion alone does not wet a cohesive
+    # cluster — the experimentally-correct phenotype; active edge traction would flatten it).
+    g6:
+      # substrate-bound: the footprint must be pinned (no 3D COM drift away from the wall) and
+      # the cap must contact the substrate (min z within one cell radius of the wall).
+      substrate_contact_within_R_cell: true
+      # adhesion is the Bare/Pre/Lam4 ligand axis: higher D_sub → flatter (smaller z-span), a
+      # monotone wetting trend (logged), not a fixed band (no MCF7 contact-angle datum).

@@ -1,0 +1,372 @@
+{
+  "aleph_authority": "none",
+  "file_suffix_counts": {
+    ".cpproj": 2,
+    ".csv": 2,
+    ".ds_store": 1,
+    ".h5": 2,
+    ".ipynb": 16,
+    ".json": 2,
+    ".pdf": 2,
+    ".sav": 4,
+    ".txt": 2,
+    ".xlsx": 2,
+    "<none>": 7
+  },
+  "member_count": 48,
+  "members": [
+    {
+      "compressed_bytes": 0,
+      "crc32": "00000000",
+      "is_directory": true,
+      "name": "SenSCOUT-main/",
+      "uncompressed_bytes": 0
+    },
+    {
+      "compressed_bytes": 140,
+      "crc32": "7aaa1b3b",
+      "is_directory": false,
+      "name": "__MACOSX/._SenSCOUT-main",
+      "uncompressed_bytes": 276
+    },
+    {
+      "compressed_bytes": 0,
+      "crc32": "00000000",
+      "is_directory": true,
+      "name": "SenSCOUT-main/Manuscript/",
+      "uncompressed_bytes": 0
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/._Manuscript",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 363,
+      "crc32": "80f54435",
+      "is_directory": false,
+      "name": "SenSCOUT-main/.DS_Store",
+      "uncompressed_bytes": 6148
+    },
+    {
+      "compressed_bytes": 53,
+      "crc32": "38c0880b",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/._.DS_Store",
+      "uncompressed_bytes": 120
+    },
+    {
+      "compressed_bytes": 0,
+      "crc32": "00000000",
+      "is_directory": true,
+      "name": "SenSCOUT-main/Models/",
+      "uncompressed_bytes": 0
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/._Models",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 0,
+      "crc32": "00000000",
+      "is_directory": true,
+      "name": "SenSCOUT-main/Cell Profiler/",
+      "uncompressed_bytes": 0
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/._Cell Profiler",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 0,
+      "crc32": "00000000",
+      "is_directory": true,
+      "name": "SenSCOUT-main/Codes/",
+      "uncompressed_bytes": 0
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/._Codes",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 0,
+      "crc32": "00000000",
+      "is_directory": true,
+      "name": "SenSCOUT-main/Data/",
+      "uncompressed_bytes": 0
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/._Data",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 8335230,
+      "crc32": "d5841e7b",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Manuscript/Manuscript.pdf",
+      "uncompressed_bytes": 8686400
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Manuscript/._Manuscript.pdf",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 38819,
+      "crc32": "682f43c3",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Models/KMEANS.sav",
+      "uncompressed_bytes": 197264
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Models/._KMEANS.sav",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 2966,
+      "crc32": "de7801d0",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Models/model_250.json",
+      "uncompressed_bytes": 76040
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Models/._model_250.json",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 77503053,
+      "crc32": "2c1b3bf4",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Models/weights.h5",
+      "uncompressed_bytes": 83652472
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Models/._weights.h5",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 3054,
+      "crc32": "67c74562",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Models/StandardScaler.sav",
+      "uncompressed_bytes": 4467
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Models/._StandardScaler.sav",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 15137,
+      "crc32": "b84a73e4",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Cell Profiler/Example Segmentation Pipeline.cpproj",
+      "uncompressed_bytes": 991864
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Cell Profiler/._Example Segmentation Pipeline.cpproj",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 173,
+      "crc32": "bce2fd52",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Cell Profiler/ReadMe.txt",
+      "uncompressed_bytes": 255
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Cell Profiler/._ReadMe.txt",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 18683,
+      "crc32": "5217e415",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Cell Profiler/Filtered Morphological Parameters.xlsx",
+      "uncompressed_bytes": 22471
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Cell Profiler/._Filtered Morphological Parameters.xlsx",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 2295,
+      "crc32": "9736cf2b",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Recombat.ipynb",
+      "uncompressed_bytes": 7674
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Recombat.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 1071,
+      "crc32": "4fd79cca",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Preprocessing.ipynb",
+      "uncompressed_bytes": 3191
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Preprocessing.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 2393,
+      "crc32": "84bc13b8",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Xception Data Creator.ipynb",
+      "uncompressed_bytes": 8363
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Xception Data Creator.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 3963969,
+      "crc32": "9a6c28ff",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Senescence UMAP_KMEANS.ipynb",
+      "uncompressed_bytes": 5259293
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Senescence UMAP_KMEANS.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 1707,
+      "crc32": "1b6e8e9b",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Biomarker Imputation Platform.ipynb",
+      "uncompressed_bytes": 5322
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Biomarker Imputation Platform.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 138712,
+      "crc32": "a88f22fc",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Senotherapy response dendrogram clustering .ipynb",
+      "uncompressed_bytes": 218355
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Senotherapy response dendrogram clustering .ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 749,
+      "crc32": "5f6bb07d",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Time Series KMEANS.ipynb",
+      "uncompressed_bytes": 1940
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Time Series KMEANS.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 4721,
+      "crc32": "47bb371f",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Codes/Xception Training Model and Applier.ipynb",
+      "uncompressed_bytes": 20080
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Codes/._Xception Training Model and Applier.ipynb",
+      "uncompressed_bytes": 176
+    },
+    {
+      "compressed_bytes": 13174483,
+      "crc32": "563e1af4",
+      "is_directory": false,
+      "name": "SenSCOUT-main/Data/Sampled_Dataset_Batch_Corrected_UMAPKMEANS_ZSCORE_logBM_transformed.csv",
+      "uncompressed_bytes": 31387940
+    },
+    {
+      "compressed_bytes": 99,
+      "crc32": "f1a04456",
+      "is_directory": false,
+      "name": "__MACOSX/SenSCOUT-main/Data/._Sampled_Dataset_Batch_Corrected_UMAPKMEANS_ZSCORE_logBM_transformed.csv",
+      "uncompressed_bytes": 176
+    }
+  ],
+  "retrieved_at": "2026-08-06",
+  "root_member_counts": {
+    "SenSCOUT-main": 24,
+    "__MACOSX": 24
+  },
+  "safe_member_paths_verified": true,
+  "schema": "aleph.outer_library.senscout_archive_receipt.v1",
+  "sha256": "1a4a70bbab2fc93d444bf062cc8df7619ea6b1c57344b411764be1fae88adb50",
+  "size_bytes": 103221799,
+  "source": {
+    "doi": "10.5061/dryad.rbnzs7hp8",
+    "dryad_dataset_id": 153325,
+    "dryad_file_id": 4037184,
+    "dryad_version_id": 360722,
+    "license": "CC0-1.0"
+  },
+  "zip_crc_verified": true
+}

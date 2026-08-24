@@ -1,0 +1,77 @@
+{
+  "aleph_authority": "none",
+  "catalog_id": "outer-cortical-tension-reference-2026-08-10",
+  "forbidden_shortcuts": [
+    "Do not compare active-only gamma_source with the total effective Laplace tension.",
+    "Do not add membrane tension to a source observable that already folds it into gamma_eff.",
+    "Do not transfer the MCF-7 suspended-interphase interval to adherent MCF-7 or MDA-MB-231.",
+    "Do not turn interval overlap into a gate verdict; VG-gamma-MCF7-suspended remains draft.",
+    "Do not expose a magnitude or ratio from a force-accepted, non-native, protocol-mismatched, time-step-dependent, or otherwise blocked engine record."
+  ],
+  "coverage_gaps": [
+    {
+      "cell_cycle_state": "interphase",
+      "cell_line": "MCF-7",
+      "reason": "No matched direct absolute cortical-tension reference is registered for adherent MCF-7.",
+      "surface_state": "adherent_2d_collagen"
+    },
+    {
+      "cell_cycle_state": "interphase",
+      "cell_line": "MDA-MB-231",
+      "reason": "No matched direct absolute cortical-tension reference is registered for suspended MDA-MB-231.",
+      "surface_state": "suspended_rounded"
+    },
+    {
+      "cell_cycle_state": "interphase",
+      "cell_line": "MDA-MB-231",
+      "reason": "No matched direct absolute cortical-tension reference is registered for adherent MDA-MB-231.",
+      "surface_state": "adherent_2d_collagen"
+    }
+  ],
+  "may_emit_aleph_parameter": false,
+  "may_mutate_physics": false,
+  "records": [
+    {
+      "context": {
+        "cell_cycle_state": "interphase",
+        "cell_line": "MCF-7",
+        "surface_state": "suspended_rounded",
+        "temperature_c": 37.0
+      },
+      "evidence": {
+        "citation_key": "Hosseini2020_AdvSci",
+        "doi": "10.1002/advs.202001276",
+        "figure_locator": "Figure 2g",
+        "knowledge_claim_id": "KB-6.1.7",
+        "knowledge_claim_status": "verified",
+        "pmcid": "PMC7539203",
+        "source_audit_required_verdict": "OK",
+        "source_evidence_uid": "SE181"
+      },
+      "gate_context": {
+        "may_score_pass_fail": false,
+        "status": "draft",
+        "validation_gate_id": "VG-γ-MCF7-suspended"
+      },
+      "measurement_operator": {
+        "definition": "time-averaged total effective Laplace surface tension; membrane contribution already folded into gamma_eff",
+        "external_observable": "effective_laplace_surface_tension",
+        "frequency_hz": 1.0,
+        "method": "dynamic_AFM_parallel_plate_confinement",
+        "relation": "gamma_eff = F / (A_contact * (1/R1 + 1/R2))"
+      },
+      "reference_id": "hosseini2020_mcf7_suspended_interphase_afm",
+      "role": "primary_descriptive_reference",
+      "summary": {
+        "digitization_precision_pn_per_um": 30.0,
+        "interval_kind": "interquartile_range",
+        "median_pn_per_um": 270.0,
+        "n_cells": 27,
+        "q1_pn_per_um": 180.0,
+        "q3_pn_per_um": 400.0,
+        "unit": "pN/micrometre"
+      }
+    }
+  ],
+  "schema": "aleph.outer_library.cortical_tension_reference_catalog.v1"
+}

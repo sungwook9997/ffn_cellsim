@@ -1,0 +1,106 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 1 item
+
+ffn_sim/tests/validation/test_ku130.py F
+
+=================================== FAILURES ===================================
+__________ TestKU130_3_PointDipole.test_point_dipole_production_band ___________
+
+self = <ffn_sim.tests.validation.test_ku130.TestKU130_3_PointDipole object at 0x1471fa850>
+
+    @pytest.mark.skipif(
+        os.environ.get("H1_KU130_PRODUCTION", "") != "1",
+        reason="Production-scale KU-1.30 #3; opt-in via H1_KU130_PRODUCTION=1.",
+    )
+    def test_point_dipole_production_band(self):
+        """Production-scale point-dipole σ(r) ∝ 1/r² fit with
+        **multi-seed ensemble + paired baseline + cos(2θ) angular**.
+    
+        v5 improvements (autonomous /loop iteration 2, mechanistic /
+        fine-grained per acs_no_abstractions):
+        1. Multi-seed ensemble (new in v5): n_seeds=5 independent
+           Mikado realisations.  Each contributes a (σ_r vs r) curve
+           which is averaged element-wise across seeds → smooths the
+           outlier-bond-near-dipole problem that dominated v4's bin-5
+           340 Pa spike on a single realisation.  Same pattern as
+           strain-stiffening #2's 3-ramp ensemble.
+        2. Paired baseline (v3+): identical seed thermal-noise
+           trajectory cancellation.
+        3. cos(2θ) angular projection (v4+): m=2 angular harmonic.
+        """
+        with open(CONFIG_PATH) as f:
+            cfg = yaml.safe_load(f)
+        p = resolve_derived(cfg)
+        t0 = time.time()
+        n_seeds = 5
+        per_seed_sigma = []
+        per_seed_slope = []
+        bin_centers = None
+        for i in range(n_seeds):
+            p_i = replace(p, seed=p.seed + i)
+            r_i = _point_dipole_stress_decay(
+                p_i,
+                n_softstart=100, n_baoab=900, n_after_dipole=2000,
+                n_time_avg_samples=5, time_avg_spacing=200,
+                paired_baseline=True,
+                angular_weighting=True,
+            )
+            per_seed_sigma.append(r_i.sigma_radial_pa)
+            per_seed_slope.append(r_i.fit_exponent)
+            if bin_centers is None:
+                bin_centers = r_i.bin_centers_m
+    
+        sigma_stack = np.stack(per_seed_sigma, axis=0)
+        sigma_avg = np.mean(sigma_stack, axis=0)
+    
+        # Re-fit the ensemble-averaged σ_r(r).
+        valid_avg = (sigma_avg > 0.0) & np.isfinite(sigma_avg)
+        if valid_avg.sum() > 0:
+            idxs = np.where(valid_avg)[0]
+            valid_avg[idxs[0]] = False
+            if len(idxs) > 1:
+                valid_avg[idxs[-1]] = False
+        if valid_avg.sum() >= 3:
+            lg_r = np.log(bin_centers[valid_avg])
+            lg_s = np.log(sigma_avg[valid_avg])
+            slope_ensemble = float(np.polyfit(lg_r, lg_s, 1)[0])
+        else:
+            slope_ensemble = float("nan")
+        # Wrap into a DipoleResult-like for the writeback.
+        res = DipoleResult(
+            bin_centers_m=bin_centers,
+            sigma_radial_pa=sigma_avg,
+            fit_exponent=slope_ensemble,
+        )
+        # Extra ensemble diagnostics (saved to npz below).
+        ensemble_sigma_stack = sigma_stack
+        ensemble_per_seed_slopes = np.array(per_seed_slope)
+        elapsed = time.time() - t0
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            OUTPUTS_DIR / "ku130_point_dipole_production.npz",
+            bin_centers_m=res.bin_centers_m,
+            sigma_radial_pa_ensemble_avg=res.sigma_radial_pa,
+            sigma_radial_pa_per_seed=ensemble_sigma_stack,
+            fit_exponent_ensemble=res.fit_exponent,
+            fit_exponent_per_seed=ensemble_per_seed_slopes,
+            n_seeds=n_seeds,
+            wall_time_s=elapsed,
+        )
+>       assert -2.5 <= res.fit_exponent <= -1.5, (
+            f"Ensemble fit_exponent = {res.fit_exponent:.3f} "
+            f"(per-seed = {ensemble_per_seed_slopes}) outside KU-1.30 "
+            f"#3 band [-2.5, -1.5]. Surface to PI per CLAUDE.md "
+            f"no-gate-loosening."
+        )
+E       AssertionError: Ensemble fit_exponent = -0.330 (per-seed = [ 0.00320617  0.04435772 -0.57080936  0.30318251 -1.02602981]) outside KU-1.30 #3 band [-2.5, -1.5]. Surface to PI per CLAUDE.md no-gate-loosening.
+E       assert -0.3298082334777092 <= -1.5
+E        +  where -0.3298082334777092 = DipoleResult(bin_centers_m=array([6.29977771e-07, 9.57510196e-07, 1.45533036e-06, 2.21197274e-06,\n       3.36200188e-0...,   80.73124257,  101.00811087,\n         46.29520196,   64.79140676,   28.60424326]), fit_exponent=-0.3298082334777092).fit_exponent
+
+ffn_sim/tests/validation/test_ku130.py:893: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/validation/test_ku130.py::TestKU130_3_PointDipole::test_point_dipole_production_band
+======================== 1 failed in 1033.15s (0:17:13) ========================

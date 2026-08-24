@@ -1,0 +1,30 @@
+{
+  "aleph_authority": "none",
+  "archive_member": "NA-006-D4NA00003J-s001.xlsx",
+  "cell_line_counts": {
+    "MCF-10A": 68,
+    "MCF-7": 60,
+    "MDA-MB-231": 68
+  },
+  "doi": "10.1039/D4NA00003J",
+  "license": "CC BY-NC 3.0",
+  "measurement_columns": [
+    "wire_length_um",
+    "wire_diameter_um",
+    "omega_c_rad_s",
+    "wire_aspect_effective",
+    "viscosity_pa_s",
+    "viscosity_uncertainty_pa_s",
+    "theta_b_low_rad",
+    "theta_b_high_rad",
+    "elastic_modulus_pa",
+    "elastic_modulus_uncertainty_pa"
+  ],
+  "normalized_row_count": 196,
+  "pmcid": "PMC10929591",
+  "publisher_declared_md5": "cedad5da75da899061f8176986c3ba05",
+  "raw_measurements_modified": false,
+  "schema": "aleph.outer_library.mechanics_source_receipt.v1",
+  "source_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10929591/supplementaryFiles",
+  "workbook_sha256": "43d990b27f3b8f48f081d487ec3ea7941138e87106198ad8f175ac0321d858dd"
+}

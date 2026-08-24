@@ -1,0 +1,460 @@
+{
+  "aleph_authority": "none",
+  "architecture": {
+    "embedding_dimension": 32,
+    "family": "conditional_small_UNet",
+    "parameter_count": 26641,
+    "selected_base_channels": 16,
+    "selected_epoch": 9
+  },
+  "candidate_selection": [
+    {
+      "base_channels": 8,
+      "history": [
+        {
+          "epoch": 1,
+          "fit_sampled_loss": 0.07072462520356905,
+          "selection_required_target_macro_study_MAE": 0.16721188463270664,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.15130894258618355,
+            "Nucleus": 0.18311482667922974
+          }
+        },
+        {
+          "epoch": 2,
+          "fit_sampled_loss": 0.04198619919055599,
+          "selection_required_target_macro_study_MAE": 0.13312296941876411,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12850754894316196,
+            "Nucleus": 0.13773838989436626
+          }
+        },
+        {
+          "epoch": 3,
+          "fit_sampled_loss": 0.04011214701300961,
+          "selection_required_target_macro_study_MAE": 0.13499227538704872,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.1305683869868517,
+            "Nucleus": 0.13941616378724575
+          }
+        },
+        {
+          "epoch": 4,
+          "fit_sampled_loss": 0.03964903464509269,
+          "selection_required_target_macro_study_MAE": 0.13164846505969763,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.1268442366272211,
+            "Nucleus": 0.13645269349217415
+          }
+        },
+        {
+          "epoch": 5,
+          "fit_sampled_loss": 0.039277021283820525,
+          "selection_required_target_macro_study_MAE": 0.1342624593526125,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12974219024181366,
+            "Nucleus": 0.13878272846341133
+          }
+        },
+        {
+          "epoch": 6,
+          "fit_sampled_loss": 0.0387066821173086,
+          "selection_required_target_macro_study_MAE": 0.13880125246942043,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.13135284930467606,
+            "Nucleus": 0.1462496556341648
+          }
+        },
+        {
+          "epoch": 7,
+          "fit_sampled_loss": 0.039106522260581034,
+          "selection_required_target_macro_study_MAE": 0.1319969967007637,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12707315757870674,
+            "Nucleus": 0.13692083582282066
+          }
+        },
+        {
+          "epoch": 8,
+          "fit_sampled_loss": 0.03844303688255407,
+          "selection_required_target_macro_study_MAE": 0.13450770173221827,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.13232598826289177,
+            "Nucleus": 0.13668941520154476
+          }
+        },
+        {
+          "epoch": 9,
+          "fit_sampled_loss": 0.038794205476671964,
+          "selection_required_target_macro_study_MAE": 0.12734356243163347,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12485604733228683,
+            "Nucleus": 0.1298310775309801
+          }
+        },
+        {
+          "epoch": 10,
+          "fit_sampled_loss": 0.03833299288052624,
+          "selection_required_target_macro_study_MAE": 0.12596528604626656,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.1268241573125124,
+            "Nucleus": 0.1251064147800207
+          }
+        },
+        {
+          "epoch": 11,
+          "fit_sampled_loss": 0.03848711704298601,
+          "selection_required_target_macro_study_MAE": 0.1447757901623845,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.13447640649974346,
+            "Nucleus": 0.15507517382502556
+          }
+        },
+        {
+          "epoch": 12,
+          "fit_sampled_loss": 0.03782950114395659,
+          "selection_required_target_macro_study_MAE": 0.13772134575992823,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.13134104385972023,
+            "Nucleus": 0.14410164766013622
+          }
+        }
+      ]
+    },
+    {
+      "base_channels": 16,
+      "history": [
+        {
+          "epoch": 1,
+          "fit_sampled_loss": 0.07961579784750938,
+          "selection_required_target_macro_study_MAE": 0.1812901608645916,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.15555410832166672,
+            "Nucleus": 0.20702621340751648
+          }
+        },
+        {
+          "epoch": 2,
+          "fit_sampled_loss": 0.04310652910400245,
+          "selection_required_target_macro_study_MAE": 0.1355388956144452,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.1307297684252262,
+            "Nucleus": 0.1403480228036642
+          }
+        },
+        {
+          "epoch": 3,
+          "fit_sampled_loss": 0.04011254037840892,
+          "selection_required_target_macro_study_MAE": 0.12707366608083248,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12273128144443035,
+            "Nucleus": 0.1314160507172346
+          }
+        },
+        {
+          "epoch": 4,
+          "fit_sampled_loss": 0.03969430121577392,
+          "selection_required_target_macro_study_MAE": 0.13187039457261562,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12917415238916874,
+            "Nucleus": 0.1345666367560625
+          }
+        },
+        {
+          "epoch": 5,
+          "fit_sampled_loss": 0.038972976728010984,
+          "selection_required_target_macro_study_MAE": 0.12653890158981085,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12387328967452049,
+            "Nucleus": 0.1292045135051012
+          }
+        },
+        {
+          "epoch": 6,
+          "fit_sampled_loss": 0.038404207676649094,
+          "selection_required_target_macro_study_MAE": 0.1300196312367916,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12450851872563362,
+            "Nucleus": 0.1355307437479496
+          }
+        },
+        {
+          "epoch": 7,
+          "fit_sampled_loss": 0.03882006423200591,
+          "selection_required_target_macro_study_MAE": 0.12754473462700844,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12146621011197567,
+            "Nucleus": 0.1336232591420412
+          }
+        },
+        {
+          "epoch": 8,
+          "fit_sampled_loss": 0.0382306139474198,
+          "selection_required_target_macro_study_MAE": 0.12969624437391758,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12741070985794067,
+            "Nucleus": 0.13198177888989449
+          }
+        },
+        {
+          "epoch": 9,
+          "fit_sampled_loss": 0.03862374339063289,
+          "selection_required_target_macro_study_MAE": 0.12536347564309835,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.1230195015668869,
+            "Nucleus": 0.1277074497193098
+          }
+        },
+        {
+          "epoch": 10,
+          "fit_sampled_loss": 0.03812108630851164,
+          "selection_required_target_macro_study_MAE": 0.13015088718384504,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12915981747210026,
+            "Nucleus": 0.13114195689558983
+          }
+        },
+        {
+          "epoch": 11,
+          "fit_sampled_loss": 0.0384675677297479,
+          "selection_required_target_macro_study_MAE": 0.13812681753188372,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.13066359236836433,
+            "Nucleus": 0.1455900426954031
+          }
+        },
+        {
+          "epoch": 12,
+          "fit_sampled_loss": 0.037945051188186064,
+          "selection_required_target_macro_study_MAE": 0.12805639766156673,
+          "selection_target_macro_study_MAE": {
+            "Mitochondria": 0.12601758167147636,
+            "Nucleus": 0.1300952136516571
+          }
+        }
+      ]
+    }
+  ],
+  "checkpoint_sha256": "66e70773f0c4e0a01af93cb7a483ab67de49d73fd2c6ec730179d43cfffff05d",
+  "confirmation_pairs_seen": 0,
+  "embedding_reference": {
+    "calibration_score_mean": 5.303730487823486,
+    "dimension": 32,
+    "fit_pair_count": 3744,
+    "score": "diagonal_Mahalanobis_squared",
+    "selection_score_mean": 3.029489278793335
+  },
+  "fit_predictions_used_for_reporting_only": 3744,
+  "independent_dataset_or_lab_confirmation_performed": false,
+  "limitations": [
+    "selection and calibration are study-disjoint but remain inside one multi-center source collection",
+    "global SSIM is reported explicitly and is not a local-window SSIM implementation",
+    "per-image normalization prohibits absolute fluorescence-intensity claims",
+    "single-use confirmation studies remain unopened"
+  ],
+  "may_emit_numeric_sweep_range": false,
+  "observable_evidence_eligible": false,
+  "production_eligible": false,
+  "protocol_sha256": "158805d3501f9da0472633924f083b951fb18ca9ac62ae61994a61692b0ff269",
+  "schema": "aleph.outer_library.lightmycells_model_training.v1",
+  "selection_baseline_comparison": {
+    "Actin": {
+      "fit_mean_map_macro_study_MAE": 0.17993971705436707,
+      "model_macro_study_MAE": 0.1486389935016632,
+      "per_study_fit_mean_map_MAE": {
+        "Study_3": 0.17993971705436707
+      },
+      "per_study_model_MAE": {
+        "Study_3": 0.1486389935016632
+      },
+      "relative_MAE_improvement": 0.17395116578540937
+    },
+    "Mitochondria": {
+      "fit_mean_map_macro_study_MAE": 0.1294429451227188,
+      "model_macro_study_MAE": 0.1230195015668869,
+      "per_study_fit_mean_map_MAE": {
+        "Study_11": 0.12979723513126373,
+        "Study_15": 0.11771246790885925,
+        "Study_28": 0.119744211435318,
+        "Study_3": 0.15051786601543427
+      },
+      "per_study_model_MAE": {
+        "Study_11": 0.13009923696517944,
+        "Study_15": 0.10821346938610077,
+        "Study_28": 0.10489030182361603,
+        "Study_3": 0.14887499809265137
+      },
+      "relative_MAE_improvement": 0.049623743879916686
+    },
+    "Nucleus": {
+      "fit_mean_map_macro_study_MAE": 0.14546799287199974,
+      "model_macro_study_MAE": 0.1277074497193098,
+      "per_study_fit_mean_map_MAE": {
+        "Study_11": 0.14341139793395996,
+        "Study_15": 0.14345772564411163,
+        "Study_28": 0.13403093814849854,
+        "Study_3": 0.16097190976142883
+      },
+      "per_study_model_MAE": {
+        "Study_11": 0.1437959522008896,
+        "Study_15": 0.12366725504398346,
+        "Study_28": 0.09231411665678024,
+        "Study_3": 0.15105247497558594
+      },
+      "relative_MAE_improvement": 0.12209244660657274
+    }
+  },
+  "selection_metrics": {
+    "per_study_target": [
+      {
+        "MAE": 0.13009923696517944,
+        "MSE": 0.033616483211517334,
+        "mean_global_SSIM": 0.01917087148586119,
+        "mean_image_Pearson": -0.05370777870119,
+        "pair_count": 4,
+        "study_id": "Study_11",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.1437959522008896,
+        "MSE": 0.03510177507996559,
+        "mean_global_SSIM": 0.014631815105836629,
+        "mean_image_Pearson": -0.0864114607555608,
+        "pair_count": 4,
+        "study_id": "Study_11",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.10821346938610077,
+        "MSE": 0.026397189125418663,
+        "mean_global_SSIM": 0.12340662446518808,
+        "mean_image_Pearson": 0.4328240745501297,
+        "pair_count": 4,
+        "study_id": "Study_15",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.12366725504398346,
+        "MSE": 0.04698920249938965,
+        "mean_global_SSIM": 0.07702038775263936,
+        "mean_image_Pearson": 0.35434175889278263,
+        "pair_count": 4,
+        "study_id": "Study_15",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.10489030182361603,
+        "MSE": 0.026286322623491287,
+        "mean_global_SSIM": 0.1467131920524869,
+        "mean_image_Pearson": 0.5062253209131241,
+        "pair_count": 16,
+        "study_id": "Study_28",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.09231411665678024,
+        "MSE": 0.022732889279723167,
+        "mean_global_SSIM": 0.12174825488747414,
+        "mean_image_Pearson": 0.33773923142659373,
+        "pair_count": 7,
+        "study_id": "Study_28",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.1486389935016632,
+        "MSE": 0.03294377401471138,
+        "mean_global_SSIM": 0.04506169648634118,
+        "mean_image_Pearson": 0.09520283087192143,
+        "pair_count": 7,
+        "study_id": "Study_3",
+        "target_channel": "Actin"
+      },
+      {
+        "MAE": 0.14887499809265137,
+        "MSE": 0.0406467504799366,
+        "mean_global_SSIM": 0.03107333215325894,
+        "mean_image_Pearson": 0.06250095916910643,
+        "pair_count": 7,
+        "study_id": "Study_3",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.15105247497558594,
+        "MSE": 0.03825196623802185,
+        "mean_global_SSIM": 0.025664745267704576,
+        "mean_image_Pearson": 0.03390311550392068,
+        "pair_count": 8,
+        "study_id": "Study_3",
+        "target_channel": "Nucleus"
+      }
+    ],
+    "per_target": {
+      "Actin": {
+        "macro_study_MAE": 0.1486389935016632,
+        "macro_study_Pearson": 0.09520283087192143,
+        "macro_study_global_SSIM": 0.04506169648634118,
+        "pair_count": 7,
+        "study_count": 1
+      },
+      "Mitochondria": {
+        "macro_study_MAE": 0.1230195015668869,
+        "macro_study_Pearson": 0.23696064398279257,
+        "macro_study_global_SSIM": 0.08009100503919878,
+        "pair_count": 31,
+        "study_count": 4
+      },
+      "Nucleus": {
+        "macro_study_MAE": 0.1277074497193098,
+        "macro_study_Pearson": 0.15989316126693404,
+        "macro_study_global_SSIM": 0.05976630075341367,
+        "pair_count": 23,
+        "study_count": 4
+      }
+    }
+  },
+  "selection_required_target_macro": {
+    "MAE": 0.12536347564309835,
+    "Pearson_correlation": 0.1984269026248633,
+    "global_SSIM": 0.06992865289630623,
+    "relative_MAE_improvement_over_fit_mean_target": 0.08585809524324471
+  },
+  "status": "checkpoint_and_same_source_calibration_frozen_confirmation_pending",
+  "tensor_sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0",
+  "uncertainty_authority": false,
+  "uncertainty_calibration": {
+    "Actin": {
+      "status": "unsupported",
+      "study_count": 0
+    },
+    "Mitochondria": {
+      "normalized_interval_width": 0.49380582571029663,
+      "pair_count": 253,
+      "pixel_coverage": 0.950872730360672,
+      "status": "calibrated_same_source_studies",
+      "study_90th_residual_quantiles": {
+        "Study_16": 0.3547537922859192,
+        "Study_18": 0.3908986449241638,
+        "Study_27": 0.17008467018604279
+      },
+      "study_count": 3,
+      "threshold": 0.3908986449241638
+    },
+    "Nucleus": {
+      "normalized_interval_width": 0.5308331251144409,
+      "pair_count": 268,
+      "pixel_coverage": 0.9522768846198694,
+      "status": "calibrated_same_source_studies",
+      "study_90th_residual_quantiles": {
+        "Study_18": 0.4297351837158203,
+        "Study_27": 0.11424374580383301,
+        "Study_29": 0.14802837371826172
+      },
+      "study_count": 3,
+      "threshold": 0.4297351837158203
+    },
+    "Tubulin": {
+      "status": "unsupported",
+      "study_count": 1
+    }
+  }
+}

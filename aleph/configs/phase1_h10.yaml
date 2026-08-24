@@ -1,0 +1,76 @@
+# Phase 1 — Unit H.10 CYTOPLASM (Tier-1 effective-viscosity drag contrast).
+#
+# ADDITIVE + DEFAULT-OFF: this config does NOT alter any existing run. The
+# cytoplasm block is consumed ONLY when a driver opts in (resolve_cytoplasm +
+# apply_cytoplasm_drag). Absent / eta_eff = water => bit-for-bit identical to
+# pre-H.10 (the default-off contract). All values SI (m, s, J, N, K, Pa·s).
+#
+# Module:    aleph/cell/cytoplasm.py   (Tier-1 only; Tier-2/3 PI-gated)
+# Design:    aleph/docs/H10_CYTOPLASM_DESIGN.md  §"Tier 1"
+# Brief:     aleph/docs/briefs/H10_cytoplasm.md  (KU-3.B3.1)
+# Cell map:  aleph/docs/CANCER_CELLTYPE_PARAM_MAP.md  §Cytoplasm-viscosity
+#
+# Magic-Number Block (η bands — measured acceptance oracles, NEVER fit targets):
+#   Microrheology viscosity is probe-length-dependent (η ∝ L²); all η below are
+#   at the MRS wire length L ≈ 3 ± 1 µm. Validation = reproduce the ~5× MCF7/MDA
+#   viscosity RATIO (=> D-ratio), NOT the absolute Pa·s (which is L-dependent).
+#   Source: Hu et al. 2024, Nanoscale Adv (PMC10929591), magnetic rotational
+#   spectroscopy; cross-checked H.10 brief KU-3.B3.1. η_water: NIST 310 K, KU-1.26.
+
+cytoplasm:
+
+  # ---- Default (DEFAULT-OFF) -------------------------------------------------
+  # eta_eff = water => apply_cytoplasm_drag is the exact identity (bit-for-bit).
+  # Set `enabled: true` AND choose a cell_type / eta_eff to engage Tier-1.
+  enabled: false
+
+  eta_water: 6.913e-4          # Pa·s  η_water at 310 K (NIST), KU-1.26 (reference)
+
+  # ---- Viscosity source (priority: eta_eff > cell_type > water) --------------
+  # Provide EITHER an explicit eta_eff (a measured Pa·s value) OR a cell_type key.
+  cell_type: null              # one of: MCF10A | MCF7 | MDA-MB-231 | water | null
+  eta_eff: null                # Pa·s  explicit override; null => use cell_type/water
+
+  # ---- PI-GATE (DEFAULT-OFF rationale) ---------------------------------------
+  # η_eff is ~5×10⁴× the water drag. The overdamped BAOAB limit makes this the
+  # INTENDED behaviour (the cell is deeply overdamped in cytoplasm) and it RELAXES
+  # every τ = γ_b/k_eff CFL gate (cfl_relaxation_at_drag_jump re-asserts this),
+  # but it is a large frozen-medium-policy change. Before enabling, surface to PI:
+  #   (1) the η_eff magnitude, and
+  #   (2) a re-run of the existing CFL/timestep gates at the raised drag.
+  # NOT a magic number (η_eff is the Hu-2024 measurement); a medium-policy gate.
+  pi_gate:
+    magnitude_ratified: false  # PI must ratify the η_eff magnitude before enable
+    cfl_rerun_done: false      # existing CFL/timestep gates re-passed at raised drag
+
+  # ---- Per-cell-type cytoplasm viscosity table (Hu 2024, L ≈ 3 µm) -----------
+  # Mirrors ETA_CYTO_BY_CELLTYPE in cytoplasm.py (single source of truth there;
+  # listed here for provenance / driver convenience). Acceptance oracles.
+  eta_by_celltype:
+    water:        6.913e-4     # Pa·s  no-op default (bit-identity)
+    MCF10A:       41.6         # Pa·s  normal epithelial   (MRS; KU-3.B3.1)
+    MCF7:         65.9         # Pa·s  low-invasion         (Hu 2024 refined; 56.4 MRS)
+    MDA-MB-231:   12.0         # Pa·s  high-invasion        (Hu 2024 refined; 10.7 MRS)
+    # contrast: MCF7 ≈ 5.5× MDA (Hu 2024) / 5.3× (MRS) — THE validation target.
+
+  # ---- Immersed particle types ----------------------------------------------
+  # Interior cytosol-bathed beads whose Stokes drag is scaled to η_eff. Water-
+  # exposed membrane / cortex-shell types keep water drag (omit them here).
+  # Mirrors DEFAULT_IMMERSED_TYPES in cytoplasm.py. The cortex actin shell sits
+  # at the cytoplasm/membrane interface (open PI item, H10 design §Open items):
+  # included by default as interior (conservative for the viscosity-contrast).
+  immersed_types:
+    - actin_cortex
+    - xlink_head
+    - cortex_myosin_backbone
+    - cortex_myosin_head
+    - actin_lamel
+    - wave_particle
+    - nucleus_bead
+
+  # ---- Tier-2 / Tier-3 (PI-GATED — NOT implemented; design only) -------------
+  # Tier-2 Markovian-GLE elastic storage modulus G ∈ 33–79 Pa  (Hu 2024): adds
+  #        auxiliary DOFs to the FROZEN integrator => frozen-`integrator/` PI-gate.
+  # Tier-3 poroelastic filler particles (Dp 40–60 µm²/s; pore ξ≈14 nm): Template-2
+  #        new `cytosol_bead` type + redistribution Action => heaviest, deferred.
+  # See aleph/docs/H10_CYTOPLASM_DESIGN.md §"Tier 2"/"Tier 3". DO NOT enable here.

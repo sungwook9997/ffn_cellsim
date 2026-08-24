@@ -1,0 +1,97 @@
+{
+  "schema": "aleph.outer_library.lightmycells_cross_study_protocol.v1",
+  "frozen_before_bulk_file_list_or_image_content_access": true,
+  "access_history_before_freeze": {
+    "paper_and_study_metadata_read": true,
+    "single_file_list_probe": "Study_30",
+    "image_pixels_opened": 0,
+    "model_predictions_made": 0,
+    "note": "Study_30 was used only to verify the published FileList JSON schema; it is assigned to fit, never confirmation."
+  },
+  "objective": "train a study-robust transmitted-light encoder that predicts author-labelled organelle fluorescence and quantify cross-study generalization, uncertainty, and OOD without Aleph execution",
+  "source": {
+    "accession": "S-BIAD1047",
+    "title": "Light My Cells : Bright Field to Fluorescence Imaging Challenge",
+    "provider": "EMBL-EBI BioImage Archive / France-BioImaging",
+    "paper_doi": "10.1038/s41597-026-07004-w",
+    "license": "CC BY 4.0",
+    "study_count": 30,
+    "published_acquisition_set_count": 2574,
+    "published_image_count": 56984,
+    "published_fluorescence_counts": {
+      "Nucleus": 2533,
+      "Mitochondria": 1819,
+      "Tubulin": 223,
+      "Actin": 27
+    },
+    "study_api": "https://www.ebi.ac.uk/biostudies/api/v1/studies/S-BIAD1047",
+    "file_list_template": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_{study_number}.json"
+  },
+  "author_label_contract": {
+    "input_modalities": ["BF", "PC", "DIC"],
+    "target_channels": ["Nucleus", "Mitochondria", "Tubulin", "Actin"],
+    "labels_from_filenames_only": true,
+    "no_manual_relabelling": true,
+    "acquisition_set_regex": "^image_([0-9]+)_(BF|PC|DIC|Nucleus|Mitochondria|Tubulin|Actin)(?:_z([0-9]+))?\\.ome\\.tiff$",
+    "unrecognized_file_policy": "retain in metadata audit but exclude from supervised task"
+  },
+  "split_contract": {
+    "outer_split_unit": "BioImage Archive Study Component",
+    "inner_group_unit": "acquisition_set_id",
+    "selection_salt": "aleph-lightmycells-study-split-v1-20260807",
+    "assignment_algorithm": "sort Study_1..Study_30 by sha256(salt + '|' + study_id); first 6 confirmation, next 4 calibration, next 4 selection, remaining 16 fit",
+    "fit": ["Study_22", "Study_25", "Study_26", "Study_24", "Study_4", "Study_23", "Study_7", "Study_19", "Study_14", "Study_13", "Study_21", "Study_8", "Study_30", "Study_17", "Study_6", "Study_10"],
+    "selection": ["Study_11", "Study_3", "Study_28", "Study_15"],
+    "calibration": ["Study_18", "Study_27", "Study_29", "Study_16"],
+    "single_use_confirmation": ["Study_9", "Study_12", "Study_5", "Study_20", "Study_1", "Study_2"],
+    "study_overlap_permitted": false,
+    "acquisition_set_overlap_permitted": false,
+    "confirmation_pixels_before_model_and_calibration_freeze": false,
+    "inaccessible_study_policy": "refuse that study before pixels; require at least four accessible confirmation studies and do not backfill"
+  },
+  "model_contract": {
+    "task": "transmitted_light_to_organelle_fluorescence_spatial_prediction",
+    "input": "one registered transmitted-light z-stack or provider-declared best-focus plane",
+    "output": "four target-specific normalized fluorescence maps plus target-presence and predictive-uncertainty heads",
+    "missing_target_channels": "masked loss, never a negative label",
+    "training_stages": [
+      "self-supervised acquisition-set contrastive pretraining on fit inputs",
+      "target-specific fluorescence reconstruction on fit studies",
+      "architecture and stopping selection on selection studies",
+      "uncertainty calibration on calibration studies",
+      "exactly one evaluation on single-use confirmation studies"
+    ],
+    "model_may_not_use": [
+      "study identifier as a predictive feature",
+      "file path tokens beyond modality and z index",
+      "confirmation images or metrics for fitting, selection, stopping, normalization, or calibration"
+    ]
+  },
+  "evaluation_contract": {
+    "inference_unit": "study-level metric aggregate; acquisition sets are nested technical observations",
+    "supported_target_rule": "report a target only when at least 25 confirmation acquisition sets contain it",
+    "required_targets": ["Nucleus", "Mitochondria"],
+    "spatial_metrics": ["Pearson_correlation", "SSIM", "foreground_weighted_MAE"],
+    "uncertainty_metrics": ["90_percent_pixel_interval_coverage", "normalized_interval_width"],
+    "ood_metric": "study-level embedding OOD AUROC against fit-study embeddings",
+    "frozen_endpoints": {
+      "macro_study_Pearson_correlation": {"operator": ">=", "value": 0.35},
+      "macro_study_SSIM": {"operator": ">=", "value": 0.25},
+      "relative_MAE_improvement_over_fit_mean_target": {"operator": ">=", "value": 0.10},
+      "pixel_interval_coverage": {"operator": "between_inclusive", "value": [0.85, 0.95]},
+      "embedding_OOD_AUROC": {"operator": ">=", "value": 0.70}
+    },
+    "all_applicable_endpoints_required": true,
+    "per_study_and_per_target_metrics_required": true,
+    "technical_fields_may_not_be_counted_as_biological_replicates": true
+  },
+  "authority_contract": {
+    "independent_network_role": "trainable_visual_observation_encoder",
+    "success_role": "cross-study validated label-free organelle representation and observation prediction",
+    "failure_role": "consumed domain-shift diagnostic only",
+    "general_cell_state_production_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "future_aleph_adapter_requires_separate_operator_and_forward_sensitivity_validation": true
+  }
+}

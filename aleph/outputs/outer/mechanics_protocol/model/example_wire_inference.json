@@ -1,0 +1,14 @@
+{
+  "aleph_authority": "none",
+  "cell_line_prediction_refused": true,
+  "cell_line_probabilities_diagnostic": {
+    "MCF-10A": 0.4167892170895614,
+    "MCF-7": 0.16297487672429842,
+    "MDA-MB-231": 0.4202359061861403
+  },
+  "cell_line_refusal_reason": "experimental-date-disjoint balanced accuracy was 0.385",
+  "effective_viscosity_authority": "Dessard_MRS_operator_interpolation_only",
+  "effective_viscosity_pa_s": 82.35610812742449,
+  "independent_lab_holdout": false,
+  "schema": "aleph.outer_library.mechanics_wire_inference.v1"
+}

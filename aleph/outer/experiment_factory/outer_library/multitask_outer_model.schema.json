@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aleph.outer_library.multitask_model.v1",
+  "title": "Task-scoped multimodal Outer Library model report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "model_family",
+    "architecture",
+    "heads",
+    "readiness",
+    "sweep_interface",
+    "aleph_authority"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.outer_library.multitask_model.v1"},
+    "model_family": {"const": "task_scoped_multimodal_multihead"},
+    "aleph_authority": {"const": "none"},
+    "architecture": {
+      "type": "object",
+      "required": ["shared_latent", "fusion", "head_count", "trainable_raw_encoder_status"],
+      "properties": {
+        "shared_latent": {"const": false},
+        "fusion": {"const": "task_scoped_late_fusion_only"},
+        "head_count": {"type": "integer", "minimum": 1},
+        "trainable_raw_encoder_status": {
+          "enum": [
+        "not_yet_trained",
+        "one_temporal_encoder_trained_rejected_external",
+        "two_encoders_trained_no_external_acceptance",
+        "three_encoders_trained_external_IF_failed",
+        "trained"
+      ]
+    },
+    "trained_encoder_heads": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    }
+      }
+    },
+    "heads": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "head_id",
+          "task",
+          "kind",
+          "modalities",
+          "split_contract",
+          "metrics",
+          "status",
+          "external_holdout",
+          "pristine_confirmation",
+          "uncertainty_eligible",
+          "observable_evidence_eligible",
+          "parameter_proposal_eligible",
+          "aleph_authority",
+          "limitations"
+        ],
+        "properties": {
+          "head_id": {"type": "string", "minLength": 1},
+          "task": {"type": "string", "minLength": 1},
+          "kind": {"type": "string", "minLength": 1},
+          "modalities": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "split_contract": {"type": "object"},
+          "metrics": {"type": "object"},
+          "status": {"type": "string"},
+          "external_holdout": {"type": "boolean"},
+          "pristine_confirmation": {"type": "boolean"},
+          "uncertainty_eligible": {"type": "boolean"},
+          "observable_evidence_eligible": {"type": "boolean"},
+          "parameter_proposal_eligible": {"const": false},
+          "aleph_authority": {"const": "none"},
+          "limitations": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "required": [
+        "task_scoped_evidence_runtime_ready",
+        "general_cell_type_state_model_ready",
+        "production_eligible"
+      ],
+      "properties": {
+        "task_scoped_evidence_runtime_ready": {"type": "boolean"},
+        "general_cell_type_state_model_ready": {"const": false},
+        "production_eligible": {"type": "boolean"}
+      }
+    },
+    "sweep_interface": {
+      "type": "object",
+      "required": [
+        "status",
+        "admissible_head_ids",
+        "may_emit_numeric_parameter_range",
+        "may_select_aleph_parameter",
+        "may_mutate_physics"
+      ],
+      "properties": {
+        "status": {"const": "evidence_only"},
+        "admissible_head_ids": {"type": "array", "items": {"type": "string"}},
+        "may_emit_numeric_parameter_range": {"const": false},
+        "may_select_aleph_parameter": {"const": false},
+        "may_mutate_physics": {"const": false}
+      }
+    }
+  }
+}

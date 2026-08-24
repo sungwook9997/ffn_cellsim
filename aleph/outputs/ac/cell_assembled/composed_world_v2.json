@@ -1,0 +1,322 @@
+{
+  "stage": {
+    "name": "COMPOSED ac/engine world (14 comp / 36 conn \u00b7 real census)",
+    "evidence": "CENSUS-WIRED",
+    "quantitative_claim_status": "BLOCKED",
+    "evidence_basis": "census + topology for 14 components / 36 connectors; geometry and forces are SYNTHETIC",
+    "note": "topology + counts + disjoint global filament-IDs from dump_composed_world_state; geometry + forces SYNTHETIC (real device dump = A5000 lane). cortex=KB native; MT/IF/filo count=PI-GAP."
+  },
+  "report": {
+    "n_actors": 49,
+    "n_filaments_total": 71624,
+    "n_nodes_total_census": 497021,
+    "actor_ids_unique": true,
+    "filament_blocks_disjoint": true,
+    "n_components_drawn": 14,
+    "n_connectors_drawn": 36
+  },
+  "components": [
+    {
+      "key": "membrane",
+      "kind": "mesh",
+      "order": 0,
+      "n_actors": 1
+    },
+    {
+      "key": "cortex",
+      "kind": "filaments",
+      "order": 1,
+      "n_actors": 2000
+    },
+    {
+      "key": "cytosol",
+      "kind": "points",
+      "order": 2,
+      "n_actors": 1
+    },
+    {
+      "key": "nucleus",
+      "kind": "mesh",
+      "order": 3,
+      "n_actors": 1
+    },
+    {
+      "key": "sf_arc",
+      "kind": "filaments",
+      "order": 4,
+      "n_actors": 60
+    },
+    {
+      "key": "focal_adhesion",
+      "kind": "points",
+      "order": 5,
+      "n_actors": 1
+    },
+    {
+      "key": "microtubule",
+      "kind": "filaments",
+      "order": 6,
+      "n_actors": 120
+    },
+    {
+      "key": "intermediate_filament",
+      "kind": "filaments",
+      "order": 7,
+      "n_actors": 150
+    },
+    {
+      "key": "lamellipodium",
+      "kind": "filaments",
+      "order": 8,
+      "n_actors": 66
+    },
+    {
+      "key": "filopodium",
+      "kind": "filaments",
+      "order": 9,
+      "n_actors": 8
+    },
+    {
+      "key": "nmii",
+      "kind": "filaments",
+      "order": 10,
+      "n_actors": 100
+    },
+    {
+      "key": "ecm",
+      "kind": "filaments",
+      "order": 11,
+      "n_actors": 300
+    },
+    {
+      "key": "world_boundary",
+      "kind": "points",
+      "order": 12,
+      "n_actors": 1
+    },
+    {
+      "key": "extracellular_medium",
+      "kind": "points",
+      "order": 13,
+      "n_actors": 1
+    }
+  ],
+  "connectors": [
+    {
+      "key": "membrane_erm_cortex",
+      "family": "ERM",
+      "a_component": "membrane",
+      "b_component": "cortex"
+    },
+    {
+      "key": "surface_porous_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "cortex",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "membrane_cytosol_boundary",
+      "family": "FLUID-BOUNDARY",
+      "a_component": "membrane",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "nucleus_cytosol_boundary",
+      "family": "FLUID-BOUNDARY",
+      "a_component": "nucleus",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "fa_actin_anchor",
+      "family": "ACTIN-ANCHOR",
+      "a_component": "sf_arc",
+      "b_component": "focal_adhesion"
+    },
+    {
+      "key": "integrin_collagen_clutch",
+      "family": "FA-clutch",
+      "a_component": "focal_adhesion",
+      "b_component": "ecm"
+    },
+    {
+      "key": "sf_cortex_transient",
+      "family": "TRANSIENT-ACTIN",
+      "a_component": "sf_arc",
+      "b_component": "cortex"
+    },
+    {
+      "key": "actin_cap_linc",
+      "family": "LINC",
+      "a_component": "sf_arc",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "mt_nucleus_linc",
+      "family": "LINC",
+      "a_component": "microtubule",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "mt_cortex_capture",
+      "family": "MOTOR",
+      "a_component": "microtubule",
+      "b_component": "cortex"
+    },
+    {
+      "key": "if_nucleus_linc",
+      "family": "LINC",
+      "a_component": "intermediate_filament",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "if_sf_plectin",
+      "family": "PLECTIN",
+      "a_component": "intermediate_filament",
+      "b_component": "sf_arc"
+    },
+    {
+      "key": "mt_sf_spectraplakin",
+      "family": "SPECTRAPLAKIN",
+      "a_component": "microtubule",
+      "b_component": "sf_arc"
+    },
+    {
+      "key": "sf_cytosol_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "sf_arc",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "mt_cytosol_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "microtubule",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "if_cytosol_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "intermediate_filament",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "lamellipodium_membrane_contact",
+      "family": "CONTACT",
+      "a_component": "lamellipodium",
+      "b_component": "membrane"
+    },
+    {
+      "key": "lamellipodium_cortex_seam",
+      "family": "TRANSIENT-ACTIN",
+      "a_component": "lamellipodium",
+      "b_component": "cortex"
+    },
+    {
+      "key": "lamellipodium_cytosol_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "lamellipodium",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "lamellipodium_nascent_fa",
+      "family": "ACTIN-ANCHOR",
+      "a_component": "lamellipodium",
+      "b_component": "focal_adhesion"
+    },
+    {
+      "key": "filopodium_membrane_tip",
+      "family": "CONTACT",
+      "a_component": "filopodium",
+      "b_component": "membrane"
+    },
+    {
+      "key": "filopodium_cortex_root",
+      "family": "TRANSIENT-ACTIN",
+      "a_component": "filopodium",
+      "b_component": "cortex"
+    },
+    {
+      "key": "filopodium_cytosol_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "filopodium",
+      "b_component": "cytosol"
+    },
+    {
+      "key": "filopodium_nascent_fa",
+      "family": "ACTIN-ANCHOR",
+      "a_component": "filopodium",
+      "b_component": "focal_adhesion"
+    },
+    {
+      "key": "nmii_sf_motor",
+      "family": "MOTOR",
+      "a_component": "nmii",
+      "b_component": "sf_arc"
+    },
+    {
+      "key": "nmii_cortex_motor",
+      "family": "MOTOR",
+      "a_component": "nmii",
+      "b_component": "cortex"
+    },
+    {
+      "key": "nmii_lamellipodium_motor",
+      "family": "MOTOR",
+      "a_component": "nmii",
+      "b_component": "lamellipodium"
+    },
+    {
+      "key": "nmii_filopodium_motor",
+      "family": "MOTOR",
+      "a_component": "nmii",
+      "b_component": "filopodium"
+    },
+    {
+      "key": "dorsal_arc_crosslink",
+      "family": "TRANSIENT-ACTIN",
+      "a_component": "sf_arc",
+      "b_component": "sf_arc"
+    },
+    {
+      "key": "ecm_crosslink",
+      "family": "FIBER-CROSSLINK",
+      "a_component": "ecm",
+      "b_component": "ecm"
+    },
+    {
+      "key": "ecm_far_field_anchor",
+      "family": "ENVIRONMENT-BOUNDARY",
+      "a_component": "ecm",
+      "b_component": "world_boundary"
+    },
+    {
+      "key": "membrane_medium_traction",
+      "family": "ENVIRONMENT-BOUNDARY",
+      "a_component": "membrane",
+      "b_component": "extracellular_medium"
+    },
+    {
+      "key": "membrane_ecm_contact",
+      "family": "CONTACT",
+      "a_component": "membrane",
+      "b_component": "ecm"
+    },
+    {
+      "key": "nucleus_cortex_contact",
+      "family": "CONTACT",
+      "a_component": "nucleus",
+      "b_component": "cortex"
+    },
+    {
+      "key": "membrane_cortex_contact",
+      "family": "CONTACT",
+      "a_component": "membrane",
+      "b_component": "cortex"
+    },
+    {
+      "key": "nmii_cytosol_transfer",
+      "family": "IMMERSED-TRANSFER",
+      "a_component": "nmii",
+      "b_component": "cytosol"
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "schema": "ffn-ac-l0-balance-exists-v1",
+  "declared_before_run": {
+    "criterion": "descent_ratio = residual_end / residual_start < 1",
+    "negative_control": "setpoint OFF must NOT descend; if it does the run FAILED",
+    "axis_per_head_force_pn": [
+      0.5,
+      1.0,
+      2.0
+    ],
+    "axis_fraction": [
+      0.01,
+      0.05,
+      0.2
+    ],
+    "source_string": "TEST AXIS 2026-08-20, NOT a sourced value. per-head 0.5-2.0 pN is the recorded I0-B3 bracket whose ends are an AFINES simulation parameter and a retired kernel constant; fraction spans the contract's admissible domain and is not a physiological band. Scope: tests whether the mechanism can produce a balance point anywhere in its own domain. PI ruling: band-as-test, not a citation."
+  },
+  "verdict": "NO_DESCENT_ANYWHERE",
+  "note": "no ON point descended and neither did the control. The tension source does not create a reachable balance point anywhere on this axis, which is a NEGATIVE result about the mechanism and not about the solver.",
+  "n_attempted": 10,
+  "n_declared": 10,
+  "not_attempted": [],
+  "results": [
+    {
+      "point": {
+        "name": "control_OFF",
+        "fraction": null,
+        "f_head_pn": null
+      },
+      "wall_s": 76.6067955493927,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/control_OFF.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 0,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.01_p0.5",
+        "fraction": 0.01,
+        "f_head_pn": 0.5
+      },
+      "wall_s": 65.07530975341797,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.01_p0.5.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 88,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.01_p2",
+        "fraction": 0.01,
+        "f_head_pn": 2.0
+      },
+      "wall_s": 82.62417364120483,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.01_p2.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 88,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.2_p0.5",
+        "fraction": 0.2,
+        "f_head_pn": 0.5
+      },
+      "wall_s": 58.493130922317505,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.2_p0.5.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 1768,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.2_p2",
+        "fraction": 0.2,
+        "f_head_pn": 2.0
+      },
+      "wall_s": 57.24189043045044,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.2_p2.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 1768,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.01_p1",
+        "fraction": 0.01,
+        "f_head_pn": 1.0
+      },
+      "wall_s": 71.72031617164612,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.01_p1.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 88,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.05_p0.5",
+        "fraction": 0.05,
+        "f_head_pn": 0.5
+      },
+      "wall_s": 67.07302975654602,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.05_p0.5.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 442,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.05_p1",
+        "fraction": 0.05,
+        "f_head_pn": 1.0
+      },
+      "wall_s": 53.02406287193298,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.05_p1.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 442,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.05_p2",
+        "fraction": 0.05,
+        "f_head_pn": 2.0
+      },
+      "wall_s": 57.746657848358154,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.05_p2.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 442,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    },
+    {
+      "point": {
+        "name": "on_f0.2_p1",
+        "fraction": 0.2,
+        "f_head_pn": 1.0
+      },
+      "wall_s": 51.175530672073364,
+      "returncode": 0,
+      "json": "/home/sungwook/ffn/ffn_cellsim_89a3f38a/outputs/l0_balance_exists/on_f0.2_p1.json",
+      "residual_start": 47.405172429438764,
+      "residual_end": 47.405172429438764,
+      "descent_ratio": 1.0,
+      "descends": false,
+      "inner_converged": false,
+      "myosin_bound_after_step": 1768,
+      "erm_bound_after_step": 642,
+      "preload_mechanically_feasible_upper_bound": false,
+      "r_mean_start": 7.299813096203852,
+      "r_mean_end": 7.299813096203852
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/outer-library-forward-sensitivity-v1.json",
+  "title": "Aleph Outer Library forward-sensitivity bundle",
+  "type": "object",
+  "required": [
+    "schema",
+    "engine",
+    "physics_commit",
+    "scenario",
+    "observable_operator",
+    "observable_operator_status",
+    "observable_operator_validation_sha256",
+    "axis",
+    "axis_unit",
+    "observable",
+    "observable_unit",
+    "reference_axis_value",
+    "expected_direction",
+    "runs"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.outer_library.forward_sensitivity.v1"},
+    "engine": {"const": "Project_Aleph"},
+    "physics_commit": {"type": "string", "minLength": 1},
+    "scenario": {"type": "string", "minLength": 1},
+    "observable_operator": {"type": "string", "minLength": 1},
+    "observable_operator_status": {
+      "enum": ["native_validated", "surrogate_validated"]
+    },
+    "observable_operator_validation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "axis": {
+      "enum": [
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness",
+        "aleph.vertical.nmii.MotorKinetics.attachment_rate",
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um",
+        "aleph.vertical.focal_adhesion.ClutchCard.anchor_stiffness_pn_per_um"
+      ]
+    },
+    "axis_unit": {"enum": ["pN", "pN_per_um", "per_s"]},
+    "observable": {
+      "enum": [
+        "tissue_traction_force_per_cell",
+        "membrane_tether_plateau_force"
+      ]
+    },
+    "observable_unit": {"enum": ["nN_per_cell", "pN"]},
+    "refusal": {
+      "type": "object",
+      "required": ["refused", "code", "reason", "operator_id", "detail"],
+      "properties": {
+        "refused": {"const": true},
+        "code": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "operator_id": {"type": "string", "minLength": 1},
+        "detail": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "reference_axis_value": {"type": "number"},
+    "expected_direction": {"enum": ["increases", "decreases"]},
+    "runs": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["run_id", "axis_value", "observable_value", "converged"],
+        "properties": {
+          "run_id": {"type": "string", "minLength": 1},
+          "axis_value": {"type": "number"},
+          "observable_value": {"type": "number"},
+          "converged": {"const": true},
+          "seed": {"type": "integer"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"required": ["refusal"]},
+      "then": {"properties": {"runs": {"maxItems": 0}}},
+      "else": {"properties": {"runs": {"minItems": 12}}}
+    },
+    {
+      "if": {"properties": {"observable": {"const": "tissue_traction_force_per_cell"}}},
+      "then": {"properties": {"observable_unit": {"const": "nN_per_cell"}}},
+      "else": {"properties": {"observable_unit": {"const": "pN"}}}
+    }
+  ],
+  "additionalProperties": true
+}

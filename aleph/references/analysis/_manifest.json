@@ -1,0 +1,1471 @@
+[
+ {
+  "n": 1,
+  "path": "1-s2.0-S0022509623001941-main.pdf",
+  "pages": 18,
+  "title": "A computational model for early cell spreading, migration, and competing taxis",
+  "slug": "01_a-computational-model-for-early-cell-spreading-migration-and"
+ },
+ {
+  "n": 2,
+  "path": "1-s2.0-S0928098725003677-main (1).pdf",
+  "pages": 11,
+  "title": "Integrating simulation and experimental validation of nutrient-limited growth in breast cancer spheroids",
+  "slug": "02_integrating-simulation-and-experimental-validation-of-nutrie"
+ },
+ {
+  "n": 3,
+  "path": "1-s2.0-S1369703X24003541-main.pdf",
+  "pages": 10,
+  "title": "The impact of 3D tumor spheroid maturity on cell migration and invasion dynamics",
+  "slug": "03_the-impact-of-3d-tumor-spheroid-maturity-on-cell-migration-a"
+ },
+ {
+  "n": 4,
+  "path": "10.3934_mbe.2018016.pdf",
+  "pages": 32,
+  "title": "",
+  "slug": "04_10-3934-mbe-2018016"
+ },
+ {
+  "n": 5,
+  "path": "11744268-6759-4d1c-8363-9666c54cd8c3.pdf",
+  "pages": 11,
+  "title": "",
+  "slug": "05_11744268-6759-4d1c-8363-9666c54cd8c3"
+ },
+ {
+  "n": 6,
+  "path": "2020.12.06.413856v1.full.pdf",
+  "pages": 40,
+  "title": "Mathematical model of tumour spheroid experiments with real-time cell cycle imaging",
+  "slug": "06_mathematical-model-of-tumour-spheroid-experiments-with-real-"
+ },
+ {
+  "n": 7,
+  "path": "Adv Healthcare Materials - 2023 - Dhandapani - In Vitro 3D Spheroid Model Preserves Tumor Microenvironment of Hot and Cold.pdf",
+  "pages": 13,
+  "title": "In Vitro 3D Spheroid Model Preserves Tumor Microenvironment of Hot and Cold Breast Cancer Subtypes",
+  "slug": "07_in-vitro-3d-spheroid-model-preserves-tumor-microenvironment-"
+ },
+ {
+  "n": 8,
+  "path": "Bustamante_2021_Biofabrication_13_035010.pdf",
+  "pages": 15,
+  "title": "Biofabrication of spheroids fusion-based tumor models: computational simulation of glucose effects",
+  "slug": "08_biofabrication-of-spheroids-fusion-based-tumor-models-comput"
+ },
+ {
+  "n": 9,
+  "path": "Directed_invasion_of_cancer_cell_spheroids_inside_ (1).pdf",
+  "pages": 15,
+  "title": "Directed invasion of cancer cell spheroids inside 3D collagen matrices oriented by microfluidic flow in experiment and simulation",
+  "slug": "09_directed-invasion-of-cancer-cell-spheroids-inside-3d-collage"
+ },
+ {
+  "n": 10,
+  "path": "PhysRevE.93.042404.pdf",
+  "pages": 15,
+  "title": "",
+  "slug": "10_physreve-93-042404"
+ },
+ {
+  "n": 11,
+  "path": "Spheroid mechanics and implications for cell invasion.pdf",
+  "pages": 36,
+  "title": "Spheroid mechanics and implications for cell invasion",
+  "slug": "11_spheroid-mechanics-and-implications-for-cell-invasion"
+ },
+ {
+  "n": 12,
+  "path": "Spheroid_Formation_of_Hepatocarcinoma_Cells_in_Mic.pdf",
+  "pages": 13,
+  "title": "Spheroid Formation of Hepatocarcinoma Cells in Microwells: Experiments and Monte Carlo Simulations",
+  "slug": "12_spheroid-formation-of-hepatocarcinoma-cells-in-microwells-ex"
+ },
+ {
+  "n": 13,
+  "path": "c2ib20159c.pdf",
+  "pages": 12,
+  "title": "RSC_IB_C2IB20159C 1..12",
+  "slug": "13_rsc-ib-c2ib20159c-1-12"
+ },
+ {
+  "n": 14,
+  "path": "cancers-15-04846.pdf",
+  "pages": 23,
+  "title": "Three-Dimensional In Vitro Tumor Spheroid Models for Evaluation of Anticancer Therapy: Recent Updates",
+  "slug": "14_three-dimensional-in-vitro-tumor-spheroid-models-for-evaluat"
+ },
+ {
+  "n": 15,
+  "path": "cancers-17-03512-with-cover.pdf",
+  "pages": 23,
+  "title": "Spheroid-Based 3D Models to Decode Cell Function and Matrix Effectors in Breast Cancer",
+  "slug": "15_spheroid-based-3d-models-to-decode-cell-function-and-matrix-"
+ },
+ {
+  "n": 16,
+  "path": "cells-14-00732-with-cover.pdf",
+  "pages": 36,
+  "title": "Modeling Tumor Microenvironment Complexity In Vitro: Spheroids as Physiologically Relevant Tumor Models and Strategies for Their Analysis",
+  "slug": "16_modeling-tumor-microenvironment-complexity-in-vitro-spheroid"
+ },
+ {
+  "n": 17,
+  "path": "fbioe-13-1515962.pdf",
+  "pages": 15,
+  "title": "",
+  "slug": "17_fbioe-13-1515962"
+ },
+ {
+  "n": 18,
+  "path": "jove-105-53409.pdf",
+  "pages": 6,
+  "title": "",
+  "slug": "18_jove-105-53409"
+ },
+ {
+  "n": 19,
+  "path": "multiscale-modeling-of-spheroid-tumors-effect-of-nutrient-availability-on-tumor-evolution.pdf",
+  "pages": 9,
+  "title": "Multiscale Modeling of Spheroid Tumors: Effect of Nutrient Availability on Tumor Evolution",
+  "slug": "19_multiscale-modeling-of-spheroid-tumors-effect-of-nutrient-av"
+ },
+ {
+  "n": 20,
+  "path": "npre.2007.62.2.pdf",
+  "pages": 44,
+  "title": "SPATIO-TEMPORAL MODEL OF ISOTROPIC CELL SPREADING",
+  "slug": "20_spatio-temporal-model-of-isotropic-cell-spreading"
+ },
+ {
+  "n": 21,
+  "path": "organoids-01-00012.pdf",
+  "pages": 19,
+  "title": "3D Tumor Spheroid and Organoid to Model Tumor Microenvironment for Cancer Immunotherapy",
+  "slug": "21_3d-tumor-spheroid-and-organoid-to-model-tumor-microenvironme"
+ },
+ {
+  "n": 22,
+  "path": "pcbi.1003267.pdf",
+  "pages": 14,
+  "title": "pcbi.1003267 1..14",
+  "slug": "22_pcbi-1003267-1-14"
+ },
+ {
+  "n": 23,
+  "path": "pcbi.1010471.pdf",
+  "pages": 26,
+  "title": "Development of a scoring function for comparing simulated and experimental tumor spheroids",
+  "slug": "23_development-of-a-scoring-function-for-comparing-simulated-an"
+ },
+ {
+  "n": 24,
+  "path": "s41377-018-0001-5.pdf",
+  "pages": 15,
+  "title": "Quantitative analysis of focal adhesion dynamics using photonic resonator outcoupler microscopy (PROM)",
+  "slug": "24_quantitative-analysis-of-focal-adhesion-dynamics-using-photo"
+ },
+ {
+  "n": 25,
+  "path": "s41540-026-00648-9.pdf",
+  "pages": 15,
+  "title": "Simulation-based inference of cell migration dynamics in complex spatial environments",
+  "slug": "25_simulation-based-inference-of-cell-migration-dynamics-in-com"
+ },
+ {
+  "n": 26,
+  "path": "s41598-018-25337-4.pdf",
+  "pages": 9,
+  "title": "TASI: A software tool for spatial-temporal quantification of tumor spheroid dynamics",
+  "slug": "26_tasi-a-software-tool-for-spatial-temporal-quantification-of-"
+ },
+ {
+  "n": 27,
+  "path": "s41598-019-54117-x.pdf",
+  "pages": 12,
+  "title": "A cellular automaton model for spheroid response to radiation and hyperthermia treatments",
+  "slug": "27_a-cellular-automaton-model-for-spheroid-response-to-radiatio"
+ },
+ {
+  "n": 28,
+  "path": "s41598-022-18950-x.pdf",
+  "pages": 11,
+  "title": "Tumor spheroids accelerate persistently invading cancer cells",
+  "slug": "28_tumor-spheroids-accelerate-persistently-invading-cancer-cell"
+ },
+ {
+  "n": 29,
+  "path": "s42003-018-0084-9.pdf",
+  "pages": 7,
+  "title": "A general model of focal adhesion orientation dynamics in response to static and cyclic stretch",
+  "slug": "29_a-general-model-of-focal-adhesion-orientation-dynamics-in-re"
+ },
+ {
+  "n": 30,
+  "path": "sciadv.aas8998.pdf",
+  "pages": 11,
+  "title": "Hydrogel microenvironments for cancer spheroid growth and drug screening",
+  "slug": "30_hydrogel-microenvironments-for-cancer-spheroid-growth-and-dr"
+ },
+ {
+  "n": 31,
+  "path": "cellpress_bundle/zip01_Prion-Protein_Antibody-Complexes-Characterized-by-.pdf",
+  "pages": 13,
+  "title": "Prion Protein-Antibody Complexes Characterized by Chromatography-Coupled Small-Angle X-Ray Scattering",
+  "slug": "31_prion-protein-antibody-complexes-characterized-by-chromatogr"
+ },
+ {
+  "n": 32,
+  "path": "cellpress_bundle/zip02_Protein-Conformational-Changes-Are-Detected-and-Re.pdf",
+  "pages": 10,
+  "title": "Protein Conformational Changes Are Detected and Resolved Site Specifically by Second-Harmonic Generation",
+  "slug": "32_protein-conformational-changes-are-detected-and-resolved-sit"
+ },
+ {
+  "n": 33,
+  "path": "cellpress_bundle/zip03_Dead-End-Elimination-with-a-Polarizable-Force-Fiel.pdf",
+  "pages": 11,
+  "title": "Dead-End Elimination with a Polarizable Force Field Repacks PCNA Structures",
+  "slug": "33_dead-end-elimination-with-a-polarizable-force-field-repacks-"
+ },
+ {
+  "n": 34,
+  "path": "cellpress_bundle/zip04_The-Conformation-of-Myosin-Heads-in-Relaxed-Skelet.pdf",
+  "pages": 10,
+  "title": "The Conformation of Myosin Heads in Relaxed Skeletal Muscle: Implications for Myosin-Based Regulation",
+  "slug": "34_the-conformation-of-myosin-heads-in-relaxed-skeletal-muscle-"
+ },
+ {
+  "n": 35,
+  "path": "cellpress_bundle/zip05_Hydrophobic-Mismatch-Drives-the-Interaction-of-E5-.pdf",
+  "pages": 13,
+  "title": "Hydrophobic Mismatch Drives the Interaction of E5 with the Transmembrane Segment of PDGF Receptor",
+  "slug": "35_hydrophobic-mismatch-drives-the-interaction-of-e5-with-the-t"
+ },
+ {
+  "n": 36,
+  "path": "cellpress_bundle/zip06_Thermodynamics-of-Micelle-Formation-and-Membrane-F.pdf",
+  "pages": 10,
+  "title": "Thermodynamics of Micelle Formation and Membrane Fusion Modulate Antimicrobial Lipopeptide Activity",
+  "slug": "36_thermodynamics-of-micelle-formation-and-membrane-fusion-modu"
+ },
+ {
+  "n": 37,
+  "path": "cellpress_bundle/zip07_Synaptobrevin-Transmembrane-Domain-Dimerization-St.pdf",
+  "pages": 12,
+  "title": "Synaptobrevin Transmembrane Domain Dimerization Studied by Multiscale Molecular Dynamics Simulations",
+  "slug": "37_synaptobrevin-transmembrane-domain-dimerization-studied-by-m"
+ },
+ {
+  "n": 38,
+  "path": "cellpress_bundle/zip08_NMR-Dynamics-of-Transmembrane-and-Intracellular-Do.pdf",
+  "pages": 11,
+  "title": "NMR Dynamics of Transmembrane and Intracellular Domains of p75NTR in Lipid-Protein Nanodiscs",
+  "slug": "38_nmr-dynamics-of-transmembrane-and-intracellular-domains-of-p"
+ },
+ {
+  "n": 39,
+  "path": "cellpress_bundle/zip09_Protrusive-and-Contractile-Forces-of-Spreading-Hum.pdf",
+  "pages": 11,
+  "title": "Protrusive and Contractile Forces of Spreading Human Neutrophils",
+  "slug": "39_protrusive-and-contractile-forces-of-spreading-human-neutrop"
+ },
+ {
+  "n": 40,
+  "path": "cellpress_bundle/zip10_Spatial-Intensity-Distribution-Analysis-Reveals-Ab.pdf",
+  "pages": 12,
+  "title": "Spatial Intensity Distribution Analysis Reveals Abnormal Oligomerization of Proteins in Single Cells",
+  "slug": "40_spatial-intensity-distribution-analysis-reveals-abnormal-oli"
+ },
+ {
+  "n": 41,
+  "path": "cellpress_bundle/zip11_Anionic-Lipids-Modulate-the-Activity-of-the-Aquagl.pdf",
+  "pages": 10,
+  "title": "Anionic Lipids Modulate the Activity of the Aquaglyceroporin GlpF",
+  "slug": "41_anionic-lipids-modulate-the-activity-of-the-aquaglyceroporin"
+ },
+ {
+  "n": 42,
+  "path": "cellpress_bundle/zip12_Two-Point-Microrheology-of-Phase-Separated-Domains.pdf",
+  "pages": 5,
+  "title": "Two-Point Microrheology of Phase-Separated Domains in Lipid Bilayers",
+  "slug": "42_two-point-microrheology-of-phase-separated-domains-in-lipid-"
+ },
+ {
+  "n": 43,
+  "path": "cellpress_bundle/zip13_Through-Thick-and-Thin_Interfilament-Communication.pdf",
+  "pages": 3,
+  "title": "Through Thick and Thin-Interfilament Communication in&nbsp;Muscle",
+  "slug": "43_through-thick-and-thin-interfilament-communication-in-nbsp-m"
+ },
+ {
+  "n": 44,
+  "path": "cellpress_bundle/zip14_Better-Together--Lipopeptide-Micelle-Formation-Enh.pdf",
+  "pages": 2,
+  "title": "Better Together: Lipopeptide Micelle Formation Enhances Antimicrobial Selectivity",
+  "slug": "44_better-together-lipopeptide-micelle-formation-enhances-antim"
+ },
+ {
+  "n": 45,
+  "path": "cellpress_bundle/zip15_Moving-Cell-Boundaries-Drive-Nuclear-Shaping-durin.pdf",
+  "pages": 17,
+  "title": "Moving Cell Boundaries Drive Nuclear Shaping during Cell Spreading",
+  "slug": "45_moving-cell-boundaries-drive-nuclear-shaping-during-cell-spr"
+ },
+ {
+  "n": 46,
+  "path": "cellpress_bundle/zip16_Feeling-for-Filaments--Quantification-of-the-Corti.pdf",
+  "pages": 12,
+  "title": "Feeling for Filaments: Quantification of the Cortical Actin Web in Live Vascular Endothelium",
+  "slug": "46_feeling-for-filaments-quantification-of-the-cortical-actin-w"
+ },
+ {
+  "n": 47,
+  "path": "cellpress_bundle/zip17_SpIDA-Surveys-the-Intricate-Web-of-Macromolecular-.pdf",
+  "pages": 2,
+  "title": "SpIDA Surveys the Intricate Web of Macromolecular Oligomerization In Situ",
+  "slug": "47_spida-surveys-the-intricate-web-of-macromolecular-oligomeriz"
+ },
+ {
+  "n": 48,
+  "path": "cellpress_bundle/zip18_Variable-Field-Analytical-Ultracentrifugation--I.-.pdf",
+  "pages": 11,
+  "title": "Variable-Field Analytical Ultracentrifugation: I. Time-Optimized Sedimentation Equilibrium",
+  "slug": "48_variable-field-analytical-ultracentrifugation-i-time-optimiz"
+ },
+ {
+  "n": 49,
+  "path": "cellpress_bundle/zip19_Mechanistic-Investigation-of-the-Arrhythmogenic-Ro.pdf",
+  "pages": 12,
+  "title": "Mechanistic Investigation of the Arrhythmogenic Role of Oxidized CaMKII in the Heart",
+  "slug": "49_mechanistic-investigation-of-the-arrhythmogenic-role-of-oxid"
+ },
+ {
+  "n": 50,
+  "path": "1-s2.0-S0092867423005330-main.pdf",
+  "pages": 29,
+  "title": "Cell protrusions and contractions generate long-range membrane tension propagation",
+  "slug": "50_cell-protrusions-and-contractions-generate-long-range-membra"
+ },
+ {
+  "n": 51,
+  "path": "1-s2.0-S0092867423005858-main.pdf",
+  "pages": 3,
+  "title": "Effective membrane tension: A long-range integrator of cellular dynamics",
+  "slug": "51_effective-membrane-tension-a-long-range-integrator-of-cellul"
+ },
+ {
+  "n": 52,
+  "path": "1-s2.0-S1534580715004554-main.pdf",
+  "pages": 14,
+  "title": "Cortical Tension Allocates the First Inner Cells of the Mammalian Embryo",
+  "slug": "52_cortical-tension-allocates-the-first-inner-cells-of-the-mamm"
+ },
+ {
+  "n": 53,
+  "path": "2023.03.28.534574v1.full.pdf",
+  "pages": 11,
+  "title": "3D Simulation of Tissue Mechanics with Cell Polarization",
+  "slug": "53_3d-simulation-of-tissue-mechanics-with-cell-polarization"
+ },
+ {
+  "n": 54,
+  "path": "2025.12.15.694413.full.pdf",
+  "pages": 32,
+  "title": "Control of cellular cortical tension and shape by RhoGTPase signalling",
+  "slug": "54_control-of-cellular-cortical-tension-and-shape-by-rhogtpase-"
+ },
+ {
+  "n": 55,
+  "path": "2026.03.17.712503v1.full.pdf",
+  "pages": 32,
+  "title": "Computational Design for Engineering Layered Tissue Architectures via Cell-Cell Interfacial Tension Modulation",
+  "slug": "55_computational-design-for-engineering-layered-tissue-architec"
+ },
+ {
+  "n": 56,
+  "path": "847046v1.full.pdf",
+  "pages": 21,
+  "title": "Tuning cell motility via cell tension with a mechanochemical cell migration model (preprint)",
+  "slug": "56_tuning-cell-motility-via-cell-tension-with-a-mechanochemical"
+ },
+ {
+  "n": 57,
+  "path": "main (1).pdf",
+  "pages": 11,
+  "title": "Tuning Cell Motility via Cell Tension with a Mechanochemical Cell Migration Model",
+  "slug": "57_tuning-cell-motility-via-cell-tension-with-a-mechanochemical"
+ },
+ {
+  "n": 58,
+  "path": "Adhesion-induced-cortical-flows-pattern-E-cadherin.pdf",
+  "pages": 21,
+  "title": "Adhesion-induced cortical flows pattern E-cadherin-mediated cell contacts",
+  "slug": "58_adhesion-induced-cortical-flows-pattern-e-cadherin-mediated-"
+ },
+ {
+  "n": 59,
+  "path": "DownloadCombinedArticleAndSupplmentPdf.pdf",
+  "pages": 19,
+  "title": "Inferring cell junction tension and pressure from cell geometry",
+  "slug": "59_inferring-cell-junction-tension-and-pressure-from-cell-geome"
+ },
+ {
+  "n": 60,
+  "path": "Quantification_of_Single-Cell_Cortical_Tension_Using_Multiple_Constriction_Channels.pdf",
+  "pages": 8,
+  "title": "Quantification of Single-Cell Cortical Tension Using Multiple Constriction Channels",
+  "slug": "60_quantification-of-single-cell-cortical-tension-using-multipl"
+ },
+ {
+  "n": 61,
+  "path": "Quantitative_Analysis_of_Cell_Membrane_Tension_in_.pdf",
+  "pages": 27,
+  "title": "Quantitative Analysis of Cell Membrane Tension in Time-Series Imaging and A Minimal Lattice Model",
+  "slug": "61_quantitative-analysis-of-cell-membrane-tension-in-time-serie"
+ },
+ {
+  "n": 62,
+  "path": "Spontaneous-formation-of-tumor-spheroid-on-a-hydrop_2019_Colloids-and-Surfac.pdf",
+  "pages": 9,
+  "title": "Spontaneous formation of tumor spheroid on a hydrophilic filter paper for cancer stem cell enrichment",
+  "slug": "62_spontaneous-formation-of-tumor-spheroid-on-a-hydrophilic-fil"
+ },
+ {
+  "n": 63,
+  "path": "Warmt_2021_New_J._Phys._23_103020.pdf",
+  "pages": 29,
+  "title": "Differences in cortical contractile properties between healthy epithelial and cancerous mesenchymal breast cells",
+  "slug": "63_differences-in-cortical-contractile-properties-between-healt"
+ },
+ {
+  "n": 64,
+  "path": "dmitrieff-et-al-2017-balance-of-microtubule-stiffness-and-cortical-tension-determines-the-size-of-blood-cells-with.pdf",
+  "pages": 6,
+  "title": "Balance of microtubule stiffness and cortical tension determines the size of blood cells with marginal band across species",
+  "slug": "64_balance-of-microtubule-stiffness-and-cortical-tension-determ"
+ },
+ {
+  "n": 65,
+  "path": "jcs174623.pdf",
+  "pages": 7,
+  "title": "Cell adhesion strength from cortical tension - an integration of concepts",
+  "slug": "65_cell-adhesion-strength-from-cortical-tension-an-integration-"
+ },
+ {
+  "n": 66,
+  "path": "nihms-1939023.pdf",
+  "pages": 33,
+  "title": "Single-cell mechanical analysis and tension quantification via electrodeformation relaxation",
+  "slug": "66_single-cell-mechanical-analysis-and-tension-quantification-v"
+ },
+ {
+  "n": 67,
+  "path": "s41556-017-0005-z.pdf",
+  "pages": 17,
+  "title": "Adhesion forces and cortical tension couple cell proliferation and differentiation to drive epidermal stratification",
+  "slug": "67_adhesion-forces-and-cortical-tension-couple-cell-proliferati"
+ },
+ {
+  "n": 68,
+  "path": "s41556-025-01807-6.pdf",
+  "pages": 26,
+  "title": "Target cell cortical tension regulates macrophage trogocytosis",
+  "slug": "68_target-cell-cortical-tension-regulates-macrophage-trogocytos"
+ },
+ {
+  "n": 69,
+  "path": "s41592-024-02277-8.pdf",
+  "pages": 17,
+  "title": "Dissecting cell membrane tension dynamics and its effect on Piezo1-mediated cellular mechanotransduction",
+  "slug": "69_dissecting-cell-membrane-tension-dynamics-and-its-effect-on-"
+ },
+ {
+  "n": 70,
+  "path": "mmc4.pdf",
+  "pages": 23,
+  "title": "Molecular dynamics simulations of Piezo1 channel opening by increases in membrane tension",
+  "slug": "70_molecular-dynamics-simulations-of-piezo1-channel-opening-by-"
+ },
+ {
+  "n": 71,
+  "path": "z152-x4l1.pdf",
+  "pages": 13,
+  "title": "Cortical tension links curvature to tissue growth in the cellular Potts model",
+  "slug": "71_cortical-tension-links-curvature-to-tissue-growth-in-the-cel"
+ },
+ {
+  "n": 72,
+  "path": "myosin-v-passing-over-arp2-3-junctions-branching-r-7-120568.pdf",
+  "pages": null,
+  "title": "Myosin V passing over Arp2/3 junctions: branching ratio calculated from the elastic lever arm model",
+  "slug": "myosin-v-passing-over-arp2-3-junctions-branching-ratio-calcu",
+  "clip_source": "clipped",
+  "doi": "10.1529/biophysj.107.120568"
+ },
+ {
+  "n": 73,
+  "path": "forecasting-avalanches-in-branched-actomyosin-netw-06-04005.pdf",
+  "pages": null,
+  "title": "Forecasting Avalanches in Branched Actomyosin Networks with Network Science and Machine Learning",
+  "slug": "forecasting-avalanches-in-branched-actomyosin-networks-with-",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 74,
+  "path": "density-fields-for-branching-stiff-networks-in-rig-11784-0.pdf",
+  "pages": null,
+  "title": "Density fields for branching, stiff networks in rigid confining regions",
+  "slug": "density-fields-for-branching-stiff-networks-in-rigid-confini",
+  "clip_source": "clipped",
+  "doi": "10.1140/epje/i2019-11784-0"
+ },
+ {
+  "n": 75,
+  "path": "new-proposed-mechanism-of-actin-polymerization-dri-8-134783.pdf",
+  "pages": null,
+  "title": "New Proposed Mechanism of Actin-Polymerization-Driven Motility",
+  "slug": "new-proposed-mechanism-of-actin-polymerization-driven-motili",
+  "clip_source": "clipped",
+  "doi": "10.1529/biophysj.108.134783"
+ },
+ {
+  "n": 76,
+  "path": "direct-actin-monomer-delivery-is-a-wasp-specific-r-6-169662.pdf",
+  "pages": null,
+  "title": "Direct Actin Monomer Delivery is a WASP-specific Requirement for Arp2/3 Complex Activation",
+  "slug": "direct-actin-monomer-delivery-is-a-wasp-specific-requirement",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.jmb.2026.169662"
+ },
+ {
+  "n": 77,
+  "path": "mechanism-of-arp2-3-complex-branch-disassembly-by-64787-z.pdf",
+  "pages": null,
+  "title": "Mechanism of Arp2/3 complex branch disassembly by human Coro7",
+  "slug": "mechanism-of-arp2-3-complex-branch-disassembly-by-human-coro",
+  "clip_source": "clipped",
+  "doi": "10.1038/s41467-025-64787-z"
+ },
+ {
+  "n": 78,
+  "path": "force-generation-by-myosin-ii-filaments-in-complia-404-3262.pdf",
+  "pages": null,
+  "title": "Force generation by Myosin II Filaments in Compliant Networks",
+  "slug": "force-generation-by-myosin-ii-filaments-in-compliant-network",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 79,
+  "path": "simulated-actin-reorganization-mediated-by-motor-p-1010026.pdf",
+  "pages": null,
+  "title": "Simulated actin reorganization mediated by motor proteins",
+  "slug": "simulated-actin-reorganization-mediated-by-motor-proteins",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pcbi.1010026"
+ },
+ {
+  "n": 80,
+  "path": "f-actin-bending-facilitates-net-actomyosin-contrac-01737-z.pdf",
+  "pages": null,
+  "title": "F-actin bending facilitates net actomyosin contraction By inhibiting expansion with plus-end-located myosin motors",
+  "slug": "f-actin-bending-facilitates-net-actomyosin-contraction-by-in",
+  "clip_source": "clipped",
+  "doi": "10.1007/s00285-022-01737-z"
+ },
+ {
+  "n": 81,
+  "path": "glioblastoma-cells-use-an-integrin-and-cd44-mediat-00799-x.pdf",
+  "pages": null,
+  "title": "Glioblastoma Cells Use an Integrin- and CD44-Mediated Motor-Clutch Mode of Migration in Brain Tissue",
+  "slug": "glioblastoma-cells-use-an-integrin-and-cd44-mediated-motor-c",
+  "clip_source": "clipped",
+  "doi": "10.1007/s12195-024-00799-x"
+ },
+ {
+  "n": 82,
+  "path": "a-multi-scale-clutch-model-for-adhesion-complex-me-1011250.pdf",
+  "pages": null,
+  "title": "A multi-scale clutch model for adhesion complex mechanics",
+  "slug": "a-multi-scale-clutch-model-for-adhesion-complex-mechanics",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pcbi.1011250"
+ },
+ {
+  "n": 83,
+  "path": "tensile-force-induced-cytoskeletal-remodeling-mech-1007693.pdf",
+  "pages": null,
+  "title": "Tensile force-induced cytoskeletal remodeling: Mechanics before chemistry",
+  "slug": "tensile-force-induced-cytoskeletal-remodeling-mechanics-befo",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pcbi.1007693"
+ },
+ {
+  "n": 84,
+  "path": "distinct-roles-of-nonmuscle-myosin-ii-isoforms-for-fe-71888.pdf",
+  "pages": null,
+  "title": "Distinct roles of nonmuscle myosin II isoforms for establishing tension and elasticity during cell morphodynamics",
+  "slug": "distinct-roles-of-nonmuscle-myosin-ii-isoforms-for-establish",
+  "clip_source": "clipped",
+  "doi": "10.7554/elife.71888"
+ },
+ {
+  "n": 85,
+  "path": "emergent-mechanics-of-actomyosin-drive-punctuated-1006344.pdf",
+  "pages": null,
+  "title": "Emergent mechanics of actomyosin drive punctuated contractions and shape network morphology in the cell cortex",
+  "slug": "emergent-mechanics-of-actomyosin-drive-punctuated-contractio",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pcbi.1006344"
+ },
+ {
+  "n": 86,
+  "path": "load-dependent-modulation-of-non-muscle-myosin-2a-rep20554.pdf",
+  "pages": null,
+  "title": "Load-dependent modulation of non-muscle myosin-2A function by tropomyosin 4.2",
+  "slug": "load-dependent-modulation-of-non-muscle-myosin-2a-function-b",
+  "clip_source": "clipped",
+  "doi": "10.1038/srep20554"
+ },
+ {
+  "n": 87,
+  "path": "the-nucleus-as-a-mechanobiological-hub-in-muscle-a-2688584.pdf",
+  "pages": null,
+  "title": "The nucleus as a mechanobiological hub in muscle aging",
+  "slug": "the-nucleus-as-a-mechanobiological-hub-in-muscle-aging",
+  "clip_source": "clipped",
+  "doi": "10.1080/19491034.2026.2688584"
+ },
+ {
+  "n": 88,
+  "path": "mechanical-forces-of-beating-heart-suppress-cancer-6-100197.pdf",
+  "pages": null,
+  "title": "Mechanical forces of beating heart suppress cancer growth",
+  "slug": "mechanical-forces-of-beating-heart-suppress-cancer-growth",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.mbm.2026.100197"
+ },
+ {
+  "n": 89,
+  "path": "nuclear-lamins-a-molecular-bridge-coupling-extrace-27073258.pdf",
+  "pages": null,
+  "title": "Nuclear Lamins: A Molecular Bridge Coupling Extracellular Mechanical Cues to Intranuclear Signal Transduction and Gene Regulation",
+  "slug": "nuclear-lamins-a-molecular-bridge-coupling-extracellular-mec",
+  "clip_source": "clipped",
+  "doi": "10.3390/ijms27073258"
+ },
+ {
+  "n": 90,
+  "path": "integration-of-nuclear-mechanosensing-with-integri-2677308.pdf",
+  "pages": null,
+  "title": "Integration of nuclear mechanosensing with integrin-extracellular matrix adhesions",
+  "slug": "integration-of-nuclear-mechanosensing-with-integrin-extracel",
+  "clip_source": "clipped",
+  "doi": "10.1080/19491034.2026.2677308"
+ },
+ {
+  "n": 91,
+  "path": "the-nemp1-nesprin-complex-mediates-cellular-respon-21253123.pdf",
+  "pages": null,
+  "title": "The Nemp1-Nesprin complex mediates cellular responses to matrix mechanics",
+  "slug": "the-nemp1-nesprin-complex-mediates-cellular-responses-to-mat",
+  "clip_source": "clipped",
+  "doi": "10.1073/pnas.2521253123"
+ },
+ {
+  "n": 92,
+  "path": "nuclei-on-the-move-linc-complex-dependent-and-inde-2679812.pdf",
+  "pages": null,
+  "title": "Nuclei on the move: LINC complex-dependent and -independent mechanisms of nuclear migration in development",
+  "slug": "nuclei-on-the-move-linc-complex-dependent-and-independent-me",
+  "clip_source": "clipped",
+  "doi": "10.1080/19491034.2026.2679812"
+ },
+ {
+  "n": 93,
+  "path": "elevated-sun1-promotes-migratory-cell-polarity-def-09229-8.pdf",
+  "pages": null,
+  "title": "Elevated SUN1 promotes migratory cell polarity defects through mechanically coupling microtubules to the nuclear lamina",
+  "slug": "elevated-sun1-promotes-migratory-cell-polarity-defects-throu",
+  "clip_source": "clipped",
+  "doi": "10.1038/s42003-025-09229-8"
+ },
+ {
+  "n": 94,
+  "path": "farnesylated-prelamin-a-induces-fibroblast-polarit-s-264488.pdf",
+  "pages": null,
+  "title": "Farnesylated prelamin A induces fibroblast polarity defects in premature aging disorders by inhibiting nesprin-2-SUN2 LINC complex function",
+  "slug": "farnesylated-prelamin-a-induces-fibroblast-polarity-defects-",
+  "clip_source": "clipped",
+  "doi": "10.1242/jcs.264488"
+ },
+ {
+  "n": 95,
+  "path": "cargo-recognition-of-nesprin-2-by-the-dynein-adapt-5c00596.pdf",
+  "pages": null,
+  "title": "Cargo Recognition of Nesprin-2 by the Dynein Adapter Bicaudal D2 for a Nuclear Positioning Pathway That Is Important for Brain Development",
+  "slug": "cargo-recognition-of-nesprin-2-by-the-dynein-adapter-bicauda",
+  "clip_source": "clipped",
+  "doi": "10.1021/acs.biochem.5c00596"
+ },
+ {
+  "n": 96,
+  "path": "stress-transmission-towards-the-nucleus-of-the-cel-1790136.pdf",
+  "pages": null,
+  "title": "Stress transmission towards the nucleus of the cell",
+  "slug": "stress-transmission-towards-the-nucleus-of-the-cell",
+  "clip_source": "clipped",
+  "doi": "10.3389/fcell.2026.1790136"
+ },
+ {
+  "n": 97,
+  "path": "nesprin-2-8-3ewzdv.pdf",
+  "pages": null,
+  "title": "Nesprin-2",
+  "slug": "nesprin-2",
+  "clip_source": "clipped",
+  "doi": "10.32388/3ewzdv"
+ },
+ {
+  "n": 98,
+  "path": "nesprin-1-8-38dq47.pdf",
+  "pages": null,
+  "title": "Nesprin-1",
+  "slug": "nesprin-1",
+  "clip_source": "clipped",
+  "doi": "10.32388/38dq47"
+ },
+ {
+  "n": 99,
+  "path": "multiple-novel-nesprin-1-and-nesprin-2-variants-ac-0040098.pdf",
+  "pages": null,
+  "title": "Multiple Novel Nesprin-1 and Nesprin-2 Variants Act as Versatile Tissue-Specific Intracellular Scaffolds",
+  "slug": "multiple-novel-nesprin-1-and-nesprin-2-variants-act-as-versa",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pone.0040098"
+ },
+ {
+  "n": 100,
+  "path": "comparison-of-nanomechanical-properties-of-in-vivo-11-02218.pdf",
+  "pages": null,
+  "title": "Comparison of nanomechanical properties of in vivo and in vitro keratin 8/18 networks",
+  "slug": "comparison-of-nanomechanical-properties-of-in-vivo-and-in-vi",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 101,
+  "path": "functionally-graded-keratin-facilitates-tactile-se-adx8981.pdf",
+  "pages": null,
+  "title": "Functionally graded keratin facilitates tactile sensing in elephant whiskers",
+  "slug": "functionally-graded-keratin-facilitates-tactile-sensing-in-e",
+  "clip_source": "clipped",
+  "doi": "10.1126/science.adx8981"
+ },
+ {
+  "n": 102,
+  "path": "a-predictive-model-for-protein-materials-from-macr-6-042407.pdf",
+  "pages": null,
+  "title": "A predictive model for protein materials: from macromolecules to macroscopic fibers",
+  "slug": "a-predictive-model-for-protein-materials-from-macromolecules",
+  "clip_source": "clipped",
+  "doi": "10.1103/PhysRevE.96.042407"
+ },
+ {
+  "n": 103,
+  "path": "forcegen-end-to-end-de-novo-protein-generation-bas-10-10605.pdf",
+  "pages": null,
+  "title": "ForceGen: End-to-end de novo protein generation based on nonlinear mechanical unfolding responses using a protein language diffusion model",
+  "slug": "forcegen-end-to-end-de-novo-protein-generation-based-on-nonl",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 104,
+  "path": "hair-is-a-functionally-graded-composite-not-a-unif-07-22023.pdf",
+  "pages": null,
+  "title": "Hair is a functionally graded composite, not a uniform fiber",
+  "slug": "hair-is-a-functionally-graded-composite-not-a-uniform-fiber",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 105,
+  "path": "extreme-cooperative-swelling-in-topologically-diso-02-07629.pdf",
+  "pages": null,
+  "title": "Extreme cooperative swelling in topologically disordered fibre entanglements",
+  "slug": "extreme-cooperative-swelling-in-topologically-disordered-fib",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 106,
+  "path": "cell-motility-cytoskeleton-and-motor-proteins-21st-01218-1.pdf",
+  "pages": null,
+  "title": "Cell motility, cytoskeleton, and motor proteins-21st IUPAB Congress session commentary",
+  "slug": "cell-motility-cytoskeleton-and-motor-proteins-21st-iupab-con",
+  "clip_source": "clipped",
+  "doi": "10.1007/s12551-024-01218-1"
+ },
+ {
+  "n": 107,
+  "path": "the-tissuetractor-a-device-for-applying-large-stra-02500136.pdf",
+  "pages": null,
+  "title": "The TissueTractor: A Device for Applying Large Strains to Tissues and Cells for Simultaneous High-Resolution Live Cell Microscopy",
+  "slug": "the-tissuetractor-a-device-for-applying-large-strains-to-tis",
+  "clip_source": "clipped",
+  "doi": "10.1002/smtd.202500136"
+ },
+ {
+  "n": 108,
+  "path": "keratin-filament-mechanics-and-energy-dissipation-3-04-014.pdf",
+  "pages": null,
+  "title": "Keratin filament mechanics and energy dissipation are determined by metal-like plasticity",
+  "slug": "keratin-filament-mechanics-and-energy-dissipation-are-determ",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.matt.2023.04.014"
+ },
+ {
+  "n": 109,
+  "path": "a-strategy-for-biomass-derived-matrix-with-facile-69813-2.pdf",
+  "pages": null,
+  "title": "A strategy for biomass-derived matrix with facile moulding and closed-loop recycling capabilities",
+  "slug": "a-strategy-for-biomass-derived-matrix-with-facile-moulding-a",
+  "clip_source": "clipped",
+  "doi": "10.1038/s41467-026-69813-2"
+ },
+ {
+  "n": 110,
+  "path": "vimentin-filament-transport-and-organization-revea-02406054.pdf",
+  "pages": null,
+  "title": "Vimentin filament transport and organization revealed by single-particle tracking and 3D FIB-SEM",
+  "slug": "vimentin-filament-transport-and-organization-revealed-by-sin",
+  "clip_source": "clipped",
+  "doi": "10.1083/jcb.202406054"
+ },
+ {
+  "n": 111,
+  "path": "combining-image-restoration-and-traction-force-mic-2-901038.pdf",
+  "pages": null,
+  "title": "Combining Image Restoration and Traction Force Microscopy to Study Extracellular Matrix-Dependent Keratin Filament Network Plasticity",
+  "slug": "combining-image-restoration-and-traction-force-microscopy-to",
+  "clip_source": "clipped",
+  "doi": "10.3389/fcell.2022.901038"
+ },
+ {
+  "n": 112,
+  "path": "multiscale-mechanics-and-temporal-evolution-of-vim-02026118.pdf",
+  "pages": null,
+  "title": "Multiscale mechanics and temporal evolution of vimentin intermediate filament networks",
+  "slug": "multiscale-mechanics-and-temporal-evolution-of-vimentin-inte",
+  "clip_source": "clipped",
+  "doi": "10.1073/pnas.2102026118"
+ },
+ {
+  "n": 113,
+  "path": "keratin-filament-8-n240ui.pdf",
+  "pages": null,
+  "title": "Keratin Filament",
+  "slug": "keratin-filament",
+  "clip_source": "clipped",
+  "doi": "10.32388/n240ui"
+ },
+ {
+  "n": 114,
+  "path": "structure-function-analyses-of-a-keratin-heterotyp-1-821090.pdf",
+  "pages": null,
+  "title": "Structure–function analyses of a keratin heterotypic complex identify specific keratin regions involved in intermediate filament assembly",
+  "slug": "structure-function-analyses-of-a-keratin-heterotypic-complex",
+  "clip_source": "clipped",
+  "doi": "10.1101/821090"
+ },
+ {
+  "n": 115,
+  "path": "stiffening-and-inelastic-fluidization-in-vimentin-03-10388.pdf",
+  "pages": null,
+  "title": "Stiffening and Inelastic Fluidization in Vimentin Intermediate Filament Networks",
+  "slug": "stiffening-and-inelastic-fluidization-in-vimentin-intermedia",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 116,
+  "path": "loss-of-vimentin-intermediate-filaments-decreases-07-06378.pdf",
+  "pages": null,
+  "title": "Loss of vimentin intermediate filaments decreases peri-nuclear stiffness and enhances cell motility through confined spaces",
+  "slug": "loss-of-vimentin-intermediate-filaments-decreases-peri-nucle",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 117,
+  "path": "self-consistent-field-theory-for-the-interactions-212-0677.pdf",
+  "pages": null,
+  "title": "Self-consistent field theory for the interactions between keratin intermediate filaments",
+  "slug": "self-consistent-field-theory-for-the-interactions-between-ke",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 118,
+  "path": "the-vimentin-cytoskeleton-when-polymer-physics-mee-08-10563.pdf",
+  "pages": null,
+  "title": "The vimentin cytoskeleton: When polymer physics meets cell biology",
+  "slug": "the-vimentin-cytoskeleton-when-polymer-physics-meets-cell-bi",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 119,
+  "path": "models-of-vimentin-organization-under-actin-driven-7-054408.pdf",
+  "pages": null,
+  "title": "Models of Vimentin Organization Under Actin-Driven Transport",
+  "slug": "models-of-vimentin-organization-under-actin-driven-transport",
+  "clip_source": "clipped",
+  "doi": "10.1103/PhysRevE.107.054408"
+ },
+ {
+  "n": 120,
+  "path": "the-role-of-vimentin-nuclear-interactions-in-persi-0-ac2550.pdf",
+  "pages": null,
+  "title": "The role of vimentin-nuclear interactions in persistent cell motility through confined spaces",
+  "slug": "the-role-of-vimentin-nuclear-interactions-in-persistent-cell",
+  "clip_source": "clipped",
+  "doi": "10.1088/1367-2630/ac2550"
+ },
+ {
+  "n": 121,
+  "path": "a-theory-to-describe-emergent-properties-of-compos-9-03-017.pdf",
+  "pages": null,
+  "title": "A theory to describe emergent properties of composite F-actin and vimentin networks",
+  "slug": "a-theory-to-describe-emergent-properties-of-composite-f-acti",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.jmps.2019.03.017"
+ },
+ {
+  "n": 122,
+  "path": "discrete-to-continuum-models-of-pre-stressed-cytos-09-01034.pdf",
+  "pages": null,
+  "title": "Discrete-to-continuum models of pre-stressed cytoskeletal filament networks",
+  "slug": "discrete-to-continuum-models-of-pre-stressed-cytoskeletal-fi",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 123,
+  "path": "protein-characterization-of-the-igm-triplet-involv-2025065.pdf",
+  "pages": null,
+  "title": "Protein characterization of the IgM triplet involved in the diagnosis of congenital toxoplasmosis",
+  "slug": "protein-characterization-of-the-igm-triplet-involved-in-the-",
+  "clip_source": "clipped",
+  "doi": "10.1051/parasite/2025065"
+ },
+ {
+  "n": 124,
+  "path": "co-translational-ribosome-pairing-enables-native-a-61500-y.pdf",
+  "pages": null,
+  "title": "Co-translational ribosome pairing enables native assembly of misfolding-prone subunits",
+  "slug": "co-translational-ribosome-pairing-enables-native-assembly-of",
+  "clip_source": "clipped",
+  "doi": "10.1038/s41467-025-61500-y"
+ },
+ {
+  "n": 125,
+  "path": "the-roles-of-the-microtubule-cytoskeletal-network-s-264308.pdf",
+  "pages": null,
+  "title": "The roles of the microtubule cytoskeletal network in cardiac mechanobiology",
+  "slug": "the-roles-of-the-microtubule-cytoskeletal-network-in-cardiac",
+  "clip_source": "clipped",
+  "doi": "10.1242/jcs.264308"
+ },
+ {
+  "n": 126,
+  "path": "multispectral-study-on-the-effects-of-capsaicin-on-5-103383.pdf",
+  "pages": null,
+  "title": "Multispectral study on the effects of capsaicin on myofibrillar proteins structure and functional characteristics in <i>Litopenaeus vanname</i>",
+  "slug": "multispectral-study-on-the-effects-of-capsaicin-on-myofibril",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.fochx.2025.103383"
+ },
+ {
+  "n": 127,
+  "path": "small-heat-shock-proteins-and-biomolecular-condens-06216-y.pdf",
+  "pages": null,
+  "title": "Small heat shock proteins and biomolecular condensates",
+  "slug": "small-heat-shock-proteins-and-biomolecular-condensates",
+  "clip_source": "clipped",
+  "doi": "10.1007/s00018-026-06216-y"
+ },
+ {
+  "n": 128,
+  "path": "nestin-forms-a-flexible-cytoskeleton-by-means-of-a-14020138.pdf",
+  "pages": null,
+  "title": "Nestin Forms a Flexible Cytoskeleton by Means of a Huge Tail Domain That Is Reversibly Stretched and Contracted by Weak Forces",
+  "slug": "nestin-forms-a-flexible-cytoskeleton-by-means-of-a-huge-tail",
+  "clip_source": "clipped",
+  "doi": "10.3390/cells14020138"
+ },
+ {
+  "n": 129,
+  "path": "a-dynamic-biointerface-in-mussels-mediated-by-a-me-64527-3.pdf",
+  "pages": null,
+  "title": "A dynamic biointerface in mussels mediated by a mechanoresponsive intermediate filament-based biopolymer",
+  "slug": "a-dynamic-biointerface-in-mussels-mediated-by-a-mechanorespo",
+  "clip_source": "clipped",
+  "doi": "10.1038/s41467-025-64527-3"
+ },
+ {
+  "n": 130,
+  "path": "characterization-and-modulation-of-human-insulin-d-e-105761.pdf",
+  "pages": null,
+  "title": "Characterization and modulation of human insulin degrading enzyme conformational dynamics to control enzyme activity",
+  "slug": "characterization-and-modulation-of-human-insulin-degrading-e",
+  "clip_source": "clipped",
+  "doi": "10.7554/elife.105761"
+ },
+ {
+  "n": 131,
+  "path": "direct-contact-ultrasound-tempering-of-frozen-pork-5-107724.pdf",
+  "pages": null,
+  "title": "Direct contact ultrasound tempering of frozen pork: Effects on physicochemical properties, myofibrillar protein and microstructure",
+  "slug": "direct-contact-ultrasound-tempering-of-frozen-pork-effects-o",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.ultsonch.2025.107724"
+ },
+ {
+  "n": 132,
+  "path": "viscoelasticity-of-the-heart-an-overview-of-viscoe-5-023632.pdf",
+  "pages": null,
+  "title": "Viscoelasticity of the Heart: An Overview of Viscoelastic Measurements at Different Scales",
+  "slug": "viscoelasticity-of-the-heart-an-overview-of-viscoelastic-mea",
+  "clip_source": "clipped",
+  "doi": "10.1146/annurev-bioeng-020625-023632"
+ },
+ {
+  "n": 133,
+  "path": "mechanotransduction-by-nuclear-envelope-tension-2600901.pdf",
+  "pages": null,
+  "title": "Mechanotransduction by nuclear envelope tension",
+  "slug": "mechanotransduction-by-nuclear-envelope-tension",
+  "clip_source": "clipped",
+  "doi": "10.1080/19491034.2025.2600901"
+ },
+ {
+  "n": 134,
+  "path": "intermediate-filament-8-ir0lpr.pdf",
+  "pages": null,
+  "title": "Intermediate Filament",
+  "slug": "intermediate-filament",
+  "clip_source": "clipped",
+  "doi": "10.32388/ir0lpr"
+ },
+ {
+  "n": 135,
+  "path": "intermediate-filament-protein-8-atwm7w.pdf",
+  "pages": null,
+  "title": "Intermediate Filament Protein",
+  "slug": "intermediate-filament-protein",
+  "clip_source": "clipped",
+  "doi": "10.32388/atwm7w"
+ },
+ {
+  "n": 136,
+  "path": "microtubule-dynamic-instability-the-role-of-cracks-sm52892h.pdf",
+  "pages": null,
+  "title": "Microtubule dynamic instability: the role of cracks between protofilaments",
+  "slug": "microtubule-dynamic-instability-the-role-of-cracks-between-p",
+  "clip_source": "clipped",
+  "doi": "10.1039/C3SM52892H"
+ },
+ {
+  "n": 137,
+  "path": "topological-edge-currents-promote-exploratory-chro-10-14109.pdf",
+  "pages": null,
+  "title": "Topological edge currents promote exploratory chromosome capture in microtubule dynamic instability",
+  "slug": "topological-edge-currents-promote-exploratory-chromosome-cap",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 138,
+  "path": "modeling-the-effects-of-drug-binding-on-the-dynami-5-056004.pdf",
+  "pages": null,
+  "title": "Modeling the Effects of Drug Binding on the Dynamic Instability of Microtubules",
+  "slug": "modeling-the-effects-of-drug-binding-on-the-dynamic-instabil",
+  "clip_source": "clipped",
+  "doi": "10.1088/1478-3975/8/5/056004"
+ },
+ {
+  "n": 139,
+  "path": "biophysics-of-filament-length-regulation-by-molecu-3-036004.pdf",
+  "pages": null,
+  "title": "Biophysics of filament length regulation by molecular motors",
+  "slug": "biophysics-of-filament-length-regulation-by-molecular-motors",
+  "clip_source": "clipped",
+  "doi": "10.1088/1478-3975/10/3/036004"
+ },
+ {
+  "n": 140,
+  "path": "prognostic-diagnostic-and-therapeutic-value-of-the-10347-w.pdf",
+  "pages": null,
+  "title": "Prognostic, diagnostic and therapeutic value of the cancer tubulin code",
+  "slug": "prognostic-diagnostic-and-therapeutic-value-of-the-cancer-tu",
+  "clip_source": "clipped",
+  "doi": "10.1007/s10555-026-10347-w"
+ },
+ {
+  "n": 141,
+  "path": "more-is-different-reconstituting-complexity-in-mic-3-105398.pdf",
+  "pages": null,
+  "title": "More is different: Reconstituting complexity in microtubule regulation",
+  "slug": "more-is-different-reconstituting-complexity-in-microtubule-r",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.jbc.2023.105398"
+ },
+ {
+  "n": 142,
+  "path": "structural-switching-of-tubulin-in-the-microtubule-20240360.pdf",
+  "pages": null,
+  "title": "Structural switching of tubulin in the microtubule lattice",
+  "slug": "structural-switching-of-tubulin-in-the-microtubule-lattice",
+  "clip_source": "clipped",
+  "doi": "10.1042/bst20240360"
+ },
+ {
+  "n": 143,
+  "path": "roles-of-cytoskeleton-in-metastasis-from-its-mecha-01608-9.pdf",
+  "pages": null,
+  "title": "Roles of cytoskeleton in metastasis: from its mechanism to therapeutic strategies",
+  "slug": "roles-of-cytoskeleton-in-metastasis-from-its-mechanism-to-th",
+  "clip_source": "clipped",
+  "doi": "10.1038/s12276-025-01608-9"
+ },
+ {
+  "n": 144,
+  "path": "nucleation-feedback-can-drive-establishment-and-ma-5-109538.pdf",
+  "pages": null,
+  "title": "Nucleation feedback can drive establishment and maintenance of biased microtubule polarity in neurites",
+  "slug": "nucleation-feedback-can-drive-establishment-and-maintenance-",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.mbs.2025.109538"
+ },
+ {
+  "n": 145,
+  "path": "dynamic-microtubules-slow-down-during-their-shrink-7-501773.pdf",
+  "pages": null,
+  "title": "Dynamic microtubules slow down during their shrinkage phase",
+  "slug": "dynamic-microtubules-slow-down-during-their-shrinkage-phase",
+  "clip_source": "clipped",
+  "doi": "10.1101/2022.07.27.501773"
+ },
+ {
+  "n": 146,
+  "path": "quantification-of-microtubule-stutters-dynamic-ins-6-878603.pdf",
+  "pages": null,
+  "title": "Quantification of Microtubule Stutters: Dynamic Instability Behaviors that are Strongly Associated with Catastrophe",
+  "slug": "quantification-of-microtubule-stutters-dynamic-instability-b",
+  "clip_source": "clipped",
+  "doi": "10.1101/2019.12.16.878603"
+ },
+ {
+  "n": 147,
+  "path": "multifractality-nature-of-microtubule-dynamic-inst-8-121749.pdf",
+  "pages": null,
+  "title": "Multifractality Nature of Microtubule Dynamic Instability Process",
+  "slug": "multifractality-nature-of-microtubule-dynamic-instability-pr",
+  "clip_source": "clipped",
+  "doi": "10.1101/2020.05.28.121749"
+ },
+ {
+  "n": 148,
+  "path": "atomistic-basis-of-microtubule-dynamic-instability-7-897439.pdf",
+  "pages": null,
+  "title": "Atomistic basis of microtubule dynamic instability assessed via multiscale modeling",
+  "slug": "atomistic-basis-of-microtubule-dynamic-instability-assessed-",
+  "clip_source": "clipped",
+  "doi": "10.1101/2020.01.07.897439"
+ },
+ {
+  "n": 149,
+  "path": "a-structural-mechano-chemical-model-for-dynamic-in-1-291682.pdf",
+  "pages": null,
+  "title": "A structural mechano-chemical model for dynamic instability of microtubule",
+  "slug": "a-structural-mechano-chemical-model-for-dynamic-instability-",
+  "clip_source": "clipped",
+  "doi": "10.1101/291682"
+ },
+ {
+  "n": 150,
+  "path": "spaca9-acts-as-a-molecular-staple-modulating-micro-4-732105.pdf",
+  "pages": null,
+  "title": "SPACA9 Acts as a Molecular Staple Modulating Microtubule Dynamic Instability",
+  "slug": "spaca9-acts-as-a-molecular-staple-modulating-microtubule-dyn",
+  "clip_source": "clipped",
+  "doi": "10.64898/2026.06.14.732105"
+ },
+ {
+  "n": 151,
+  "path": "tracking-of-plus-ends-reveals-microtubule-function-rep30285.pdf",
+  "pages": null,
+  "title": "Tracking of plus-ends reveals microtubule functional diversity in different cell types",
+  "slug": "tracking-of-plus-ends-reveals-microtubule-functional-diversi",
+  "clip_source": "clipped",
+  "doi": "10.1038/srep30285"
+ },
+ {
+  "n": 152,
+  "path": "dynein-dynamics-at-the-microtubule-plus-ends-and-c-03-07610.pdf",
+  "pages": null,
+  "title": "Dynein dynamics at the microtubule plus-ends and cortex during division in the C. $\\textit{elegans}$ zygote",
+  "slug": "dynein-dynamics-at-the-microtubule-plus-ends-and-cortex-duri",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 153,
+  "path": "microtubule-length-distributions-in-the-presence-o-1-031910.pdf",
+  "pages": null,
+  "title": "Microtubule length distributions in the presence of protein-induced severing",
+  "slug": "microtubule-length-distributions-in-the-presence-of-protein-",
+  "clip_source": "clipped",
+  "doi": "10.1103/PhysRevE.81.031910"
+ },
+ {
+  "n": 154,
+  "path": "motor-protein-accumulation-on-antiparallel-microtu-6-03-039.pdf",
+  "pages": null,
+  "title": "Motor protein accumulation on antiparallel microtubule overlaps",
+  "slug": "motor-protein-accumulation-on-antiparallel-microtubule-overl",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.bpj.2016.03.039"
+ },
+ {
+  "n": 155,
+  "path": "the-mechanics-of-a-microscopic-mixer-microtubules-101-2225.pdf",
+  "pages": null,
+  "title": "The mechanics of a microscopic mixer: microtubules and cytoplasmic streaming in Drosophila oocytes",
+  "slug": "the-mechanics-of-a-microscopic-mixer-microtubules-and-cytopl",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 156,
+  "path": "crowding-of-molecular-motors-determines-microtubul-1-09-009.pdf",
+  "pages": null,
+  "title": "Crowding of molecular motors determines microtubule depolymerization",
+  "slug": "crowding-of-molecular-motors-determines-microtubule-depolyme",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.bpj.2011.09.009"
+ },
+ {
+  "n": 157,
+  "path": "collective-cargo-hauling-by-a-bundle-of-parallel-m-1-p01008.pdf",
+  "pages": null,
+  "title": "Collective cargo hauling by a bundle of parallel microtubules: bi-directional motion caused by load-dependent polymerization and depolymerization",
+  "slug": "collective-cargo-hauling-by-a-bundle-of-parallel-microtubule",
+  "clip_source": "clipped",
+  "doi": "10.1088/1742-5468/2015/01/P01008"
+ },
+ {
+  "n": 158,
+  "path": "kinesin-12-klp-18-contributes-to-the-kinetochore-m-07-06620.pdf",
+  "pages": null,
+  "title": "Kinesin-12 KLP-18 contributes to the kinetochore-microtubule poleward flux during the metaphase of C. elegans one-cell embryo",
+  "slug": "kinesin-12-klp-18-contributes-to-the-kinetochore-microtubule",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 159,
+  "path": "a-framework-for-the-organization-of-microtubules-i-5-732274.pdf",
+  "pages": null,
+  "title": "A framework for the organization of microtubules in developing neurons",
+  "slug": "a-framework-for-the-organization-of-microtubules-in-developi",
+  "clip_source": "clipped",
+  "doi": "10.64898/2026.06.15.732274"
+ },
+ {
+  "n": 160,
+  "path": "the-role-and-mechanism-of-tubulin-folding-cofactor-03232-6.pdf",
+  "pages": null,
+  "title": "The role and mechanism of tubulin folding cofactor B in glioblastoma migration",
+  "slug": "the-role-and-mechanism-of-tubulin-folding-cofactor-b-in-glio",
+  "clip_source": "clipped",
+  "doi": "10.1038/s41420-026-03232-6"
+ },
+ {
+  "n": 161,
+  "path": "kinetochore-proteins-control-microtubule-dynamics-20684123.pdf",
+  "pages": null,
+  "title": "Kinetochore proteins control microtubule dynamics in postmitotic neurons to regulate the formation of dendritic spines",
+  "slug": "kinetochore-proteins-control-microtubule-dynamics-in-postmit",
+  "clip_source": "clipped",
+  "doi": "10.1073/pnas.2520684123"
+ },
+ {
+  "n": 162,
+  "path": "worm-orthologues-of-cytokinesis-associated-protein-1012106.pdf",
+  "pages": null,
+  "title": "Worm orthologues of cytokinesis-associated proteins CIT and ASPM regulate neuronal microtubule dynamics and polarity in C. elegans",
+  "slug": "worm-orthologues-of-cytokinesis-associated-proteins-cit-and-",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pgen.1012106"
+ },
+ {
+  "n": 163,
+  "path": "dimeric-cin8-motors-have-an-inherent-plus-end-bias-6-03-012.pdf",
+  "pages": null,
+  "title": "Dimeric Cin8 motors have an inherent plus-end bias and weak interhead coordination",
+  "slug": "dimeric-cin8-motors-have-an-inherent-plus-end-bias-and-weak-",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.bpj.2026.03.012"
+ },
+ {
+  "n": 164,
+  "path": "i-erm-1-i-mrna-and-erm-1-protein-co-translationall-5-725403.pdf",
+  "pages": null,
+  "title": "<i>erm-1</i>  mRNA and ERM-1 protein co-translationally localize to the plasma membrane through a microtubule- and BMK-1-dependent pathway",
+  "slug": "i-erm-1-i-mrna-and-erm-1-protein-co-translationally-localize",
+  "clip_source": "clipped",
+  "doi": "10.64898/2026.05.15.725403"
+ },
+ {
+  "n": 165,
+  "path": "plus-end-of-the-microtubule-8-c9ik05.pdf",
+  "pages": null,
+  "title": "Plus End of the Microtubule",
+  "slug": "plus-end-of-the-microtubule",
+  "clip_source": "clipped",
+  "doi": "10.32388/c9ik05"
+ },
+ {
+  "n": 166,
+  "path": "bending-torsional-elasticity-and-energetics-of-the-2-456048.pdf",
+  "pages": null,
+  "title": "Bending-torsional elasticity and energetics of the plus-end microtubule tip",
+  "slug": "bending-torsional-elasticity-and-energetics-of-the-plus-end-",
+  "clip_source": "clipped",
+  "doi": "10.1101/2021.08.12.456048"
+ },
+ {
+  "n": 167,
+  "path": "mechanical-stress-inference-for-two-dimensional-ce-1002512.pdf",
+  "pages": null,
+  "title": "Mechanical Stress Inference for Two Dimensional Cell Arrays",
+  "slug": "mechanical-stress-inference-for-two-dimensional-cell-arrays",
+  "clip_source": "clipped",
+  "doi": "10.1371/journal.pcbi.1002512"
+ },
+ {
+  "n": 168,
+  "path": "tissue-shape-from-cell-scale-active-tensions-01-14467.pdf",
+  "pages": null,
+  "title": "Tissue shape from cell-scale active tensions",
+  "slug": "tissue-shape-from-cell-scale-active-tensions",
+  "clip_source": "clipped",
+  "doi": ""
+ },
+ {
+  "n": 169,
+  "path": "low-stress-ion-conductance-microscopy-of-sub-cellu-sm01106c.pdf",
+  "pages": null,
+  "title": "Low Stress Ion Conductance Microscopy of Sub-Cellular Stiffness",
+  "slug": "low-stress-ion-conductance-microscopy-of-sub-cellular-stiffn",
+  "clip_source": "clipped",
+  "doi": "10.1039/c6sm01106c"
+ },
+ {
+  "n": 170,
+  "path": "the-cytoplasm-of-living-cells-can-sustain-transien-e-105523.pdf",
+  "pages": null,
+  "title": "The cytoplasm of living cells can sustain transient and steady intracellular pressure gradients",
+  "slug": "the-cytoplasm-of-living-cells-can-sustain-transient-and-stea",
+  "clip_source": "clipped",
+  "doi": "10.7554/elife.105523"
+ },
+ {
+  "n": 171,
+  "path": "a-role-for-paxb-in-regulating-blebbing-experimenta-00584-w.pdf",
+  "pages": null,
+  "title": "A role for PaxB in regulating blebbing: experimental insights and theoretical perspectives from Dictyostelium discoideum",
+  "slug": "a-role-for-paxb-in-regulating-blebbing-experimental-insights",
+  "clip_source": "clipped",
+  "doi": "10.1186/s12860-026-00584-w"
+ },
+ {
+  "n": 172,
+  "path": "frog-killing-chytrid-fungus-deploys-different-stra-5-10-013.pdf",
+  "pages": null,
+  "title": "Frog-killing chytrid fungus deploys different strategies to regulate intracellular pressure in developmental states that have or lack a cell wall",
+  "slug": "frog-killing-chytrid-fungus-deploys-different-strategies-to-",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.cub.2025.10.013"
+ },
+ {
+  "n": 173,
+  "path": "synergistic-mechanotransduction-via-the-p-eppk1-dd-29917-v1.pdf",
+  "pages": null,
+  "title": "Synergistic mechanotransduction via the ΔP–EPPK1/DDR2– PI3K/AKT axis drives cell invasion and migration",
+  "slug": "synergistic-mechanotransduction-via-the-p-eppk1-ddr2-pi3k-ak",
+  "clip_source": "clipped",
+  "doi": "10.21203/rs.3.rs-8929917/v1"
+ },
+ {
+  "n": 174,
+  "path": "studies-on-hydrostatic-pressure-responses-to-piezo-66-13-20.pdf",
+  "pages": null,
+  "title": "Studies on Hydrostatic Pressure Responses to Piezo1 and TRPV4 in the Mouse Lens",
+  "slug": "studies-on-hydrostatic-pressure-responses-to-piezo1-and-trpv",
+  "clip_source": "clipped",
+  "doi": "10.1167/iovs.66.13.20"
+ },
+ {
+  "n": 175,
+  "path": "frog-killing-chytrid-fungi-deploy-different-strate-3-653819.pdf",
+  "pages": null,
+  "title": "Frog-killing chytrid fungi deploy different strategies to regulate intracellular pressure in cell types that have or lack a cell wall",
+  "slug": "frog-killing-chytrid-fungi-deploy-different-strategies-to-re",
+  "clip_source": "clipped",
+  "doi": "10.1101/2025.05.13.653819"
+ },
+ {
+  "n": 176,
+  "path": "amoeboid-cancer-cells-at-a-glance-s-264674.pdf",
+  "pages": null,
+  "title": "Amoeboid cancer cells at a glance",
+  "slug": "amoeboid-cancer-cells-at-a-glance",
+  "clip_source": "clipped",
+  "doi": "10.1242/jcs.264674"
+ },
+ {
+  "n": 177,
+  "path": "extracellular-osmolarity-regulates-osteoblast-migr-07946-8.pdf",
+  "pages": null,
+  "title": "Extracellular osmolarity regulates osteoblast migration through the TRPV4-Rho/ROCK signaling",
+  "slug": "extracellular-osmolarity-regulates-osteoblast-migration-thro",
+  "clip_source": "clipped",
+  "doi": "10.1038/s42003-025-07946-8"
+ },
+ {
+  "n": 178,
+  "path": "hypotonic-stimuli-promote-osteocyte-dendrite-forma-5-102120.pdf",
+  "pages": null,
+  "title": "Hypotonic stimuli promote osteocyte dendrite formation by modulating actin dynamics via the TRPV4-CDC42 signaling pathway",
+  "slug": "hypotonic-stimuli-promote-osteocyte-dendrite-formation-by-mo",
+  "clip_source": "clipped",
+  "doi": "10.1016/j.mtbio.2025.102120"
+ },
+ {
+  "n": 179,
+  "path": "differential-endopeptidase-requirements-during-ada-0-001671.pdf",
+  "pages": null,
+  "title": "Differential endopeptidase requirements during adaptation to changing growth conditions in &lt;i&gt;Vibrio cholerae&lt;/i&gt;",
+  "slug": "differential-endopeptidase-requirements-during-adaptation-to",
+  "clip_source": "clipped",
+  "doi": "10.1099/mic.0.001671"
+ }
+]

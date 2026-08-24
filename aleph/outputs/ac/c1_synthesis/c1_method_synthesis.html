@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>C-1 method synthesis</title><style>
+body{margin:0;background:#0f1115;color:#e6e8ee;font:14px/1.6 ui-sans-serif,system-ui,sans-serif}
+.w{max-width:900px;margin:0 auto;padding:28px 24px}
+h1{font-size:19px;margin:0 0 4px} .sub{color:#9aa3b2;font-size:12px;margin-bottom:22px}
+table{border-collapse:collapse;width:100%;margin:10px 0 22px}
+td,th{padding:6px 10px;border-bottom:1px solid #262b36;text-align:left;font-size:13px}
+th{color:#9aa3b2;font-weight:500} .mono{font-family:ui-monospace,Menlo,monospace}
+.big{font-size:15px;background:#151822;border:1px solid #262b36;border-radius:8px;padding:14px 16px;margin:18px 0}
+.no{color:#ff9b9b} ul{margin:6px 0 0 18px;padding:0} li{font-size:12.5px;color:#c9cfdb}
+img{max-width:100%;border-radius:8px;border:1px solid #262b36;margin:8px 0 22px}
+</style></head><body><div class=w>
+<h1>C-1 method synthesis — 5 readings of one medium</h1>
+<div class=sub>Biot pore-pressure field alone: no cell, no mechanics, no contact law.
+build <span class=mono>2753580a</span></div>
+<div class=big><b>the scaling belongs to the medium and the magnitude belongs to the instrument (4 of 5 readings; 1 excluded for failing their own method's validity checks)</b><br>
+exponent spread <span class=mono>0.0002</span>
+(bound 0.1) &nbsp;·&nbsp;
+prefactor ratio <span class=mono>2.9357</span>
+(min 1.5)</div>
+<img src="c1_method_synthesis.png" alt="method synthesis">
+<table><tr><th>method</th><th>reading</th><th>exponent p</th>
+<th>prefactor C [a&sup2;/D]</th><th>r&sup2;</th>
+<th>points</th><th>verdict</th></tr><tr><td>step_relaxation</td><td class=mono>l2_norm</td><td class=mono>1.9998</td><td class=mono>1.396</td><td class=mono>1.00000</td><td class=mono>11</td><td class=mono>PASS</td></tr><tr><td>step_relaxation</td><td class=mono>peak</td><td class=mono>1.9997</td><td class=mono>0.47553</td><td class=mono>1.00000</td><td class=mono>11</td><td class=mono>PASS</td></tr><tr><td>step_relaxation</td><td class=mono>patch_mean</td><td class=mono>1.9999</td><td class=mono>0.57942</td><td class=mono>1.00000</td><td class=mono>11</td><td class=mono>PASS</td></tr><tr><td>oscillatory</td><td class=mono>minus_3dB_bandwidth</td><td class=mono>1.9997</td><td class=mono>0.86331</td><td class=mono>1.00000</td><td class=mono>11</td><td class=mono>PASS</td></tr><tr><td>creep</td><td class=mono>flux_decay</td><td class=mono>2.0059</td><td class=mono>0.27772</td><td class=mono>0.99929</td><td class=mono>11</td><td class=mono>FAIL</td></tr></table>
+<div class=big><b class=no>May not be quoted for</b><ul><li>any statement about a cell — every input is the field alone</li><li>which reading is correct — they measure different functionals of one state</li><li>the C-1 gate, which is scored on an indented cell</li><li>a cytoplasm viscosity or any physiological magnitude</li></ul></div>
+<div class=big><b>Replicate scatter: 0.0</b><br>
+<span style="font-size:12.5px;color:#c9cfdb">the Biot field solve is DETERMINISTIC — no RNG enters it, so replicate scatter is exactly zero and running replicates would measure nothing. The uncertainty here is NUMERICAL, and it is bounded by the dx-invariance sweep and the fit r2, both of which are in the step record. C-1 section 6.1's three-replicate requirement binds the CELL measurement, where kinetics carry seeds; it does not transfer to this.</span></div>
+</div></body></html>

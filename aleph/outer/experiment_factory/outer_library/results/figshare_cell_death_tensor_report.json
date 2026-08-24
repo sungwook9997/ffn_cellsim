@@ -1,0 +1,45 @@
+{
+  "aleph_authority": "none",
+  "compound_count": 55,
+  "cross_split_compound_overlap_count": 0,
+  "eligible_role": "same_provider_unseen_compound_programmed_cell_death_training",
+  "feature_count": 672,
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "label_well_counts": {
+    "apoptosis": 339,
+    "autophagy inducer": 126,
+    "ferroptosis inducer": 142,
+    "immunogenic cell death": 163,
+    "necroptosis inducer": 81,
+    "pyroptosis inducer": 103
+  },
+  "may_select_aleph_parameter": false,
+  "plate_count": 8,
+  "profile_unit": "plate_well_mean_of_available_sites",
+  "same_endpoint_as_biad2515_annexin_v": false,
+  "schema": "aleph.outer_library.figshare_cell_death_tensor.v1",
+  "single_cell_profiles_extracted": false,
+  "site_count_range": [
+    1,
+    9
+  ],
+  "site_rows": 6626,
+  "source_aggregate_sha256": "01d10a24f2fa448cb560425ce41712ff264ce701fab82a5ae5aaba273f677844",
+  "source_doi": "10.17044/scilifelab.28202864.v2",
+  "source_profile_family": "DeepProfiler_aggregate_profiles",
+  "split_compound_counts": {
+    "calibration": 5,
+    "sealed_test": 6,
+    "selection": 4,
+    "train": 40
+  },
+  "split_unit": "compound_identity",
+  "split_well_counts": {
+    "calibration": 48,
+    "sealed_test": 210,
+    "selection": 51,
+    "train": 645
+  },
+  "well_rows": 954
+}

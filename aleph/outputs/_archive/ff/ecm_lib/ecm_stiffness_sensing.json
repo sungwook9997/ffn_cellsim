@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "tag": "sensing",
+    "nf": 800,
+    "Nc": 5600,
+    "n_nuc": 3000,
+    "n_fa": 200,
+    "R_um": 7.491509194377658,
+    "a_um": 0.05,
+    "nu": 0.45,
+    "dt_impl": 0.05,
+    "steps": 150,
+    "relax_steps": 400,
+    "seed": 1,
+    "device": "cpu",
+    "resting": {
+      "dP_Pa": 40.542001538307986,
+      "gamma_mN_m": 0.15291068328557225,
+      "V_over_V0": 0.9981933282056401,
+      "R_eq_um": 7.54332186293701
+    },
+    "E_list_pa": [
+      150.0,
+      8000.0
+    ],
+    "E_opt_pa": 8000.0,
+    "biphasic_interior": false,
+    "coarse_nonauthoritative": true,
+    "native_nf": 38000,
+    "path_note": "PATH-b Winkler compliant substrate; PATH-a (grip the ecm_library fiber network) is a documented future increment",
+    "a_note": "absolute traction carries the adhesion-patch radius a (KB-PIV-5, surfaced); the RELATIVE optimum is a-invariant"
+  },
+  "rows": [
+    {
+      "E_pa": 150.0,
+      "k_sub": 18.808777429467085,
+      "traction_nN": 0.0,
+      "bound_frac": 0.015,
+      "force_per_clutch_pN": 0.0,
+      "silhouette_um2": 177.19451830546174,
+      "n_clutch": 200,
+      "n_bound": 3,
+      "kmc_every": 30,
+      "dt": 0.05,
+      "dt_cfl_s": 5.476076918615019e-06,
+      "wall_s": 9.207020044326782,
+      "diverged": false,
+      "pa_recipe": "3/0.06",
+      "pa_tissue": "brain / neural (soft, neurogenic ~0.1-1 kPa, Engler 2006)"
+    },
+    {
+      "E_pa": 8000.0,
+      "k_sub": 1003.1347962382446,
+      "traction_nN": 0.16203791498715275,
+      "bound_frac": 0.87,
+      "force_per_clutch_pN": 0.9312523849836366,
+      "silhouette_um2": 176.029004856278,
+      "n_clutch": 200,
+      "n_bound": 174,
+      "kmc_every": 30,
+      "dt": 0.05,
+      "dt_cfl_s": 5.476076918615019e-06,
+      "wall_s": 9.816996812820435,
+      "diverged": false,
+      "pa_recipe": "8/0.20",
+      "pa_tissue": "muscle-range (Subramani 2020)"
+    }
+  ]
+}

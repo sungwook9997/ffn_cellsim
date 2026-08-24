@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "authority": "external_non_authoritative_combined_oa_router",
+  "source_family_id": "doi:10.1038/ncb3525",
+  "source_pass": "second",
+  "title": "Actin cortex architecture regulates cell surface tension.",
+  "bounded_section_token_counts": {"abstract": 151, "methods": 52, "results": 1, "conclusion": 0},
+  "top_coarse_route": {"route": "cortical_membrane_pressure", "probability": 0.9967765212059021},
+  "retrieval": [
+    {"source_family_id": "doi:10.1038/ncb2307", "pass": "first", "cosine_score": 0.9877057671546936},
+    {"source_family_id": "doi:10.1091/mbc.e14-07-1229", "pass": "first", "cosine_score": 0.9866134524345398},
+    {"source_family_id": "doi:10.7554/elife.00116", "pass": "second", "cosine_score": 0.9859464764595032},
+    {"source_family_id": "doi:10.1091/mbc.e10-01-0066", "pass": "second", "cosine_score": 0.9806642532348633},
+    {"source_family_id": "doi:10.1038/srep14700", "pass": "first", "cosine_score": 0.9784133434295654}
+  ],
+  "refusal_boundary": "External OA routing only; no evidence promotion, physical-parameter estimate, physics validation, or authority claim."
+}

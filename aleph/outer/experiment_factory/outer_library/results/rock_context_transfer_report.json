@@ -1,0 +1,43 @@
+{
+  "aleph_parameter_proposal_eligible": false,
+  "context_heterogeneity_detected": true,
+  "dryad_H1299_PL_2D": {
+    "Y27632_minus_DMSO_date_effects": [
+      -6376.798800000001,
+      6876.625500000002,
+      17365.454999999998,
+      13276.777200000002
+    ],
+    "direction": "increases",
+    "experimental_date_bootstrap_95ci": [
+      -1463.4048000000005,
+      15321.116100000001
+    ],
+    "inference_unit": "author_experimental_date",
+    "mean_date_effect_source_unit": 7785.514725000001,
+    "paired_experimental_dates": 4
+  },
+  "elife_NIH3T3_3D_CDM": {
+    "Y27632_cells": 9,
+    "cell_bootstrap_speed_difference_95ci_descriptive_only": [
+      -0.5533279583333334,
+      -0.19375341666666687
+    ],
+    "control_cells": 24,
+    "direction": "decreases",
+    "independent_experiment_identifiers_reported": false,
+    "inference_unit": "unknown; cells cannot be promoted to biological replicates",
+    "persistent_speed_Y27632_minus_control_micrometre_per_minute": -0.36734500000000014,
+    "persistent_speed_hedges_g": -0.9372043647388244,
+    "speed_oscillation_period_Y27632_minus_control_minute": 9.036111111111108
+  },
+  "eligible_as_context_diversity_training": true,
+  "failure_reason": "independent eLife experiment identifiers are not reported and the context-specific speed direction reverses",
+  "independent_lab_dataset_present": true,
+  "independent_lab_mechanism_holdout_passed": false,
+  "interpretation": "ROCK inhibition has opposite migration-speed directions in H1299-PL 2D and NIH3T3 3D CDM contexts; a universal speed constraint or one-parameter Aleph mapping is rejected.",
+  "may_mutate_physics": false,
+  "observable_constraint_eligible": false,
+  "speed_direction_consistent_across_contexts": false,
+  "task": "ROCK_inhibition_migration_speed_context_transfer"
+}

@@ -1,0 +1,103 @@
+{
+  "aleph_authority": "none",
+  "author_processed_profile_source": true,
+  "baselines_on_same_sealed_test": {
+    "dose_only_log_linear": {
+      "mae": 0.17507316385949503,
+      "r2": 0.6629322952677003,
+      "rmse": 0.23128247046390893,
+      "spearman_rho": 0.6565379871744698,
+      "well_count": 10
+    },
+    "fit_mean": {
+      "mae": 0.3158947442419797,
+      "r2": -0.02975821714503568,
+      "rmse": 0.4042516292113248,
+      "spearman_rho": null,
+      "well_count": 10
+    },
+    "image_model_beats_dose_only_mae": true
+  },
+  "conformal_90": {
+    "calibration_well_count": 10,
+    "conditional_coverage_authority": false,
+    "interval_radius_author_normalized_units": 0.2658901689216312,
+    "mean_interval_width_author_normalized_units": 0.5317803378432624,
+    "sealed_test_coverage": 0.9,
+    "unit": "well"
+  },
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "limitations": [
+    "only three wells per dose and one provider are available",
+    "the input is an author-processed 2,336-feature profile rather than raw pixels",
+    "the ten sealed test wells establish well transfer, not dataset or laboratory transfer",
+    "the 90% conformal interval has only ten calibration wells and no conditional authority"
+  ],
+  "may_select_aleph_parameter": false,
+  "model": {
+    "alpha_selected_by_fit_only_leave_one_well_out_cv": 0.0001,
+    "family": "dual_ridge_regression",
+    "fit_well_count": 10,
+    "input_feature_count": 2336,
+    "minimum_fit_only_cv_mse": 0.007969020750107667
+  },
+  "ood_validated": false,
+  "production_eligible": false,
+  "raw_image_accession": "S-BIAD2515",
+  "schema": "aleph.outer_library.biad2515_apoptosis_evaluation.v1",
+  "sealed_same_provider_test": {
+    "author_positive_vs_other_auroc_from_predicted_AnnexinV": 0.88,
+    "mae": 0.0982944459762701,
+    "r2": 0.8780050176068454,
+    "rmse": 0.13914100315101516,
+    "spearman_rho": 0.7234075969792768,
+    "well_count": 10
+  },
+  "split": {
+    "calibration_wells": [
+      "C-02",
+      "D-03",
+      "D-04",
+      "D-10",
+      "D-11",
+      "E-05",
+      "E-06",
+      "E-07",
+      "E-08",
+      "E-09"
+    ],
+    "each_of_ten_doses_present_once_per_split": true,
+    "fit_wells": [
+      "C-04",
+      "C-05",
+      "C-07",
+      "C-08",
+      "C-09",
+      "C-10",
+      "D-02",
+      "D-06",
+      "E-03",
+      "E-11"
+    ],
+    "sealed_test_wells": [
+      "C-03",
+      "C-06",
+      "C-11",
+      "D-05",
+      "D-07",
+      "D-08",
+      "D-09",
+      "E-02",
+      "E-04",
+      "E-10"
+    ],
+    "test_used_for_fitting_selection_or_calibration": false,
+    "unit": "dose_matched_independent_well",
+    "well_overlap_count": 0
+  },
+  "status": "same_provider_well_holdout_training_only",
+  "target": "Terminal_Cytoplasm_Intensity_UpperQuartileIntensity_AnnexinV",
+  "task": "six_hour_live_multichannel_morphology_to_terminal_AnnexinV_observable",
+  "terminal_features_excluded_from_inputs": true
+}

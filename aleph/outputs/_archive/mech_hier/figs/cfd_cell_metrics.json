@@ -1,0 +1,12 @@
+{
+ "R_um": 7.500071048736572,
+ "D_cyto_um2_s": 50.0,
+ "tau_p_poroelastic_s": 0.11398849123048496,
+ "tau_fit_center_s": 0.1308947418446804,
+ "tau_ratio_fit_over_analytic": 1.1483154170363652,
+ "center_holds_vs_rim_drained_at_tau_p": 1.4751945125956538,
+ "tau_osm_0D_efflux_s": "30\u2013200 (the SLOW clock the spatial field REPLACES)",
+ "grid": "47\u00b3",
+ "Nc_cortex": 494802,
+ "verifiable": "compare tau_fit_center to tau_p_poroelastic \u2014 the spatial field relaxes on the FAST poroelastic time (~R\u00b2/D), reproducing Moeendarbary, NOT the 0-D efflux clock."
+}

@@ -1,0 +1,179 @@
+{
+  "schema": "ffn-world-phase1-native@1",
+  "kind": "diagnostic",
+  "quantitative_claim_status": "BLOCKED",
+  "device": "cuda:0",
+  "cortex_seg_um": 0.05,
+  "stages": [
+    {
+      "population": "A1: cortex+membrane+envelope",
+      "wall_s": 0.0165,
+      "live_after": {
+        "node": 4402458,
+        "segment": 4128840,
+        "angle3": 4060026,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 0,
+        "bond": 0
+      }
+    },
+    {
+      "population": "A2: microtubule",
+      "wall_s": 0.0015,
+      "live_after": {
+        "node": 4476459,
+        "segment": 4202340,
+        "angle3": 4133026,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 500,
+        "bond": 0
+      }
+    },
+    {
+      "population": "A2: intermediate_filament",
+      "wall_s": 0.0011,
+      "live_after": {
+        "node": 4478919,
+        "segment": 4204740,
+        "angle3": 4135366,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 560,
+        "bond": 0
+      }
+    },
+    {
+      "population": "A2: filopodium",
+      "wall_s": 1.0766,
+      "live_after": {
+        "node": 4539919,
+        "segment": 4264740,
+        "angle3": 4194366,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 1560,
+        "bond": 0
+      }
+    },
+    {
+      "population": "A2: lamellipodium",
+      "wall_s": 0.1698,
+      "live_after": {
+        "node": 4544119,
+        "segment": 4268740,
+        "angle3": 4198166,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 1760,
+        "bond": 0
+      }
+    },
+    {
+      "population": "A2: stress_fiber",
+      "wall_s": 0.1601,
+      "live_after": {
+        "node": 4745119,
+        "segment": 4468740,
+        "angle3": 4397166,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 2760,
+        "bond": 0
+      }
+    }
+  ],
+  "total_build_s": 4.569,
+  "census": {
+    "capacity": {
+      "node": 12000000,
+      "segment": 12000000,
+      "angle3": 12000000,
+      "angle4": 2000000,
+      "face": 1500000,
+      "strand": 200000,
+      "bond": 1000000
+    },
+    "live": {
+      "node": 4745119,
+      "segment": 4468740,
+      "angle3": 4397166,
+      "angle4": 614400,
+      "face": 409600,
+      "strand": 2760,
+      "bond": 0
+    },
+    "utilisation": {
+      "node": 0.39542658333333336,
+      "segment": 0.372395,
+      "angle3": 0.3664305,
+      "angle4": 0.3072,
+      "face": 0.2730666666666667,
+      "strand": 0.0138,
+      "bond": 0.0
+    },
+    "populations": {
+      "cortex": {
+        "node": 4197654,
+        "segment": 4128840,
+        "angle3": 4060026
+      },
+      "membrane": {
+        "node": 163842,
+        "face": 327680,
+        "angle4": 491520
+      },
+      "nuclear_envelope": {
+        "node": 40962,
+        "face": 81920,
+        "angle4": 122880
+      },
+      "microtubule": {
+        "node": 74001,
+        "strand": 500,
+        "segment": 73500,
+        "angle3": 73000
+      },
+      "intermediate_filament": {
+        "node": 2460,
+        "strand": 60,
+        "segment": 2400,
+        "angle3": 2340
+      },
+      "filopodium": {
+        "node": 61000,
+        "strand": 1000,
+        "segment": 60000,
+        "angle3": 59000
+      },
+      "lamellipodium": {
+        "node": 4200,
+        "strand": 200,
+        "segment": 4000,
+        "angle3": 3800
+      },
+      "stress_fiber": {
+        "node": 201000,
+        "strand": 1000,
+        "segment": 200000,
+        "angle3": 199000
+      }
+    },
+    "n_claims": 29,
+    "device": "cuda:0",
+    "node_arrays": [
+      "force",
+      "mobility",
+      "position",
+      "position_snap",
+      "range_id",
+      "strand_id"
+    ],
+    "node_bytes_arithmetic": 1056000000
+  },
+  "partitioned": true,
+  "exact_peak_gpu_bytes": null,
+  "exact_peak_note": "gpu_memory_accounting.query_process_peak -> NvmlAccountingResult(probe_status='ACCOUNTING_DISABLED', device_uuid='GPU-22357b0e-e9ec-dd49-0722-90a3133041a3', pid=2976503, accounting_enabled=False, exact_peak_bytes=None, error=None)",
+  "not_a_claim": "five of the eight populations carry PI_GAP counts \u2014 no sourced per-cell structure count exists for microtubule, intermediate filament, filopodium, lamellipodium or stress fibre. This measures what a world of this SIZE costs to stand; it does not say a cell has these many of anything."
+}

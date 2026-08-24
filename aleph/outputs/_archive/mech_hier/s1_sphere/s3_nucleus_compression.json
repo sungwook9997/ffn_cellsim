@@ -1,0 +1,125 @@
+{
+  "nfil": 70686,
+  "R0_um": 7.499978516787127,
+  "R_nuc_um": 5.249984961750989,
+  "E_nuc_Pa": 399.0,
+  "n_beads": 3000,
+  "s_contact_theory": 0.30000000000000004,
+  "force_ratio": {
+    "0.15": 1.0082535702442712,
+    "0.25": 1.0239527162688933,
+    "0.35": 1.054402043788517,
+    "0.45": 1.1068679339737424
+  },
+  "R_nuc_eq": {
+    "0.15": 5.2590403213344885,
+    "0.25": 5.259046216008722,
+    "0.35": 5.259058393623006,
+    "0.45": 5.259083766481471
+  },
+  "R_nuc_eq_max": 5.259083766481471,
+  "s3_pass": true,
+  "rows": [
+    {
+      "strain": 0.15,
+      "with_nucleus": false,
+      "F_plate_pN": 11961.101001090123,
+      "dP_turgor_Pa": 44.45645720245195,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "V_over_V0": 0.9730079307552235,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.15,
+      "with_nucleus": true,
+      "F_plate_pN": 12059.822788401443,
+      "dP_turgor_Pa": 46.98896121954147,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.2590403213344885,
+      "V_over_V0": 0.9589801017969591,
+      "n_nuc": 3000
+    },
+    {
+      "strain": 0.25,
+      "with_nucleus": false,
+      "F_plate_pN": 22631.48839302257,
+      "dP_turgor_Pa": 57.969345183266256,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "V_over_V0": 0.9274844725366653,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.25,
+      "with_nucleus": true,
+      "F_plate_pN": 23173.57401324339,
+      "dP_turgor_Pa": 66.02999012607242,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.259046216008722,
+      "V_over_V0": 0.889971824285121,
+      "n_nuc": 3000
+    },
+    {
+      "strain": 0.35,
+      "with_nucleus": false,
+      "F_plate_pN": 33013.61503011223,
+      "dP_turgor_Pa": 75.51953505484414,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "V_over_V0": 0.8624447351176593,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.35,
+      "with_nucleus": true,
+      "F_plate_pN": 34809.62316059764,
+      "dP_turgor_Pa": 93.20176806646552,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.259058393623006,
+      "V_over_V0": 0.7919158397422121,
+      "n_nuc": 3000
+    },
+    {
+      "strain": 0.45,
+      "with_nucleus": false,
+      "F_plate_pN": 44747.27981696443,
+      "dP_turgor_Pa": 97.91361542674751,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "V_over_V0": 0.7802955145080328,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.45,
+      "with_nucleus": true,
+      "F_plate_pN": 49529.32916194836,
+      "dP_turgor_Pa": 128.26851166437825,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.259083766481471,
+      "V_over_V0": 0.6697592641598706,
+      "n_nuc": 3000
+    }
+  ],
+  "ratio_increments": [
+    [
+      0.2,
+      0.01569914602462208
+    ],
+    [
+      0.3,
+      0.030449327519623814
+    ],
+    [
+      0.4,
+      0.052465890185225295
+    ]
+  ],
+  "inc_lo_mean": 0.023074236772122947,
+  "inc_hi_mean": 0.052465890185225295,
+  "contact_accel_x": 2.2737865916593076,
+  "ratio_max": 1.1068679339737424,
+  "nucleus_pct_at_max": 10.686793397374238,
+  "g1_contact_onset_pass": true,
+  "g2_nucleus_active_pass": true
+}

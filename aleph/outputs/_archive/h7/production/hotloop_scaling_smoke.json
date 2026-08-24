@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "mode": "native-dt0",
+      "n_fil": 150,
+      "steps": 1000,
+      "wall_s": 0.5882971286773682,
+      "steps_per_s": 1699.82131690535,
+      "build_wall_s": 0.32284092903137207,
+      "topology": {
+        "particles": 5498,
+        "bonds": 5772,
+        "angles": 750,
+        "particle_types": 4,
+        "bond_types": 24
+      },
+      "forces": [
+        "Harmonic",
+        "Harmonic",
+        "LJ"
+      ],
+      "device": "gpu"
+    }
+  ],
+  "steps": 1000,
+  "batch_steps": 20000,
+  "device": "gpu",
+  "seed": 1
+}

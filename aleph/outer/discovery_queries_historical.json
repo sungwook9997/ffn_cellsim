@@ -1,0 +1,22 @@
+{
+  "snapshot_date": "2026-08-05",
+  "minimum_year": 2010,
+  "maximum_date": "2021-12-31",
+  "provider": "Europe PMC REST API",
+  "provider_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+  "target_total": 1800,
+  "domains": [
+    {"domain": "historical_2010", "target": 150, "minimum_date": "2010-01-01", "maximum_date": "2010-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2011", "target": 150, "minimum_date": "2011-01-01", "maximum_date": "2011-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2012", "target": 150, "minimum_date": "2012-01-01", "maximum_date": "2012-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2013", "target": 150, "minimum_date": "2013-01-01", "maximum_date": "2013-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2014", "target": 150, "minimum_date": "2014-01-01", "maximum_date": "2014-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2015", "target": 150, "minimum_date": "2015-01-01", "maximum_date": "2015-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2016", "target": 150, "minimum_date": "2016-01-01", "maximum_date": "2016-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2017", "target": 150, "minimum_date": "2017-01-01", "maximum_date": "2017-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2018", "target": 150, "minimum_date": "2018-01-01", "maximum_date": "2018-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2019", "target": 150, "minimum_date": "2019-01-01", "maximum_date": "2019-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2020", "target": 150, "minimum_date": "2020-01-01", "maximum_date": "2020-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"},
+    {"domain": "historical_2021", "target": 150, "minimum_date": "2021-01-01", "maximum_date": "2021-12-31", "query": "TITLE_ABS:(mechanobiology OR \"cell mechanics\" OR \"tissue mechanics\" OR \"traction force\" OR \"membrane tension\" OR \"nuclear mechanics\" OR mechanotransduction OR cytoskeleton OR \"matrix stiffness\" OR AFM)"}
+  ]
+}

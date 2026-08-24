@@ -1,0 +1,60 @@
+{
+ "rows": [
+  {
+   "tick": 0,
+   "phys_t_s": 0.0,
+   "bound_frac": 0.0,
+   "F_over_stall": NaN,
+   "n_bound": 0,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 1,
+   "phys_t_s": 0.00026061396017119487,
+   "bound_frac": 0.0065,
+   "F_over_stall": NaN,
+   "n_bound": 13,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 5.2122792034238976e-11,
+   "s_grip_over_l0": 0.00010424558406847795,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 2,
+   "phys_t_s": 0.0005212279203423897,
+   "bound_frac": 0.011,
+   "F_over_stall": NaN,
+   "n_bound": 22,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 8.292264876763178e-11,
+   "s_grip_over_l0": 0.00016584529753526357,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 3,
+   "phys_t_s": 0.0007818418805135846,
+   "bound_frac": 0.013,
+   "F_over_stall": 0.03367574677328226,
+   "n_bound": 26,
+   "gamma_soft": 0.00010531683659728852,
+   "gamma_soft_ik": 3.294780996102985e-05,
+   "s_grip_m": 1.2228765057485092e-10,
+   "s_grip_over_l0": 0.0002445753011497019,
+   "backbone_r_over_r0": 1.0000546912910566
+  }
+ ],
+ "wall_s": 28.600114583969116,
+ "verdict": "INCONCLUSIVE: s_grip did not develop enough in this run length \u2014 extend ticks (s_grip/\u2113\u2080=0.00).",
+ "n_fil": 150,
+ "batch_dt": 0.00026061396017119487,
+ "ell0": 5e-07,
+ "R_cell": 1e-05,
+ "F_stall_per_head": 1.8849555921538762e-11,
+ "connected_mesh": true
+}

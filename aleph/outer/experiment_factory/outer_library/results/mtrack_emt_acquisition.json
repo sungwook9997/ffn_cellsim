@@ -1,0 +1,200 @@
+{
+  "counts": {
+    "files": 20,
+    "timepoints": 10
+  },
+  "files": [
+    {
+      "google_drive_file_id": "1cTuJPB-rR2MKAuo6eg1LCyIkudDin3y0",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t003c1.tif",
+      "sha256": "e36e73f83b489942b5a7d049b5aec516db2f98adfa0cb59b043774b7e0fba149",
+      "size": 7645628,
+      "time_index": 3
+    },
+    {
+      "google_drive_file_id": "12HIwjd7H4D69m-J0sE3mKVlosvnscJEL",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t003c2.png",
+      "sha256": "d6db13900e1b909c59c4a262b980a16f59aad2beb895fad820da158b2a597f4d",
+      "size": 10062,
+      "time_index": 3
+    },
+    {
+      "google_drive_file_id": "1opUR6kiFM3j7cidvH-jWFGfmP-0VuXjT",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t013c1.tif",
+      "sha256": "a0b3c7ef40d4afc8140dfee2dcd3e1b70c7372ae99707892694c73fb3623d63e",
+      "size": 7645628,
+      "time_index": 13
+    },
+    {
+      "google_drive_file_id": "14a-kfz6O3sfPgS2c6AAcRlmvB3rPdGAH",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t013c2.png",
+      "sha256": "b5888859c1c6d93646774243d56336b680fbe68efccbbf3064af5087bc860671",
+      "size": 10057,
+      "time_index": 13
+    },
+    {
+      "google_drive_file_id": "1jJo-qXpl3YI8TpicGiLGrYnemOD3jXQH",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t025c1.tif",
+      "sha256": "9dd96ad0c22ef3da127613e6d248ca78be7f7ba2fdefd3348b1e24b1d8ff942d",
+      "size": 7645628,
+      "time_index": 25
+    },
+    {
+      "google_drive_file_id": "1CFjeD0JAKq3JbL6bNsqBiuT2F_56VC4I",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t025c2.png",
+      "sha256": "3c11ffb5ac4bef6799d6565cdb335242965b66c0f004622a53c7c624cb5d11a3",
+      "size": 10459,
+      "time_index": 25
+    },
+    {
+      "google_drive_file_id": "1ARKU63bAEsVVnY4Vmy5NkSG1ybNRpjSY",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t037c1.tif",
+      "sha256": "d2c1985840540e830fe031a52ba7e1fc01d78c8f7a27f97c653d63ccc6a6ab5b",
+      "size": 7645628,
+      "time_index": 37
+    },
+    {
+      "google_drive_file_id": "140eSF3imy7AUbaX9s-r88QKzAs8Om7a9",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t037c2.png",
+      "sha256": "151a2d1b5e5e80a1a1d2f1150788aea75da3f1fa9ea9106a3bf37b62d6381c86",
+      "size": 11386,
+      "time_index": 37
+    },
+    {
+      "google_drive_file_id": "1j68vSfZ0T3--Z5UUAqd3ZO45qBLyV10K",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t061c1.tif",
+      "sha256": "ff98644ef4779ed40930b67814eaf89e19873689f341a4e788dfe823fc1b053d",
+      "size": 7645628,
+      "time_index": 61
+    },
+    {
+      "google_drive_file_id": "1a8VZTvNJFptJ3ZBPGpqU4jqL5AkY9iRN",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t061c2.png",
+      "sha256": "b2e7b933012e32e531b12a7381e281205c7c94b2f6af15fe8ae4f9cfc0015886",
+      "size": 11997,
+      "time_index": 61
+    },
+    {
+      "google_drive_file_id": "1klXq6MVAXkOIrvFO_Zct1VYPxKUye11z",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t077c1.tif",
+      "sha256": "d6552b9250cb74bc4b6f2b1d15e26c1c012710e5bc54a46e9673fce1793f1edb",
+      "size": 7645628,
+      "time_index": 77
+    },
+    {
+      "google_drive_file_id": "1yQ_D8C_1mUaNE_l9RHqdATs2IhO8ZW_M",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t077c2.png",
+      "sha256": "9199483b155ed7733281c4eaf63cb2ac4391450e37c2e51e899fc84e35a9d6d0",
+      "size": 12817,
+      "time_index": 77
+    },
+    {
+      "google_drive_file_id": "1POa5UYz1RiT6QCHBZNkzDyVb6lYsgqAP",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t093c1.tif",
+      "sha256": "bcd00442e77c601093446df7435997982fec01fb094d42908de89782630baaa6",
+      "size": 7645628,
+      "time_index": 93
+    },
+    {
+      "google_drive_file_id": "1sCysARaFDCEdwoyn3GxKa_A3ziFjwdrP",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t093c2.png",
+      "sha256": "015dee4397d6f87caf03ac7e8156657f524ab010dc3044dd0190287d89ebb933",
+      "size": 12328,
+      "time_index": 93
+    },
+    {
+      "google_drive_file_id": "1MzAoTHnEuH0cvt8TZglVwdrlDuu-oTNR",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t107c1.tif",
+      "sha256": "19ba2d80019c77c620dada0f0089760dc15e42eb82946b11ebe70ab759b91a0c",
+      "size": 7645628,
+      "time_index": 107
+    },
+    {
+      "google_drive_file_id": "1BXk5SWxraOnE2Zwypza_PINwVCtvY3FW",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t107c2.png",
+      "sha256": "fad55a4feb7fc15f77b84b142ac14c46093d0e179b8a22f6c113c3005d1a5c4e",
+      "size": 12548,
+      "time_index": 107
+    },
+    {
+      "google_drive_file_id": "1llwaI0tcZMzhoFTdh0iLYs6yXrU7AkTi",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t123c1.tif",
+      "sha256": "7149f940005be659af7297f7e3b0803dcf473ddb18f67b037e9a0237ac769600",
+      "size": 7645628,
+      "time_index": 123
+    },
+    {
+      "google_drive_file_id": "1JC5p4C7OQddBxZPd9_4oG8Ateclm2nb8",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t123c2.png",
+      "sha256": "a5e9c4708122f35f1b3bc5912bb2743dc6b67d11205fb5867f1516d0dac4c073",
+      "size": 12953,
+      "time_index": 123
+    },
+    {
+      "google_drive_file_id": "1Mrr0ZzxPbw9v22EidXZqygtSwSzJLDJY",
+      "kind": "VIM_RFP",
+      "local_name": "a549_tgf4ngxy01t145c1.tif",
+      "sha256": "cc0bb6f9d8699dc696fae37156d3e15abe6aabdd7f1a650148069aa606f66287",
+      "size": 7645628,
+      "time_index": 145
+    },
+    {
+      "google_drive_file_id": "1tfLrkAs9K9su0e4baj0-HY0dzXl91qz_",
+      "kind": "segmentation_mask",
+      "local_name": "seg_a549_tgf4ngxy01t145c2.png",
+      "sha256": "41fb5807ebd5aaf0cef893cf87693b2cff82f9aa69f7d19f193e0cd57505212c",
+      "size": 14483,
+      "time_index": 145
+    }
+  ],
+  "limitations": [
+    "the GUI release exposes one treated xy01 trajectory, not a biological replicate panel",
+    "no untreated control trajectory is present in the linked GUI example",
+    "the image-data license is not stated in the repository or public folder metadata"
+  ],
+  "schema": "aleph.outer_library.mtrack_emt_acquisition.v1",
+  "selection": {
+    "all_frames_form_one_split_group": true,
+    "selection_frozen_before_feature_evaluation": true,
+    "time_indices": [
+      3,
+      13,
+      25,
+      37,
+      61,
+      77,
+      93,
+      107,
+      123,
+      145
+    ],
+    "trajectory": "A549_TGFbeta_4ng_per_mL_xy01"
+  },
+  "source": {
+    "connector_visibility_status": "access_not_verified_but_paper_repository_links_public_folder",
+    "license_id": "not_stated_for_image_data",
+    "paper_doi": "10.1126/sciadv.aba9319",
+    "paper_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7473671/",
+    "public_google_drive_folder_id": "1KwVwR9moblQlA0U2aDPWHNeKDNONrk9J",
+    "release_role": "paper_linked_GUI_input_example",
+    "repository_url": "https://github.com/opnumten/M-TRACK"
+  }
+}

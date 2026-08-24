@@ -1,0 +1,717 @@
+{
+  "aleph_authority": "none",
+  "architecture": {
+    "device": "cpu",
+    "gpu_used": false,
+    "protocol_router": "hashed_protocol_tokens_24_tanh_three_heads",
+    "wire_head": "4_input_16_tanh_shared_3_class_plus_log_viscosity_regression"
+  },
+  "capabilities": [
+    "route known protocols to non-poolable measurement and mechanical-scope heads",
+    "learn the deterministic dynamic-response-to-effective-viscosity mapping from individual wires",
+    "quantify how a cell-line classifier degrades when an entire acquisition date is withheld",
+    "attach a probe-scale hypothesis to a future relaxation curve without choosing an Aleph parameter"
+  ],
+  "dataset": {
+    "catalog_record_count": 19,
+    "catalog_source_count": 9,
+    "experiment_date_count": 12,
+    "individual_wire_source": "Dessard2024_NanoscaleAdv",
+    "repo_source_audit_counts": {
+      "CHECK": 2,
+      "NOT_REGISTERED": 2,
+      "OK": 5
+    },
+    "wire_count": 196
+  },
+  "may_select_aleph_parameter": false,
+  "observable_evidence_eligible": false,
+  "probe_size_dependence": {
+    "decisive_afm_probe_radius_sweep": {
+      "fold_change_a_1_to_5_um": 25.0,
+      "fold_change_a_1_to_5_um_probe_independent": 1.0,
+      "poroelastic_prediction": "tau proportional to a^2",
+      "probe_independent_clock_prediction": "tau proportional to a^0",
+      "status": "preregistered_discriminator_not_yet_an_external_afm_radius_dataset",
+      "warning": "Dessard wire length scaling is evidence that apparent viscosity is probe-scale dependent; wire length is not AFM contact radius and does not validate tau(a)."
+    },
+    "external_mrs_wire_length_scaling": {
+      "MCF-10A": {
+        "experiment_date_cluster_bootstrap_95_interval": [
+          0.719711050638478,
+          2.2386034209070313
+        ],
+        "n_experiment_dates": 3,
+        "n_wires": 68,
+        "predicted_eta_fold_1_to_5_um_from_raw_fit": 14.127751787214422,
+        "published_binned_exponent": 2.2,
+        "published_standard_error": 0.2,
+        "raw_wire_level_log_log_exponent": 1.6453825614478612,
+        "raw_wire_level_r2": 0.24106478276383325
+      },
+      "MCF-7": {
+        "experiment_date_cluster_bootstrap_95_interval": [
+          0.6508188764604592,
+          1.777319074645186
+        ],
+        "n_experiment_dates": 3,
+        "n_wires": 60,
+        "predicted_eta_fold_1_to_5_um_from_raw_fit": 6.6268852586399625,
+        "published_binned_exponent": 2.2,
+        "published_standard_error": 0.2,
+        "raw_wire_level_log_log_exponent": 1.1750281785473937,
+        "raw_wire_level_r2": 0.20159008641312592
+      },
+      "MDA-MB-231": {
+        "experiment_date_cluster_bootstrap_95_interval": [
+          1.5789532760334375,
+          2.6707416834535764
+        ],
+        "n_experiment_dates": 6,
+        "n_wires": 68,
+        "predicted_eta_fold_1_to_5_um_from_raw_fit": 26.742453658876247,
+        "published_binned_exponent": 2.5,
+        "published_standard_error": 0.2,
+        "raw_wire_level_log_log_exponent": 2.0418633747494113,
+        "raw_wire_level_r2": 0.30405840741131007
+      }
+    }
+  },
+  "protocol_router": {
+    "external_holdout": false,
+    "independent_source_counts_by_class": {
+      "method": {
+        "internal_or_local_magnetic_rheology": 2,
+        "local_afm": 2,
+        "noncontact_whole_cell_deformation": 1,
+        "optical_probe_microrheology": 1,
+        "whole_cell_afm_confinement": 2,
+        "whole_cell_suction": 1
+      },
+      "scope": {
+        "cytoplasmic_solvent_microviscosity": 1,
+        "effective_cytoplasm_viscoelasticity": 1,
+        "local_cortical_stiffness": 1,
+        "local_cytoplasm_apparent_viscosity": 1,
+        "poroelastic_diffusivity": 1,
+        "short_time_cortical_prestress": 1,
+        "total_effective_surface_tension": 2,
+        "whole_cell_apparent_viscosity": 1
+      },
+      "surface_state": {
+        "adherent": 5,
+        "suspended": 5
+      }
+    },
+    "reason": "several method/scope classes occur in only one independent paper; training fit is not a generalization metric",
+    "record_count": 19,
+    "runtime_policy": "exact ontology route or abstain; no interpolation across mechanical_scope or unit",
+    "source_count": 9,
+    "source_record_counts": {
+      "Bausch1998_BiophysJ": 1,
+      "Dessard2024_NanoscaleAdv": 3,
+      "FischerFriedrich2014_SciRep": 2,
+      "Flormann2024_PNAS": 2,
+      "Hosseini2020_AdvSci": 2,
+      "Moazzeni2021_PhysRevE": 3,
+      "Moeendarbary2013_NatMater": 2,
+      "Vaippully2020_JPhysCondensMatter": 1,
+      "Wang2019_RSOS": 3
+    },
+    "status": "routing_representation_only_insufficient_external_holdout",
+    "training_resubstitution_diagnostic": {
+      "method": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "confusion_matrix_true_by_predicted": [
+          [
+            4,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3
+          ]
+        ],
+        "macro_f1": 1.0,
+        "per_class": {
+          "internal_or_local_magnetic_rheology": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 4
+          },
+          "local_afm": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 4
+          },
+          "noncontact_whole_cell_deformation": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 3
+          },
+          "optical_probe_microrheology": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 1
+          },
+          "whole_cell_afm_confinement": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 4
+          },
+          "whole_cell_suction": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 3
+          }
+        },
+        "sample_count": 19
+      },
+      "scope": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "confusion_matrix_true_by_predicted": [
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            3
+          ]
+        ],
+        "macro_f1": 1.0,
+        "per_class": {
+          "cytoplasmic_solvent_microviscosity": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 1
+          },
+          "effective_cytoplasm_viscoelasticity": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 3
+          },
+          "local_cortical_stiffness": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 2
+          },
+          "local_cytoplasm_apparent_viscosity": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 1
+          },
+          "poroelastic_diffusivity": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 2
+          },
+          "short_time_cortical_prestress": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 3
+          },
+          "total_effective_surface_tension": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 4
+          },
+          "whole_cell_apparent_viscosity": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 3
+          }
+        },
+        "sample_count": 19
+      },
+      "surface_state": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "confusion_matrix_true_by_predicted": [
+          [
+            8,
+            0
+          ],
+          [
+            0,
+            11
+          ]
+        ],
+        "macro_f1": 1.0,
+        "per_class": {
+          "adherent": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 8
+          },
+          "suspended": {
+            "f1": 1.0,
+            "recall": 1.0,
+            "support": 11
+          }
+        },
+        "sample_count": 19
+      }
+    }
+  },
+  "refusals": [
+    "no cross-unit global mechanics score",
+    "no claim of general cell-state classification from one-lab magnetic-wire data",
+    "no substitution of MRS wire length for AFM contact radius",
+    "no engine validation, gate verdict, parameter selection, or physics mutation"
+  ],
+  "schema": "aleph.outer_library.mechanics_protocol_model.v1",
+  "task": "protocol_conditioned_cell_mechanics_representation",
+  "wire_head": {
+    "experimental_date_disjoint": {
+      "metrics": {
+        "calibration": {
+          "cell_line": {
+            "accuracy": 0.3684210526315789,
+            "balanced_accuracy": 0.5104895104895105,
+            "confusion_matrix_true_by_predicted": [
+              [
+                10,
+                3,
+                9
+              ],
+              [
+                8,
+                2,
+                16
+              ],
+              [
+                0,
+                0,
+                9
+              ]
+            ],
+            "macro_f1": 0.34921230307576895,
+            "per_class": {
+              "MCF-10A": {
+                "f1": 0.5,
+                "recall": 0.45454545454545453,
+                "support": 22
+              },
+              "MCF-7": {
+                "f1": 0.12903225806451613,
+                "recall": 0.07692307692307693,
+                "support": 26
+              },
+              "MDA-MB-231": {
+                "f1": 0.4186046511627907,
+                "recall": 1.0,
+                "support": 9
+              }
+            },
+            "sample_count": 57
+          },
+          "log_viscosity": {
+            "mae_log_pa_s": 0.14488999143222664,
+            "median_absolute_percent_error": 0.09209623320276428,
+            "r2": 0.9814146094517184
+          }
+        },
+        "fit": {
+          "cell_line": {
+            "accuracy": 0.7303370786516854,
+            "balanced_accuracy": 0.6335978835978836,
+            "confusion_matrix_true_by_predicted": [
+              [
+                15,
+                2,
+                10
+              ],
+              [
+                6,
+                6,
+                2
+              ],
+              [
+                4,
+                0,
+                44
+              ]
+            ],
+            "macro_f1": 0.6561771561771561,
+            "per_class": {
+              "MCF-10A": {
+                "f1": 0.5769230769230769,
+                "recall": 0.5555555555555556,
+                "support": 27
+              },
+              "MCF-7": {
+                "f1": 0.5454545454545454,
+                "recall": 0.42857142857142855,
+                "support": 14
+              },
+              "MDA-MB-231": {
+                "f1": 0.8461538461538461,
+                "recall": 0.9166666666666666,
+                "support": 48
+              }
+            },
+            "sample_count": 89
+          },
+          "log_viscosity": {
+            "mae_log_pa_s": 0.10091352884362696,
+            "median_absolute_percent_error": 0.07386528352664001,
+            "r2": 0.991078904795421
+          }
+        },
+        "test": {
+          "cell_line": {
+            "accuracy": 0.28,
+            "balanced_accuracy": 0.3850877192982456,
+            "confusion_matrix_true_by_predicted": [
+              [
+                2,
+                4,
+                13
+              ],
+              [
+                4,
+                1,
+                15
+              ],
+              [
+                0,
+                0,
+                11
+              ]
+            ],
+            "macro_f1": 0.22666666666666666,
+            "per_class": {
+              "MCF-10A": {
+                "f1": 0.16,
+                "recall": 0.10526315789473684,
+                "support": 19
+              },
+              "MCF-7": {
+                "f1": 0.08,
+                "recall": 0.05,
+                "support": 20
+              },
+              "MDA-MB-231": {
+                "f1": 0.44,
+                "recall": 1.0,
+                "support": 11
+              }
+            },
+            "sample_count": 50
+          },
+          "log_viscosity": {
+            "mae_log_pa_s": 0.13536808779436277,
+            "median_absolute_percent_error": 0.12058679340069056,
+            "r2": 0.9799953440741748
+          }
+        }
+      },
+      "roles_by_cell_line": {
+        "MCF-10A": {
+          "calibration": [
+            "2022-03-17"
+          ],
+          "fit": [
+            "2022-03-16"
+          ],
+          "test": [
+            "2022-04-01"
+          ]
+        },
+        "MCF-7": {
+          "calibration": [
+            "2022-02-15"
+          ],
+          "fit": [
+            "2022-02-08"
+          ],
+          "test": [
+            "2022-02-22"
+          ]
+        },
+        "MDA-MB-231": {
+          "calibration": [
+            "2022-03-30"
+          ],
+          "fit": [
+            "2022-03-01",
+            "2022-03-08",
+            "2022-03-10",
+            "2022-03-15"
+          ],
+          "test": [
+            "2022-03-31"
+          ]
+        }
+      },
+      "split_group_overlap_count": 0
+    },
+    "independent_lab_holdout": false,
+    "input_features": [
+      "wire_length_um",
+      "wire_diameter_um",
+      "omega_c_rad_s",
+      "wire_aspect_effective"
+    ],
+    "production_eligible": false,
+    "random_wire_holdout_interpolation_only": {
+      "calibration": {
+        "cell_line": {
+          "accuracy": 0.525,
+          "balanced_accuracy": 0.5238095238095238,
+          "confusion_matrix_true_by_predicted": [
+            [
+              7,
+              2,
+              5
+            ],
+            [
+              3,
+              6,
+              3
+            ],
+            [
+              3,
+              3,
+              8
+            ]
+          ],
+          "macro_f1": 0.5245303274288782,
+          "per_class": {
+            "MCF-10A": {
+              "f1": 0.5185185185185185,
+              "recall": 0.5,
+              "support": 14
+            },
+            "MCF-7": {
+              "f1": 0.5217391304347826,
+              "recall": 0.5,
+              "support": 12
+            },
+            "MDA-MB-231": {
+              "f1": 0.5333333333333333,
+              "recall": 0.5714285714285714,
+              "support": 14
+            }
+          },
+          "sample_count": 40
+        },
+        "log_viscosity": {
+          "mae_log_pa_s": 0.07718621912879935,
+          "median_absolute_percent_error": 0.054082567674029136,
+          "r2": 0.9924503532723327
+        }
+      },
+      "fit": {
+        "cell_line": {
+          "accuracy": 0.6206896551724138,
+          "balanced_accuracy": 0.6203703703703703,
+          "confusion_matrix_true_by_predicted": [
+            [
+              21,
+              9,
+              10
+            ],
+            [
+              10,
+              22,
+              4
+            ],
+            [
+              8,
+              3,
+              29
+            ]
+          ],
+          "macro_f1": 0.6196707263048578,
+          "per_class": {
+            "MCF-10A": {
+              "f1": 0.5316455696202531,
+              "recall": 0.525,
+              "support": 40
+            },
+            "MCF-7": {
+              "f1": 0.6285714285714286,
+              "recall": 0.6111111111111112,
+              "support": 36
+            },
+            "MDA-MB-231": {
+              "f1": 0.6987951807228916,
+              "recall": 0.725,
+              "support": 40
+            }
+          },
+          "sample_count": 116
+        },
+        "log_viscosity": {
+          "mae_log_pa_s": 0.0929561146375411,
+          "median_absolute_percent_error": 0.06130967945237442,
+          "r2": 0.9918918105523988
+        }
+      },
+      "test": {
+        "cell_line": {
+          "accuracy": 0.475,
+          "balanced_accuracy": 0.46428571428571425,
+          "confusion_matrix_true_by_predicted": [
+            [
+              9,
+              3,
+              2
+            ],
+            [
+              6,
+              3,
+              3
+            ],
+            [
+              2,
+              5,
+              7
+            ]
+          ],
+          "macro_f1": 0.45999208832308414,
+          "per_class": {
+            "MCF-10A": {
+              "f1": 0.5806451612903226,
+              "recall": 0.6428571428571429,
+              "support": 14
+            },
+            "MCF-7": {
+              "f1": 0.2608695652173913,
+              "recall": 0.25,
+              "support": 12
+            },
+            "MDA-MB-231": {
+              "f1": 0.5384615384615384,
+              "recall": 0.5,
+              "support": 14
+            }
+          },
+          "sample_count": 40
+        },
+        "log_viscosity": {
+          "mae_log_pa_s": 0.08805317780959565,
+          "median_absolute_percent_error": 0.08110387651253415,
+          "r2": 0.9930725682500355
+        }
+      }
+    },
+    "status": "within_paper_representation_only_failed_robust_cell_line_transfer"
+  }
+}

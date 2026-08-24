@@ -1,0 +1,82 @@
+[
+  {
+    "generation": {
+      "n_engaged": 53,
+      "sumF_head_N": 4.238191930163688e-10,
+      "mean_F_head_N": 7.996588547478656e-12,
+      "median_F_head_N": 8.402191717086386e-12,
+      "max_F_head_N": 1.1082004748664615e-11,
+      "p90_F_head_N": 1.0872899111923658e-11,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.025696350303151684
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.00030690294257538266,
+      "median_F_over_Fstall": 0.00030720692815238944,
+      "max_F_over_Fstall": 0.000558769677406846,
+      "p90_F_over_Fstall": 0.0005388064176221943,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 1.7671458676442582e-11
+    },
+    "tension": {
+      "g_soft_gate_Npm": 2.4286892293077932e-08,
+      "g_mop_total_Npm": 1.2413315367000369e-07,
+      "g_mop_attach_Npm": 1.2267797905133923e-07,
+      "g_mop_myosin_Npm": 1.240077837650853e-07,
+      "g_ik_total_Npm": 6.931936789214784e-08,
+      "g_ik_attach_Npm": 6.66070638191616e-08,
+      "g_ceiling_attach_Npm": 7.325860252189353e-08,
+      "mean_tangential_fraction": 0.8863530893396696
+    },
+    "efficiency": {
+      "eta_agg": 0.9092046739392264,
+      "eta_medium": 1.0407209673789277,
+      "eta_total": 0.9462283678074742,
+      "ceiling_over_band": 0.0002093102929196958,
+      "gate_over_ceiling": 0.331522735310433
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00021\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
+  },
+  {
+    "generation": {
+      "n_engaged": 102,
+      "sumF_head_N": 8.0055704306227e-10,
+      "mean_F_head_N": 7.848598461394803e-12,
+      "median_F_head_N": 8.345781982697212e-12,
+      "max_F_head_N": 1.107924257194206e-11,
+      "p90_F_head_N": 1.0793660645072935e-11,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.048538137383006316
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.0005898763795934123,
+      "median_F_over_Fstall": 0.0005867075426693295,
+      "max_F_over_Fstall": 0.0011181811635154143,
+      "p90_F_over_Fstall": 0.001019225640057464,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 1.7671458676442582e-11
+    },
+    "tension": {
+      "g_soft_gate_Npm": 7.867383928186278e-08,
+      "g_mop_total_Npm": 1.5400786036265812e-07,
+      "g_mop_attach_Npm": 1.4971585371078652e-07,
+      "g_mop_myosin_Npm": 1.5390890502737185e-07,
+      "g_ik_total_Npm": 1.2703276776495977e-07,
+      "g_ik_attach_Npm": 1.2398020319227642e-07,
+      "g_ceiling_attach_Npm": 1.3584090061868317e-07,
+      "mean_tangential_fraction": 0.8850873915075156
+    },
+    "efficiency": {
+      "eta_agg": 0.912686846359325,
+      "eta_medium": 1.0246213870770096,
+      "eta_total": 0.9351584624836331,
+      "ceiling_over_band": 0.00038811685891052336,
+      "gate_over_ceiling": 0.5791616436842307
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00039\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
+  }
+]

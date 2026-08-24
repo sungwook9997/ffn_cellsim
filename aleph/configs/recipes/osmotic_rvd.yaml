@@ -1,0 +1,33 @@
+# ============================================================================
+# RECIPE: osmotic_rvd  (H.7 platform — H.11 osmotic regulation LIVE, 2026-06-09)
+# ============================================================================
+# The suspended/rounded MCF7 cell with DYNAMIC volume regulation turned ON: the
+# osmotic-regulation updater modulates the enclosed_volume turgor setpoint V0(t)
+# over time via membrane water flux (Kedem-Katchalsky / van't Hoff), so a
+# hyper/hypo-osmotic shock relaxes the cell volume back toward equilibrium on the
+# Hoffmann-2009 seconds-to-minutes RVD/RVI timescale.
+#
+# Extends suspended_round (the resting baseline) and adds osmotic_regulation.
+# osmotic_regulation requires enclosed_volume, which suspended_round enables.
+# ============================================================================
+
+name: osmotic_rvd
+description: Suspended MCF7 cell with dynamic osmotic volume regulation (RVD/RVI kinetics).
+scope: suspended
+extends: suspended_round
+
+observables: [cortical_tension, cell_volume]
+
+enable:
+  - osmotic_regulation   # H.11 setpoint updater on the enclosed_volume turgor
+
+disable: []
+declare_pending: []
+
+notes: >
+  Lp = 1e-12 m/(s.Pa) (Jung 2011 MCF7/AQP5; PI-ratified 2026-06-09). The osmolar
+  shock delta_c (mol/m3) is a per-run knob set in the manifest override or the
+  activation driver (e.g. -100 for the Jung-2011 100 mM sorbitol hyperosmotic
+  arm -> RVD). The osmotic updater adds ZERO bonds (modulates the existing turgor
+  force setpoint only) so it does NOT contaminate the cortical-gamma estimator.
+  tau_RVD = V0/(Lp*A*Pi_osm) lands in the Hoffmann 2009 [~3 s, ~600 s] band.

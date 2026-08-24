@@ -1,0 +1,48 @@
+{
+  "schema": "aleph.external_training.ragtagcag_validation.v1",
+  "authority_status": "proposed",
+  "input": {
+    "manifest_files": 6,
+    "manifest_records": 7218,
+    "source_families": 7213,
+    "duplicate_records": 5,
+    "acquisition_receipt_snapshot_records": 2713,
+    "acquisition_receipt_snapshot_sha256": "2fdd7cd76c139d2d5619a42aab7b263cea2e89aae48ed147d9cee31cf6496d8c",
+    "acquisition_success_receipts": 2701,
+    "acquisition_failed_receipts": 12,
+    "validated_xml_bytes": 445899949
+  },
+  "first_ingest": {
+    "events_appended": 7213,
+    "ledger_events": 7213,
+    "objects": 12627,
+    "acquisition_payloads_present": 2701,
+    "acquisition_payloads_unavailable": 0,
+    "retracted_entities": 8,
+    "chain_verified": true,
+    "missing_objects": 0,
+    "cag_lint_violations": 0,
+    "ledger_head_hash": "a93c1912ed4973a1fba090eb0a37da9564e93bfd7210ea0e3fb9912e9da978ce",
+    "snapshot_id": "snap-20260804T164051-external-training-corpus-proposed-head-7213",
+    "snapshot_manifest_hash": "0db851b1af77a48a79f0311fb0136fa116e6d36bdd59b1dff7a11e663bde569f",
+    "projection_hash": "d6e6e86e25b43923f629002812d7d256d772451184ce85752d601837bcb8e7db"
+  },
+  "second_ingest": {
+    "events_appended": 0,
+    "ledger_events": 7213,
+    "objects": 12627,
+    "chain_verified": true,
+    "missing_objects": 0,
+    "cag_lint_violations": 0,
+    "ledger_head_hash": "a93c1912ed4973a1fba090eb0a37da9564e93bfd7210ea0e3fb9912e9da978ce",
+    "snapshot_manifest_hash": "0db851b1af77a48a79f0311fb0136fa116e6d36bdd59b1dff7a11e663bde569f",
+    "projection_hash": "d6e6e86e25b43923f629002812d7d256d772451184ce85752d601837bcb8e7db"
+  },
+  "idempotent": true,
+  "committed_payloads": false,
+  "notes": [
+    "All imported scientific authority remains proposed.",
+    "The repository currently contains 7218 input rows and 7213 unique normalized source families, not 7214.",
+    "The final receipt input was frozen after the acquisition worker completed all 2713 eligible PMCIDs."
+  ]
+}

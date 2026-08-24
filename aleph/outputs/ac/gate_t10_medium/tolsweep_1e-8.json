@@ -1,0 +1,198 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "T10 extracellular_medium \u2014 exterior Stokes operator on the native membrane surface",
+  "build": {
+    "commit": "2001c119",
+    "dirty": null,
+    "branch": null,
+    "source": "declared",
+    "reason": "/home/sungwook/ffn_ac_native is not a git repository; the commit is the caller's assertion and was not verified here"
+  },
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "the exterior operator executes on CUDA over the FULL native membrane surface quadrature and its six rigid-mode resistances are measured strictly positive with the translation channel proportional to the cell radius; the rung stops at CUDA_UNIT because the membrane_medium_traction connector is NOT dispatched -- that claim belongs to SurfaceBody -- and the quantitative axis is BLOCKED because mu_medium is a PI-GAP, so only the viscosity-free ratios and the exact structural residuals are quotable",
+  "config": {
+    "argv": {
+      "build_commit": "2001c119",
+      "cg_tolerance": 1e-08,
+      "dt": 0.001,
+      "omega": 0.01,
+      "out": "outputs/ac/gate_t10_medium/tolsweep_1e-8.json",
+      "radius": 7.5,
+      "speed": 1.0,
+      "subdivisions": 3,
+      "viscosity": 0.001
+    },
+    "blob_epsilon_um": 1.0589242639185066,
+    "epsilon_rule": "epsilon = 1.0 x mean nearest-neighbour spacing (DERIVED, grid-invariant)",
+    "wall_mode": "free_space",
+    "cg_relative_tolerance": 1e-08,
+    "cg_max_iterations": 200
+  },
+  "config_sha256": "sha256:ac319f90a24b911ece2b21fd3db4bf739e532e693d201050ef5e3bd657f1221b",
+  "census": {
+    "n_surface_quadrature_points": 642,
+    "n_surface_faces": 1280,
+    "n_dof": 1926,
+    "icosphere_subdivisions": 3,
+    "is_native_population": true,
+    "population_note": "the exterior medium addresses the cell's outer SURFACE only, and the native membrane surface IS icosphere level 3 = 642 nodes / 1280 faces (ac/cell/compartments.py:104,641), so this is the component's complete native population rather than a slice of it. What is not native is the COMPOSITION: no composed cell, no connector dispatch",
+    "components_declared": 14,
+    "connectors_declared": 36,
+    "component": "extracellular_medium",
+    "connector_not_yet_dispatched": "membrane_medium_traction"
+  },
+  "parameter_provenance": {
+    "viscosity_medium": "PI_GAP",
+    "blob_epsilon": "DERIVED",
+    "cell_radius": "SOURCED",
+    "membrane_subdivisions": "SOURCED"
+  },
+  "t0": {
+    "surface_at_rest_max_abs_force_pN": 0.0,
+    "surface_at_rest_resultant_pN": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "dissipated_work_pN_um": 0.0,
+    "note": "no motion, so no force and no dissipation: the t0 row a run needs to claim emergence"
+  },
+  "timing": {
+    "wall_seconds": 6.706218329258263,
+    "n_steps": 1,
+    "wall_seconds_per_step": 6.706218329258263,
+    "n_inner_iterations": 95,
+    "wall_seconds_per_inner_iteration": 0.07059177188692908,
+    "device_note": "NOT a benchmark. The run performs 11 device resistance solves (rest, translation, rotation, six rigid modes, a reversed translation, a doubled-viscosity translation) plus a dense host mobility assembly and condition-number estimate for the VOID ceiling, and Warp kernel compilation is included in the wall clock",
+    "comparable": false,
+    "not_comparable_reason": "the gate verdict is FAIL, so this run did not establish the convergence its cost would have to be quoted at. Quoting it as the engine's speed compares the cost of NOT converging"
+  },
+  "measurements": {
+    "stokes_law_ratio": {
+      "translation_measured_over_exact": 1.0415394470245856,
+      "rotation_measured_over_exact": 1.1168979889677202,
+      "note": "the viscosity cancels in both ratios, which is why they are quotable while the magnitudes are not; departure from 1 is the surface quadrature's discretisation error at this refinement, MEASURED not tuned"
+    },
+    "rigid_modes_are_loaded": {
+      "eigenvalues": [
+        0.14724417039099755,
+        0.14724417039720675,
+        0.14724417051658478,
+        11.850170764199728,
+        11.85017076488076,
+        11.850170765452678
+      ],
+      "min_eigenvalue": 0.14724417039099755,
+      "all_strictly_positive": true,
+      "translation_resistance_over_radius": 0.01963255605799052,
+      "rotation_over_translation_shape": 80.47972785504122,
+      "rotation_over_translation_exact_shape": 75.0,
+      "note": "the BLOCKS_CRAWL statement in falsifiable form: an aI regulariser gives a resistance independent of the cell, this one is a function of its geometry"
+    },
+    "exact_structural_residuals": {
+      "translation_isotropy": 3.925115816198007e-10,
+      "translation_rotation_coupling": 1.5290200916932594e-12,
+      "operator_symmetry": 0.0,
+      "round_off_floor": 1.4210854715202004e-14,
+      "note": "icosahedral symmetry forces the first two to vanish and the kernel's evenness forces the third; all three are population-INDEPENDENT properties of the operator's form"
+    },
+    "time_reversal": {
+      "forward_axial_pN": -0.1472441703838386,
+      "reversed_axial_pN": 0.14724417041193424,
+      "relative_asymmetry": 2.4715728070204533e-10
+    },
+    "viscosity_linearity": {
+      "doubled_over_single": 2.000000001429821,
+      "exact": 2.0
+    },
+    "dissipation": {
+      "banked_work_pN_um": -0.00014724417036811885,
+      "strictly_negative": true,
+      "committed_reference_advanced_max_abs_um": 0.0,
+      "note": "work is banked only inside commit_irreversible, so it is an accepted-step quantity and not an integral over the solver's path"
+    },
+    "solver": {
+      "cg_iterations_translation": 38,
+      "cg_iterations_rotation": 57,
+      "cg_converged": true,
+      "mobility_condition_number": 2157.44136796682,
+      "transverse_over_axial": 1.5361137673018435e-10,
+      "void_ceiling_ratio": 2.1574413679668202e-05
+    },
+    "grid_invariance": {
+      "exact_translation_resistance": 0.1413716694115407,
+      "exact_rotation_resistance": 10.602875205865553,
+      "epsilon_ratio": 1.0,
+      "rows": [
+        {
+          "n_points": 42.0,
+          "spacing_um": 4.098997933690075,
+          "epsilon_um": 4.098997933690075,
+          "translation_resistance": 0.1709806972039537,
+          "rotation_resistance": 17.00089953715081,
+          "translation_relative_error": 0.2094410281470151,
+          "rotation_relative_error": 0.603423524945936,
+          "translation_isotropy_residual": 1.345357508083552e-16
+        },
+        {
+          "n_points": 162.0,
+          "spacing_um": 2.0958628511555104,
+          "epsilon_um": 2.0958628511555104,
+          "translation_resistance": 0.1544262581140935,
+          "rotation_resistance": 13.313506449145699,
+          "translation_relative_error": 0.09234232542412847,
+          "rotation_relative_error": 0.2556505844547348,
+          "translation_isotropy_residual": 2.937675973032524e-16
+        },
+        {
+          "n_points": 642.0,
+          "spacing_um": 1.0589242639185066,
+          "epsilon_um": 1.0589242639185066,
+          "translation_resistance": 0.14724417043227725,
+          "rotation_resistance": 11.842329211266431,
+          "translation_relative_error": 0.04153944736721882,
+          "rotation_relative_error": 0.1168979150782806,
+          "translation_isotropy_residual": 2.6706563529883645e-16
+        }
+      ],
+      "translation_order": 1.195205695629557
+    },
+    "wall": {
+      "mode": "free_space",
+      "half_space_blake_implemented": false,
+      "note": "T10 checklist item 3 (asymmetric world boundary: basal 2D collagen + free media face) is NOT landed here; spreading and crawl stay gated on it"
+    }
+  },
+  "gate": {
+    "verdict": "FAIL",
+    "criterion_met": false,
+    "residual": 2.2618379728155286e-11,
+    "signal": 0.1472441703838386,
+    "residual_over_signal": 1.5361137673018435e-10,
+    "void_ceiling_ratio": 2.1574413679668202e-05,
+    "void_ceiling_rationale": "a translating icosphere feels exactly zero transverse force by icosahedral symmetry, so any transverse resultant is solver error expressed in physical units; the ceiling is the standard CG error bound (relative residual tolerance x the operator's measured condition number), above which the reported resistance is dominated by an unconverged solve rather than by the exterior operator, and neither PASS nor FAIL of a Stokes-law criterion is interpretable"
+  },
+  "notes": {
+    "mechanism": {
+      "rest_is_force_free": true,
+      "all_six_rigid_modes_loaded": true,
+      "isotropy_at_round_off": false,
+      "decoupling_at_round_off": false,
+      "operator_exactly_symmetric": true,
+      "time_reversible": false,
+      "linear_in_viscosity": false,
+      "dissipates_strictly": true,
+      "cg_converged": true,
+      "converges_under_refinement": true
+    },
+    "trap_four": "PI framework trap #4 is discharged as an enforced invariant, not a deletion: the audit (docs/v2_audit/T10_GAMMA_NODE_AUDIT_2026-07-28.md) found gamma_node = 6 pi eta R / Nc has never existed in ac/ -- both live sites are in ff/ with only legacy scripts/ff_* callers -- so this landing takes ac/'s velocity-proportional drag count from 0 to 1 and medium_exterior.assert_single_dissipation_owner keeps it there",
+    "not_closed": [
+      "membrane_medium_traction is declared and NOT dispatched; rung cannot exceed CUDA_UNIT",
+      "HALF_SPACE_BLAKE (the basal no-slip wall) is not implemented, so the world boundary is still symmetric and spreading/crawl remain gated",
+      "mu_medium is a PI-GAP, so no drag magnitude from this run is quotable",
+      "the aI regularisers in sf_implicit.py and ac/cell/ are untouched: removing them is the cortex/sf-motor lanes' change once the medium is dispatched on a composed cell"
+    ]
+  }
+}

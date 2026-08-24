@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/oa-recoverability-compact-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "authority_status", "source_family_id", "pmcid", "record_sha256", "decision", "priority_score", "research_article_status", "signal_counts", "missing_review_fields", "tag_counts", "observation_locator_count", "dataset_group_hashes"],
+  "properties": {
+    "schema": {"const": "aleph.external_training.oa_recoverability_compact.v1"},
+    "authority_status": {"const": "proposed"},
+    "source_family_id": {"type": "string"},
+    "pmcid": {"type": "string", "pattern": "^PMC[0-9]+$"},
+    "record_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "decision": {"enum": ["hold", "manual_priority", "exception_candidate"]},
+    "exception_reason": {"enum": ["validated_method", "rare_modality", "NONE"]},
+    "priority_score": {"type": "integer"},
+    "research_article_status": {"enum": ["research_article_metadata", "non_research_metadata", "unknown"]},
+    "signal_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "missing_review_fields": {"type": "array", "items": {"type": "string"}},
+    "tag_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "observation_locator_count": {"type": "integer", "minimum": 0},
+    "dataset_group_hashes": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}}
+  }
+}

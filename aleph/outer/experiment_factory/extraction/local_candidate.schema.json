@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aleph.external_training.experiment_local_candidate.v1",
+  "title": "Local proposed ExperimentRecord candidate",
+  "$comment": "The canonical sibling schema is authoritative; text is kept in a separate ignored evidence store keyed by SHA-256.",
+  "$ref": "../schema/experiment_record.schema.json"
+}

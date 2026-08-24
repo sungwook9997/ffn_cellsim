@@ -1,0 +1,328 @@
+{
+  "kind": "diagnostic",
+  "phase": "WORLD_PORT PHASE 1a — geometry only",
+  "scope": "cortex + plasma membrane + nuclear envelope ONLY. MT, IF, filopodium, lamellipodium and stress fibres are built elsewhere and are NOT in these totals.",
+  "may_not_claim": [
+    "any physics — no force is computed and no law is bound",
+    "any step throughput — nothing steps",
+    "that the geometry is correct because it built"
+  ],
+  "device": {
+    "requested": "cuda:0",
+    "resolved": "cuda:0",
+    "name": "NVIDIA GeForce RTX 4090",
+    "arch": 89,
+    "total_memory_bytes": 25756565504,
+    "mempool_enabled": true
+  },
+  "warp_version": "1.14.0",
+  "axes": {
+    "R_cell_um": {
+      "value": 7.5,
+      "unit": "um",
+      "provenance": "SOURCED",
+      "source": "laws/cell_geometry.MCF7_GEOMETRY — MCF7 cell volume 1760 um^3 (BNID 115154, Gamcsik 1995 via Wagner 2011) -> sphere-equivalent R 7.49 um; confirmed by photoacoustic sizing n=37."
+    },
+    "h_cortex_um": {
+      "value": 0.2,
+      "unit": "um",
+      "provenance": "SOURCED",
+      "source": "h_cortex ~ 200 nm (KB-3.1 / KB-3.5; Salbreux 2012 TCB, Charras 2008 BJ, Clark 2013 10.1016/j.bpj.2013.05.057), quoted in laws/cortex_assembly.py:61."
+    },
+    "cortex_areal_density_um2": {
+      "value": 100.00023384349969,
+      "unit": "um^-2",
+      "provenance": "SOURCED",
+      "source": "actin filament areal density ~100 um^-2 (KB-3.18); read back from laws/cortex_assembly.CortexParams rather than retyped."
+    },
+    "cortex_contour_um": {
+      "value": 3.0,
+      "unit": "um",
+      "provenance": "CONVENIENCE",
+      "source": "laws/cortex_assembly.CortexParams.L_filament_um. ⚠ PARAM_PROVENANCE_AUDIT 2026-07-24 rates 3.0 um CONVENIENCE (coarse): sourced formin ~1 um / Arp2/3 ~0.1 um means 3-30x TOO LONG, and the Arp2/3 short-filament population (~1/3 of cortical actin by mass) is a MISSING ARCHITECTURE rather than a wrong number. Carried forward unchanged so this phase changes one axis, not two."
+    },
+    "cortex_seg_um": {
+      "value": 0.05,
+      "unit": "um",
+      "provenance": "SOURCED (band floor)",
+      "source": "cortical mesh / crosslink spacing 50-100 nm (Morone 2006, Bovellan 2014, Chugh & Paluch 2018); the FLOOR of that band, directed by the PI 2026-08-20. It replaces the incumbent's 0.5 um, which the audit rates CONVENIENCE with 0 KB rows and 5-10x TOO COARSE. ⚠ The band CEILING (0.100 um) is equally sourced and halves the cortex node count; which end is used is a PI decision, not a derivation, and it is recorded here as one."
+    },
+    "membrane_mesh_um": {
+      "value": 0.1,
+      "unit": "um",
+      "provenance": "SOURCED (band ceiling)",
+      "source": "same band, read as an upper bound: the membrane mesh must be no COARSER than 100 nm, so the subdivision is the coarsest level lying inside the band. That rule returns 7 at R_cell, which is the level WORLD_PORT_PLAN and PI 2026-07-22 both name — reached from the spacing rather than typed."
+    },
+    "envelope_mesh_um": {
+      "value": 0.1,
+      "unit": "um",
+      "provenance": "PI-GAP",
+      "source": "PI-GAP: no lamin meshwork spacing is registered in this repository. The value used is the cortical/membrane-skeleton mesh band (50-100 nm; Morone 2006, Bovellan 2014, Chugh & Paluch 2018), which is a property of the actin-spectrin cortex and NOT of the nuclear lamina. This is an analogy, not a derivation, and the subdivision it produces inherits that status."
+    },
+    "nc_ratio": {
+      "value": 0.68,
+      "unit": "1",
+      "provenance": "SOURCED",
+      "source": "nucleus:cell RADIUS ratio 0.68 +/- 0.08 — imaging flow cytometry n=2164 (PMC7000884) and photoacoustic n=37 (10.1007/s10765-016-2129-y), both 0.68. ⚠ CONFLICT: components/incumbent/compartments.py carries r_eq_um = 5.0 labelled 'provisional geometry; PI GAP'. The sourced ratio gives 5.10 um. The laws/ value is used; the conflict is reported, not closed."
+    },
+    "seed": {
+      "value": 0,
+      "unit": "1",
+      "provenance": "NUMERICAL",
+      "source": "RNG seed for the cortical filament frames. Not physiological: it selects one realisation of the quenched disorder, and a conclusion that depends on it is a conclusion about one draw."
+    }
+  },
+  "counts": {
+    "cortex": {
+      "shell_radius_um": 7.4,
+      "n_filaments": 68814,
+      "nodes_per_filament": 61,
+      "node": 4197654,
+      "segment": 4128840,
+      "angle3": 4060026
+    },
+    "membrane": {
+      "radius_um": 7.5,
+      "subdivisions": 7,
+      "mesh_um_realised": 0.07058150424933134,
+      "node": 163842,
+      "face": 327680,
+      "angle4": 491520
+    },
+    "nuclear_envelope": {
+      "radius_um": 5.1000000000000005,
+      "subdivisions": 6,
+      "mesh_um_realised": 0.09599084577909062,
+      "node": 40962,
+      "face": 81920,
+      "angle4": 122880
+    },
+    "total": {
+      "node": 4402458,
+      "segment": 4128840,
+      "angle3": 4060026,
+      "face": 409600,
+      "angle4": 614400
+    }
+  },
+  "populations": {
+    "populations": [
+      {
+        "population": "cortex",
+        "kind": "strand_population",
+        "n_strands": 68814,
+        "nodes_per_strand": 61,
+        "n_nodes": 4197654,
+        "n_segments": 4128840,
+        "n_angle3": 4060026,
+        "radius_um": 7.4,
+        "thickness_um": 0.2,
+        "centre_um": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "areal_density_um2": 100.00023384349969,
+        "density_provenance": "actin filament areal density ~100 um^-2 (KB-3.18); read back from laws/cortex_assembly.CortexParams rather than retyped.",
+        "contour_um_requested": 3.0,
+        "contour_um_realised": 3.0,
+        "seg_um_requested": 0.05,
+        "seg_um_realised_arc": 0.05,
+        "seed": 0,
+        "polarity": 1,
+        "topology_bytes": 180843192,
+        "claims": {
+          "node": [
+            0,
+            4197654
+          ],
+          "segment": [
+            0,
+            4128840
+          ],
+          "angle3": [
+            0,
+            4060026
+          ]
+        },
+        "seg_chord_um_mean": 0.049999904874584035,
+        "seg_chord_um_min": 0.049999902264552185,
+        "seg_chord_um_max": 0.04999990740744329
+      },
+      {
+        "population": "membrane",
+        "kind": "closed_surface",
+        "subdivisions": 7,
+        "n_vertices": 163842,
+        "n_faces": 327680,
+        "n_hinges": 491520,
+        "radius_um": 7.5,
+        "centre_um": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mesh_um_requested": 0.1,
+        "mesh_um_realised": 0.07058150424933134,
+        "mesh_provenance": "same band, read as an upper bound: the membrane mesh must be no COARSER than 100 nm, so the subdivision is the coarsest level lying inside the band. That rule returns 7 at R_cell, which is the level WORLD_PORT_PLAN and PI 2026-07-22 both name — reached from the spacing rather than typed.",
+        "volume0_um3": 1767.0859961655485,
+        "area0_total_um2": 706.8450554048138,
+        "topology_bytes": 14417920,
+        "claims": {
+          "node": [
+            4197654,
+            4361496
+          ],
+          "face": [
+            0,
+            327680
+          ],
+          "angle4": [
+            0,
+            491520
+          ]
+        }
+      },
+      {
+        "population": "nuclear_envelope",
+        "kind": "closed_surface",
+        "subdivisions": 6,
+        "n_vertices": 40962,
+        "n_faces": 81920,
+        "n_hinges": 122880,
+        "radius_um": 5.1000000000000005,
+        "centre_um": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mesh_um_requested": 0.1,
+        "mesh_um_realised": 0.09599084577909062,
+        "mesh_provenance": "PI-GAP: no lamin meshwork spacing is registered in this repository. The value used is the cortical/membrane-skeleton mesh band (50-100 nm; Morone 2006, Bovellan 2014, Chugh & Paluch 2018), which is a property of the actin-spectrin cortex and NOT of the nuclear lamina. This is an analogy, not a derivation, and the subdivision it produces inherits that status.",
+        "volume0_um3": 555.571912952269,
+        "area0_total_um2": 326.8267168652128,
+        "topology_bytes": 3604480,
+        "claims": {
+          "node": [
+            4361496,
+            4402458
+          ],
+          "face": [
+            327680,
+            409600
+          ],
+          "angle4": [
+            491520,
+            614400
+          ]
+        }
+      }
+    ],
+    "arena": {
+      "capacity": {
+        "node": 4402458,
+        "segment": 4128840,
+        "angle3": 4060026,
+        "face": 409600,
+        "angle4": 614400
+      },
+      "live": {
+        "node": 4402458,
+        "segment": 4128840,
+        "angle3": 4060026,
+        "face": 409600,
+        "angle4": 614400
+      },
+      "utilisation": {
+        "node": 1.0,
+        "segment": 1.0,
+        "angle3": 1.0,
+        "face": 1.0,
+        "angle4": 1.0
+      },
+      "populations": {
+        "cortex": {
+          "node": 4197654,
+          "segment": 4128840,
+          "angle3": 4060026
+        },
+        "membrane": {
+          "node": 163842,
+          "face": 327680,
+          "angle4": 491520
+        },
+        "nuclear_envelope": {
+          "node": 40962,
+          "face": 81920,
+          "angle4": 122880
+        }
+      },
+      "n_claims": 9,
+      "device": "cuda:0",
+      "node_arrays": [
+        "force",
+        "mobility",
+        "position",
+        "position_snap",
+        "range_id",
+        "strand_id"
+      ],
+      "node_bytes_arithmetic": 387416304
+    },
+    "topology_bytes_total": 198865592
+  },
+  "timings_s": {
+    "arena_alloc_s": 3.7912298120209016,
+    "cortex_s": 0.0067922360030934215,
+    "membrane_s": 0.03187419500318356,
+    "envelope_s": 0.0022655109933111817,
+    "total_s": 3.8321678250213154
+  },
+  "memory": {
+    "warp_mempool_high_bytes": 606925788,
+    "warp_mempool_high_note": "Warp allocator high-water mark. Every byte this build allocates goes through it; the CUDA context does not.",
+    "device_used_before_bytes": 1647706112,
+    "device_used_after_bytes": 2287337472,
+    "device_used_delta_bytes": 639631360,
+    "device_used_note": "device-WIDE, so it carries the CUDA context and any other process on the card. Not a per-process figure.",
+    "arena_node_bytes_arithmetic": 387416304,
+    "population_topology_bytes": 198865592,
+    "bytes_per_node_arena": 88.0,
+    "bytes_per_node_with_topology": 133.17149101706366,
+    "bytes_per_node_measured": 137.8606651102634,
+    "exact_peak_gpu_bytes": null,
+    "exact_peak_gpu_bytes_status": "NOT MEASURED. The ledger's exact_peak_gpu_bytes is NVML per-process maxMemoryUsage, which needs driver accounting mode enabled before the process starts. The only implementation in this repository is components/incumbent/gpu_memory_accounting.py, and world/ may not import components/ (test_layer_directions). Porting it into a layer world/ may import is an open item; the two figures above are what this module can measure, named for what they are."
+  },
+  "invariants": {
+    "assert_partitioned": "PASS",
+    "assert_disjoint_spans": [
+      "force",
+      "mobility",
+      "position",
+      "position_snap",
+      "range_id",
+      "strand_id"
+    ],
+    "verification": {
+      "max_relative_radius_drift_within_filament": 7.516679549050898e-15,
+      "shell_radius_span_um": [
+        7.300005841255187,
+        7.499999320507052
+      ],
+      "shell_fill_fraction": 0.9999673962593247,
+      "max_relative_chord_deviation": 5.370714062053722e-14,
+      "chord_vs_requested_step": 0.9999980974916807,
+      "topology_identical_to_per_strand_builder": true,
+      "claims_per_strand_builder": 24,
+      "claims_this_builder": 3,
+      "membrane_max_relative_radius_deviation": 3.552713678800501e-16,
+      "membrane_discrete_analytic_volume_gap": 3.388032635346539e-05,
+      "membrane_area0_total_um2": 706.8450554048138,
+      "nuclear_envelope_max_relative_radius_deviation": 3.4830526262750004e-16,
+      "nuclear_envelope_discrete_analytic_volume_gap": 0.00013551134887270844,
+      "nuclear_envelope_area0_total_um2": 326.8267168652128,
+      "assert_partitioned": "PASS"
+    },
+    "verification_note": "read back from what the kernels wrote; the topology entry is an EXACT comparison against strand.build_strand, which is what makes the claim-model change bookkeeping rather than geometry."
+  }
+}

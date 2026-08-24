@@ -1,0 +1,52 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 3 items
+
+ffn_sim/tests/test_persistence_length.py ..F
+
+=================================== FAILURES ===================================
+________________ TestH2Production.test_angle_distribution_ks_3d ________________
+
+self = <ffn_sim.tests.test_persistence_length.TestH2Production object at 0x106eee8b0>
+production_trajectory = ({'frame_steps': array([  150000,   200000,   250000,   300000,   350000,   400000,
+         450000,   500000,   55000...59745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None))
+
+    def test_angle_distribution_ks_3d(self, production_trajectory):
+        from scipy import stats
+        result, p = production_trajectory
+        pos_all = result["positions"]
+        theta_samples = []
+        for frame in pos_all:
+            theta = hoomd_angle_array(frame, box=None)
+            theta_samples.append(theta.ravel())
+        theta_all = np.concatenate(theta_samples)
+        # Reference 3D solid-angle Boltzmann CDF.
+        grid = np.linspace(
+            theta_all.min(), theta_all.max(), 4001, dtype=np.float64
+        )
+        density = boltzmann_angle_density_3d(
+            grid, bending_modulus=p.bending_modulus,
+            rest_length=p.rest_length, kT=p.kT,
+        )
+        cdf_vals = np.cumsum(density)
+        cdf_vals /= cdf_vals[-1]
+        # Empirical CDF at grid points (interpolate).
+        def cdf_ref(x):
+            return np.interp(x, grid, cdf_vals)
+        ks_stat, p_value = stats.kstest(theta_all, cdf_ref)
+>       assert p_value > p.angle_ks_p_min, (
+            f"Angle distribution KS p = {p_value:.4f} < threshold "
+            f"{p.angle_ks_p_min} (ks_stat = {ks_stat:.4f}). 3D Boltzmann "
+            "form is the principled reference per BAOAB §Open #1; if "
+            "this fails, surface to PI."
+        )
+E       AssertionError: Angle distribution KS p = 0.0000 < threshold 1e-06 (ks_stat = 0.1363). 3D Boltzmann form is the principled reference per BAOAB §Open #1; if this fails, surface to PI.
+E       assert np.float64(3.7166015030951394e-308) > 1e-06
+E        +  where 1e-06 = ResolvedH2(L_fiber=1e-05, bead_radius=3e-08, persistence_length=1.7e-05, bending_modulus=7e-26, stretching_modulus=1.5...559745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None).angle_ks_p_min
+
+ffn_sim/tests/test_persistence_length.py:324: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/test_persistence_length.py::TestH2Production::test_angle_distribution_ks_3d
+=================== 1 failed, 2 passed in 4732.66s (1:18:52) ===================

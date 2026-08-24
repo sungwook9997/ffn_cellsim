@@ -1,0 +1,22 @@
+{
+  "ambiguous_observations_promoted_to_labels": 0,
+  "authority_status": "proposed",
+  "error_classes": {
+    "leakage_split": 0
+  },
+  "errors": 0,
+  "forbidden_raw_fields": 0,
+  "frozen_300_evaluation_cohort_sources": 300,
+  "leakage_groups": 5560,
+  "leakage_split_violations": 0,
+  "projection_file_sha256": "929adbbbd5b5ee7c59cabd5612c3961bd8e4a93edcdaafeb3e3eb654a7f42421",
+  "schema": "aleph.external_training.learning_projection_audit.v1",
+  "sources": 5675,
+  "split_source_counts": {
+    "test": 831,
+    "train": 4004,
+    "validation": 840
+  },
+  "unique_projection_ids": 5675,
+  "unique_sources": 5675
+}

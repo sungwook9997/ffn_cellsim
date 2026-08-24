@@ -1,0 +1,123 @@
+{
+  "aleph_authority": "none",
+  "aligned_active_nanoswitch_task": {
+    "active_strata": [
+      "LooPINS",
+      "CaPINS"
+    ],
+    "external_metrics": {
+      "accuracy": 0.5819935691318328,
+      "auroc": 0.7616572616572617,
+      "balanced_accuracy": 0.725980100980101,
+      "class_counts": {
+        "0": 52,
+        "1": 259
+      },
+      "decision_threshold": 0.5,
+      "macro_f1": 0.5499376614124143,
+      "sample_count": 311
+    },
+    "external_stratum_metrics": {
+      "CaPINS": {
+        "accuracy": 0.5739130434782609,
+        "auroc": 0.8063973063973064,
+        "balanced_accuracy": 0.7215909090909091,
+        "class_counts": {
+          "0": 27,
+          "1": 88
+        },
+        "decision_threshold": 0.5,
+        "macro_f1": 0.5692225365033254,
+        "sample_count": 115
+      },
+      "LooPINS": {
+        "accuracy": 0.5867346938775511,
+        "auroc": 0.7375438596491228,
+        "balanced_accuracy": 0.7119298245614035,
+        "class_counts": {
+          "0": 25,
+          "1": 171
+        },
+        "decision_threshold": 0.5,
+        "macro_f1": 0.524314606741573,
+        "sample_count": 196
+      }
+    },
+    "representation": "baseline_subtracted_time_and_amplitude_invariant_curve_shape",
+    "selected_penalty": 31.622776601683793,
+    "selected_threshold": 0.5,
+    "selection_protocol": "feature, ridge penalty, and decision threshold selected on a deterministic 30/20-per-class HeLa train/validation split; EA.hy926 never used for selection",
+    "training_validation_metrics": {
+      "accuracy": 0.95,
+      "auroc": 0.985,
+      "balanced_accuracy": 0.95,
+      "class_counts": {
+        "0": 20,
+        "1": 20
+      },
+      "decision_threshold": 0.5,
+      "macro_f1": 0.95,
+      "sample_count": 40
+    }
+  },
+  "aligned_external_conditions": [
+    "CaPINS (+GsMTx4)",
+    "CaPINS (+Mag)",
+    "LooPINS (+GsMTx4)",
+    "LooPINS (+Mag)"
+  ],
+  "external_conditions": [
+    "BINPs (+GsMTx4)",
+    "BINPs (+Mag)",
+    "CaPINS (+GsMTx4)",
+    "CaPINS (+Mag)",
+    "LooPINS (+GsMTx4)",
+    "LooPINS (+Mag)",
+    "No NPs (+GsMTx4)",
+    "No NPs (+Mag)"
+  ],
+  "external_dataset": "zenodo-19890985 EA.hy926",
+  "external_lab_holdout": true,
+  "label_mapping": {
+    "0": "non-inhibited magnetic/mechanical reference",
+    "1": "GsMTx4 Piezo1-inhibited"
+  },
+  "legacy_broad_arm_metrics": {
+    "accuracy": 0.5445205479452054,
+    "auroc": 0.5082221446035627,
+    "balanced_accuracy": 0.51789032483409,
+    "class_counts": {
+      "0": 175,
+      "1": 409
+    },
+    "macro_f1": 0.5075573138567661,
+    "sample_count": 584
+  },
+  "limitations": [
+    "cell line and stimulation protocol differ across labs",
+    "EA.hy926 biological-replicate IDs are not encoded per cell",
+    "mechanism-level labels are aligned; exact treatment labels are not identical",
+    "external class prevalence differs sharply and no external labels tune the threshold"
+  ],
+  "metrics": {
+    "accuracy": 0.5445205479452054,
+    "auroc": 0.5082221446035627,
+    "balanced_accuracy": 0.51789032483409,
+    "class_counts": {
+      "0": 175,
+      "1": 409
+    },
+    "macro_f1": 0.5075573138567661,
+    "sample_count": 584
+  },
+  "sample_overlap_count": 0,
+  "split_unit": "entire dataset and lab",
+  "task": "binary_Piezo1_inhibitor_signature_transfer",
+  "task_holdout_passed": false,
+  "training_conditions": [
+    "Piezo1_inhibited_GsMTx4",
+    "untreated_control"
+  ],
+  "training_dataset": "zenodo-18495219 HeLa",
+  "training_sample_count": 100
+}

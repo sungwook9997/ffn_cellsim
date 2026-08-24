@@ -1,0 +1,94 @@
+{
+  "schema": "aleph.outer_library.idr0072_if_final_optical_protocol.v4",
+  "frozen_after_human_and_mouse_metadata_probes_but_before_pixel_array_access_or_prediction": true,
+  "scientific_role": "schema-and-optics-informed independent-provider domain-shift diagnostic; not a pristine source-selection holdout",
+  "current_program_objective": "independent_external_biophysical_inference_network",
+  "future_aleph_adapter_required_for_completion": false,
+  "discovery_disclosure": {
+    "annotation_schema_rows_seen_before_v2": 1,
+    "human_flex_files_opened_for_metadata": 1,
+    "mouse_flex_files_opened_for_metadata": 1,
+    "pixel_arrays_loaded": 0,
+    "model_predictions_made": 0,
+    "reports": [
+      "results/idr0072_if_v1_schema_discovery.json",
+      "results/idr0072_if_v2_channel_discovery.json",
+      "results/idr0072_if_v3_mouse_optics_discovery.json"
+    ],
+    "effect_on_model_or_endpoints": "none"
+  },
+  "source_contract": {
+    "provider": "Image Data Resource / University of Dundee",
+    "study": "idr0072-schormann-subcellref",
+    "data_doi": "10.17867/10000160",
+    "publication_doi": "10.1083/jcb.201904090",
+    "license": "CC BY 4.0",
+    "flex_manifest": "results/idr0072_if_flex_manifest.jsonl",
+    "flex_manifest_sha256": "40ac8cf5d52ec887e4c65fe41b7eec1d407d7bf4a73d473f7362587104dc3371",
+    "flex_manifest_commit": "7cdb399"
+  },
+  "frozen_model": {
+    "checkpoint": "results/hpa_raw_if_cnn_checkpoint.pt",
+    "checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+    "training_report": "results/hpa_raw_if_cnn_training_report.json",
+    "commit": "e755bd9",
+    "weights_thresholds_temperature_and_conformal_values_may_change": false
+  },
+  "field_and_channel_contract": {
+    "metadata_source": "PerkinElmer FLEX XML tag 65200",
+    "field_resolution": "parse the one-based Field number from the frozen IDR image name and select Image elements whose integer Sublayout equals that field",
+    "z_resolution": "within the selected sublayout, group repeated role-matched pages by role; maximum-project only if more than one page for a role shares the same sublayout",
+    "target_protein": {
+      "camera_normalized_suffixes": ["cam1", "camera1"],
+      "emission_center_nm": 520,
+      "emission_bandwidth_nm": 35,
+      "required_light_source_nm": 488
+    },
+    "nucleus": {
+      "camera_normalized_suffixes": ["cam3", "camera3"],
+      "emission_center_nm": 690,
+      "allowed_emission_bandwidth_nm": [50, 70],
+      "allowed_light_source_nm": [635, 640]
+    },
+    "light_source_rule": "the selected sublayout's referenced LightSourceCombination must contain 488 and one of 635 or 640 nm; camera and emission filter uniquely assign roles",
+    "resolution_rule": "after sublayout filtering, each page must map to at most one role and both roles must have at least one page",
+    "mismatch": "refuse file before prediction"
+  },
+  "pixel_preprocessing_contract": {
+    "input_order": ["nucleus", "target_protein"],
+    "per_channel_scaling": "finite p1/p99 clipping to [0,1] with all-zero output when p99 is not above p1",
+    "geometry": "center-crop to square then area-resize to 128x128",
+    "input_shape": [2, 128, 128],
+    "server_rendered_composite_used": false,
+    "absolute_intensity_claim": false
+  },
+  "evaluation_contract": {
+    "supported_primary_classes": ["nuclear_interior", "endoplasmic_reticulum", "golgi", "mitochondria", "plasma_membrane_or_junction", "vesicular_organelle"],
+    "unsupported_frozen_model_classes": ["nuclear_envelope", "cytosol", "cytoskeleton_or_adhesion"],
+    "thresholds_temperature_and_conformal": "use frozen HPA checkpoint values unchanged",
+    "prediction_aggregation": "image diagnostics plus arithmetic-mean logits per landmark protein and plate",
+    "external_labels_may_select_or_change_nothing": true
+  },
+  "frozen_endpoints": {
+    "supported_class_image_level_macro_average_precision_minimum": 0.45,
+    "supported_class_image_level_macro_F1_minimum": 0.45,
+    "multilabel_ECE_maximum": 0.20,
+    "positive_label_conformal_coverage_minimum": 0.85,
+    "mean_prediction_set_size_maximum": 4.0,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_diagnostic_if_endpoints_pass": true,
+    "pristine_holdout_authority": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  },
+  "failure_policy": {
+    "file_field_or_optical_metadata_mismatch": "refuse affected image before prediction",
+    "endpoint_failure": "retain as consumed independent-provider diagnostic only",
+    "endpoint_success": "record optics-informed independent-provider domain-shift support without pristine or uncertainty authority"
+  }
+}

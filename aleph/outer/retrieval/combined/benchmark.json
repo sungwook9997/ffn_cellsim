@@ -1,0 +1,51 @@
+{
+  "authority_status": "proposed",
+  "combined": {
+    "cold_import_and_initialization_ms": 5112.974709001719,
+    "queries": {
+      "cortical_tension": {
+        "median_ms": 391.7751249973662,
+        "observed_max_ms": 463.5201670025708,
+        "result_sha256": "79a5ed457291fac884d10c2e9de49ce549623e1395e763d777093c88c3b8b508",
+        "top_proposed_coarse_domain": "cortical_membrane_pressure"
+      },
+      "if_wb_pcr": {
+        "median_ms": 362.9229590005707,
+        "observed_max_ms": 434.093791001942,
+        "result_sha256": "2618c5ec808ed399a26e9e9c1068b8d3fb29d648952527037aabb864270aed0f",
+        "top_proposed_coarse_domain": "mechanotransduction"
+      },
+      "piv_cell_state": {
+        "median_ms": 279.6600410074461,
+        "observed_max_ms": 339.23033300379757,
+        "result_sha256": "54af9164bdf4a0e77496fd236b889cb03536ed96263af430f5d6d8b5766d642d",
+        "top_proposed_coarse_domain": "flow_shear"
+      },
+      "tfm": {
+        "median_ms": 330.7021249929676,
+        "observed_max_ms": 388.46158399246633,
+        "result_sha256": "b322ce379f3d3cb346bcf80b44ee6d5f11046f182b7e987d2e049605e79885fe",
+        "top_proposed_coarse_domain": "adhesion_ecm_mechanics"
+      }
+    }
+  },
+  "environment": "local CPU; separate fresh processes for v1 and combined, seven warm in-process runs per query",
+  "queries": {
+    "cortical_tension": "cortical tension actomyosin membrane",
+    "if_wb_pcr": "immunofluorescence western blot PCR cell state",
+    "piv_cell_state": "particle image velocimetry PIV cell migration state",
+    "tfm": "traction force microscopy focal adhesion TFM"
+  },
+  "runs_per_query": 7,
+  "schema": "aleph.external_training.combined_retrieval_benchmark.v1",
+  "snippets_committed": false,
+  "v1_same_session_comparator": {
+    "cold_import_and_initialization_ms": 2564.2927089938894,
+    "queries": {
+      "cortical_tension": {"median_ms": 311.2716250034282, "observed_max_ms": 331.4038749958854},
+      "if_wb_pcr": {"median_ms": 310.0516660051653, "observed_max_ms": 342.8692090092227},
+      "piv_cell_state": {"median_ms": 317.3181250022026, "observed_max_ms": 342.4877500074217},
+      "tfm": {"median_ms": 291.9985830085352, "observed_max_ms": 312.9686669999501}
+    }
+  }
+}

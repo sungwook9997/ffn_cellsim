@@ -1,0 +1,121 @@
+{
+  "authority_status": "proposed",
+  "combined_retrieval": {
+    "binding_checks": {
+      "coarse_taxonomy_sha256": true,
+      "index_sha256": true,
+      "model_routable_set_matches_index": true,
+      "rag_ledger_head_hash": true,
+      "rag_projection_hash": true,
+      "rag_snapshot_manifest_hash": true,
+      "rag_validation_receipt_sha256": true,
+      "splits_sha256": true,
+      "weights_sha256": true
+    },
+    "chunk_count": 284620,
+    "claims_verified": true,
+    "errors": {},
+    "forbidden_content_fields": [],
+    "index_rows": 5675,
+    "index_sha256": "ede8d2aff2a8786efa8e01bba6fbb398f46bdfdcc34eda0ef2662bdefe7a5887",
+    "neural_routable_source_families": 5669,
+    "pass_source_families": {"first": 2701, "second": 2974},
+    "producer_commits": {
+      "combined_index": "3dbb3aaf5ace50ea73bd3304a3da630d540ce14a",
+      "model_weights": "53366721e1d0124b2427258ecfff31f550ab2fb8",
+      "rag_validation_receipt": "736153b3b73059b281e40fdd9a3550f7d587dbf2"
+    },
+    "text_committed": false,
+    "unique_source_families": 5675
+  },
+  "candidate_families": {
+    "combined_unique_families": 10208,
+    "family_overlap": 5,
+    "first_pass_files": 6,
+    "first_pass_rows": 7218,
+    "first_pass_unique_families": 7213,
+    "second_pass_new_families": 2995,
+    "second_pass_rows": 3000,
+    "second_pass_unique_families": 3000
+  },
+  "claims_verified": true,
+  "derived_chunks": {
+    "errors": {},
+    "passes": [
+      {
+        "article_manifest_set_sha256": "cf618563667281631b8df4f5453a83c65402e95ae619ba8788c72297607ac069",
+        "article_manifests": 2701,
+        "chunk_files": 2701,
+        "chunk_records": 139573,
+        "figures": 17173,
+        "manifest_chunk_sum": 139573,
+        "path": "data/external_training/derived",
+        "payload_bytes": 445899949,
+        "sections": 79071,
+        "source_families": 2701,
+        "tables": 2213
+      },
+      {
+        "article_manifest_set_sha256": "9627db89509f0a2f363ec93e65a2da4b68d3ab1b0415195788145b54a30bcf0f",
+        "article_manifests": 2974,
+        "chunk_files": 2974,
+        "chunk_records": 145047,
+        "figures": 21143,
+        "manifest_chunk_sum": 145047,
+        "path": "data/external_training/derived_second_pass",
+        "payload_bytes": 404754837,
+        "sections": 82918,
+        "source_families": 2974,
+        "tables": 2237
+      }
+    ],
+    "source_family_overlap_between_stores": 0,
+    "totals": {
+      "chunks": 284620,
+      "families": 5675,
+      "figures": 38316,
+      "payload_bytes": 850654786,
+      "sections": 161989,
+      "tables": 4450
+    }
+  },
+  "receipts_and_objects": {
+    "disk_object_files": 5675,
+    "errors": {},
+    "passes": [
+      {
+        "path": "corpus/external_training/acquisition/europe_pmc_oa_2026-08-05.jsonl",
+        "records": 2713,
+        "sha256": "a3348a0d505c5761b670e527109665814885fd71e196c68f553639ade34005cd",
+        "status_counts": {"failed": 12, "success": 2701},
+        "success_families": 2701,
+        "success_payload_digests": 2701,
+        "verified_bytes": 445899949,
+        "verified_success_objects": 2701
+      },
+      {
+        "path": "corpus/external_training/acquisition/second_pass/receipts_2026-08-05.jsonl",
+        "records": 3000,
+        "sha256": "399e1db43925f0c6cab7a007c884b228de0abf5823f79ffd9c320f0aadfc9b7a",
+        "status_counts": {"failed": 26, "success": 2974},
+        "success_families": 2974,
+        "success_payload_digests": 2974,
+        "verified_bytes": 404754837,
+        "verified_success_objects": 2974
+      }
+    ],
+    "referenced_objects_missing_from_disk_listing": 0,
+    "referenced_unique_objects": 5675,
+    "success_family_overlap_between_passes": 0,
+    "totals": {"bytes": 850654786, "failed": 38, "records": 5713, "success": 5675},
+    "unreferenced_disk_objects": 0
+  },
+  "schema": "aleph.external_training.independent_verification.v1",
+  "tracked_hygiene": {
+    "forbidden_tracked_paths": [],
+    "tracked_chunk_text_files": 0,
+    "tracked_external_data_root_files": 0,
+    "tracked_files": 839,
+    "tracked_pdf_xml_jats_files": 0
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "n_fil": 200,
+    "n_motors": 0,
+    "turgor_Pa": [
+      0,
+      40,
+      400
+    ],
+    "R_cell_um": 7.5,
+    "band_mN_m": [
+      0.35,
+      0.65
+    ]
+  },
+  "conditions": [
+    {
+      "turgor_dP0_Pa": 0.0,
+      "yl_pred_mN_m": 0.0,
+      "g_soft_mN_m": 9.399899558061843e-08,
+      "g_rigid_mN_m": 0.03332701394032694,
+      "g_total_mN_m": 0.03332710793932252,
+      "signed_soft_mN_m": 6.81753788575954e-08,
+      "r_over_r0": 1.000001437464995,
+      "n_motors": 0
+    },
+    {
+      "turgor_dP0_Pa": 40.0,
+      "yl_pred_mN_m": 0.15000000000000002,
+      "g_soft_mN_m": 8.60825484916725e-08,
+      "g_rigid_mN_m": 0.033337342896476996,
+      "g_total_mN_m": 0.03333742897902549,
+      "signed_soft_mN_m": 6.058431094254346e-08,
+      "r_over_r0": 1.0000013794867395,
+      "n_motors": 0
+    },
+    {
+      "turgor_dP0_Pa": 400.0,
+      "yl_pred_mN_m": 1.5,
+      "g_soft_mN_m": 8.210808253380455e-08,
+      "g_rigid_mN_m": 0.03259766208187883,
+      "g_total_mN_m": 0.032597744189961364,
+      "signed_soft_mN_m": 6.121788485264429e-08,
+      "r_over_r0": 1.000001327017437,
+      "n_motors": 0
+    }
+  ],
+  "verdict": "PARTIAL \u2014 turgor lifts tension but BELOW Young-Laplace (g_total/YL \u2248 0.12); the shell partly inflates/relaxes rather than holding the full hoop tension (check r/r0)."
+}

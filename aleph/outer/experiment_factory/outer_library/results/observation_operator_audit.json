@@ -1,0 +1,113 @@
+{
+  "aleph_source_files_mutated": false,
+  "candidate_native_external_observables": [
+    "tissue_traction_force_per_cell"
+  ],
+  "checks": {
+    "all_declared_source_evidence_resolves": true,
+    "all_shortcuts_explicitly_forbidden": true,
+    "all_statuses_allowed": true,
+    "authority_is_conservative_inventory": true,
+    "entries_present": true,
+    "external_observables_unique": true,
+    "no_unvalidated_entry_is_promotable": true,
+    "schema_supported": true,
+    "unavailable_entries_have_no_operator": true,
+    "validated_statuses_have_complete_validation": true
+  },
+  "duplicate_external_observables": [],
+  "entries": [
+    {
+      "external_observable": "CDH1_RNA_abundance",
+      "forbidden_shortcut_recorded": true,
+      "operator_id": null,
+      "promotable_to_numeric_sweep": false,
+      "required_validation_fields_present": false,
+      "source_exists": null,
+      "source_path": null,
+      "source_sha256": null,
+      "source_symbol_present": null,
+      "status": "unavailable",
+      "status_allowed": true
+    },
+    {
+      "external_observable": "VIM_RNA_abundance",
+      "forbidden_shortcut_recorded": true,
+      "operator_id": null,
+      "promotable_to_numeric_sweep": false,
+      "required_validation_fields_present": false,
+      "source_exists": null,
+      "source_path": null,
+      "source_sha256": null,
+      "source_symbol_present": null,
+      "status": "unavailable",
+      "status_allowed": true
+    },
+    {
+      "external_observable": "E_cadherin_protein_abundance",
+      "forbidden_shortcut_recorded": true,
+      "operator_id": null,
+      "promotable_to_numeric_sweep": false,
+      "required_validation_fields_present": false,
+      "source_exists": null,
+      "source_path": null,
+      "source_sha256": null,
+      "source_symbol_present": null,
+      "status": "unavailable",
+      "status_allowed": true
+    },
+    {
+      "external_observable": "Vimentin_protein_abundance",
+      "forbidden_shortcut_recorded": true,
+      "operator_id": null,
+      "promotable_to_numeric_sweep": false,
+      "required_validation_fields_present": false,
+      "source_exists": null,
+      "source_path": null,
+      "source_sha256": null,
+      "source_symbol_present": null,
+      "status": "unavailable",
+      "status_allowed": true
+    },
+    {
+      "external_observable": "tissue_traction_force_per_cell",
+      "forbidden_shortcut_recorded": true,
+      "operator_id": "aleph.vertical.connectors_transfer.ExteriorStokesTractionConnector.read_forces",
+      "promotable_to_numeric_sweep": false,
+      "required_validation_fields_present": false,
+      "source_exists": true,
+      "source_path": "aleph/vertical/connectors_transfer.py",
+      "source_sha256": "b986f95cbaadbfb39b6c7877fbd17a8c4bb43c9cc9fbc358ca9006a797d79646",
+      "source_symbol_present": true,
+      "status": "candidate_native",
+      "status_allowed": true
+    },
+    {
+      "external_observable": "membrane_tether_plateau_force",
+      "forbidden_shortcut_recorded": true,
+      "operator_id": null,
+      "promotable_to_numeric_sweep": false,
+      "required_validation_fields_present": false,
+      "source_exists": true,
+      "source_path": "aleph/vertical/cortex_filaments.py",
+      "source_sha256": "d52981b4dc3de65b882b84659049130ab7460d7af84982542eed80c5a8ab9d0f",
+      "source_symbol_present": true,
+      "status": "unavailable",
+      "status_allowed": true
+    }
+  ],
+  "failed_checks": [],
+  "may_emit_numeric_parameter_range": false,
+  "may_select_aleph_parameter": false,
+  "passed": true,
+  "promotable_external_observables": [],
+  "registry_schema": "aleph.outer_library.observation_operator_registry.v1",
+  "schema": "aleph.outer_library.observation_operator_audit.v1",
+  "unavailable_external_observables": [
+    "CDH1_RNA_abundance",
+    "E_cadherin_protein_abundance",
+    "VIM_RNA_abundance",
+    "Vimentin_protein_abundance",
+    "membrane_tether_plateau_force"
+  ]
+}

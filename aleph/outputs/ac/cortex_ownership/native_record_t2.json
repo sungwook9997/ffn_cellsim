@@ -1,0 +1,229 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "GATE-A cortex array ownership \u2014 private arrays, incumbent parity, double-count control",
+  "build": {
+    "commit": "dc6b8aa3",
+    "dirty": null,
+    "branch": null,
+    "source": "declared",
+    "reason": "/home/sungwook/ffn_ac_native is not a git repository; the commit is the caller's assertion and was not verified here"
+  },
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "the cortex owner allocated component-private position/force arrays of exactly its own node count, launched the real ff bending + crosslink kernels on CUDA over them, and its force field matched the incumbent's cortex assembly node-by-node; NOT CONNECTED \u2014 no connector was dispatched inside an accepted-step transaction and no two-sided resultant was closed",
+  "config": {
+    "argv": {
+      "build_commit": "dc6b8aa3",
+      "cortex_density": 20.0,
+      "cortex_length_um": 3.0,
+      "cortex_seg_um": 0.5,
+      "device": null,
+      "filaments": 70686,
+      "out": "outputs/ac/cortex_ownership/native_record_t2.json",
+      "overlap_free": true,
+      "seed": 0,
+      "skip_myosin_arm": false
+    },
+    "parity_relative_tolerance": 1e-12,
+    "parity_tolerance_source": "COMPARTMENT_VALIDATION_TRACKS_2026-07-25.md T2 pass criterion, written before this run",
+    "incumbent_compartments": "myosin/steric/nucleus/membrane/pressure OFF for the parity arm"
+  },
+  "config_sha256": "sha256:e189f8e678cf5e2a32e0f31e92bb7b621bc175c76efbd7d9c028e07c4c7f4b39",
+  "census": {
+    "component": "cortex",
+    "population": {
+      "n_filaments": 70686,
+      "n_nodes": 494802,
+      "n_segments": 424116,
+      "n_crosslinks": 1413720,
+      "n_bending_triples": 353430,
+      "n_branch_triples": 0,
+      "n_myosin_sites_offered": 442,
+      "n_active_filament_ids": 70686,
+      "n_dormant_filament_ids": 0
+    },
+    "owned_position_len": 494802,
+    "owned_force_len": 494802,
+    "arrays_private": true,
+    "position_storage": "('device-ptr', 'cuda:0', 12918456320)",
+    "force_storage": "('device-ptr', 'cuda:0', 12930331648)",
+    "bound_force_channels": [
+      "cytosim_bending",
+      "crosslink_link_spring"
+    ],
+    "channels_not_bound": {
+      "axial_inextensibility": "NF2007 constraint carried by the solver, not an accumulated force \u2014 binding a spring here would double-count the backbone",
+      "steric_wca": "the WCA neighbour search addresses every solid node in the cell, not just the cortex; it belongs to the composed world",
+      "biot_pressure": "-alpha*grad(p)*V is a field->solid coupling owned by the cytosol component and delivered through surface_porous_transfer, not a cortex-internal channel"
+    },
+    "connector_domains": {
+      "filopodium_cortex_root": {
+        "domain": "node",
+        "size": 494802
+      },
+      "lamellipodium_cortex_seam": {
+        "domain": "node",
+        "size": 494802
+      },
+      "membrane_cortex_contact": {
+        "domain": "node",
+        "size": 494802
+      },
+      "membrane_erm_cortex": {
+        "domain": "node",
+        "size": 494802
+      },
+      "mt_cortex_capture": {
+        "domain": "node",
+        "size": 494802
+      },
+      "nmii_cortex_motor": {
+        "domain": "segment",
+        "size": 424116
+      },
+      "nucleus_cortex_contact": {
+        "domain": "node",
+        "size": 494802
+      },
+      "sf_cortex_transient": {
+        "domain": "node",
+        "size": 494802
+      },
+      "surface_porous_transfer": {
+        "domain": "node",
+        "size": 494802
+      }
+    },
+    "provenance": {
+      "generator": "ac.weave.weave_cell -> to_crosslinked_cortex (same chain as ac.cell.assemble)",
+      "geometry": "n_filaments=70686 seg_um=0.5 length_um=3.0 density_per_fil=20.0 arp23_fraction=0.0",
+      "geometry_provenance": "CONVENIENCE (coarse/percolation), not sourced \u2014 seg_um and length_um sit above the sourced cortical mesh and filament lengths and density_per_fil has no sourced value (PARAM_PROVENANCE_AUDIT_2026-07-24.md)",
+      "overlap": "overlap_free=True mode=transverse span=2",
+      "seed": "0",
+      "force_channels": "cytosim bending + Hookean crosslink (+ Arp2/3 branch angle when mixed)",
+      "not_a_channel": "axial inextensibility is an NF2007 solver constraint, not an accumulated force \u2014 a spring here would double-count it"
+    },
+    "is_native_population": true,
+    "population_note": "native is 70,686 filaments; a slice develops the instrument and never supports a conclusion",
+    "n_cortex_terminating_connectors": 9
+  },
+  "parameter_provenance": {
+    "cortex_seg_um": "CONVENIENCE",
+    "cortex_length_um": "CONVENIENCE",
+    "cortex_density_per_fil": "CONVENIENCE",
+    "kappa_actin": "SOURCED",
+    "crosslink_k": "SOURCED"
+  },
+  "t0": {
+    "engine_max_force_pN": 0.03563540033213392,
+    "incumbent_max_force_pN": 0.03563540033213392,
+    "measured_before_any_perturbation": true
+  },
+  "timing": {
+    "wall_seconds": 39.13651293888688,
+    "device_note": "NOT a benchmark: the wall-clock covers two (or three) full cell builds plus kernel compilation, and this gate runs no time steps at all \u2014 it is a static force-assembly comparison, so there is no converged-step cost to report",
+    "comparable": true,
+    "comparable_against": "another run whose gate also PASSED under the same contract and observable; a cost is only a cost at a stated convergence"
+  },
+  "measurements": {
+    "ownership": {
+      "engine_position_len": 494802,
+      "engine_force_len": 494802,
+      "incumbent_n_actin": 494802,
+      "incumbent_n_total": 494802,
+      "engine_arrays_are_exactly_the_cortex": true,
+      "engine_arrays_distinct_from_incumbent": true,
+      "engine_position_storage": "('device-ptr', 'cuda:0', 12918456320)",
+      "engine_force_storage": "('device-ptr', 'cuda:0', 12930331648)",
+      "incumbent_storage": {
+        "position": "('device-ptr', 'cuda:0', 12997344256)",
+        "force": "('device-ptr', 'cuda:0', 13009219584)"
+      }
+    },
+    "parity": {
+      "max_abs_delta_pN": 9.965227682168975e-18,
+      "mean_abs_delta_pN": 4.763696704606487e-19,
+      "reference_max_force_pN": 0.03563540033213392,
+      "max_relative_delta": 2.7964405027836644e-16,
+      "n_nodes_compared": 494802
+    },
+    "detector_control": {
+      "what": "a known constant force added to a COPY of the incumbent's actin-block force",
+      "injected_pN": 0.3563540033213392,
+      "measured": {
+        "max_abs_delta_pN": 0.35635400332133926,
+        "mean_abs_delta_pN": 0.3563540033213393,
+        "reference_max_force_pN": 0.38684883250428165,
+        "max_relative_delta": 0.9211712001674327,
+        "n_nodes_compared": 494802
+      },
+      "parity_fails_as_required": true,
+      "recovers_the_injection": true
+    },
+    "myosin_arm": {
+      "ran": true,
+      "what": "incumbent rebuilt with myosin ON; how much of that reaches an ACTIN node",
+      "n_total_with_myosin": 509830,
+      "n_myosin_particles": 15028,
+      "myosin_force_on_actin_pN": 4.9065389333867974e-18,
+      "is_exactly_zero": false,
+      "why": "every head is UNBOUND at rest (the resting bound-myosin setpoint is a PI-GAP and defaults OFF), so the minifilament's backbone/head-arm forces land on myosin particles at indices >= n_actin and no myosin force reaches an actin node",
+      "not_a_control": "because it is zero, this arm cannot detect a foreign force; the device-side double-count control is the separate omit-mask arm below, unblocked by PI TRACKS-\u00a76-D2 on 2026-07-29"
+    },
+    "omit_mask_double_count_control": {
+      "what": "mask OFF while the engine owner also accumulates the same channels onto the same array \u2014 the failure `_accumulate_all(omit=)` exists to prevent, staged deliberately",
+      "n_nodes_compared": 494802,
+      "factor_median": 2.0,
+      "max_deviation_from_two": 7.72715225139109e-14,
+      "parity_fails": true,
+      "fails_by_exactly_two": true,
+      "max_relative_delta_vs_single": 0.5,
+      "why_this_is_the_control": "the pass arm shows the engine and the incumbent agree; ONLY this arm shows that adding the force twice is DETECTABLE rather than silently absorbed, which is what makes the parity number evidence of exclusivity instead of evidence of a coincidence",
+      "identity": {
+        "pos_storage": "('device-ptr', 'cuda:0', 12998030848)",
+        "force_storage": "('device-ptr', 'cuda:0', 13009906176)",
+        "n_actin": 494802,
+        "n_total": 494802,
+        "actin_is_offset_zero": true,
+        "omitted_channels": [],
+        "engine_cortex_also_accumulated": true
+      }
+    },
+    "transaction": {
+      "displacement_applied_um": [
+        0.001,
+        -0.002,
+        0.003
+      ],
+      "displacement_was_real": true,
+      "rejected_step_restores_exactly": true,
+      "accepted_step_keeps_the_candidate": true,
+      "predicate_stayed_on_device": true
+    },
+    "verdict": {
+      "private_allocations": true,
+      "geometry_identical_to_incumbent": true,
+      "force_parity_within_1e-12": true,
+      "detector_control_fails_as_required": true,
+      "detector_control_recovers_the_injection": true,
+      "omit_mask_control_fails_by_exactly_two": true,
+      "rejected_step_restores_exactly": true,
+      "accepted_step_keeps_the_candidate": true
+    },
+    "channels_not_bound": {
+      "axial_inextensibility": "NF2007 constraint carried by the solver, not an accumulated force \u2014 binding a spring here would double-count the backbone",
+      "steric_wca": "the WCA neighbour search addresses every solid node in the cell, not just the cortex; it belongs to the composed world",
+      "biot_pressure": "-alpha*grad(p)*V is a field->solid coupling owned by the cytosol component and delivered through surface_porous_transfer, not a cortex-internal channel"
+    }
+  },
+  "gate": {
+    "verdict": "PASS",
+    "criterion_met": true,
+    "residual": 9.965227682168975e-18,
+    "signal": 0.03563540033213392,
+    "residual_over_signal": 2.7964405027836644e-16,
+    "void_ceiling_ratio": 1e-06,
+    "void_ceiling_rationale": "a relative force difference above 1e-6 cannot be float64 atomic arrival order on a network of this size, so the run would be comparing two models rather than one model with itself, and the parity number would not be interpretable as a refactor check"
+  }
+}

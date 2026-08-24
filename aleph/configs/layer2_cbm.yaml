@@ -1,0 +1,116 @@
+# Layer-2 CBM spheroid (HOOMD runtime) defaults — 1 particle per cell.
+#
+# All values SI (m, s, J, N, K). Every primary is literature-anchored (citation in
+# comment), a DERIVED value (filled by aleph.spheroid.params.resolve_layer2; never
+# hand-set), or a flagged modeling/numerical-policy choice. No empirical magic numbers.
+#
+# Brief:     aleph/docs/LAYER2_MULTICELL_DESIGN.md
+# Anchors:   aleph/docs/LAYER2_ANCHORS_2026-06-02.md  (dossier wf_6369ec0f-1bb provenance)
+# Isolated:  separate line; reuses integrator/baoab.py + common/gsd_traj.py read-only.
+
+spheroid:
+
+  # ---- Primary scales (shared with the single-cell line; same SI units) ----
+  temperature: 310.0          # K    37 °C
+  kT: 4.28e-21                # J    k_B·T at 310 K, KU-1.1
+  water_viscosity: 6.913e-4   # Pa·s η_water at 310 K (NIST), KU-1.26
+  seed: 42
+
+  # ---- Cell geometry ----
+  cell:
+    # MCF7 suspended single-cell diameter. Wagner 2011 (Free Radic Biol Med 51:700,
+    # PMC3147247) MEASURED 14.8 µm / 1.70 pL by Coulter Counter. 15 µm = low end of the
+    # measured 15-20 µm band; band-position is a documented modeling choice (ANCHORS doc).
+    diameter: 1.5e-5          # m   (Wagner 2011: 14.8 µm → 15 µm)
+
+  # ---- Upstream single-cell mechanics consumed by Layer-2 ----
+  # Track A boundary: Layer-2 consumes cortical tension as a PHYSIOLOGICAL config input.
+  # It does NOT import or interrogate aleph.cortex internals. Track B remains responsible
+  # for producing this value emergently from myosin→actin mechanics.
+  mechanics:
+    cortical_tension: 5.7e-4              # N/m  = 0.57 mN/m, KU-3.5 g_rigid native in-band
+    cortical_tension_band: [3.5e-4, 6.5e-4] # N/m  Chugh/KU-3.5 acceptance band
+
+  # ---- Cell–cell adhesion (Morse pair, MVP) ----
+  # D_e is set so the Morse MAX attractive force (D_e·alpha/2) == the MEASURED MCF7-MCF7
+  # de-adhesion FORCE. Anchor: Iturri 2020 Cells PMC7227807 (MCF7-MCF7 SCFS, MEASURED, OA):
+  # ~6-7 nN at 120 s mature (~1-2 nN at 5 s nascent); corroborated Omidvar 2014 J Biomech
+  # (ranking MCF7>T47D>MDA, nN) + Omidvar 2016 Mol Cell Biochem (1.42-2.85 nN). This nN
+  # cohesion balances nN single-cell traction (the spreading physics).
+  # ⚠️ RETIRES the earlier cadherin N_cad·⟨F⟩·Δx* = 1.2e-17 J seed (~4 OOM too small, a pN
+  # single-bond product) + the Buckley-2014 Δx*=4nm misattribution (that is αE-catenin–actin,
+  # NOT E-cadherin homophilic; real E-cadherin catch-bond = Rakshit 2012 PNAS, for L2.5).
+  adhesion:
+    deadhesion_force_mature: 6.5e-9   # N  MCF7-MCF7 120s mature, Iturri 2020 (6-7 nN midpoint)
+    deadhesion_force_nascent: 1.5e-9  # N  MCF7-MCF7 5s nascent (maturation range)
+    # Adhesive interaction range = Morse 1/alpha. contact_zone_width ~ 10% of the cell
+    # diameter (cell-cell contact-zone scale) — a GEOMETRIC MODELING CHOICE, not a
+    # literature constant. Morse energy-minimum (center-to-center) = diameter (= 2R).
+    contact_zone_width: 1.5e-6    # m   (~0.1 · diameter)
+
+  # ---- Integration (reuse integrator/baoab.py, overdamped Langevin) ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab   # reuse aleph.integrator.baoab (CPU)
+    cfl_safety_factor: 0.1                   # dt = safety · γ/k_spring (overdamped relax)
+    # Per-cell MIGRATION drag γ = adhesion-limited motor-clutch friction (NOT water-Stokes
+    # 6πηR ≈ 9.8e-8, which is ~6.5 OOM too small for crawling — a nN traction → mm/s).
+    # γ = n_eng·κ/k_off, n_eng = N·k_on/(k_on+k_off); KU-2.18 (Bangasser 2013), the single-
+    # cell clutch the project already holds (scale-bridge). = 37.5·8e-4/0.1 = 0.30 N·s/m.
+    # Cross-validated: MCF7 0.2-0.5 µm/min under nN traction → ~0.3 N·s/m (Maiuri PMC4245034,
+    # SICM-TFM PMC8697701). At γ=0.3, 1 nN → v=0.2 µm/min (slow epithelial MCF7).
+    clutch_n: 50                # KU-2.18 clutches per adhesion module (Bangasser 2013)
+    clutch_k_on: 0.3            # s⁻¹  KU-2.18
+    clutch_k_off: 0.1           # s⁻¹  KU-2.18
+    clutch_stiffness: 8.0e-4    # N/m  (0.8 pN/nm) KU-2.18
+
+  # ---- Cell proliferation (L2.4: contact-inhibited division) ----
+  # The minimal CBM (cohesion + edge-traction) is COHESION-LOCKED → A/A0 ≈ 1 and the PI law
+  # A/A0 = a + b/R + c/R² does NOT emerge (a model-limit finding, not a tuning miss — L2.3
+  # REPORT). The experiment runs over days; spreading is partly proliferation-driven. This
+  # block adds MECHANISTIC contact-inhibited proliferation: a cell divides when its cell-cycle
+  # timer elapses AND it sits on a free surface (not fully coordinated). Bulk cells are
+  # contact-inhibited (quiescent) ⇒ a proliferating RIM of ~constant thickness ⇒ the
+  # proliferating fraction ∝ surface/volume ∝ 1/R — the geometric origin of the law's 1/R,
+  # 1/R² terms (EMERGENT, never hard-coded).
+  proliferation:
+    # Uncrowded MCF7 cell-cycle (population doubling) time. MCF7 doubling is density-dependent
+    # (~30 h dense → ~75 h sparse; range 20-48 h across studies — the density dependence is
+    # itself the contact-inhibition arm this block models mechanically). We anchor the
+    # UNCROWDED baseline to the dense-culture low end ~30 h and let CIP slow the crowded bulk.
+    # Source: BNID 100685 (cancerous-cell-line doubling); MCF7 30-40 h standard culture.
+    cycle_time_mean: 1.08e5     # s   (30 h uncrowded doubling, MCF7; BNID 100685)
+    # Cell-cycle length variability (CV) — desynchronizes divisions so growth is smooth, not
+    # in lockstep. A flagged MODELING CHOICE (typical mammalian intercell cycle-time CV
+    # ~0.1-0.3); 0.15 is mid-range. Not tuned to any gate.
+    cycle_time_cv: 0.15         # –   (Gaussian CV on per-cell cycle target; modeling choice)
+    # Contact-inhibition PRIMARY gate = the Drasdo-Höhme FREE-SPACE rule: a cell divides only
+    # if it can place a daughter (bud) at least one repulsive-core radius from EVERY existing
+    # cell — i.e. there is room. The room threshold is the Morse repulsive-core onset
+    # r0 − contact_zone_width ≈ 0.9·r0 (DERIVED from the pair potential, not tuned; α is so
+    # large that significant repulsion sets in one contact-zone inside r0). A buried bulk cell
+    # has no free face (measured free-gap ≈ 0.7·r0 in the settled liquid-like packing) ⇒
+    # quiescent; a rim cell (free-gap ≈ 1.3·r0) proliferates. This — NOT a neighbour count —
+    # is the operative discriminator (the settled bulk coordination is only ≈11, below Z, so a
+    # count threshold mis-classifies; the diagnostic is in the L2.4 REPORT).
+    # SECONDARY hard ceiling: a cell whose first shell reaches the 3D sphere kissing number Z
+    # (a pathologically dense spot) is also blocked. Z=12 is geometric (FCC/HCP/RCP), not tuned.
+    kissing_number: 12          # –   (secondary ceiling = 3D kissing number; geometric)
+    # First-coordination-shell cutoff = shell_factor · r0. Between the rest separation (1·r0)
+    # and the 2nd shell (FCC √2·r0 ≈ 1.41·r0; RCP ~1.3-1.4·r0). 1.25 captures the 1st shell
+    # only — a GEOMETRIC numerical-policy choice (like contact_zone_width / r_cut).
+    shell_factor: 1.25          # –   (first-shell cutoff in units of r0; geometric policy)
+    # Daughters are placed at parent ± (r0/2)·n̂ ⇒ born exactly at the rest separation r0
+    # (no repulsive-core blow-up, no gap), n̂ pointing into the least-crowded direction. COM-
+    # conserving. split_factor·r0 = daughter centre-to-centre; 1.0 = rest separation.
+    split_factor: 1.0           # –   (daughter separation in units of r0; = rest length)
+
+  # ---- Derived (filled by resolve_layer2; do NOT edit by hand) ----
+  derived:
+    R_cell: null            # [m]    = diameter/2
+    cortical_tension: null  # [N/m]  = mechanics.cortical_tension (Layer-2 input, not cortex import)
+    D_e: null               # [J]    = N_cad·⟨F⟩·Δx*   (PI-ratification pending)
+    morse_r0: null          # [m]    = diameter
+    morse_alpha: null       # [1/m]  = 1/contact_zone_width
+    morse_k_spring: null    # [N/m]  = 2·D_e·alpha²
+    gamma_cell: null        # [N·s/m]= n_eng·κ/k_off (clutch migration drag, ≈0.30)
+    dt_cfl: null            # [s]    = safety·γ/k_spring

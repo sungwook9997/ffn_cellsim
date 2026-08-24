@@ -1,0 +1,2328 @@
+{
+  "aleph_authority": "none",
+  "checkpoint_sha256": "150c4a5884b4b4dabc1a412f0bc8b9bd43d3d339f9c4e46d12beb665a04ac383",
+  "confirmation_consumed": true,
+  "file_count": 386,
+  "files": [
+    {
+      "path": "Images/Study_1/image_0_BF_z0.ome.tiff",
+      "sha256": "edc33e3bd57dd42f779f9b04912477c7ea5fc4f1fff7c1864d0c11e8b7fc0762",
+      "size_bytes": 5769226,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_0_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_0_Mitochondria.ome.tiff",
+      "sha256": "305f6f86e19f381064d3692f298195f7734a131851e759acdf75bfa01c841af5",
+      "size_bytes": 5981766,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_0_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_0_Nucleus.ome.tiff",
+      "sha256": "f2611da5ac40b2a12176d233b1c37ca075822e6e547d97010c54340656d05d93",
+      "size_bytes": 4701218,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_0_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_10_BF_z0.ome.tiff",
+      "sha256": "ae3095b7d5b573f677e565d0c0c9a5a3f2b360c1f6a1b589c5dfdf096e8083c0",
+      "size_bytes": 6133650,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_10_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_10_Mitochondria.ome.tiff",
+      "sha256": "184bab5c04fb37d69dfa3f6550869a64dc13d4ca9981092c64c886c7170d6391",
+      "size_bytes": 6438824,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_10_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_10_Nucleus.ome.tiff",
+      "sha256": "9bc0b3bd59e24e45d044cac974be71ba18935070be4062b68bce9a6172f3c716",
+      "size_bytes": 5042170,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_10_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_11_BF_z0.ome.tiff",
+      "sha256": "fc184edadc520045b7004c7fa95682d7d1a96185ab8c0fe1564f2bbc7c9da64f",
+      "size_bytes": 5772245,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_11_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_11_Mitochondria.ome.tiff",
+      "sha256": "ee0042d3ad0c3dbb9ad66cfdcdd3a07fbf186c8ed595a84de294d358ed8c3140",
+      "size_bytes": 4678876,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_11_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_11_Nucleus.ome.tiff",
+      "sha256": "1761329c189d11402b5bf16171847582f06ce1a47c946051e21236d6c3ae32e3",
+      "size_bytes": 4654760,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_11_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_12_BF_z0.ome.tiff",
+      "sha256": "6cd75ca4a38146e84aa974b1a39f96ef4f88a8e32a3335fe11a6675060c180e8",
+      "size_bytes": 5993574,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_12_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_12_Mitochondria.ome.tiff",
+      "sha256": "3598abafa4ffdba70db65a247c7938d217ad67900b9fc29a057344c3eb87027b",
+      "size_bytes": 6494747,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_12_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_12_Nucleus.ome.tiff",
+      "sha256": "9965eacb6dc70e3330676208bf5086812aa7ea1f7f85c35169c860aa6500354f",
+      "size_bytes": 4771810,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_12_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_13_BF_z0.ome.tiff",
+      "sha256": "71730d9c666a5d112839ddc8d53d9a06e918685039f0f81a115ed2413b6fd105",
+      "size_bytes": 6060077,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_13_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_13_Mitochondria.ome.tiff",
+      "sha256": "d4562032c3fe94d0a2fe788a5481d3ec6f8584b1d0a63a2d0750972780c8070b",
+      "size_bytes": 6309230,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_13_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_13_Nucleus.ome.tiff",
+      "sha256": "45c8fa091148c40c695dae4aae530bddd61c461dc6b7103a110086143102bfdf",
+      "size_bytes": 5070238,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_13_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_14_BF_z0.ome.tiff",
+      "sha256": "745a52a69e1663fa7b6d070f01af123fe3af183b77b9f3663477b7b4b1956526",
+      "size_bytes": 5872190,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_14_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_14_Mitochondria.ome.tiff",
+      "sha256": "7588c2d5c93ffa99cb7204eb45412cd007b03e9fdff62b6d31973b5966a9c7e6",
+      "size_bytes": 6273568,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_14_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_14_Nucleus.ome.tiff",
+      "sha256": "42b34ba2bb3f91e649eadc0129c3ca9b716887c955d4a2a036b2f72f6c4e71dc",
+      "size_bytes": 4890213,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_14_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_15_BF_z0.ome.tiff",
+      "sha256": "81fe2a4e29ec10527f1477e3900003847d1e7cd69aa5ca9cdaa207402ed2d696",
+      "size_bytes": 5921311,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_15_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_15_Mitochondria.ome.tiff",
+      "sha256": "b10cb887475f3ee128ab776149bfef306fd14fb623e81d54ee3563a1f872735e",
+      "size_bytes": 6225511,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_15_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_15_Nucleus.ome.tiff",
+      "sha256": "b8e86567ff4ba76333167138bad9501a89942596bd323c3487aae5b9c33fd6ad",
+      "size_bytes": 4945247,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_15_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_16_BF_z0.ome.tiff",
+      "sha256": "452bb347a3ce6d49ba927037b9a89095ce7075a93963dcba45c58e70612ef853",
+      "size_bytes": 6033141,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_16_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_16_Mitochondria.ome.tiff",
+      "sha256": "593e8920062d8de08e8498ee40a190065abba189ddf3c8a806504011f12e6d48",
+      "size_bytes": 6680393,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_16_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_16_Nucleus.ome.tiff",
+      "sha256": "ba48c3b9d5eedb3f6546ad4477cb5304b18f70abd13c7836597211b057b9ab42",
+      "size_bytes": 5016369,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_16_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_17_BF_z0.ome.tiff",
+      "sha256": "eae1c25ad865469371cfce0977ee18b76dda8dd236eaf0788d93aca6aed680a0",
+      "size_bytes": 6182437,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_17_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_17_Mitochondria.ome.tiff",
+      "sha256": "e98f995d3e6afda31e0723a40b3d7c6884e386e4033b433d130889f4c83087d4",
+      "size_bytes": 6728792,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_17_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_17_Nucleus.ome.tiff",
+      "sha256": "9b43b40ebde776ccefc59aca7fc60996a356bce23c83d28f411e769366bbf0c6",
+      "size_bytes": 5049830,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_17_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_18_BF_z0.ome.tiff",
+      "sha256": "dd015a25cc2f6e122e807ab98522b1a38886067e5c2a972a152c9764112dffc4",
+      "size_bytes": 5890627,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_18_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_18_Mitochondria.ome.tiff",
+      "sha256": "45a7b6c3bbe0202e5587a884d663ee478b4ac9fce07092c0fd9c346e5bc0bc43",
+      "size_bytes": 6502136,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_18_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_18_Nucleus.ome.tiff",
+      "sha256": "4867eecd1c7fad53091fa414b77c47f62be46769fd84caa1d0e6bf2030f3de14",
+      "size_bytes": 5007024,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_18_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_19_BF_z0.ome.tiff",
+      "sha256": "fa39f28f413c5ab332e88b9980c154da4849b7ef173825dda0f2212ec675603b",
+      "size_bytes": 5674681,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_19_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_19_Mitochondria.ome.tiff",
+      "sha256": "41dd069d31f929eea04ffdfb43b7ebc6d39c12272c752989fca7e4b69537899f",
+      "size_bytes": 5012615,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_19_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_19_Nucleus.ome.tiff",
+      "sha256": "e663361067b7d34f82eee6ec5af446be954921912eff632becac4c3585829481",
+      "size_bytes": 4279276,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_19_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_1_BF_z0.ome.tiff",
+      "sha256": "349c758adaf8b4057c072575e99ef33d789b6f8fceefd5f9572d1820bcafb388",
+      "size_bytes": 5763923,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_1_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_1_Mitochondria.ome.tiff",
+      "sha256": "b184966cad748bb285225359b74f4a3535a61f37bf53cdad43a6312b4711cdec",
+      "size_bytes": 5662245,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_1_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_1_Nucleus.ome.tiff",
+      "sha256": "0c0c12269a6ddff8e15d9233d721930030ad735c3f94eae3864fa4a30e3eca0c",
+      "size_bytes": 4657392,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_1_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_20_BF_z0.ome.tiff",
+      "sha256": "c58cdd60eae4732c4ed8d6f680bfd64b1715e8ae52f5c13090d44e6bbfda48b2",
+      "size_bytes": 5736086,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_20_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_20_Mitochondria.ome.tiff",
+      "sha256": "3a4dfa70907443886472dac4350338c6ba20acf95e6b3ea13af3adab840274e2",
+      "size_bytes": 5165743,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_20_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_20_Nucleus.ome.tiff",
+      "sha256": "3c749a6bb8bcf418b563d9140d1a14fd09b53866df27d3825636e26d438c60a4",
+      "size_bytes": 4846967,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_20_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_21_BF_z0.ome.tiff",
+      "sha256": "8cd0686e0ea5aa31d6c2561563153f82ed8721ebd4f908cf8ab98fe8cd31ff54",
+      "size_bytes": 6015821,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_21_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_21_Mitochondria.ome.tiff",
+      "sha256": "64b019efadcc72fbc6d17e6c19335ca42b4e2977c422a7a83199edd503159fd0",
+      "size_bytes": 6221588,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_21_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_21_Nucleus.ome.tiff",
+      "sha256": "96b37328107ddb8a0086d36d395ec4d0726da4c3cd5e5de639647d786a622772",
+      "size_bytes": 5090854,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_21_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_22_BF_z0.ome.tiff",
+      "sha256": "4c4a13a715dbb73ccf2bb238c223e45cf8cc58d28e221b16541fbf05e7eca47c",
+      "size_bytes": 6171254,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_22_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_22_Mitochondria.ome.tiff",
+      "sha256": "99c6b82e85be5efbde550e6088f1184dbc1411993e2f9163fde5d13a195c53b0",
+      "size_bytes": 6066600,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_22_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_22_Nucleus.ome.tiff",
+      "sha256": "6d4a7cdd36a08babbe60bce8764a405b7e0468db3045a0a60af939a2d492e24b",
+      "size_bytes": 5023229,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_22_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_23_BF_z0.ome.tiff",
+      "sha256": "67948599e709eb5df59848b9139756f0608bfacdc493c503ae9f36382289d192",
+      "size_bytes": 5735361,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_23_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_23_Mitochondria.ome.tiff",
+      "sha256": "8534639ac562f5634609c0099c77479c9300253a7c909070a819616241ed978b",
+      "size_bytes": 6000346,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_23_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_23_Nucleus.ome.tiff",
+      "sha256": "b0859d4de376c4fab7dc7180608272f781e2108ab73ea4b4f8734e3786d375e4",
+      "size_bytes": 4934334,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_23_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_24_BF_z0.ome.tiff",
+      "sha256": "2afa9a48a35d8ab0d944bb2ed2a3373f3f4bc59dfd77d8b7b9da496ab3864fc8",
+      "size_bytes": 6147154,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_24_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_24_Mitochondria.ome.tiff",
+      "sha256": "301db5f59c73503748d63312506c1082a6384142fa9f25b7b8c9529831fb617b",
+      "size_bytes": 6665050,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_24_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_24_Nucleus.ome.tiff",
+      "sha256": "2ba4ffdb9bacaa6cfe0cac784937eae7de27243135d2fb9c83944603c4960fb0",
+      "size_bytes": 5064374,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_24_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_25_BF_z0.ome.tiff",
+      "sha256": "eb4d8d589e6141f22a11dff4e0315f65df754965f934ce31f98871b8b7e55217",
+      "size_bytes": 5884455,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_25_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_25_Mitochondria.ome.tiff",
+      "sha256": "163cfb8384c5416bf7451a9894e6e145a72a46607eb450d7f48d342e9f7f65ef",
+      "size_bytes": 5816242,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_25_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_25_Nucleus.ome.tiff",
+      "sha256": "99b04e80ddda2539479c8ab67c92ea7062aef0766b00ca5934e571df9a93a7b9",
+      "size_bytes": 4819384,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_25_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_26_BF_z0.ome.tiff",
+      "sha256": "5632fe3ec802cdb79097fefa19f81ca7057daaac5beb21deb064c82981030ad8",
+      "size_bytes": 5939084,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_26_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_26_Mitochondria.ome.tiff",
+      "sha256": "ee2d792f05ebfa91b3d280f55401e0364961f7db336b9f063cb8700a573ffb62",
+      "size_bytes": 5934242,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_26_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_26_Nucleus.ome.tiff",
+      "sha256": "1238fe4192577918cfb75e99c20cab6982007d61fe5ddac7ff749a7229f76dbb",
+      "size_bytes": 4934302,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_26_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_27_BF_z0.ome.tiff",
+      "sha256": "dbc858ad917582d374fe50147837584993828c839be9a7a571cd9dacec53f0eb",
+      "size_bytes": 6118607,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_27_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_27_Mitochondria.ome.tiff",
+      "sha256": "65c96fb20ac124642088715b586b3e877948b62b5ce97607be7a0181738f882e",
+      "size_bytes": 6116134,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_27_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_27_Nucleus.ome.tiff",
+      "sha256": "d0a99b53eac820ef8266d38ca5d15be999caaece4543404dcae2f9e572ad7ee0",
+      "size_bytes": 5098269,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_27_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_28_BF_z0.ome.tiff",
+      "sha256": "5d812f4afb4374da8723531d5f3b6e54fe87765257ca1c7c07328492d25d5f54",
+      "size_bytes": 6093261,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_28_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_28_Mitochondria.ome.tiff",
+      "sha256": "4e70a94134b59e025be55737c127d3dc56f8e817cfeee8d11c1d9f28131a4bc5",
+      "size_bytes": 6263223,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_28_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_28_Nucleus.ome.tiff",
+      "sha256": "8c3354e3a339559fcd242dba983e1475e98a5df959d8b26ff4996464d0418dd4",
+      "size_bytes": 5001792,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_28_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_29_BF_z0.ome.tiff",
+      "sha256": "9dc5c35c38a335ccdeeaa3a2102172413b9d1ec931165c99921b628e185000ed",
+      "size_bytes": 6046639,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_29_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_29_Mitochondria.ome.tiff",
+      "sha256": "58de73794623e0a02d0e1ba6e032ead0c70bb25600560fbd491eddeebe0ec82b",
+      "size_bytes": 6630943,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_29_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_29_Nucleus.ome.tiff",
+      "sha256": "daccb0147515652a12b5b9737b3b8f300867159241199dc7fd0e51597d5b8ac5",
+      "size_bytes": 4906943,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_29_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_2_BF_z0.ome.tiff",
+      "sha256": "7fb7044be2623459c11c206b304ccf290710ff9a41f19dab8893bba5380aff6c",
+      "size_bytes": 5848961,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_2_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_2_Mitochondria.ome.tiff",
+      "sha256": "b590f551fbe1d577f3fcfd01a9726bd2ed71efb14c41e0cc572e93c042b50c5c",
+      "size_bytes": 6141040,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_2_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_2_Nucleus.ome.tiff",
+      "sha256": "77a89e4c0d18c8535caba602549f46901c832146c4761334aebe92673ab2e84f",
+      "size_bytes": 4853869,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_2_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_30_BF_z0.ome.tiff",
+      "sha256": "64322152d1d353833447db0acb969abf11576c98bd7cd676ace97c6448d43032",
+      "size_bytes": 5770966,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_30_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_30_Mitochondria.ome.tiff",
+      "sha256": "488c3e70cdc97285763677c6d03ec6d6c13745374746b3416477005dff1f0a89",
+      "size_bytes": 5117059,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_30_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_30_Nucleus.ome.tiff",
+      "sha256": "6174d96f70d6ec0c65225dd8c6b09962209344b85c215496e4634d3507bc479f",
+      "size_bytes": 4650917,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_30_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_31_BF_z0.ome.tiff",
+      "sha256": "f5cb7ddc5010f4e74e978859e9ca8bae41de4121e3fc75681345e1e7d1cf2dbc",
+      "size_bytes": 5995695,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_31_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_31_Mitochondria.ome.tiff",
+      "sha256": "2617d9b0a03664577010e4039a4826b26b9e025f880bb4bb9f5c5a79434f4d56",
+      "size_bytes": 5945895,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_31_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_31_Nucleus.ome.tiff",
+      "sha256": "c70b0c9402287c67120db75c259e3a4164ddcddaa2b9da77395c5e74de6cccae",
+      "size_bytes": 4953380,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_31_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_32_BF_z0.ome.tiff",
+      "sha256": "adc1ea8435c4197cc29ffcef7a34341d81ed515779f9390c460464c9f501bd47",
+      "size_bytes": 5968896,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_32_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_32_Mitochondria.ome.tiff",
+      "sha256": "634d3462cb3e4e6c385a43e03cfb93f8d1afe973f7d2e578fc26133f15f2106f",
+      "size_bytes": 6003409,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_32_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_32_Nucleus.ome.tiff",
+      "sha256": "df2f1e6a43d9564118a72678b47750f71c32a9f8e5c3934fca47cc431026de4d",
+      "size_bytes": 5008695,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_32_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_33_BF_z0.ome.tiff",
+      "sha256": "8885408d21db244dc7053353dae16f38c455794a805a1385474fb896cdadd8be",
+      "size_bytes": 5733468,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_33_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_33_Mitochondria.ome.tiff",
+      "sha256": "e44ead1dd54e1540db365868945bab66374b5f59344e98d74f66afb55848c288",
+      "size_bytes": 5962526,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_33_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_33_Nucleus.ome.tiff",
+      "sha256": "98a9efa8f5557de767dccd3a256a9a9563a47fcfd007aa8a1c0776701452d523",
+      "size_bytes": 4773706,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_33_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_34_BF_z0.ome.tiff",
+      "sha256": "f29037a6e1d0123bb6c2734d297738fbf758d44813329d99973ce740ee37f8c8",
+      "size_bytes": 5771083,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_34_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_34_Mitochondria.ome.tiff",
+      "sha256": "1b5c759cfaf43c78e8e5165e94115b797704fcd6dc4ae0e96f9988f0c3fadd0e",
+      "size_bytes": 5854261,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_34_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_34_Nucleus.ome.tiff",
+      "sha256": "e0487d8d05db08b48ff5224bdd0275a8e3212245148c038bb709cda7e9aa07ca",
+      "size_bytes": 4847307,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_34_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_35_BF_z0.ome.tiff",
+      "sha256": "c40f9a983f6e8fdece89b5b3a53a125d2aac740b58a6f98417c68a0770132e02",
+      "size_bytes": 5920532,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_35_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_35_Mitochondria.ome.tiff",
+      "sha256": "899a2c30fbbe6a175d090daa7cb51b9640a44accd3cbb7b04bf20d669966c65c",
+      "size_bytes": 5922516,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_35_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_35_Nucleus.ome.tiff",
+      "sha256": "1fe8319f37a3eba659e0532fe60f3db4ab30ff69f890a240c3f7abec4150303a",
+      "size_bytes": 4934011,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_35_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_36_BF_z0.ome.tiff",
+      "sha256": "51d38cf2af76b726bb6920628aaa680135cb79645b3ab7c418442885a65c57f8",
+      "size_bytes": 5983696,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_36_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_36_Mitochondria.ome.tiff",
+      "sha256": "ed190def14528b42e035dca63cbec0b64f92ac45bab5f7aac92fc3d9fd2f443c",
+      "size_bytes": 6804525,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_36_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_36_Nucleus.ome.tiff",
+      "sha256": "bae32d81836a7f0bfe43a3293a7fc8080076d9cffc2a1e5d369c93f78e6edf0a",
+      "size_bytes": 4817991,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_36_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_37_BF_z0.ome.tiff",
+      "sha256": "9e1341d058580319413e08bb4437ee72e049f8873f38892aee337c460bdecbee",
+      "size_bytes": 5819495,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_37_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_37_Mitochondria.ome.tiff",
+      "sha256": "27a6d0503b8fa3857b94279e0dcee17bc2bc56897574dce5fa6336669a5bf560",
+      "size_bytes": 5493935,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_37_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_37_Nucleus.ome.tiff",
+      "sha256": "924ad455ea8c698b302c051adacfe6c6d1d9ce082f3984df714daba559dc5e89",
+      "size_bytes": 4672846,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_37_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_38_BF_z0.ome.tiff",
+      "sha256": "04fb45aeef6cc20e4c0004ff4fa18d0a2e6e5a80b9ca51d92f86ac4da76f85d3",
+      "size_bytes": 5798695,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_38_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_38_Mitochondria.ome.tiff",
+      "sha256": "77ee87f69cb107b0d27792951fc39f9fb063fda68b3d6a5b09ad683ff5cffd42",
+      "size_bytes": 4916447,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_38_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_38_Nucleus.ome.tiff",
+      "sha256": "5327f3fe31548221baaee1718594e6c006269a377d8d06ba0ee9a8b06e54ccda",
+      "size_bytes": 4564013,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_38_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_39_BF_z0.ome.tiff",
+      "sha256": "ad40b1f60c6bae1a78d74b92f47cbeaddbdb4674b33fd3087c1d0ffb9413e0ee",
+      "size_bytes": 5937211,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_39_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_39_Mitochondria.ome.tiff",
+      "sha256": "8ed031e69f9451f2e58971dc30c894071c967907f77e87093d3daa234e09cd3c",
+      "size_bytes": 5866462,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_39_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_39_Nucleus.ome.tiff",
+      "sha256": "6d2353c9074ff747abb83d0d6a535b8546e19b5d5cfc967e99f20084d7e47864",
+      "size_bytes": 5002513,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_39_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_3_BF_z0.ome.tiff",
+      "sha256": "bd0ad97396f292b4805650a9209e8d9db83e64556e9c4ce8b2ba670cafd8bb51",
+      "size_bytes": 6137008,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_3_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_3_Mitochondria.ome.tiff",
+      "sha256": "e821876146fbac708b94ee341d91580cc62b721d3e7c12d2d1984091c8d544b5",
+      "size_bytes": 6572250,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_3_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_3_Nucleus.ome.tiff",
+      "sha256": "ead8715d862ec873299156b8a24e7613e40f9a24466bf001fc5f3eca2476d98c",
+      "size_bytes": 5043991,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_3_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_40_BF_z0.ome.tiff",
+      "sha256": "49d74942b8a0c03b8ab781e88665dadabbc5f1e169ff2747fde37ffe696cb6e0",
+      "size_bytes": 5908586,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_40_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_40_Mitochondria.ome.tiff",
+      "sha256": "46146a92d1c9e7c03a572e0c2bbb939150a92bb815635c5e1a281675bf56555f",
+      "size_bytes": 5657263,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_40_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_40_Nucleus.ome.tiff",
+      "sha256": "f3b26bd5d1189a7006274a3e9401feab40f69900ae07450da46d4559e01a316c",
+      "size_bytes": 4852143,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_40_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_41_BF_z0.ome.tiff",
+      "sha256": "350fa87c5bd3691a988560149d7fbd1e80ba287ab27feaaee466c8025170541a",
+      "size_bytes": 5945241,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_41_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_41_Mitochondria.ome.tiff",
+      "sha256": "da3a7ad1fbaeb5f29a42fc4b9476be8caf1f43a71ca6ef8e90c454601e702ea8",
+      "size_bytes": 6414251,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_41_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_41_Nucleus.ome.tiff",
+      "sha256": "70f95800373964c093b62efd0cc5872d6bb0adbefe2e93ecc2f96815ea1093c1",
+      "size_bytes": 4882560,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_41_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_42_BF_z0.ome.tiff",
+      "sha256": "f662404da3ef31332253f5b0e815aa107d4de57dc5525f1d9d82b431261a6a3c",
+      "size_bytes": 5898035,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_42_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_42_Mitochondria.ome.tiff",
+      "sha256": "beaab02cc17010e0b934c3a3bcc09f13b0ac57acf434c9a86e5b6f68b4573e44",
+      "size_bytes": 5558492,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_42_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_42_Nucleus.ome.tiff",
+      "sha256": "93d1a8429284d4406964f489ef6d09817ccd7504c0209e0087b1fed1a4e24247",
+      "size_bytes": 4760434,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_42_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_4_BF_z0.ome.tiff",
+      "sha256": "d82f58874cb1d2b30d4ece05a9d54f935123e832243b7e7a13a4044bf0c3a4be",
+      "size_bytes": 5772646,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_4_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_4_Mitochondria.ome.tiff",
+      "sha256": "7859904c8b97abaac2ec24e07aaa100659a1bed8c8a9b1e79415c8c6a98406de",
+      "size_bytes": 6474927,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_4_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_4_Nucleus.ome.tiff",
+      "sha256": "106c6dcba8dc36d394e9fb684bf47ecb392afa97a085763c1ce2f50bb82dd577",
+      "size_bytes": 4748280,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_4_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_5_BF_z0.ome.tiff",
+      "sha256": "42a27c8a645616c512fdaab743b53f7b9a81da6f8c3ec4e747e98eafd747adff",
+      "size_bytes": 5887478,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_5_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_5_Mitochondria.ome.tiff",
+      "sha256": "c578b18879ecb8728cc28d470c8852631fa100841d18d3677df349fbebf5e93d",
+      "size_bytes": 5891864,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_5_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_5_Nucleus.ome.tiff",
+      "sha256": "b02175ec081b663f1ae974b8cc34ca91035189e76aeb91046d43e8400a6f5cca",
+      "size_bytes": 4836280,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_5_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_6_BF_z0.ome.tiff",
+      "sha256": "09144016922239ca8ca582bf613971a93633c7e010e672c24d553e462740692a",
+      "size_bytes": 5791697,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_6_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_6_Mitochondria.ome.tiff",
+      "sha256": "3196951ca12b479ec7940e71f682e179027000b90a75440c966f6597640f02e8",
+      "size_bytes": 6115174,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_6_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_6_Nucleus.ome.tiff",
+      "sha256": "1b5da9b338a16fe139b5d026497b20e7eab118a7e18229b8d0e22b051dfc91a6",
+      "size_bytes": 4910123,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_6_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_7_BF_z0.ome.tiff",
+      "sha256": "e3c540285f90e7e164f1762a05b5be85caf47b043649a51abc6036ca66fab690",
+      "size_bytes": 5842533,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_7_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_7_Mitochondria.ome.tiff",
+      "sha256": "5f0a536ef9fa4933fa47162ffbb8eafc26542b92eef4454683e3b98fff47cfca",
+      "size_bytes": 5098075,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_7_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_7_Nucleus.ome.tiff",
+      "sha256": "d9921d2182f54db76b4a24e9f27b283e30aa42658a9a61ed195c5eba367cd47d",
+      "size_bytes": 4701928,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_7_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_8_BF_z0.ome.tiff",
+      "sha256": "ffa932aab681cc73114148ad376b0c54b12f6a2393ae1a87eeb7003f66f87918",
+      "size_bytes": 5807315,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_8_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_8_Mitochondria.ome.tiff",
+      "sha256": "899d94fe953e417eb9acce3c58aa00c58e722120bda48549067d2e12d2d83aab",
+      "size_bytes": 4957533,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_8_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_8_Nucleus.ome.tiff",
+      "sha256": "1ae4a5137e828cb41a9170000529606ef3e8f72c79b5464dfc7fa5bdc0b8aa20",
+      "size_bytes": 4358458,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_8_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_9_BF_z0.ome.tiff",
+      "sha256": "205387b0aab238ab3f23d1ebeaf3dbbc736070d957c93d53fb692295cd7237f9",
+      "size_bytes": 5856239,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_9_BF_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_9_Mitochondria.ome.tiff",
+      "sha256": "89c41c12f1988f5c2b7971f9a4588c846c5f9cb3cfa41b69c8a023e75f76e2ae",
+      "size_bytes": 5741889,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_9_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_1/image_9_Nucleus.ome.tiff",
+      "sha256": "5ffd1a00fd5f0986fb2d779d85c543b0ee79a29b9500f48bedf0fe5a75a8ccfe",
+      "size_bytes": 4633449,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_1/image_9_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_150_Mitochondria.ome.tiff",
+      "sha256": "27eaf2f1a5b490a0a7eeb10529b608cbca3a388a6ce3791bf1c4d143c9536f85",
+      "size_bytes": 6252681,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_150_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_150_Nucleus.ome.tiff",
+      "sha256": "a5862c5bc125ea90c5b709ea1b44e074e0ac5596c331f6329d83262cdca761af",
+      "size_bytes": 5365884,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_150_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_150_PC_z21.ome.tiff",
+      "sha256": "aa8bdf48a047e8ca36ab9a839f7f15bb728756745f12307f19d38135daa16040",
+      "size_bytes": 6756150,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_150_PC_z21.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_150_PC_z4.ome.tiff",
+      "sha256": "da86d4900f0d5ca214d77f4373338fdb917f75f7b2767ef0179ce3c1c9005b84",
+      "size_bytes": 6726423,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_150_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_151_Mitochondria.ome.tiff",
+      "sha256": "4d6c329b65bfb52fc3b88f9bd34af310fb60d2edcb05d5ac31709886204ac211",
+      "size_bytes": 5652833,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_151_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_151_Nucleus.ome.tiff",
+      "sha256": "1d7004a9cdc9e94489ee11d9946151315011d015bca8c622d2a564d4090ef115",
+      "size_bytes": 4489368,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_151_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_151_PC_z0.ome.tiff",
+      "sha256": "b975ddc0f9f5fe28c4331f1d965b216b0f36ef36246c7551d82163a6e11135e5",
+      "size_bytes": 6570484,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_151_PC_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_151_PC_z19.ome.tiff",
+      "sha256": "3503a1fc9871e4a69fbbcd6e696f0d42b37ddf2257752fe9c6c8c5761c593edf",
+      "size_bytes": 6595917,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_151_PC_z19.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_152_Mitochondria.ome.tiff",
+      "sha256": "a917697e1758f45736c1762303e0d74989ff2bb28ad918305c771cb10d0483be",
+      "size_bytes": 6048730,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_152_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_152_Nucleus.ome.tiff",
+      "sha256": "8bb85fb976e5052e09165ca960fe1155cf086d4ced3ab2c4b37f58bb16bb71b8",
+      "size_bytes": 5060182,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_152_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_152_PC_z1.ome.tiff",
+      "sha256": "70a4629e4df15dc103f6028a2b2ac8aa15576da6e7a8a5d6a9f7d402b044ce92",
+      "size_bytes": 6649888,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_152_PC_z1.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_152_PC_z15.ome.tiff",
+      "sha256": "33b5f7de7e294ade9c54b8b4b32289597746187ef00462f8d3c298da8dcff522",
+      "size_bytes": 6655547,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_152_PC_z15.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_153_Mitochondria.ome.tiff",
+      "sha256": "92b2a7af7d4034cbee88089e49eb60c45a21751bec9885152fa9bdd1586ffdea",
+      "size_bytes": 5557521,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_153_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_153_Nucleus.ome.tiff",
+      "sha256": "66180e419150d09432645facd56a9a0b3211b8e54ae734af51fd3240f24ad537",
+      "size_bytes": 4362604,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_153_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_153_PC_z4.ome.tiff",
+      "sha256": "f128c984d178f356d7e206651ee3fe09c559e64e0d6b4a32b25952f34c260b06",
+      "size_bytes": 6345180,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_153_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_153_PC_z7.ome.tiff",
+      "sha256": "a71fcaa23d7cb0f7bdd6b124aaebc3d6e4223ef3eb214cbbc41a0ad6b8ed5eb0",
+      "size_bytes": 6352349,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_153_PC_z7.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_154_Mitochondria.ome.tiff",
+      "sha256": "6d6d71a1faa998607a54eeee0d43d57bd7f526fb3ed6675c2d53fce597731add",
+      "size_bytes": 6046354,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_154_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_154_Nucleus.ome.tiff",
+      "sha256": "64c8c7ab2906c291e08c5b3b7d513a2d9c9071b6813f38ffa75b72c98d1a8fcb",
+      "size_bytes": 5058035,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_154_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_154_PC_z20.ome.tiff",
+      "sha256": "4d11bab8ecc19f41cb097f3514dfcdf07d9aa1011f6134aed5ba6040a2ce7e70",
+      "size_bytes": 6566696,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_154_PC_z20.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_154_PC_z9.ome.tiff",
+      "sha256": "dfdaa68de8f3c3c6518b5d52ae3630d7eb995b9e98cb6acceb9ea678b0532a71",
+      "size_bytes": 6548487,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_154_PC_z9.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_155_Mitochondria.ome.tiff",
+      "sha256": "637027103e3b2160ef8dd7c097144ce9bd1def7e76cea05419526e3279dde055",
+      "size_bytes": 5964091,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_155_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_155_Nucleus.ome.tiff",
+      "sha256": "4c2349fc49e9f81797ce21842bd4b5e74a64c0cd23e5d20d2fff0f47d6c1e78c",
+      "size_bytes": 4973468,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_155_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_155_PC_z26.ome.tiff",
+      "sha256": "7e89f75f87173651578f867c7192dcf3230caf07c1c937377bae5d93333d44af",
+      "size_bytes": 6553676,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_155_PC_z26.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_155_PC_z4.ome.tiff",
+      "sha256": "ef5452264a0c393515a5490faee33f8bc417565cecc90485b2621148dabf3657",
+      "size_bytes": 6533129,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_155_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_156_Mitochondria.ome.tiff",
+      "sha256": "bf1e99a527d7dc7bac8a7638c919f4eb4bbe38dbe727b6e5ab8414cd721b1e86",
+      "size_bytes": 5820123,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_156_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_156_Nucleus.ome.tiff",
+      "sha256": "28f7220239a5fb2c10560ddf04645036670aad60de74885001af5b3e33dc1cdc",
+      "size_bytes": 4581496,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_156_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_156_PC_z1.ome.tiff",
+      "sha256": "9a9760c3eaa3d83d0d5efaf6ff935523ecbd00f32ed7d0bf5d4a75cb5364c2c4",
+      "size_bytes": 6519359,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_156_PC_z1.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_156_PC_z5.ome.tiff",
+      "sha256": "ad55fe0682ef19c09d82c5ce3ce9d3116f9945e5fa7bdc7ed9309d0865e55758",
+      "size_bytes": 6522506,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_156_PC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_157_Mitochondria.ome.tiff",
+      "sha256": "8d45d349fdfccfc2f5a3eff0f3d111761a5998435a983c8dd6c7a13dd62f7c41",
+      "size_bytes": 6336020,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_157_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_157_Nucleus.ome.tiff",
+      "sha256": "1850bf5645edddce072f862ba439165d9e901e1cfee1f450fabc746850b8be32",
+      "size_bytes": 5682290,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_157_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_157_PC_z4.ome.tiff",
+      "sha256": "eed6c31c98ec943f19939d9ccc7394706cbf5c0ce59aeed4503b8d65b1da1cf4",
+      "size_bytes": 6806313,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_157_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_12/image_157_PC_z6.ome.tiff",
+      "sha256": "cdc7e881b1b6a9c1523a4dc07dd2a5447f9015b39ad32b830ab12e6d27c66512",
+      "size_bytes": 6809663,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_12/image_157_PC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_43_DIC_z4.ome.tiff",
+      "sha256": "6e5ddfae2961de8cfcfe3d75e9a98eebef9486b5b0037dcdf4614b1c1f09dc69",
+      "size_bytes": 1337713,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_43_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_43_Nucleus.ome.tiff",
+      "sha256": "8c4b83192fe5785725c77312eccef7833f0f4e09612364df4e2673dc27dc3ebc",
+      "size_bytes": 562403,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_43_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_44_DIC_z3.ome.tiff",
+      "sha256": "4fe423593b2211c9cd7ee3165582922543d177bf826093b9842d93f45be1bd6a",
+      "size_bytes": 1242155,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_44_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_44_DIC_z5.ome.tiff",
+      "sha256": "c8e37b05a7f33ec3f7f3c74fedbd7b6a3a02881ddcf29d0d49fe0f9abc45cb6f",
+      "size_bytes": 1224856,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_44_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_44_Mitochondria.ome.tiff",
+      "sha256": "b562373c68efaa57eb21d56c4dfdc152f790862f7c35b5d0d7e102e75cc725ae",
+      "size_bytes": 1055722,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_44_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_44_Nucleus.ome.tiff",
+      "sha256": "f408833cc036661e6b21edce28c790031f908fffc27886d085a507d9d4892923",
+      "size_bytes": 223923,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_44_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_45_DIC_z3.ome.tiff",
+      "sha256": "d7b343489ce236488544fae576576e22880f9995e5cd77d6b0d9b7e820a2ab59",
+      "size_bytes": 1145721,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_45_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_45_DIC_z5.ome.tiff",
+      "sha256": "206440ace05d96ae4e3b470771d4e14c6317a4e3e4161ebc956d0eb802bd8433",
+      "size_bytes": 1142881,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_45_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_45_Mitochondria.ome.tiff",
+      "sha256": "74f2c5c01bfebb8f6192dbc3fcdaaf8dc991b05b5e93742abec0149bbc275f73",
+      "size_bytes": 1120424,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_45_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_45_Nucleus.ome.tiff",
+      "sha256": "b44d278ad29bcae95eb2cdc1098d1e1404cd842cb0de835203bf90ee4f55a2ea",
+      "size_bytes": 587982,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_45_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_46_DIC_z6.ome.tiff",
+      "sha256": "58685124519df75b8a4dbee9ed093edb7fa6b49096b0480a6e663382b3406e8a",
+      "size_bytes": 1553575,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_46_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_46_DIC_z8.ome.tiff",
+      "sha256": "ca7caa02fd16f1436c2670b82535f0ea160070cafdefe23418e1f558e831773a",
+      "size_bytes": 1545147,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_46_DIC_z8.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_46_Mitochondria.ome.tiff",
+      "sha256": "90e1a5d33dc2f8d6f38c5a7aa4b5a93ac7e413eb322eb1c29aab74dfc4478aa9",
+      "size_bytes": 1527387,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_46_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_46_Nucleus.ome.tiff",
+      "sha256": "074eaef4a4bc7b65c6f7434605cdff45f4437f063709c6a97e73c1e7667d694e",
+      "size_bytes": 1046884,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_46_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_47_DIC_z3.ome.tiff",
+      "sha256": "840b85b8c5b717873f998bbb7a10e234502cf1e077e4992ca433487182c92ebe",
+      "size_bytes": 1374293,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_47_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_47_DIC_z6.ome.tiff",
+      "sha256": "bd93c8d0a69f1aec630cb10a47425c480a4876c0daf79ed90e928626863507c3",
+      "size_bytes": 1394645,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_47_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_47_Mitochondria.ome.tiff",
+      "sha256": "8054c0dbf1c3cdf97504e3acc8c99b0341f6676c94e6911e66f6764ad057a272",
+      "size_bytes": 1350005,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_47_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_47_Nucleus.ome.tiff",
+      "sha256": "8bbb62c2c94618416b76e5aabf84707f8e06a51b0bd843ad9865a70e5203c102",
+      "size_bytes": 605047,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_47_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_48_DIC_z5.ome.tiff",
+      "sha256": "4da44fa380434217908e1b718914547a7186e9c699b9d0a25e2281f5de06afc1",
+      "size_bytes": 1149558,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_48_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_48_DIC_z9.ome.tiff",
+      "sha256": "a22ab27325830a8126fae0069aa6be87eede8c3292018c4f5e9a61369f2291fd",
+      "size_bytes": 1140560,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_48_DIC_z9.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_48_Mitochondria.ome.tiff",
+      "sha256": "6d6ff7b69dd18ba2ca954dcc9c08a7e4f045671a5fd6780b93cd7e2984fac0f7",
+      "size_bytes": 852578,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_48_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_48_Nucleus.ome.tiff",
+      "sha256": "698c6a87550244429383cb6ea00627964f2cb72d0711aaa1f880f01cf9a9bff1",
+      "size_bytes": 386535,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_48_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_49_DIC_z4.ome.tiff",
+      "sha256": "24c7de751c2695c825276f32fd2175a4215f80c0b8bced2847ea534ff2e28c01",
+      "size_bytes": 1374087,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_49_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_49_DIC_z8.ome.tiff",
+      "sha256": "6a7ef7eb188a07be147e3d1cc7d75f0277a66d0220004f6cb0d2951375cbef6a",
+      "size_bytes": 1399153,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_49_DIC_z8.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_49_Mitochondria.ome.tiff",
+      "sha256": "eb5cbf1b63cad16d65d7ebd7e20ecf583db9fdf88e4f6fd3de5e62dbb23a0089",
+      "size_bytes": 1417062,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_49_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_49_Nucleus.ome.tiff",
+      "sha256": "a905ca0e0216e044de88561ebcdb7fd99d3bdd57d7b27538beb8440d1ae6f87d",
+      "size_bytes": 524312,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_49_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_50_DIC_z4.ome.tiff",
+      "sha256": "1563c8091818b5e7ec25a7ae47d623ff2516ce36d4225cb217209f64b7761780",
+      "size_bytes": 1423154,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_50_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_50_DIC_z6.ome.tiff",
+      "sha256": "8f23f3c3b839678c5d7fdac3a0237f396812b1470aa4e523cd6e07bebc3b7caf",
+      "size_bytes": 1444119,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_50_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_50_Mitochondria.ome.tiff",
+      "sha256": "1615d89aa0d1fb999ee6a45c0618e9de392257604a7fe1f0c595f3ab454a4be6",
+      "size_bytes": 1352318,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_50_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_50_Nucleus.ome.tiff",
+      "sha256": "9776f9e2b3cfa88e73dd3a839d1ed297da369c3c4e0e7d326d0041c0ee51beae",
+      "size_bytes": 649593,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_50_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_51_DIC_z3.ome.tiff",
+      "sha256": "0ec143a2c9beab05103738d4f126467c0960702f45817ab8ae5dc1f5e6782c89",
+      "size_bytes": 1312436,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_51_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_51_DIC_z6.ome.tiff",
+      "sha256": "ef852dd19d2257022e06197f11a42710223ce6d6a487d6ee1114c4220afb01fa",
+      "size_bytes": 1306746,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_51_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_51_Mitochondria.ome.tiff",
+      "sha256": "feac837666bda7884e0a9ead992a9a1e89b8e9134b5a20362c35106a36af65e7",
+      "size_bytes": 1379669,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_51_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_51_Nucleus.ome.tiff",
+      "sha256": "7107a826912a86522f67cc229417ead0040ffd748a711f93e9f64b29813f20f4",
+      "size_bytes": 495550,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_51_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_52_DIC_z4.ome.tiff",
+      "sha256": "5ec241aad4bb9933d2185f2d5b9fd57f6e89120169d4d67966f684a77a7c35cc",
+      "size_bytes": 1316350,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_52_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_52_DIC_z6.ome.tiff",
+      "sha256": "b93b6f5870c447df058323ccba9294ff65f32f1f7096db82a4612de11925e3f3",
+      "size_bytes": 1352453,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_52_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_52_Mitochondria.ome.tiff",
+      "sha256": "4e0e662d1bf89aff7fc8ab8c4b09fdebf309b5b388298a2e8ce50da94bddc4a9",
+      "size_bytes": 1169632,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_52_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_2/image_52_Nucleus.ome.tiff",
+      "sha256": "65e28a6be2faea9b9f86471307e3256b971fd4861afffb9106802f029d9e3584",
+      "size_bytes": 520224,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_2/image_52_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_298_DIC_z3.ome.tiff",
+      "sha256": "87e8d06e6329a9ad275c0da9c71ab3233128e3751305a3d59fde19aff9c6f446",
+      "size_bytes": 2396224,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_298_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_298_DIC_z4.ome.tiff",
+      "sha256": "182e2893229ab3d1ea7a89fa68ab132a8aa70575163295a7d1790989a7d17dc7",
+      "size_bytes": 2410875,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_298_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_298_Mitochondria.ome.tiff",
+      "sha256": "d96e882ea8724750f59d3def5e8c5acb6378943689e88333ddc190c82d5c70d8",
+      "size_bytes": 2068458,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_298_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_298_Nucleus.ome.tiff",
+      "sha256": "fe8bb757ea69430170c23e2900800d146700287f838c9761ad2c915d865cc66e",
+      "size_bytes": 2283710,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_298_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_298_Tubulin.ome.tiff",
+      "sha256": "e66f5c8ecd680e4db671b83be4afee38ca67a3b62e9047f4847f70c2310c5924",
+      "size_bytes": 1926243,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_298_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_299_DIC_z2.ome.tiff",
+      "sha256": "8f3d4c955da7cc50740aeb3812d7089380139fab4b3c71ce0690901799644738",
+      "size_bytes": 2354259,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_299_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_299_DIC_z3.ome.tiff",
+      "sha256": "54c3b6c34e280afa7c5469edeee1ddc95a907b8ae702dced977d67d2be34f654",
+      "size_bytes": 2381468,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_299_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_299_Mitochondria.ome.tiff",
+      "sha256": "a6805e72a39a1b77d1408ab5d3550bcd2d42d2bcb2f8ed54dd74ff1d0dd8c9b5",
+      "size_bytes": 2087197,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_299_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_299_Nucleus.ome.tiff",
+      "sha256": "d26fb42c5cd8944f51febdd758d6727bc59f15ceccdece92aef04d0e87d79063",
+      "size_bytes": 2309324,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_299_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_299_Tubulin.ome.tiff",
+      "sha256": "c28c9fdcae285e1c03abffb3784e8924d84c2b043aec6d512add72abaed5949a",
+      "size_bytes": 1812134,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_299_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_300_DIC_z4.ome.tiff",
+      "sha256": "6261bec4f1f1aff5c3423a3d9090959c8dfe986558124318d1bf8f49f9636cbf",
+      "size_bytes": 2451828,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_300_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_300_Mitochondria.ome.tiff",
+      "sha256": "c6f56d4e9c9f0eb6583da44a44acf8d9d600ba258506e94882b6f01ac7e6da89",
+      "size_bytes": 1928912,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_300_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_300_Nucleus.ome.tiff",
+      "sha256": "e632ea2023d3326ed518231e1cc8151e77efc8976cf0cb48686bc7b255a8416f",
+      "size_bytes": 2187239,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_300_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_300_Tubulin.ome.tiff",
+      "sha256": "5dc2fc811944b6bc2599ad9bd1c6e3eea49e663fdd22dd1b741960b932daaf30",
+      "size_bytes": 1848635,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_300_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_301_DIC_z3.ome.tiff",
+      "sha256": "303526b5e386a267db02ebcdfc3a109d5f2d22954221f56764cb305616cafb8f",
+      "size_bytes": 2476554,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_301_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_301_DIC_z4.ome.tiff",
+      "sha256": "ff07ff638599c8fc10b71eb69ad8e59408c3a253aad53f93c19d70aaa9dcc4ab",
+      "size_bytes": 2473337,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_301_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_301_DIC_z5.ome.tiff",
+      "sha256": "7bc055a49dbd41f593a3195082f8685a85fdfae82ee2bb0f1aaf990807cabf31",
+      "size_bytes": 2441571,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_301_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_301_Mitochondria.ome.tiff",
+      "sha256": "e92a3fb86ba4dc27a9b0b7c4d45f5b6a1a5df74443bc088385e13ed5abd80b95",
+      "size_bytes": 1976829,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_301_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_301_Nucleus.ome.tiff",
+      "sha256": "3093b868f2e21e18ebbaf343599dfc277602af4899bad4517ccfa13024c5467a",
+      "size_bytes": 2222082,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_301_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_301_Tubulin.ome.tiff",
+      "sha256": "ab2d4e7e6e29fd2984c4228919d978197702578e979411a88f88f623e0e95d0f",
+      "size_bytes": 1803733,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_301_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_302_DIC_z4.ome.tiff",
+      "sha256": "63f6d848590adde05ba64c4cdf5a94a9e5391152f23c2204597dbba533c0405a",
+      "size_bytes": 2443996,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_302_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_302_Mitochondria.ome.tiff",
+      "sha256": "d4e913b68179f4d9de19ff0341a28a6610c25105d57d5bebfe593811a15dba4b",
+      "size_bytes": 1941847,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_302_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_302_Nucleus.ome.tiff",
+      "sha256": "c2df05289af75053b0a3e23d1a58259665be72ffa562fa5070affb0395abad45",
+      "size_bytes": 2214362,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_302_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_302_Tubulin.ome.tiff",
+      "sha256": "808f7c4bbb74462162b6e1a54db4208b63dfef9a3c27c5cbe8bb8e6af3153b6d",
+      "size_bytes": 1794894,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_302_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_303_DIC_z4.ome.tiff",
+      "sha256": "8585c60d53681d2b8a5bb20b36d0733e617dd431ac65384acec4ff9e01eb3aca",
+      "size_bytes": 2450804,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_303_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_303_DIC_z6.ome.tiff",
+      "sha256": "671a8d36ef7aa94dd8b0c0fd0d00990abb4a9c39abe54d02c1a9827a14dd5583",
+      "size_bytes": 2415514,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_303_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_303_Mitochondria.ome.tiff",
+      "sha256": "cceb516a198a571cf393c4748b66f98b1ba24c42bc97f25f6e94d1b15c2c0641",
+      "size_bytes": 2007297,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_303_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_303_Nucleus.ome.tiff",
+      "sha256": "2e60ca2571e09d0bf61bcc66b9f692e82494db32b6108c650674971001b23b63",
+      "size_bytes": 2202127,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_303_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_303_Tubulin.ome.tiff",
+      "sha256": "76f08d4c6040d87f5429f32c2656d91bbb04ca57870192e2d1928079aa1fab33",
+      "size_bytes": 1962230,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_303_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_304_DIC_z5.ome.tiff",
+      "sha256": "f7f98dc2a57dde3b2945a11582b8d434732fd9454ae15ddc0d9cc82ddd6f5963",
+      "size_bytes": 2471645,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_304_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_304_DIC_z6.ome.tiff",
+      "sha256": "7976ab40136ba230d94435ddaeafdbe57e9632d04a39f90610c64bd9433b8992",
+      "size_bytes": 2449805,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_304_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_304_DIC_z7.ome.tiff",
+      "sha256": "808a2aec3e9e50f89000df01f637b013e7858944609dadd4b11826f5ec3fb1df",
+      "size_bytes": 2405664,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_304_DIC_z7.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_304_Mitochondria.ome.tiff",
+      "sha256": "3575ee6e8a552e9985f35c1d34bc9710e55ee64a983e5e2deb6c68186990d93b",
+      "size_bytes": 2010339,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_304_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_304_Nucleus.ome.tiff",
+      "sha256": "a19b76527e1a8eaa5a099958f2fdd27bc8a03d9b5c6dbf394c997aa2b34de844",
+      "size_bytes": 2208491,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_304_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_304_Tubulin.ome.tiff",
+      "sha256": "6f43568f07eedc5499fc89e3ae7818e7a49a8a15ddb81c46f3f4181e62c073e5",
+      "size_bytes": 1875538,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_304_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_305_DIC_z4.ome.tiff",
+      "sha256": "150b2f32eccf7cb0121e7ac4262bb57d27ea7cca69929d7ffdb1cef52c74394c",
+      "size_bytes": 2484965,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_305_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_305_DIC_z5.ome.tiff",
+      "sha256": "485b385cae435148dce59144e9bdb4bdc37626b92e9f254363b76e0087c412ee",
+      "size_bytes": 2469746,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_305_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_305_DIC_z6.ome.tiff",
+      "sha256": "56dd8f83712895454256977a538c96d0d71ac9b2819de4595bee35c1e4af626e",
+      "size_bytes": 2426091,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_305_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_305_Mitochondria.ome.tiff",
+      "sha256": "bb3246c47e7508388225c0f43800750447933bc23935d86b4f1cdbac654191d2",
+      "size_bytes": 2009960,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_305_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_305_Nucleus.ome.tiff",
+      "sha256": "d4d373aea8392d3594fc2d32a38caa34a924a35ae45876ee7a68a7d076195dbc",
+      "size_bytes": 2239913,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_305_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_305_Tubulin.ome.tiff",
+      "sha256": "2a6706c7560b43b3e02a5065b0e7b2d5ed794ee3c8d4d8ce063137af11c7bfff",
+      "size_bytes": 1886946,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_305_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_306_DIC_z3.ome.tiff",
+      "sha256": "fea29e0f18493acad3899f70e5c5f2d252f673143776cb7332271dd240eb44d0",
+      "size_bytes": 2466271,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_306_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_306_DIC_z4.ome.tiff",
+      "sha256": "ab3953fbd42de752f3872bc7bc3fc46e9f4aba2f2c4506c37bab8432ca87e2c6",
+      "size_bytes": 2452181,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_306_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_306_Mitochondria.ome.tiff",
+      "sha256": "d586491f2e263fe1538256b88761ec02edb94f84ece22e1902e276cce9748ae8",
+      "size_bytes": 2043250,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_306_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_306_Nucleus.ome.tiff",
+      "sha256": "db24c66d80bd9d1df1ffa0f40e338f279f477e5ab8ca63813fbba69ec75f60df",
+      "size_bytes": 2198640,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_306_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_306_Tubulin.ome.tiff",
+      "sha256": "a24bdaaf598247869feb451db2c93e7094a7e06d81243151db01e17dac962744",
+      "size_bytes": 1908190,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_306_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_307_DIC_z4.ome.tiff",
+      "sha256": "1faa7811ff2e913d478ece9e7ae33f854ce970f5b0639b3c37b12ca0207e0738",
+      "size_bytes": 2471142,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_307_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_307_DIC_z5.ome.tiff",
+      "sha256": "34d83592bfcdf9a33a7363ffb9a048b8eedaf894449e584e8afa2eac5a396b1b",
+      "size_bytes": 2445634,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_307_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_307_Mitochondria.ome.tiff",
+      "sha256": "895658119d80a9a168d3bca507ca2f72bd6275d018786d24baf988072b2075ef",
+      "size_bytes": 1945555,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_307_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_307_Nucleus.ome.tiff",
+      "sha256": "bad5451428e9562acaa1c50caf67537abf1440ae528f9789bb7012e3193d9cd5",
+      "size_bytes": 2200930,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_307_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_307_Tubulin.ome.tiff",
+      "sha256": "256b04879df7c784dc276efbbaa93f39f9507e0a76eeb9942076df515abe05d9",
+      "size_bytes": 1735589,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_307_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_308_DIC_z4.ome.tiff",
+      "sha256": "b391025d711cc65debf5e4cfa3ca93487748460103219f965ce5dcae0f054424",
+      "size_bytes": 2460412,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_308_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_308_DIC_z5.ome.tiff",
+      "sha256": "b1382b29b00ceacded8a7cc52f96343185e87146317f62d60a190d1489f9c5f6",
+      "size_bytes": 2461024,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_308_DIC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_308_DIC_z6.ome.tiff",
+      "sha256": "df190729fda4cc9e58455ea3a29b0b9f670c3d3b107658c9b9d106c40144f3eb",
+      "size_bytes": 2435186,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_308_DIC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_308_Mitochondria.ome.tiff",
+      "sha256": "1943e5b513a6b3592ebd656a13eb43a65c95f60431af38812f477aa7181b0886",
+      "size_bytes": 1991169,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_308_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_308_Nucleus.ome.tiff",
+      "sha256": "492293b202cdcd43ff6a9ca158c93043e276d70174b1cd66cb74c9c3b832b050",
+      "size_bytes": 2199661,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_308_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_308_Tubulin.ome.tiff",
+      "sha256": "3c3e0884fa6651e4d1cdde9b75ce6a722801070482ae3c9c69f2d01a1dd660f2",
+      "size_bytes": 1877343,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_308_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_309_DIC_z2.ome.tiff",
+      "sha256": "11e6440bc1bf2547eae397fdaaf6fa36659c839ae8f2223778d588bfcd062ab2",
+      "size_bytes": 2357869,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_309_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_309_DIC_z3.ome.tiff",
+      "sha256": "67b42a870b8bde9506c99335b1411d351d10730a794a91a99dd963fb38225306",
+      "size_bytes": 2384045,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_309_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_309_Mitochondria.ome.tiff",
+      "sha256": "de132c142f08023b395910e47bd513027b9c183a522f60ff1fe71525204750c6",
+      "size_bytes": 2016356,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_309_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_309_Nucleus.ome.tiff",
+      "sha256": "d6343b53a086bbd40378be3c43f5d762dfeea5c9c316a580fd63a481654a699b",
+      "size_bytes": 2290899,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_309_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_309_Tubulin.ome.tiff",
+      "sha256": "bc565c675fb032f2564d5891f3c2c850f09d4b6ef5b597dd906b076b4c45822e",
+      "size_bytes": 1945704,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_309_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_310_DIC_z3.ome.tiff",
+      "sha256": "efa66b2cf8d104ae577c5631b537d1654967db69d57a50ff7d48a6345045f505",
+      "size_bytes": 2367932,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_310_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_310_DIC_z4.ome.tiff",
+      "sha256": "ba229158701279f3a2220fc98530a451471aba14ffe124be51224bb37252ccef",
+      "size_bytes": 2373229,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_310_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_310_Mitochondria.ome.tiff",
+      "sha256": "4b38838c1c12f6ba51146d24a2fe7dad725052756573a4a12f9c97b1ca08a37a",
+      "size_bytes": 2066017,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_310_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_310_Nucleus.ome.tiff",
+      "sha256": "6c7311e047d82cfea5cc0ff3e481258f561ffafd69b82167e77ecb767f9545ad",
+      "size_bytes": 2318064,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_310_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_310_Tubulin.ome.tiff",
+      "sha256": "e920fca503297eb79fe8760d94c30839c95be4ce37624c04475ea0ec3eb36711",
+      "size_bytes": 1965050,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_310_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_311_DIC_z3.ome.tiff",
+      "sha256": "9a441581075e7690bfeb309f1edd5dd5984b2ff9919655e647d4e40519df15f7",
+      "size_bytes": 2454489,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_311_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_311_Mitochondria.ome.tiff",
+      "sha256": "559ef05e69cd7e229d266b9857e085e3d167eafc91162068ca39969540719c95",
+      "size_bytes": 2038288,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_311_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_311_Nucleus.ome.tiff",
+      "sha256": "d982a25a8b843a5720d23813a87b70f4fb4973caf1bb33153f8c75c0e88cd7c6",
+      "size_bytes": 2172589,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_311_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_311_Tubulin.ome.tiff",
+      "sha256": "9f5b59056ea65abd3efd6296593a41a117eb44f4a4cceaa55855ec489011f45e",
+      "size_bytes": 1862157,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_311_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_312_DIC_z2.ome.tiff",
+      "sha256": "7f4c9ed3c0046a02ec0a4f42dee518a4bb8b97b5860045f759ea4c412a8d0f2d",
+      "size_bytes": 2396735,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_312_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_312_DIC_z3.ome.tiff",
+      "sha256": "c4632391a1748737556837f21dd929574750b208a5c8f7944c036e4d1d3a466f",
+      "size_bytes": 2412938,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_312_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_312_Mitochondria.ome.tiff",
+      "sha256": "9c2b4d3abdc87bc658b958b848dd3fb4192c5b9be9ac993ca715b78eae7913cc",
+      "size_bytes": 2052346,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_312_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_312_Nucleus.ome.tiff",
+      "sha256": "1508ba1a3e04c17c347c6d3e6745118e5944a5fdb6e5b8600682f038080a5c70",
+      "size_bytes": 2294536,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_312_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_312_Tubulin.ome.tiff",
+      "sha256": "7457ac209110e3d498bebb2188f78855081178710dcd256be2257b295a71451e",
+      "size_bytes": 1970078,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_312_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_313_DIC_z3.ome.tiff",
+      "sha256": "87a09396a0dcd794f0bd0f15b9c61720c6413a8ef2e6918d26d2c616d3cc039f",
+      "size_bytes": 2466361,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_313_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_313_DIC_z4.ome.tiff",
+      "sha256": "49786c62c1ead222ee71f426940137dce2f8a2ab5869359e9e7f3e6e40ff3e56",
+      "size_bytes": 2465750,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_313_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_313_Mitochondria.ome.tiff",
+      "sha256": "77bd4f873b5eb857bc29dbdb821838253f513fccb1ee6796b8741d65c6b0cad9",
+      "size_bytes": 2008105,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_313_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_313_Nucleus.ome.tiff",
+      "sha256": "59bac954471820630970e7243b0e1b6f7e45d78fdf27da0ccd8c9698a185689c",
+      "size_bytes": 2253605,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_313_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_313_Tubulin.ome.tiff",
+      "sha256": "f07ecd9f22937664c7bd80503f52bfde008422c0e7ef5668cdd8fc8700c58413",
+      "size_bytes": 1882162,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_313_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_314_DIC_z2.ome.tiff",
+      "sha256": "a9ccbf22e2292f96f254b393728afdaca9a98f21393a2797bfe213f3f1cf8abf",
+      "size_bytes": 2345869,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_314_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_314_DIC_z3.ome.tiff",
+      "sha256": "3025243dd678b0d4439c5261e2caa29648d62992f4d82c26321304548cf07760",
+      "size_bytes": 2371952,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_314_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_314_Mitochondria.ome.tiff",
+      "sha256": "b1bdb7c3d88b0d1a233d288a342f19f96ff558657f7e5ce11e4d33cbac9f8ea7",
+      "size_bytes": 2048148,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_314_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_314_Nucleus.ome.tiff",
+      "sha256": "15fdcd057b13cc8a21549c2d69753362c7b64e6848b4bb152c95b91bbb964ee0",
+      "size_bytes": 2323686,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_314_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_314_Tubulin.ome.tiff",
+      "sha256": "6bcc3fc06623c30a5da31ca2e3cd5464fc19f336c9c3274a8ef376b0ecb16b7a",
+      "size_bytes": 1940293,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_314_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_315_DIC_z2.ome.tiff",
+      "sha256": "729ee24b47a44b9eaa918e549d7cb274dfb7acc735cb7feb72c0b1f2bb0fefac",
+      "size_bytes": 2348617,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_315_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_315_DIC_z3.ome.tiff",
+      "sha256": "0e394c0c8540c21de47bee423da24d45d95d2beb9be073d19e1f98beb0b4bfbc",
+      "size_bytes": 2376946,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_315_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_315_Mitochondria.ome.tiff",
+      "sha256": "5f5a410f0d1c79f215c9804a15f770673014ea052b243e3d1d3a1ef81509caa0",
+      "size_bytes": 1997475,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_315_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_315_Nucleus.ome.tiff",
+      "sha256": "2bd31a614b70aede080c8f4af89710d1ed0f974399a14c6023c6e73229ae8bc9",
+      "size_bytes": 2300797,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_315_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_315_Tubulin.ome.tiff",
+      "sha256": "87667625c68e8a7ba6a15e7d0f22aacf4f435af991ccee168da6bf1ca9b48f57",
+      "size_bytes": 1905740,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_315_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_316_DIC_z2.ome.tiff",
+      "sha256": "c328666ccb28b9698c89ca0d7270f3fe5febc22fd55ee2bfc54b292053ee7417",
+      "size_bytes": 2344778,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_316_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_316_DIC_z3.ome.tiff",
+      "sha256": "fcc06fd5ac84d587124f1ef2ef69c302fd6ac58316ef0e48a83820806f4bbc3f",
+      "size_bytes": 2376547,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_316_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_316_DIC_z4.ome.tiff",
+      "sha256": "b2808d7ccf953a4e7eb53906a573b05488b4447f95d91eda089f656b04dbba9e",
+      "size_bytes": 2390355,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_316_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_316_Mitochondria.ome.tiff",
+      "sha256": "9625060a430df1e7d07e8c924bb796022de967436eb79eaa38e6f0a365214e6d",
+      "size_bytes": 2053347,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_316_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_316_Nucleus.ome.tiff",
+      "sha256": "1c2a60b00a9eaadd2ac2a5f88cec78fcbc2892c881bb0e117364f09c759d7ce1",
+      "size_bytes": 2296990,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_316_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_316_Tubulin.ome.tiff",
+      "sha256": "26f700e6a1c793e86fa33bf5b993749868127979ff54eb8b9d3bd0eec2881d64",
+      "size_bytes": 1925730,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_316_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_317_DIC_z3.ome.tiff",
+      "sha256": "f7fc1b326aa3a2ecac20a2150362b936e1d83651b7864fc953700cef0f4c1a09",
+      "size_bytes": 2478747,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_317_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_317_DIC_z4.ome.tiff",
+      "sha256": "2a4c1252b7733c34a39e2551890c1f2a809d11f50cc2a3efbc7629618c1aba40",
+      "size_bytes": 2484832,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_317_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_317_Mitochondria.ome.tiff",
+      "sha256": "ebebe65bf4463cb61637245fa05d0ad83287aaca2ca62b3961e2ae3dcd593d10",
+      "size_bytes": 1978782,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_317_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_317_Nucleus.ome.tiff",
+      "sha256": "be738f07eb704517c0ca15454560a3095652dc1d71e5d158d6436a5218ca7d1e",
+      "size_bytes": 2229625,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_317_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_317_Tubulin.ome.tiff",
+      "sha256": "7afa55f4791a194315a49422e6da02efd17e2f308fa53ae644e519344cab607c",
+      "size_bytes": 1915597,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_317_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_318_DIC_z2.ome.tiff",
+      "sha256": "47b8089ce45fba9c3548a9e14fef4aef7653525ddead1dcb3bff26f3ce7f8d25",
+      "size_bytes": 2391813,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_318_DIC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_318_DIC_z3.ome.tiff",
+      "sha256": "3bbc39a833a8f229be2fc03482738723d96a8e254792ddd52a06f86652a26c3b",
+      "size_bytes": 2413346,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_318_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_318_Mitochondria.ome.tiff",
+      "sha256": "1202c268420e62fcdf510bb04c5bc8dbafb43ce90962ebbe7a6e3f7f86d7de77",
+      "size_bytes": 2058534,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_318_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_318_Nucleus.ome.tiff",
+      "sha256": "f7fab788897caf693d46d01cd773a90e898b6e73983f1593764e2c5d539c27bf",
+      "size_bytes": 2283700,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_318_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_318_Tubulin.ome.tiff",
+      "sha256": "764595f1dfab7235b14d76e75b3c8665e291d802233723afd5815afbf200cf2a",
+      "size_bytes": 1843172,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_318_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_319_DIC_z3.ome.tiff",
+      "sha256": "64a31350e489cefa737541bf0fcf792bea676912bb55374e87706947fedc0d93",
+      "size_bytes": 2347549,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_319_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_319_Mitochondria.ome.tiff",
+      "sha256": "6d4f1df9531cc703bf6e90aba77be4e27a5cca5bf8459176a83f53ec6c72f6f4",
+      "size_bytes": 2042361,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_319_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_319_Nucleus.ome.tiff",
+      "sha256": "934380e53a26c79899877490ca4b4e27fe7283bce31ce446f32fb392f1805509",
+      "size_bytes": 2294959,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_319_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_319_Tubulin.ome.tiff",
+      "sha256": "dabf613b16c26d602addd17573f8ce8095d8b99cfaf915a181b0baa7294800cb",
+      "size_bytes": 1912867,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_319_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_320_DIC_z3.ome.tiff",
+      "sha256": "cdb5b3b04c4137bd7da6466fe719bcd208856d5628c574aee4a48c67d143805a",
+      "size_bytes": 2443480,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_320_DIC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_320_DIC_z4.ome.tiff",
+      "sha256": "674016fe0ed9de9dd57be0a36f8cb1ea0f6bfa13ab2f9afae82d9eb91612316a",
+      "size_bytes": 2434852,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_320_DIC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_320_Mitochondria.ome.tiff",
+      "sha256": "df10ee632bf7027403627f8d125216c85387095d47c0b20a9b494ab63b64712e",
+      "size_bytes": 2021735,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_320_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_320_Nucleus.ome.tiff",
+      "sha256": "d57a32d9f7176724b36b083ce2188d6be89bf5c9a943d4f184f755763972da71",
+      "size_bytes": 2256582,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_320_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_20/image_320_Tubulin.ome.tiff",
+      "sha256": "de0eac513982f02becf15ecd6ff2555313f63b2d08e9deb09970eb0118db3810",
+      "size_bytes": 1876594,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_20/image_320_Tubulin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_100_Actin.ome.tiff",
+      "sha256": "53d293cf76b3d55a7bd4e705f477e108ddce472cbf7d94997eade32886038baf",
+      "size_bytes": 3268995,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_100_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_100_Nucleus.ome.tiff",
+      "sha256": "b6dc88e52d0b3fe0f39f01841524857e7e8eb09ddf37dd5d6e4724ee28b3a631",
+      "size_bytes": 2864405,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_100_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_100_PC_z3.ome.tiff",
+      "sha256": "8814daa0368216236e633d333d94548d20a6c48d7325aec8250957f92f7f984d",
+      "size_bytes": 2763182,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_100_PC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_100_PC_z5.ome.tiff",
+      "sha256": "49c95820b972dfe6eef795f9b6aafcae224eb15ca38143e5248dc553a2bdd05e",
+      "size_bytes": 2762467,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_100_PC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_101_Actin.ome.tiff",
+      "sha256": "df4320319059a5daa3c214eaf6781e6e362ea134b3cc9e8f4eed56aa2ad1992c",
+      "size_bytes": 2389516,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_101_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_101_Nucleus.ome.tiff",
+      "sha256": "4a242201b71cfca98d3906973e3aac6b1406c619a5a4f7f7c95d880ade454f77",
+      "size_bytes": 2774882,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_101_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_101_PC_z3.ome.tiff",
+      "sha256": "9b4bfab24940c0d36584f313458ad3f1c1e20d2621c95be76263a71f78e62c7d",
+      "size_bytes": 2840008,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_101_PC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_101_PC_z4.ome.tiff",
+      "sha256": "81bcf31c5f051714db68299cd38ebbc3a806ad192171643cff13d284e70344fb",
+      "size_bytes": 2841811,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_101_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_92_Actin.ome.tiff",
+      "sha256": "3cffde667e5af872ad964be0c90c2dc5feb5a4297f2e5d5381ae10105944f4b6",
+      "size_bytes": 3080227,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_92_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_92_Nucleus.ome.tiff",
+      "sha256": "97dfcfd1f6f16bfd3cc1598c76966f27291a6d9185684a8dc55a93bf3c44968b",
+      "size_bytes": 2805574,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_92_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_92_PC_z2.ome.tiff",
+      "sha256": "3826055ae40c783025eefb05dee094235e403ad30535fb72896428a1bc0dfa55",
+      "size_bytes": 2907330,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_92_PC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_92_PC_z4.ome.tiff",
+      "sha256": "45c7f00a182e892d3a93aec143988979b8e9b0372dde3dfc2e4300a8b66930f6",
+      "size_bytes": 2929440,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_92_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_93_Actin.ome.tiff",
+      "sha256": "9e05218f735bef1110253fca0c378fc40b3d991584569467ffead580a002d639",
+      "size_bytes": 3225923,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_93_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_93_Nucleus.ome.tiff",
+      "sha256": "955f3a285316d6c01e07d07e892a8f304c86150d7148ce62f964408a7d5d37e9",
+      "size_bytes": 2512631,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_93_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_93_PC_z3.ome.tiff",
+      "sha256": "745ed98e8b14a2364dada9f5b88ff7683016414bb9d7457c8175958ff40a1edb",
+      "size_bytes": 2718524,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_93_PC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_93_PC_z4.ome.tiff",
+      "sha256": "46a371f199bf538be7fb83ad1a0f31e894435c4137e2f14dddbba0d4ed83a9e0",
+      "size_bytes": 2716369,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_93_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_94_Actin.ome.tiff",
+      "sha256": "8f2248d65610d5f0a54d0669e025686df1a9d93ec56f1ef5276d901a192fd78f",
+      "size_bytes": 3252203,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_94_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_94_Nucleus.ome.tiff",
+      "sha256": "0ccece55111e73ef7a882c7db51db1b952db20000198fd8ade1fbc02eebc26fe",
+      "size_bytes": 2978947,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_94_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_94_PC_z5.ome.tiff",
+      "sha256": "6768a9701e47b65bb3be1548d2f8f22420b8d304a4a46aad60861d7a23d1a359",
+      "size_bytes": 2995920,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_94_PC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_95_Actin.ome.tiff",
+      "sha256": "78e63846c9f31c58280d68a04621b97792807686c0f807be1e99d6086fd846d2",
+      "size_bytes": 3002759,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_95_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_95_Nucleus.ome.tiff",
+      "sha256": "0ef1a2bee2a1831a67f3b026159e01275f1102963fa422380c904fbef80b9ef5",
+      "size_bytes": 2707218,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_95_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_95_PC_z3.ome.tiff",
+      "sha256": "3be19f46648435c6a76700ace2516268605090c9e0d49d2eb87755cfa6417242",
+      "size_bytes": 2921109,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_95_PC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_95_PC_z4.ome.tiff",
+      "sha256": "064142dc599dc23df5b4bcb2adadf7cc1b3fb69a2dc1d86d768506d4ee66924b",
+      "size_bytes": 2921643,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_95_PC_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_96_Actin.ome.tiff",
+      "sha256": "2f38391bd3ec2e8b4c56999af7d83067e45ec829c5154b1f98042c9c0a8281f0",
+      "size_bytes": 3273261,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_96_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_96_Nucleus.ome.tiff",
+      "sha256": "208657ce05356a25edc60ab48cd9782473a3ffe91fc7b8104fc165ec6b187317",
+      "size_bytes": 2756770,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_96_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_96_PC_z2.ome.tiff",
+      "sha256": "04a0762801ed39ee55a25a870b0bf5b423989b3fbe1b993c6ffa35262d5573eb",
+      "size_bytes": 2833314,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_96_PC_z2.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_96_PC_z5.ome.tiff",
+      "sha256": "96e51d9cc6e61e6bfe3038cb41c57fddfd63010758dd09fc64ce39557ef21f4a",
+      "size_bytes": 2819911,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_96_PC_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_97_Actin.ome.tiff",
+      "sha256": "3228f489fbd8c7f75cc68118bf92f8a4c1b5873aba3f0f39fe801233708bd120",
+      "size_bytes": 3230942,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_97_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_97_Nucleus.ome.tiff",
+      "sha256": "b8462cb455d4f57d2a383aeee608621414f94c7bc08c5bc567c7b34f3a89fdc0",
+      "size_bytes": 3038628,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_97_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_97_PC_z0.ome.tiff",
+      "sha256": "6a2750766a74f442f53636870a8bb9790c7d3a5f6f2c6e136b50d30c96028f53",
+      "size_bytes": 2798004,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_97_PC_z0.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_97_PC_z3.ome.tiff",
+      "sha256": "7ad9c7d04ba7a653696170a99f02a95035c5ad6e707078b6bacefe3c886eeea1",
+      "size_bytes": 2783305,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_97_PC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_98_Actin.ome.tiff",
+      "sha256": "c9c0d7c24c29496759ac62fc12b397483b9fdc57113ff84c8016a4d21eb2a664",
+      "size_bytes": 3118748,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_98_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_98_Nucleus.ome.tiff",
+      "sha256": "630f02dd09f29544e538713569dcdfe0efcc3ee1a71a69e7fdde10ff9db300f7",
+      "size_bytes": 3053654,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_98_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_98_PC_z1.ome.tiff",
+      "sha256": "601b430eeb450538c45198e977fc83611d24c367679c052d6aff5c78ebeafbb9",
+      "size_bytes": 2796660,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_98_PC_z1.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_98_PC_z6.ome.tiff",
+      "sha256": "95beb512c7a250405e15691b2d76d28b1a9a93820df96d92170de790fa045b54",
+      "size_bytes": 2834945,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_98_PC_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_99_Actin.ome.tiff",
+      "sha256": "239f603cb814140601b43d98c0a3962d4ea3da45b5e247b8df86d0d00962d7fa",
+      "size_bytes": 3195785,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_99_Actin.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_99_Nucleus.ome.tiff",
+      "sha256": "ed06c93de1344d4bed64899f12b4b7d35619de254d0238a85287a63819bb5dac",
+      "size_bytes": 2796976,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_99_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_99_PC_z1.ome.tiff",
+      "sha256": "3e891c26f84add5167a2821a41bd17370b1bf40c942074521f428dd7ac1e2ca2",
+      "size_bytes": 2790416,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_99_PC_z1.ome.tiff"
+    },
+    {
+      "path": "Images/Study_5/image_99_PC_z3.ome.tiff",
+      "sha256": "55a19ccb14e5b6557fcabd751a410c2e22a2739f800b4eb973a5e8d04b63359f",
+      "size_bytes": 2786505,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_5/image_99_PC_z3.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_130_BF_z11.ome.tiff",
+      "sha256": "3f91eb5e9af2ef5a9dd29021672b9f4c312dc63d99618d1eec7293f50fa39f77",
+      "size_bytes": 6545666,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_130_BF_z11.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_130_BF_z17.ome.tiff",
+      "sha256": "06dc8cb6d5886c565cc22ecf0d35c222747d742d88927d81940af4c4f6fac1e6",
+      "size_bytes": 6558359,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_130_BF_z17.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_130_Mitochondria.ome.tiff",
+      "sha256": "0e346ada79b226fe5d1ccab22f9d23cea672b9c7522a8f9fb8e34968adc0e2d6",
+      "size_bytes": 6798477,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_130_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_130_Nucleus.ome.tiff",
+      "sha256": "ed421c2ef775fda93b5c5d2d6b02e1f9a0c5f92a645c1654a8a3da9c8e4c4f4d",
+      "size_bytes": 6636737,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_130_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_131_BF_z4.ome.tiff",
+      "sha256": "845063601534a60f47a5cfd2ecec5aca96c853705b87350b51ee98c32bff7aa3",
+      "size_bytes": 6548510,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_131_BF_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_131_BF_z9.ome.tiff",
+      "sha256": "ceb3e42ee4037b7b44e88a6a9d2477402005d775ac64dae3452eec70c82d3057",
+      "size_bytes": 6561703,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_131_BF_z9.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_131_Mitochondria.ome.tiff",
+      "sha256": "54e5a62788f149d4f86ce36f52195053ca46986c752f5e199a93f39b0af6348d",
+      "size_bytes": 6811355,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_131_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_131_Nucleus.ome.tiff",
+      "sha256": "4d69ac266f225d78215412922f1c75a4cbb6560c2d69961208213ac28e3d7edb",
+      "size_bytes": 6706213,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_131_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_132_BF_z10.ome.tiff",
+      "sha256": "4035db8425a1e77ab66b7832545ef1b6202cda1ad308ba548fbc77336f9474ee",
+      "size_bytes": 6567310,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_132_BF_z10.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_132_BF_z5.ome.tiff",
+      "sha256": "f76a508a61220eaa857d0c34244b14cd3645a715e6e42ae3113414a6c7c96c3e",
+      "size_bytes": 6551691,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_132_BF_z5.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_132_Mitochondria.ome.tiff",
+      "sha256": "9c3bdc024ad81ce93ac1d40785953f3bda459985db249cf7487b5910c7af412f",
+      "size_bytes": 6842533,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_132_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_132_Nucleus.ome.tiff",
+      "sha256": "761e40562551794360166298848fd575b8c479d0b84858e224a70ba10959c42d",
+      "size_bytes": 6750898,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_132_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_133_BF_z10.ome.tiff",
+      "sha256": "633d09d6922220125b562ca3797692cb7632bddb773b571297dbf57651ab27e1",
+      "size_bytes": 6518946,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_133_BF_z10.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_133_BF_z18.ome.tiff",
+      "sha256": "c1090877c9f36fbebb1e3ee9cf514ec80b07223d0b78599e31cab22910cc77e3",
+      "size_bytes": 6537515,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_133_BF_z18.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_133_Mitochondria.ome.tiff",
+      "sha256": "10a38e5288a35075c976a06654f8a134e29d35086f4f208a51c320721b3bebc9",
+      "size_bytes": 6726710,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_133_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_133_Nucleus.ome.tiff",
+      "sha256": "57d0c42f42b085f10f36c630eefeb1828857f43827b285045f5f14222b02040a",
+      "size_bytes": 6588927,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_133_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_134_BF_z11.ome.tiff",
+      "sha256": "efe8bff3729ce90d3a799c1416bd76949a42df3f33b32b24060dae39aaf89e95",
+      "size_bytes": 6598826,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_134_BF_z11.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_134_BF_z16.ome.tiff",
+      "sha256": "07dab516b371fef6afac0598b28282349eedc77fbfd2d682688910dfd3560a7f",
+      "size_bytes": 6612720,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_134_BF_z16.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_134_Mitochondria.ome.tiff",
+      "sha256": "7fc880ce8a607f1746a573598dc5584d026938f424bae2675c94237dc18b31b4",
+      "size_bytes": 6934181,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_134_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_134_Nucleus.ome.tiff",
+      "sha256": "f9f572cbc543a2c42564705e1afac626d0022142b4d89aef7d446179a5560279",
+      "size_bytes": 6833778,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_134_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_135_BF_z12.ome.tiff",
+      "sha256": "e4b3954dd787aeefb6731c80abaca7ecf5172710ded71ee4c1dbac38b30f0161",
+      "size_bytes": 6585407,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_135_BF_z12.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_135_BF_z6.ome.tiff",
+      "sha256": "4ad7bd5cfd6e887aefdef17ae6c60e5d362fbcbd5f898d7695cf60b7968275a7",
+      "size_bytes": 6571329,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_135_BF_z6.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_135_Mitochondria.ome.tiff",
+      "sha256": "5ce21e507c6e1c9b0de6c04c2f358772623091a4c0cedfdb4ab52281b12d9746",
+      "size_bytes": 6954617,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_135_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_135_Nucleus.ome.tiff",
+      "sha256": "6e2bba80c57ead57f3200bc53c05f7add679a57db47f87b488a0f8eb25eb7f9e",
+      "size_bytes": 6810011,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_135_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_136_BF_z11.ome.tiff",
+      "sha256": "a1a8de1879d815610b346d84007cf5d05102130d21245196e04e7a0c706eac6d",
+      "size_bytes": 6610641,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_136_BF_z11.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_136_BF_z8.ome.tiff",
+      "sha256": "d0871abb8cdc5b6da1a0c0c1810acb4eeb28e5e727d4807232921e1e2ada9655",
+      "size_bytes": 6601285,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_136_BF_z8.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_136_Mitochondria.ome.tiff",
+      "sha256": "bd26f8287197aa85842dddb61c7182acace1b2fbff594f0ee5f40a1bc54b1ae5",
+      "size_bytes": 7020105,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_136_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_136_Nucleus.ome.tiff",
+      "sha256": "6a06cf287aba9e6adcc31c5838a31803a00303a8c7f5a86c75f18daf72f853ae",
+      "size_bytes": 7022969,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_136_Nucleus.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_137_BF_z4.ome.tiff",
+      "sha256": "9713c19ae7a0ced20d906f9c5201b2a0e4121955f92e9de739ac6c9c7123f710",
+      "size_bytes": 6558695,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_137_BF_z4.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_137_BF_z9.ome.tiff",
+      "sha256": "51b7170814220c461cb5efa212c0c5dfa7fd7537aa1f393a1ceab71feb262066",
+      "size_bytes": 6571162,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_137_BF_z9.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_137_Mitochondria.ome.tiff",
+      "sha256": "9e2652d12876e27be6d931c19486318f7fe40b28d9f647f674931db48cf5bb25",
+      "size_bytes": 6892235,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_137_Mitochondria.ome.tiff"
+    },
+    {
+      "path": "Images/Study_9/image_137_Nucleus.ome.tiff",
+      "sha256": "263cbae3cfc62881a61e321275b6d5feae4ceea7d3c262d0663bf6aef3629ab1",
+      "size_bytes": 6811798,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/Images/Study_9/image_137_Nucleus.ome.tiff"
+    }
+  ],
+  "pair_manifest_sha256": "8440af2b0903deb7e6ffb389c1b38ad6e92fa396212446ea7583b71856c1eaa7",
+  "report_sha256": "1dbb95dd132a2149589d0adf2f91b93d13f91cd2606d4781f6cad0576deb8a56",
+  "schema": "aleph.outer_library.lightmycells_confirmation_payload_receipt.v1",
+  "total_bytes": 1536818955
+}

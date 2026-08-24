@@ -1,0 +1,524 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "interface_residual_composed_native",
+  "kind": "diagnostic",
+  "build": {
+    "commit": "ae523fa5",
+    "source": "declared",
+    "reason": "the run host is not a git checkout; the commit is the caller's assertion"
+  },
+  "device": "cuda:0",
+  "evidence": "NATIVE",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "adjoint-closure residual of ONE assembled candidate force state on the composed native cell, per two-body cut, scored by the existing D8-derived tolerance. BLOCKED: no position was updated, nothing was solved, and the composed world's parameters are PI-GAPs. This reads the WIRING, which is what ledger.py says its two-channel gate tests.",
+  "config": {
+    "n_filaments": 70686,
+    "k_axial_pn_per_um": 1000.0,
+    "k_xb_pn_per_um": 1000.0,
+    "n_fibers_ecm": 200,
+    "membrane_subdivisions": 6,
+    "seed": 0
+  },
+  "parameter_provenance": {
+    "k_axial_pn_per_um": "PI_GAP",
+    "k_xb_pn_per_um": "PI_GAP"
+  },
+  "census": {
+    "cortex_filaments": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 551434,
+    "n_heads": 8840,
+    "fraction_of_native": 1.0
+  },
+  "bound_components": [
+    "ecm",
+    "nmii",
+    "sf_arc",
+    "cortex (PORT, not a component)"
+  ],
+  "interface": {
+    "n_cuts_declared": 27,
+    "n_measured": 3,
+    "n_unbound": 24,
+    "n_imbalanced": 0,
+    "n_unwired": 2,
+    "n_scoreable": 1,
+    "worst_residual_pn": 6.826395013532529e-25,
+    "worst_cut": [
+      "nmii",
+      "sf_arc"
+    ],
+    "cuts": [
+      {
+        "components": [
+          "cortex",
+          "cytosol"
+        ],
+        "connectors": [
+          "surface_porous_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cortex",
+          "filopodium"
+        ],
+        "connectors": [
+          "filopodium_cortex_root"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cortex",
+          "lamellipodium"
+        ],
+        "connectors": [
+          "lamellipodium_cortex_seam"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cortex",
+          "membrane"
+        ],
+        "connectors": [
+          "membrane_erm_cortex",
+          "membrane_cortex_contact"
+        ],
+        "attributable": false,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cortex",
+          "microtubule"
+        ],
+        "connectors": [
+          "mt_cortex_capture"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cortex",
+          "nmii"
+        ],
+        "connectors": [
+          "nmii_cortex_motor"
+        ],
+        "attributable": true,
+        "status": "BALANCED",
+        "residual_pn": 6.040904034823184e-25,
+        "scale_pn": 6.040904034823184e-25,
+        "cancellation": 1.0,
+        "tolerance_ratio": 1.2244283366491949e-10,
+        "connectors_bound": [
+          "nmii_cortex_motor"
+        ],
+        "unwired": false
+      },
+      {
+        "components": [
+          "cortex",
+          "nucleus"
+        ],
+        "connectors": [
+          "nucleus_cortex_contact"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cortex",
+          "sf_arc"
+        ],
+        "connectors": [
+          "sf_cortex_transient"
+        ],
+        "attributable": true,
+        "status": "BALANCED",
+        "residual_pn": 0.0,
+        "scale_pn": 0.0,
+        "cancellation": null,
+        "tolerance_ratio": 6.126132934645184e-11,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "filopodium"
+        ],
+        "connectors": [
+          "filopodium_cytosol_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "intermediate_filament"
+        ],
+        "connectors": [
+          "if_cytosol_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "lamellipodium"
+        ],
+        "connectors": [
+          "lamellipodium_cytosol_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "membrane"
+        ],
+        "connectors": [
+          "membrane_cytosol_boundary"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "microtubule"
+        ],
+        "connectors": [
+          "mt_cytosol_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "nmii"
+        ],
+        "connectors": [
+          "nmii_cytosol_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "nucleus"
+        ],
+        "connectors": [
+          "nucleus_cytosol_boundary"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "cytosol",
+          "sf_arc"
+        ],
+        "connectors": [
+          "sf_cytosol_transfer"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "ecm",
+          "membrane"
+        ],
+        "connectors": [
+          "membrane_ecm_contact"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "filopodium",
+          "membrane"
+        ],
+        "connectors": [
+          "filopodium_membrane_tip"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "filopodium",
+          "nmii"
+        ],
+        "connectors": [
+          "nmii_filopodium_motor"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "intermediate_filament",
+          "nucleus"
+        ],
+        "connectors": [
+          "if_nucleus_linc"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "intermediate_filament",
+          "sf_arc"
+        ],
+        "connectors": [
+          "if_sf_plectin"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "lamellipodium",
+          "membrane"
+        ],
+        "connectors": [
+          "lamellipodium_membrane_contact"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "lamellipodium",
+          "nmii"
+        ],
+        "connectors": [
+          "nmii_lamellipodium_motor"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "microtubule",
+          "nucleus"
+        ],
+        "connectors": [
+          "mt_nucleus_linc"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "microtubule",
+          "sf_arc"
+        ],
+        "connectors": [
+          "mt_sf_spectraplakin"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "nmii",
+          "sf_arc"
+        ],
+        "connectors": [
+          "nmii_sf_motor"
+        ],
+        "attributable": true,
+        "status": "BALANCED",
+        "residual_pn": 6.826395013532529e-25,
+        "scale_pn": 6.826395013532529e-25,
+        "cancellation": 1.0,
+        "tolerance_ratio": 6.126132934645184e-11,
+        "connectors_bound": [],
+        "unwired": true
+      },
+      {
+        "components": [
+          "nucleus",
+          "sf_arc"
+        ],
+        "connectors": [
+          "actin_cap_linc"
+        ],
+        "attributable": true,
+        "status": "UNBOUND",
+        "residual_pn": null,
+        "scale_pn": null,
+        "cancellation": null,
+        "tolerance_ratio": null,
+        "connectors_bound": [],
+        "unwired": true
+      }
+    ],
+    "scope": "the interface residual of ONE assembled candidate force state. NOT a convergence claim, NOT a physics magnitude, and NOT a statement that any component reached equilibrium \u2014 no position was updated here. READ `cancellation` BEFORE `status`: a BALANCED cut whose cancellation is near 1 cancelled nothing and is evidence of absent force or absent wiring, not of a closed adjoint."
+  },
+  "timing": {
+    "wall_seconds": 15.837371083005564,
+    "build_seconds": 15.762145026994403,
+    "n_steps": 0,
+    "comparable": false,
+    "not_comparable_reason": "no step was accepted; this is one force assembly read"
+  }
+}

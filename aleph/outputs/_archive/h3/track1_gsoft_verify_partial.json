@@ -1,0 +1,235 @@
+{
+  "status": "running",
+  "config_batch_dt_s": 9.903330486505404e-05,
+  "cfl_product": 0.0009903330486505406,
+  "naive_eq_bound_frac": 0.8333333333333334,
+  "ticks_per_tau": 168.2935522486824,
+  "baseline_g_soft_mN_per_m": 2.3813677335263267e-08,
+  "rows": [
+    {
+      "tick": 20,
+      "step": 152000,
+      "bound_frac": 0.02,
+      "n_bound": 8,
+      "mean_F_over_stall": 0.23913942747685635,
+      "g_soft_mN_per_m": 5.015803070736336e-05,
+      "tau_multiple": 0.11883996583806486
+    },
+    {
+      "tick": 40,
+      "step": 304000,
+      "bound_frac": 0.0325,
+      "n_bound": 13,
+      "mean_F_over_stall": 0.18448571695808125,
+      "g_soft_mN_per_m": 9.535848163695881e-05,
+      "tau_multiple": 0.23767993167612972
+    },
+    {
+      "tick": 60,
+      "step": 456000,
+      "bound_frac": 0.0425,
+      "n_bound": 17,
+      "mean_F_over_stall": 0.238432939839567,
+      "g_soft_mN_per_m": 5.046462155530872e-05,
+      "tau_multiple": 0.35651989751419455
+    },
+    {
+      "tick": 80,
+      "step": 608000,
+      "bound_frac": 0.06,
+      "n_bound": 24,
+      "mean_F_over_stall": 0.21509546738097637,
+      "g_soft_mN_per_m": 0.00010131463238976878,
+      "tau_multiple": 0.47535986335225944
+    },
+    {
+      "tick": 100,
+      "step": 760000,
+      "bound_frac": 0.0675,
+      "n_bound": 27,
+      "mean_F_over_stall": 0.23043267199394932,
+      "g_soft_mN_per_m": 5.895576269459114e-05,
+      "tau_multiple": 0.5941998291903243
+    },
+    {
+      "tick": 120,
+      "step": 912000,
+      "bound_frac": 0.0675,
+      "n_bound": 27,
+      "mean_F_over_stall": 0.22915634916323604,
+      "g_soft_mN_per_m": 7.928056756841861e-05,
+      "tau_multiple": 0.7130397950283891
+    },
+    {
+      "tick": 140,
+      "step": 1064000,
+      "bound_frac": 0.075,
+      "n_bound": 30,
+      "mean_F_over_stall": 0.19501783461779276,
+      "g_soft_mN_per_m": 7.540570673907781e-05,
+      "tau_multiple": 0.831879760866454
+    },
+    {
+      "tick": 160,
+      "step": 1216000,
+      "bound_frac": 0.08,
+      "n_bound": 32,
+      "mean_F_over_stall": 0.20961801837662591,
+      "g_soft_mN_per_m": 5.496184760970654e-05,
+      "tau_multiple": 0.9507197267045189
+    },
+    {
+      "tick": 180,
+      "step": 1368000,
+      "bound_frac": 0.0975,
+      "n_bound": 39,
+      "mean_F_over_stall": 0.21816809219528976,
+      "g_soft_mN_per_m": 9.552506520849768e-05,
+      "tau_multiple": 1.0695596925425837
+    },
+    {
+      "tick": 200,
+      "step": 1520000,
+      "bound_frac": 0.11,
+      "n_bound": 44,
+      "mean_F_over_stall": 0.20109866905132578,
+      "g_soft_mN_per_m": 8.035641092102789e-05,
+      "tau_multiple": 1.1883996583806486
+    },
+    {
+      "tick": 220,
+      "step": 1672000,
+      "bound_frac": 0.115,
+      "n_bound": 46,
+      "mean_F_over_stall": 0.18987245377049297,
+      "g_soft_mN_per_m": 9.706399408515198e-05,
+      "tau_multiple": 1.3072396242187134
+    },
+    {
+      "tick": 240,
+      "step": 1824000,
+      "bound_frac": 0.115,
+      "n_bound": 46,
+      "mean_F_over_stall": 0.21449219642073766,
+      "g_soft_mN_per_m": 8.322787016552699e-05,
+      "tau_multiple": 1.4260795900567782
+    },
+    {
+      "tick": 260,
+      "step": 1976000,
+      "bound_frac": 0.1225,
+      "n_bound": 49,
+      "mean_F_over_stall": 0.19592841372261918,
+      "g_soft_mN_per_m": 6.941052013489524e-05,
+      "tau_multiple": 1.5449195558948432
+    },
+    {
+      "tick": 280,
+      "step": 2128000,
+      "bound_frac": 0.125,
+      "n_bound": 50,
+      "mean_F_over_stall": 0.1878482618311849,
+      "g_soft_mN_per_m": 8.828265101777308e-05,
+      "tau_multiple": 1.663759521732908
+    },
+    {
+      "tick": 300,
+      "step": 2280000,
+      "bound_frac": 0.13,
+      "n_bound": 52,
+      "mean_F_over_stall": 0.20485844909022197,
+      "g_soft_mN_per_m": 6.459317565823123e-05,
+      "tau_multiple": 1.782599487570973
+    },
+    {
+      "tick": 320,
+      "step": 2432000,
+      "bound_frac": 0.1375,
+      "n_bound": 55,
+      "mean_F_over_stall": 0.20359210288249757,
+      "g_soft_mN_per_m": 6.648109438232856e-05,
+      "tau_multiple": 1.9014394534090377
+    },
+    {
+      "tick": 340,
+      "step": 2584000,
+      "bound_frac": 0.1425,
+      "n_bound": 57,
+      "mean_F_over_stall": 0.19120647908419638,
+      "g_soft_mN_per_m": 6.669609643758403e-05,
+      "tau_multiple": 2.0202794192471027
+    },
+    {
+      "tick": 360,
+      "step": 2736000,
+      "bound_frac": 0.15,
+      "n_bound": 60,
+      "mean_F_over_stall": 0.2244246645863773,
+      "g_soft_mN_per_m": 0.00010301534886099814,
+      "tau_multiple": 2.1391193850851673
+    },
+    {
+      "tick": 380,
+      "step": 2888000,
+      "bound_frac": 0.155,
+      "n_bound": 62,
+      "mean_F_over_stall": 0.2145485077171286,
+      "g_soft_mN_per_m": 5.576361198076164e-05,
+      "tau_multiple": 2.2579593509232323
+    },
+    {
+      "tick": 400,
+      "step": 3040000,
+      "bound_frac": 0.16,
+      "n_bound": 64,
+      "mean_F_over_stall": 0.20863517258628705,
+      "g_soft_mN_per_m": 4.275818168822847e-05,
+      "tau_multiple": 2.3767993167612973
+    },
+    {
+      "tick": 420,
+      "step": 3192000,
+      "bound_frac": 0.1575,
+      "n_bound": 63,
+      "mean_F_over_stall": 0.1967779073977502,
+      "g_soft_mN_per_m": 7.14963053256258e-05,
+      "tau_multiple": 2.495639282599362
+    },
+    {
+      "tick": 440,
+      "step": 3344000,
+      "bound_frac": 0.155,
+      "n_bound": 62,
+      "mean_F_over_stall": 0.20251689778297513,
+      "g_soft_mN_per_m": 9.158347033546535e-05,
+      "tau_multiple": 2.614479248437427
+    },
+    {
+      "tick": 460,
+      "step": 3496000,
+      "bound_frac": 0.165,
+      "n_bound": 66,
+      "mean_F_over_stall": 0.20935313322177207,
+      "g_soft_mN_per_m": 5.780103170490091e-05,
+      "tau_multiple": 2.733319214275492
+    },
+    {
+      "tick": 480,
+      "step": 3648000,
+      "bound_frac": 0.165,
+      "n_bound": 66,
+      "mean_F_over_stall": 0.20973794522669945,
+      "g_soft_mN_per_m": 7.439240459704005e-05,
+      "tau_multiple": 2.8521591801135564
+    },
+    {
+      "tick": 500,
+      "step": 3800000,
+      "bound_frac": 0.1625,
+      "n_bound": 65,
+      "mean_F_over_stall": 0.211107421288329,
+      "g_soft_mN_per_m": 4.1104804018574874e-05,
+      "tau_multiple": 2.9709991459516214
+    }
+  ]
+}

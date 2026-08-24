@@ -1,0 +1,12 @@
+{
+  "aleph_parameter_authority": "none",
+  "downloaded_unique_files_before_detection": 81,
+  "input_image_ids": 2594,
+  "model_predictions_made": 0,
+  "reason": "The unavailable IDR pixel buffer Exception exposed one repository basename repeatedly within each plate rather than the source file for each image. Treating that basename as image-specific collapsed 2594 image IDs onto 81 URLs.",
+  "resolved_manifest_commit": "7cdb399",
+  "resolved_manifest_status": "invalid_retired_before_prediction",
+  "schema": "aleph.outer_library.idr0072_if_flex_resolution_collision.v1",
+  "unique_local_paths": 81,
+  "unique_source_urls": 81
+}

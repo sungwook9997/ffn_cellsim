@@ -1,0 +1,278 @@
+{
+  "aleph_authority": "none",
+  "author_label_count": 35,
+  "cell_line_count": 39,
+  "conformal_diagnostic": {
+    "alpha": 0.1,
+    "eligible_for_uncertainty_authority": false,
+    "marginal_probability_interval_radius": 0.0895986861655437,
+    "reason": "same-provider repeated-image rows are not independent experimental units",
+    "test_entrywise_coverage": 0.8979782523766116
+  },
+  "dataset_holdout_present": true,
+  "dataset_id": "hpa-v25.1-subcellular-image-embeddings",
+  "embedding_dimensions": 128,
+  "image_count": 81007,
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "lab_group": "human-protein-atlas-subcellular-resource",
+  "limitations": [
+    "HPA embeddings and localization labels share one provider and annotation pipeline",
+    "the test split seals genes and antibodies but is not an independent laboratory",
+    "the 128-D view is a compact diagnostic, not a newly trained raw-image encoder",
+    "cell-line imbalance prevents interpreting image-level metrics as universal cell-state accuracy"
+  ],
+  "may_select_aleph_parameter": false,
+  "model": "fixed_HPA_embedding_view_plus_train_only_ridge_multilabel_head",
+  "per_label_test_metrics": {
+    "Actin filaments": {
+      "test_auroc": 0.9941218939753823,
+      "test_average_precision": 0.863743803900709,
+      "test_positive_images": 98,
+      "threshold_selected_on_validation": 0.27499999999999997
+    },
+    "Aggresome": {
+      "test_auroc": 0.9480506711324249,
+      "test_average_precision": 0.4869806567861105,
+      "test_positive_images": 18,
+      "threshold_selected_on_validation": 0.1
+    },
+    "Cell Junctions": {
+      "test_auroc": 0.9775889299830156,
+      "test_average_precision": 0.7316604177977731,
+      "test_positive_images": 146,
+      "threshold_selected_on_validation": 0.22499999999999998
+    },
+    "Centriolar satellite": {
+      "test_auroc": 0.929848759830611,
+      "test_average_precision": 0.3268666010092371,
+      "test_positive_images": 76,
+      "threshold_selected_on_validation": 0.175
+    },
+    "Centrosome": {
+      "test_auroc": 0.9713443738393687,
+      "test_average_precision": 0.6843943420053522,
+      "test_positive_images": 160,
+      "threshold_selected_on_validation": 0.27499999999999997
+    },
+    "Cleavage furrow": {
+      "test_auroc": null,
+      "test_average_precision": null,
+      "test_positive_images": 0,
+      "threshold_selected_on_validation": 0.5
+    },
+    "Cytokinetic bridge": {
+      "test_auroc": 0.9151015682963645,
+      "test_average_precision": 0.4866788362188351,
+      "test_positive_images": 90,
+      "threshold_selected_on_validation": 0.2
+    },
+    "Cytoplasmic bodies": {
+      "test_auroc": 0.9125916170407696,
+      "test_average_precision": 0.07555854084010825,
+      "test_positive_images": 44,
+      "threshold_selected_on_validation": 0.075
+    },
+    "Cytosol": {
+      "test_auroc": 0.9270263515217491,
+      "test_average_precision": 0.8445221373652178,
+      "test_positive_images": 2708,
+      "threshold_selected_on_validation": 0.42499999999999993
+    },
+    "Endoplasmic reticulum": {
+      "test_auroc": 0.9518846868782072,
+      "test_average_precision": 0.6690041256312154,
+      "test_positive_images": 288,
+      "threshold_selected_on_validation": 0.27499999999999997
+    },
+    "Endosomes": {
+      "test_auroc": 0.9954199923983277,
+      "test_average_precision": 0.4502723311546841,
+      "test_positive_images": 6,
+      "threshold_selected_on_validation": 0.075
+    },
+    "Focal adhesion sites": {
+      "test_auroc": 0.9837454001839926,
+      "test_average_precision": 0.8509671444997624,
+      "test_positive_images": 80,
+      "threshold_selected_on_validation": 0.22499999999999998
+    },
+    "Golgi apparatus": {
+      "test_auroc": 0.9767255822046554,
+      "test_average_precision": 0.8676602557223984,
+      "test_positive_images": 614,
+      "threshold_selected_on_validation": 0.42499999999999993
+    },
+    "Intermediate filaments": {
+      "test_auroc": 0.9650705855437577,
+      "test_average_precision": 0.6330363505485933,
+      "test_positive_images": 34,
+      "threshold_selected_on_validation": 0.25
+    },
+    "Kinetochore": {
+      "test_auroc": 0.8352717597871532,
+      "test_average_precision": 0.01016328380388673,
+      "test_positive_images": 6,
+      "threshold_selected_on_validation": 0.49999999999999994
+    },
+    "Lipid droplets": {
+      "test_auroc": 0.9671648351648352,
+      "test_average_precision": 0.2314297773587834,
+      "test_positive_images": 26,
+      "threshold_selected_on_validation": 0.05
+    },
+    "Lysosomes": {
+      "test_auroc": 0.9689355870260393,
+      "test_average_precision": 0.39451612183911283,
+      "test_positive_images": 20,
+      "threshold_selected_on_validation": 0.075
+    },
+    "Microtubule ends": {
+      "test_auroc": 0.9737254790145985,
+      "test_average_precision": 0.3719784436533272,
+      "test_positive_images": 8,
+      "threshold_selected_on_validation": 0.49999999999999994
+    },
+    "Microtubules": {
+      "test_auroc": 0.986793044334037,
+      "test_average_precision": 0.8751191622014088,
+      "test_positive_images": 146,
+      "threshold_selected_on_validation": 0.27499999999999997
+    },
+    "Midbody": {
+      "test_auroc": 0.785191312946904,
+      "test_average_precision": 0.06335335131157109,
+      "test_positive_images": 12,
+      "threshold_selected_on_validation": 0.075
+    },
+    "Midbody ring": {
+      "test_auroc": 0.8767545361177679,
+      "test_average_precision": 0.05488293775864899,
+      "test_positive_images": 13,
+      "threshold_selected_on_validation": 0.49999999999999994
+    },
+    "Mitochondria": {
+      "test_auroc": 0.9850723747003158,
+      "test_average_precision": 0.9406351353086988,
+      "test_positive_images": 674,
+      "threshold_selected_on_validation": 0.44999999999999996
+    },
+    "Mitotic chromosome": {
+      "test_auroc": 0.8597494505494505,
+      "test_average_precision": 0.24770391690251423,
+      "test_positive_images": 26,
+      "threshold_selected_on_validation": 0.05
+    },
+    "Mitotic spindle": {
+      "test_auroc": 0.9910734721904326,
+      "test_average_precision": 0.8381852405735796,
+      "test_positive_images": 38,
+      "threshold_selected_on_validation": 0.35
+    },
+    "Nuclear bodies": {
+      "test_auroc": 0.9761547416638914,
+      "test_average_precision": 0.8351035678763162,
+      "test_positive_images": 324,
+      "threshold_selected_on_validation": 0.32499999999999996
+    },
+    "Nuclear membrane": {
+      "test_auroc": 0.9798469633025666,
+      "test_average_precision": 0.8535883934242096,
+      "test_positive_images": 184,
+      "threshold_selected_on_validation": 0.32499999999999996
+    },
+    "Nuclear speckles": {
+      "test_auroc": 0.9827947224805929,
+      "test_average_precision": 0.8238395179170326,
+      "test_positive_images": 322,
+      "threshold_selected_on_validation": 0.37499999999999994
+    },
+    "Nucleoli": {
+      "test_auroc": 0.9766831128522001,
+      "test_average_precision": 0.7371541113158221,
+      "test_positive_images": 562,
+      "threshold_selected_on_validation": 0.35
+    },
+    "Nucleoli fibrillar center": {
+      "test_auroc": 0.9833122506568065,
+      "test_average_precision": 0.8770851488447803,
+      "test_positive_images": 172,
+      "threshold_selected_on_validation": 0.35
+    },
+    "Nucleoli rim": {
+      "test_auroc": 0.9861122637159981,
+      "test_average_precision": 0.5900122414407422,
+      "test_positive_images": 100,
+      "threshold_selected_on_validation": 0.15
+    },
+    "Nucleoplasm": {
+      "test_auroc": 0.9705624927093054,
+      "test_average_precision": 0.968212000471388,
+      "test_positive_images": 4160,
+      "threshold_selected_on_validation": 0.44999999999999996
+    },
+    "Peroxisomes": {
+      "test_auroc": null,
+      "test_average_precision": null,
+      "test_positive_images": 0,
+      "threshold_selected_on_validation": 0.075
+    },
+    "Plasma membrane": {
+      "test_auroc": 0.9463255291068827,
+      "test_average_precision": 0.8046344222521591,
+      "test_positive_images": 1146,
+      "threshold_selected_on_validation": 0.35
+    },
+    "Rods & Rings": {
+      "test_auroc": 0.9991452017323912,
+      "test_average_precision": 0.1625,
+      "test_positive_images": 2,
+      "threshold_selected_on_validation": 0.49999999999999994
+    },
+    "Vesicles": {
+      "test_auroc": 0.8798963114830571,
+      "test_average_precision": 0.6484658206928267,
+      "test_positive_images": 1120,
+      "threshold_selected_on_validation": 0.32499999999999996
+    }
+  },
+  "schema": "aleph.outer_library.hpa_if_localization_evaluation.v1",
+  "sealed_grouped_test_metrics": {
+    "evaluable_label_count": 33,
+    "exact_match_accuracy": 0.5483135824977211,
+    "image_count": 8776,
+    "macro_auroc": 0.9502753289201168,
+    "macro_average_precision": 0.5848457011644487,
+    "macro_f1": 0.5271187542496648,
+    "micro_f1": 0.7866044186302982
+  },
+  "source_sha256": "c23170d2fc1107d66c87c5a181a10b97f19cb4c2b2c5e2f2bc369ba7d547f92d",
+  "split": {
+    "component_counts": {
+      "calibration": 1245,
+      "test": 1335,
+      "train": 8065,
+      "validation": 1895
+    },
+    "gene_or_antibody_cross_split_overlap_count": 0,
+    "image_counts": {
+      "calibration": 8026,
+      "test": 8776,
+      "train": 51976,
+      "validation": 12229
+    },
+    "test_labels_used_for_fitting_or_threshold_selection": false,
+    "unit": "connected_component_of_gene_antibody_bipartite_graph"
+  },
+  "status": "training_only_grouped_same_provider",
+  "task": "HPA_IF_subcellular_localization_multilabel_representation",
+  "validation_metrics": {
+    "evaluable_label_count": 34,
+    "exact_match_accuracy": 0.5587537819936217,
+    "image_count": 12229,
+    "macro_auroc": 0.9350114564675359,
+    "macro_average_precision": 0.6116581483592145,
+    "macro_f1": 0.571420340773833,
+    "micro_f1": 0.7935582984584415
+  }
+}

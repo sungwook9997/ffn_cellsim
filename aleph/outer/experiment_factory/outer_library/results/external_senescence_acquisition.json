@@ -1,0 +1,91 @@
+{
+  "aleph_authority": "none",
+  "dataset_count": 4,
+  "external_lab_labels_may_be_used_for_model_selection": false,
+  "files": {
+    "GSE282425_barcodes.tsv.gz": {
+      "dataset": "GSE282425",
+      "gzip_stream_verified": true,
+      "lab": "Queen_Mary_University_London_Bishop_lab",
+      "role": "single_donor_2D_3D_context_shift_diagnostic",
+      "sha256": "5945b59ae608ebfb2ad55b8527f50a3f254532b6a692c803ce4f49335cb0c681",
+      "size": 14862,
+      "size_bytes": 14862,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE282nnn/GSE282425/suppl/GSE282425_barcodes.tsv.gz"
+    },
+    "GSE282425_features.tsv.gz": {
+      "dataset": "GSE282425",
+      "gzip_stream_verified": true,
+      "lab": "Queen_Mary_University_London_Bishop_lab",
+      "role": "single_donor_2D_3D_context_shift_diagnostic",
+      "sha256": "8f978c80872e705d9214ca3705d74e101a0f5b305c4495efc379aeb0c361da7c",
+      "size": 80033,
+      "size_bytes": 80033,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE282nnn/GSE282425/suppl/GSE282425_features.tsv.gz"
+    },
+    "GSE282425_matrix.mtx.gz": {
+      "dataset": "GSE282425",
+      "gzip_stream_verified": true,
+      "lab": "Queen_Mary_University_London_Bishop_lab",
+      "role": "single_donor_2D_3D_context_shift_diagnostic",
+      "sha256": "7132e6e715a176d05d04d8f749ef77e7717c555ad4a5e541a347c20da7c7e7bc",
+      "size": 33882522,
+      "size_bytes": 33882522,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE282nnn/GSE282425/suppl/GSE282425_matrix.mtx.gz"
+    },
+    "GSE297406_hDF_raw_counts_p5_to_p15.csv.gz": {
+      "dataset": "GSE297406",
+      "gzip_stream_verified": true,
+      "lab": "Sungkyunkwan_University_Cholab",
+      "role": "sealed_external_lab_four_biological_replicates_per_state",
+      "sha256": "807d7a66c9385535352d6231076db56cc5514c914c33a28fc807f1decbe2add4",
+      "size": 1618701,
+      "size_bytes": 1618701,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE297nnn/GSE297406/suppl/GSE297406_hDF_raw_counts_p5_to_p15.csv.gz"
+    },
+    "GSE301164_BJ_RNA_seq_raw_counts.txt.gz": {
+      "dataset": "GSE301164",
+      "gzip_stream_verified": true,
+      "lab": "Northwest_University_Yan_lab",
+      "role": "post_freeze_external_confirmation_replicative_and_doxorubicin",
+      "sha256": "1e07430ef9287c3263ecc8e1a5d323cc469a862be8972aaa8c4b62ba8011ca9b",
+      "size": 2261178,
+      "size_bytes": 2261178,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE301nnn/GSE301164/suppl/GSE301164_BJ_RNA_seq_raw_counts.txt.gz"
+    },
+    "GSE63577_counts_rpkm_exvivo_jenage_data.xls.gz": {
+      "dataset": "GSE63577",
+      "gzip_stream_verified": true,
+      "lab": "Leibniz_Institute_JenAge",
+      "role": "fit_selection_calibration_multicellline_biological_replicates",
+      "sha256": "48b525e052a5cb17f157b875cb466cc9603b706ef6e94358e83079ef84ca5375",
+      "size": 14273182,
+      "size_bytes": 14273182,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE63nnn/GSE63577/suppl/GSE63577_counts_rpkm_exvivo_jenage_data.xls.gz"
+    },
+    "GSE63577_exVivo_counts_RPKMs_II.xls.gz": {
+      "dataset": "GSE63577",
+      "gzip_stream_verified": true,
+      "lab": "Leibniz_Institute_JenAge",
+      "role": "fit_selection_calibration_multicellline_biological_replicates",
+      "sha256": "e37fc2da3cce72cabe5c03ef9eab88cfb07945cdc231ffc1e94202a98a96a2a3",
+      "size": 9796646,
+      "size_bytes": 9796646,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE63nnn/GSE63577/suppl/GSE63577_exVivo_counts_RPKMs_II.xls.gz"
+    }
+  },
+  "gse282425_contexts": [
+    "early_proliferative_2D",
+    "early_proliferative_3D",
+    "deeply_senescent_2D",
+    "deeply_senescent_3D"
+  ],
+  "gse282425_donors": 1,
+  "gse297406_biological_replicates_per_state": 4,
+  "gse301164_biological_replicates_per_contrast": 3,
+  "gse63577_declared_samples": 48,
+  "lab_count": 4,
+  "may_select_aleph_parameter": false,
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.external_senescence_acquisition.v1"
+}

@@ -1,0 +1,85 @@
+[OK] Granted sungwook access to /dev/dxg for Slurm job 56.
+[GPU SUBMIT]
+  reserved_token: rtx3090
+  physical_gpu:   2
+  visible_device: cuda:0
+  CUDA_VISIBLE_DEVICES=2
+  cpus:           4
+  mem_gb:         16
+  PWD=/home/sungwook/ffn/ffn_cellsim_cortical_tension
+
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.3
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA GeForce RTX 3090" (24 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+Module aleph.engine.connector_joints 821a9ff load on device 'cuda:0' took 0.74 ms  (cached)
+Module aleph.engine.afm_indenter 717be33 load on device 'cuda:0' took 0.58 ms  (cached)
+{
+  "schema": "afm-indenter-cuda-gate@1",
+  "kind": "gate",
+  "device": "cuda:0",
+  "verdict": "PASS",
+  "checks": {
+    "separated_and_touching_force_free_overlap_repulsive": true,
+    "reaction_channel_and_contact_count": true,
+    "adjoint_force_balance": true,
+    "global_candidate_membrane_block_only": true,
+    "rejected_candidate_restores_centre": true,
+    "accepted_candidate_keeps_centre": true
+  },
+  "measured": {
+    "membrane_force_pN": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0000000000000009
+      ]
+    ],
+    "centre_force_pN": [
+      0.0,
+      0.0,
+      1.0000000000000009
+    ],
+    "reaction_force_pN_and_contact_count": [
+      1.0000000000000009,
+      1.0
+    ],
+    "adjoint_balance_pN": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "global_nonmembrane_force_pN": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  "may_not_be_quoted_for": [
+    "contact stiffness calibration",
+    "indenter radius",
+    "cortical tension",
+    "full-native response"
+  ]
+}
+[OK] Kept sungwook access to /dev/dxg; another Slurm job is still active.

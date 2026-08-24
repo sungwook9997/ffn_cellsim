@@ -1,0 +1,106 @@
+{
+  "schema": "aleph.outer_library.pbmc_final_confirmation_protocol.v1",
+  "frozen_before_Wilk_h5ad_expression_or_observation_access": true,
+  "objective": "perform the single untouched confirmation of the GSE96583 classifier after GSE164378-only uncertainty calibration, using the paper-linked processed count matrix and cell metadata for the independent Stanford GSE150728 cohort",
+  "prior_source_failures": [
+    {
+      "accession": "GSE222647",
+      "status": "retired_before_model_execution",
+      "reason": "exact frozen donor and condition column aliases did not admit the released headers"
+    },
+    {
+      "accession": "GSE158055",
+      "status": "retired_before_model_execution_and_before_count_matrix_completion",
+      "reason": "the frozen donor alias list did not admit the released plural Patients header",
+      "partial_count_payload_used": false
+    }
+  ],
+  "confirmation_source": {
+    "accession": "GSE150728",
+    "lab_group": "Stanford_Wilk_Blish_COVID19_PBMC",
+    "official_geo_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE150728",
+    "paper": "Wilk et al., Nature Medicine 2020, PMID 32514174",
+    "paper_data_availability": "processed count matrices with de-identified metadata and embeddings are distributed through the COVID-19 Cell Atlas and the public CZ CELLxGENE dataset",
+    "cellxgene_collection_id": "a72afd53-ab92-4511-88da-252fb0e26b9a",
+    "cellxgene_collection_api": "https://api.cellxgene.cziscience.com/curation/v1/collections/a72afd53-ab92-4511-88da-252fb0e26b9a",
+    "cellxgene_dataset_id": "456e8b9b-f872-488b-871d-94534090a865",
+    "h5ad_asset_url": "https://datasets.cellxgene.cziscience.com/8d7fad46-2f37-4aa0-ac9d-babbc36efb6f.h5ad",
+    "expected_asset_size_bytes": 217094236,
+    "official_design_known_before_asset_access": "44,721 PBMC cells from seven hospitalized COVID-19 patients and six healthy controls",
+    "role": "single_use_untouched_confirmation"
+  },
+  "fixed_upstream": {
+    "classifier_training_dataset": "GSE96583",
+    "classifier_artifact": "pbmc_cross_lab_model.npz",
+    "feature_order_count": 508,
+    "calibration_dataset": "GSE164378",
+    "calibrated_artifact": "pbmc_gse164378_calibrated_model.npz",
+    "classifier_weights_may_change": false,
+    "temperature_or_conformal_thresholds_may_change": false,
+    "GSE132044_labels_may_influence_confirmation": false
+  },
+  "h5ad_axis_contract": {
+    "cell_identifier": "H5AD obs index only",
+    "cell_type_column_resolution": "first exact normalized match among celltype, celltypel1, majorcelltype, authorcelltype, annotation; normalization is Unicode casefold followed by deletion of non-ASCII-alphanumeric characters and removal of a single trailing s",
+    "donor_column_resolution": "first exact normalized match among donor, donorid, patient, patientid, individual, individualid, subject, subjectid, sample, sampleid; the same normalization and singularization apply",
+    "condition_column_resolution": "first exact normalized match among disease, diseasestatus, condition, group, status, studyclassification, sampletype; the same normalization and singularization apply",
+    "ambiguous_or_missing_required_column": "refuse",
+    "manual_column_choice_after_asset_access": "forbidden",
+    "raw_count_matrix_precedence": ["raw/X", "layers/raw_counts", "layers/counts", "X"],
+    "matrix_acceptance": "selected matrix must be sparse or dense nonnegative integer-valued counts; refuse normalized nonintegers",
+    "gene_symbol_precedence": ["raw/var/feature_name", "raw/var/gene_symbols", "var/feature_name", "var/gene_symbols", "selected_matrix_var_index"],
+    "minimum_common_features": 450
+  },
+  "population_contract": {
+    "primary_population": "cells whose author/paper-linked condition is normal or healthy control",
+    "required_distinct_donors": 6,
+    "no_COVID19_cells_in_primary_metrics": true,
+    "cells_are_not_independent_biological_replicates": true,
+    "donor_is_the_reporting_and_inference_unit": true,
+    "all_metrics_reported_by_donor": true
+  },
+  "expression_contract": {
+    "normalization": "per-cell library size to 10000 followed by log1p",
+    "gene_alignment": "exact case-sensitive HGNC symbol intersection in the fixed 508-feature order",
+    "feature_selection_retraining_or_weight_fitting": false,
+    "minimum_library_size": 1,
+    "duplicate_cell_identifiers": "refuse",
+    "duplicate_gene_symbols": "use first released row in source order and report"
+  },
+  "coarse_cell_type_mapping_in_order": [
+    {"canonical": "B_cell", "case_insensitive_patterns": ["(^|[^a-z])b([^a-z]|$)", "b cell", "b-cell", "cd19", "cd20"]},
+    {"canonical": "CD4_T_cell", "case_insensitive_patterns": ["cd4", "helper t", "regulatory t", "treg"]},
+    {"canonical": "CD8_T_cell", "case_insensitive_patterns": ["cd8", "cytotoxic t"]},
+    {"canonical": "NK_cell", "case_insensitive_patterns": ["(^|[^a-z])nk([^a-z]|$)", "natural killer"]},
+    {"canonical": "monocyte", "case_insensitive_patterns": ["mono", "cd14", "cd16"]},
+    {"canonical": "dendritic_cell", "case_insensitive_patterns": ["dendritic", "(^|[^a-z])dc([^a-z]|$)", "pdc"]}
+  ],
+  "label_policy": {
+    "generic_T_without_CD4_or_CD8": "exclude",
+    "unassigned_or_unknown": "exclude",
+    "outside_six_class_ontology": "semantic_OOD_only",
+    "manual_marker_relabeling": "forbidden",
+    "model_prediction_as_truth": "forbidden"
+  },
+  "single_use_endpoints": {
+    "macro_f1_minimum": 0.70,
+    "ece_15_bin_maximum": 0.15,
+    "marginal_conformal_coverage_minimum": 0.90,
+    "class_conditional_coverage_minimum_for_classes_with_at_least_100_cells": 0.80,
+    "mean_prediction_set_size_maximum": 3.0,
+    "semantic_ood_auroc_minimum_if_at_least_100_positive_and_100_negative_cells": 0.70,
+    "confirmation_labels_may_select_or_change_nothing": true
+  },
+  "failure_policy": {
+    "missing_required_axis_or_raw_counts": "refuse before prediction",
+    "any_primary_endpoint_failure": "retain blocked_external_uncertainty and permanently retire this asset from pristine use",
+    "success": "promote only the PBMC context head to externally uncertainty-validated pre-sweep ranking; numeric Aleph ranges remain forbidden"
+  },
+  "authority": {
+    "role": "pre_sweep_context_compression_only",
+    "aleph_parameter_authority": "none",
+    "may_delete_sweep_axis": false,
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  }
+}

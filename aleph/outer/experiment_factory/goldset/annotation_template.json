@@ -1,0 +1,36 @@
+{
+  "schema": "aleph.external_training.annotation_template.v1",
+  "authority_status": "proposed",
+  "version": "1.0.0",
+  "record_schema": "../schema/experiment_record.schema.json",
+  "candidate_schema": "../schema/annotation_candidate.schema.json",
+  "annotation_unit": "one independently interpretable experiment or comparison inside one source",
+  "required_passes": [
+    "annotator_A",
+    "annotator_B",
+    "adjudication"
+  ],
+  "initial_review_state": "gold_candidate",
+  "post_single_annotation_state": "annotation_in_progress",
+  "post_double_annotation_state": "double_adjudication_pending",
+  "post_adjudication_state": "adjudicated",
+  "blinded_fields_between_annotators": [
+    "other_annotator_identity",
+    "other_annotator_extractions",
+    "other_annotator_confidence"
+  ],
+  "adjudication_required_for": [
+    "experiment_boundary",
+    "cell_or_state_identity",
+    "condition_arm_linkage",
+    "protocol_or_calibration",
+    "numeric_value_or_unit",
+    "replicate_semantics",
+    "uncertainty_type",
+    "figure_panel_or_table_cell",
+    "comparison_direction"
+  ],
+  "missing_value_policy": "Record explicit missing or ambiguous states; do not infer an unreported value.",
+  "evidence_policy": "Every protocol, observation, and comparison requires an exact document digest and locator digest.",
+  "promotion_policy": "Adjudication completes this dataset's annotation workflow only; it does not promote evidence into Aleph physics authority."
+}

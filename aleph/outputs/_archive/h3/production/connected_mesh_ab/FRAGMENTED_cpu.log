@@ -1,0 +1,14 @@
+=== MCF7 FULL-CELL STAGE-1 (R_cell=7.5µm, all compartments ON, n_fil=1000, arm=grip_walk, smoke=False) ===
+HOOMD 7.0.1
+
+--- arm: grip_walk ---
+  [compartments ON] nucleus k_chrom=3.69e-05 E_nuc=4700.0Pa | enclosed dP_ref=40Pa | membrane gamma_mem=0.10mN/m | cytoplasm eta=65.9Pa·s (MCF7)
+  [grip_walk] s=1/6 r/r0=1.00000 g_soft=1.308e-04 g_rigid=6.724e-02 g_tot=6.737e-02 mN/m
+  [grip_walk] s=2/6 r/r0=1.00000 g_soft=2.102e-04 g_rigid=7.145e-02 g_tot=7.166e-02 mN/m
+  [grip_walk] s=3/6 r/r0=1.00000 g_soft=2.452e-04 g_rigid=8.191e-02 g_tot=8.216e-02 mN/m
+  [grip_walk] s=4/6 r/r0=1.00001 g_soft=2.813e-04 g_rigid=9.507e-02 g_tot=9.535e-02 mN/m
+  [grip_walk] s=5/6 r/r0=1.00000 g_soft=2.610e-04 g_rigid=6.750e-02 g_tot=6.776e-02 mN/m
+  [grip_walk] s=6/6 r/r0=1.00001 g_soft=2.635e-04 g_rigid=7.515e-02 g_tot=7.542e-02 mN/m
+
+=== DONE in 2302s. Full cell (cortex+membrane+nucleus+cytoplasm+enclosed-vol) ran stably with STAGE-1 grip_walk. ===
+  grip_walk: <r/r0>=1.00000 <g_soft>=2.320e-04 <g_rigid>=7.639e-02 <g_tot>=7.662e-02 mN/m  (band [0.35,0.65])

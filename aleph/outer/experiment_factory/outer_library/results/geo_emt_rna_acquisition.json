@@ -1,0 +1,88 @@
+{
+  "accessions": [
+    "GSE17708",
+    "GSE42373",
+    "GSE125369",
+    "GSE69667",
+    "GSE49644",
+    "GPL570"
+  ],
+  "aleph_authority": "none",
+  "design_contract": {
+    "biological_samples": 72,
+    "independent_lab_groups": 5,
+    "single_samples_or_expression_features_may_not_be_resampled_as_biological_studies": true,
+    "studies": 5
+  },
+  "files": {
+    "GPL570.annot.gz": {
+      "observed_sha256": "d7cd44352127b1e34f3a720ebea86093ef255a38f1612a85a2962b71bde8f394",
+      "sha256": "d7cd44352127b1e34f3a720ebea86093ef255a38f1612a85a2962b71bde8f394",
+      "size": 8471521,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/platforms/GPLnnn/GPL570/annot/GPL570.annot.gz"
+    },
+    "GSE125369_RAW.tar": {
+      "observed_sha256": "c0cec52852335486838a25e1caa14c4be174e17789d365299ab62aecfbef07a6",
+      "sha256": "c0cec52852335486838a25e1caa14c4be174e17789d365299ab62aecfbef07a6",
+      "size": 3737600,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE125nnn/GSE125369/suppl/GSE125369_RAW.tar"
+    },
+    "GSE125369_family.soft.gz": {
+      "observed_sha256": "e63ce08516044557e2d262317702d3daf1c725958f3027d1f46985aa36d4c6ca",
+      "sha256": "e63ce08516044557e2d262317702d3daf1c725958f3027d1f46985aa36d4c6ca",
+      "size": 2026,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE125nnn/GSE125369/soft/GSE125369_family.soft.gz"
+    },
+    "GSE17708_series_matrix.txt.gz": {
+      "observed_sha256": "968e1c6d27551d6713d610780620d0391060a23ffc912285300f1608f0ccb3fa",
+      "sha256": "968e1c6d27551d6713d610780620d0391060a23ffc912285300f1608f0ccb3fa",
+      "size": 4604333,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE17nnn/GSE17708/matrix/GSE17708_series_matrix.txt.gz"
+    },
+    "GSE42373_series_matrix.txt.gz": {
+      "observed_sha256": "5e2ddea1061ddb2b758dcd004099c9f6c00c80e10deec3d4c179dba559864bf2",
+      "sha256": "5e2ddea1061ddb2b758dcd004099c9f6c00c80e10deec3d4c179dba559864bf2",
+      "size": 1615527,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE42nnn/GSE42373/matrix/GSE42373_series_matrix.txt.gz"
+    },
+    "GSE49644_annotated_results.txt.gz": {
+      "observed_sha256": "3914a982f3428660cb358fac3b135e970aa228af02dbe68c18b4115e48950884",
+      "sha256": "3914a982f3428660cb358fac3b135e970aa228af02dbe68c18b4115e48950884",
+      "size": 2204155,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE49nnn/GSE49644/suppl/GSE49644_annotated_results.txt.gz"
+    },
+    "GSE49644_family.soft.gz": {
+      "observed_sha256": "29afe137525afaaea50a1c211cfa70bc35e3afcb0dd669209687793a43eab4d1",
+      "sha256": "29afe137525afaaea50a1c211cfa70bc35e3afcb0dd669209687793a43eab4d1",
+      "size": 15002098,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE49nnn/GSE49644/soft/GSE49644_family.soft.gz"
+    },
+    "GSE49644_series_matrix.txt.gz": {
+      "observed_sha256": "0e8afb9d4f2aa4d4d39869b08153f5d49211572d556dcd3d0e1f8e5cd9af623c",
+      "sha256": "0e8afb9d4f2aa4d4d39869b08153f5d49211572d556dcd3d0e1f8e5cd9af623c",
+      "size": 2036171,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE49nnn/GSE49644/matrix/GSE49644_series_matrix.txt.gz"
+    },
+    "GSE69667_RNASEQ_TPM_rep1.txt.gz": {
+      "observed_sha256": "11fbc9e45f8ea7102c779b711dbf7052c9caa3ed4b572a95fc5f7231b2c33d5a",
+      "sha256": "11fbc9e45f8ea7102c779b711dbf7052c9caa3ed4b572a95fc5f7231b2c33d5a",
+      "size": 1082455,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE69nnn/GSE69667/suppl/GSE69667_RNASEQ_TPM_rep1.txt.gz"
+    },
+    "GSE69667_RNASEQ_TPM_rep2.txt.gz": {
+      "observed_sha256": "9245710a49be62a743ee563add88ce03ad0f734e9c69900a6f9df16be4266c82",
+      "sha256": "9245710a49be62a743ee563add88ce03ad0f734e9c69900a6f9df16be4266c82",
+      "size": 1058187,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE69nnn/GSE69667/suppl/GSE69667_RNASEQ_TPM_rep2.txt.gz"
+    },
+    "GSE69667_family.soft.gz": {
+      "observed_sha256": "2256977b39fed4dbb6809a8be62893cb0c80d473b87c599d237209397a2f9d0d",
+      "sha256": "2256977b39fed4dbb6809a8be62893cb0c80d473b87c599d237209397a2f9d0d",
+      "size": 2180,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE69nnn/GSE69667/soft/GSE69667_family.soft.gz"
+    }
+  },
+  "provider": "NCBI Gene Expression Omnibus official FTP",
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.geo_emt_rna_acquisition.v1"
+}

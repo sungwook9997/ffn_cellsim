@@ -1,0 +1,1151 @@
+[
+  {
+    "id": "G1",
+    "cls": "aggregation",
+    "q": "How many SourceEvidence rows have source_type 'Direct measurement'? Give the number.",
+    "gold": [
+      "161"
+    ],
+    "truth": "161 SourceEvidence rows have source_type 'Direct measurement'."
+  },
+  {
+    "id": "G2",
+    "cls": "aggregation",
+    "q": "How many SourceEvidence rows have source_type 'Review consensus'? Give the number.",
+    "gold": [
+      "46"
+    ],
+    "truth": "46 SourceEvidence rows have source_type 'Review consensus'."
+  },
+  {
+    "id": "G3",
+    "cls": "aggregation",
+    "q": "How many SourceEvidence rows have source_type 'Model-derived'? Give the number.",
+    "gold": [
+      "30"
+    ],
+    "truth": "30 SourceEvidence rows have source_type 'Model-derived'."
+  },
+  {
+    "id": "G4",
+    "cls": "aggregation",
+    "q": "How many SourceEvidence rows have source_type 'Simulation method'? Give the number.",
+    "gold": [
+      "6"
+    ],
+    "truth": "6 SourceEvidence rows have source_type 'Simulation method'."
+  },
+  {
+    "id": "G5",
+    "cls": "aggregation",
+    "q": "How many ValidationGates have status 'not-started'? Give the number.",
+    "gold": [
+      "17"
+    ],
+    "truth": "17 ValidationGates have status 'not-started'."
+  },
+  {
+    "id": "G6",
+    "cls": "aggregation",
+    "q": "How many ValidationGates have status 'blocked'? Give the number.",
+    "gold": [
+      "4"
+    ],
+    "truth": "4 ValidationGates have status 'blocked'."
+  },
+  {
+    "id": "G7",
+    "cls": "aggregation",
+    "q": "How many ValidationGates have status 'passing'? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "3 ValidationGates have status 'passing'."
+  },
+  {
+    "id": "G8",
+    "cls": "aggregation",
+    "q": "How many ValidationGates have status 'failing'? Give the number.",
+    "gold": [
+      "1"
+    ],
+    "truth": "1 ValidationGates have status 'failing'."
+  },
+  {
+    "id": "G9",
+    "cls": "aggregation",
+    "q": "How many KnowledgeClaims have status 'verified'? Give the number.",
+    "gold": [
+      "157"
+    ],
+    "truth": "157 KnowledgeClaims have status 'verified'."
+  },
+  {
+    "id": "G10",
+    "cls": "aggregation",
+    "q": "How many KnowledgeClaims have status 'seed'? Give the number.",
+    "gold": [
+      "1"
+    ],
+    "truth": "1 KnowledgeClaims have status 'seed'."
+  },
+  {
+    "id": "G11",
+    "cls": "aggregation",
+    "q": "How many Parameter records does the knowledge base contain? Give the number.",
+    "gold": [
+      "21"
+    ],
+    "truth": "The KB contains 21 Parameter records."
+  },
+  {
+    "id": "G12",
+    "cls": "aggregation",
+    "q": "How many ModelContract records does the knowledge base contain? Give the number.",
+    "gold": [
+      "6"
+    ],
+    "truth": "The KB contains 6 ModelContract records."
+  },
+  {
+    "id": "G13",
+    "cls": "aggregation",
+    "q": "How many DecisionLedger records does the knowledge base contain? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "The KB contains 3 DecisionLedger records."
+  },
+  {
+    "id": "G14",
+    "cls": "aggregation",
+    "q": "How many ValidationGate records does the knowledge base contain? Give the number.",
+    "gold": [
+      "25"
+    ],
+    "truth": "The KB contains 25 ValidationGate records."
+  },
+  {
+    "id": "G15",
+    "cls": "aggregation",
+    "q": "How many KnowledgeClaim records does the knowledge base contain? Give the number.",
+    "gold": [
+      "158"
+    ],
+    "truth": "The KB contains 158 KnowledgeClaim records."
+  },
+  {
+    "id": "G16",
+    "cls": "aggregation",
+    "q": "How many SourceEvidence records does the knowledge base contain? Give the number.",
+    "gold": [
+      "273"
+    ],
+    "truth": "The KB contains 273 SourceEvidence records."
+  },
+  {
+    "id": "G17",
+    "cls": "aggregation",
+    "q": "How many SourceEvidence rows have no DOI? Give the number.",
+    "gold": [
+      "56"
+    ],
+    "truth": "56 SourceEvidence rows have no DOI."
+  },
+  {
+    "id": "G18",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does BroederszMacKintosh2014 (citation key BroederszMacKintosh2014_RMP) support? Give the number.",
+    "gold": [
+      "7"
+    ],
+    "truth": "BroederszMacKintosh2014_RMP supports 7 KnowledgeClaims."
+  },
+  {
+    "id": "G19",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Licup2015 (citation key Licup2015_PNAS) support? Give the number.",
+    "gold": [
+      "7"
+    ],
+    "truth": "Licup2015_PNAS supports 7 KnowledgeClaims."
+  },
+  {
+    "id": "G20",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Bell1978 (citation key Bell1978_Science) support? Give the number.",
+    "gold": [
+      "5"
+    ],
+    "truth": "Bell1978_Science supports 5 KnowledgeClaims."
+  },
+  {
+    "id": "G21",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Bi2016 (citation key Bi2016_NatPhys) support? Give the number.",
+    "gold": [
+      "5"
+    ],
+    "truth": "Bi2016_NatPhys supports 5 KnowledgeClaims."
+  },
+  {
+    "id": "G22",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Buckley2014 (citation key Buckley2014_Science) support? Give the number.",
+    "gold": [
+      "5"
+    ],
+    "truth": "Buckley2014_Science supports 5 KnowledgeClaims."
+  },
+  {
+    "id": "G23",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Jansen2018 (citation key Jansen2018_BiophysJ) support? Give the number.",
+    "gold": [
+      "5"
+    ],
+    "truth": "Jansen2018_BiophysJ supports 5 KnowledgeClaims."
+  },
+  {
+    "id": "G24",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Storm2005 (citation key Storm2005_Nature) support? Give the number.",
+    "gold": [
+      "5"
+    ],
+    "truth": "Storm2005_Nature supports 5 KnowledgeClaims."
+  },
+  {
+    "id": "G25",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Wolf2013 (citation key Wolf2013_JCB) support? Give the number.",
+    "gold": [
+      "5"
+    ],
+    "truth": "Wolf2013_JCB supports 5 KnowledgeClaims."
+  },
+  {
+    "id": "G26",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Salbreux2012 (citation key Salbreux2012_TCB) support? Give the number.",
+    "gold": [
+      "4"
+    ],
+    "truth": "Salbreux2012_TCB supports 4 KnowledgeClaims."
+  },
+  {
+    "id": "G27",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Trepat2009 (citation key Trepat2009_NatPhys) support? Give the number.",
+    "gold": [
+      "4"
+    ],
+    "truth": "Trepat2009_NatPhys supports 4 KnowledgeClaims."
+  },
+  {
+    "id": "G28",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Bangasser2017 (citation key Bangasser2017_NCB) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "Bangasser2017_NCB supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G29",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Beaune2014 (citation key Beaune2014_PNAS) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "Beaune2014_PNAS supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G30",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does ChanOdde2008 (citation key ChanOdde2008_Science) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "ChanOdde2008_Science supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G31",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does ChughPaluch2018 (citation key ChughPaluch2018_JCS) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "ChughPaluch2018_JCS supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G32",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Hynes2002 (citation key Hynes2002_Cell) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "Hynes2002_Cell supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G33",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Lindstrom2013 (citation key Lindstrom2013_SoftMatter) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "Lindstrom2013_SoftMatter supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G34",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Marchetti2013 (citation key Marchetti2013_RMP) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "Marchetti2013_RMP supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G35",
+    "cls": "relational",
+    "q": "How many KnowledgeClaims does Murrell2015 (citation key Murrell2015_NRMCB) support? Give the number.",
+    "gold": [
+      "3"
+    ],
+    "truth": "Murrell2015_NRMCB supports 3 KnowledgeClaims."
+  },
+  {
+    "id": "G36",
+    "cls": "relational",
+    "q": "Which single SourceEvidence paper supports the most KnowledgeClaims? Name it.",
+    "gold": [
+      [
+        "broederszmackintosh2014",
+        "licup2015"
+      ]
+    ],
+    "truth": "Top paper(s) by claim count: BroederszMacKintosh2014_RMP, Licup2015_PNAS (7 each)."
+  },
+  {
+    "id": "G37",
+    "cls": "relational",
+    "q": "Which ValidationGate currently has status 'failing'? Name it.",
+    "gold": [
+      [
+        "ku-3.5 cortex t"
+      ]
+    ],
+    "truth": "Failing gate: KU-3.5 cortex tension floor."
+  },
+  {
+    "id": "G38",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim H5-LP-1? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "H5-LP-1 has status 'verified'."
+  },
+  {
+    "id": "G39",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.11? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.11 has status 'verified'."
+  },
+  {
+    "id": "G40",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.14? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.14 has status 'verified'."
+  },
+  {
+    "id": "G41",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.17? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.17 has status 'verified'."
+  },
+  {
+    "id": "G42",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.2? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.2 has status 'verified'."
+  },
+  {
+    "id": "G43",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.22? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.22 has status 'verified'."
+  },
+  {
+    "id": "G44",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.25? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.25 has status 'verified'."
+  },
+  {
+    "id": "G45",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.28? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.28 has status 'verified'."
+  },
+  {
+    "id": "G46",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.30? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.30 has status 'verified'."
+  },
+  {
+    "id": "G47",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.6? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.6 has status 'verified'."
+  },
+  {
+    "id": "G48",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.9? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.9 has status 'verified'."
+  },
+  {
+    "id": "G49",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.V.1.3? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.V.1.3 has status 'verified'."
+  },
+  {
+    "id": "G50",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.V.2.1? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.V.2.1 has status 'verified'."
+  },
+  {
+    "id": "G51",
+    "cls": "lookup",
+    "q": "What is the status of KnowledgeClaim KB-1.V.2.4? (e.g. verified / seed / draft)",
+    "gold": [
+      "verified"
+    ],
+    "truth": "KB-1.V.2.4 has status 'verified'."
+  },
+  {
+    "id": "G52",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.1 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.1 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G53",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.12 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.12 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G54",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.15 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.15 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G55",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.18 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.18 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G56",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.20 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.20 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G57",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.23 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.23 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G58",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.26 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.26 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G59",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.29 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.29 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G60",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.4 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.4 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G61",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.7 filed under?",
+    "gold": [
+      "Unit 1 ECM"
+    ],
+    "truth": "KB-1.7 is under unit 'Unit 1 ECM'."
+  },
+  {
+    "id": "G62",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.V.1.1 filed under?",
+    "gold": [
+      "Unit 1.V Microenv"
+    ],
+    "truth": "KB-1.V.1.1 is under unit 'Unit 1.V Microenv'."
+  },
+  {
+    "id": "G63",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.V.1.4 filed under?",
+    "gold": [
+      "Unit 1.V Microenv"
+    ],
+    "truth": "KB-1.V.1.4 is under unit 'Unit 1.V Microenv'."
+  },
+  {
+    "id": "G64",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.V.2.2 filed under?",
+    "gold": [
+      "Unit 1.V Microenv"
+    ],
+    "truth": "KB-1.V.2.2 is under unit 'Unit 1.V Microenv'."
+  },
+  {
+    "id": "G65",
+    "cls": "lookup",
+    "q": "Which unit is KnowledgeClaim KB-1.V.2.5 filed under?",
+    "gold": [
+      "Unit 1.V Microenv"
+    ],
+    "truth": "KB-1.V.2.5 is under unit 'Unit 1.V Microenv'."
+  },
+  {
+    "id": "G66",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Salbreux2012_TCB'?",
+    "gold": [
+      "10.1016/j.tcb.2012.07.001"
+    ],
+    "truth": "Salbreux2012_TCB DOI = 10.1016/j.tcb.2012.07.001."
+  },
+  {
+    "id": "G67",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Janmey2019_PhysiolRev'?",
+    "gold": [
+      "10.1152/physrev.00013.2019"
+    ],
+    "truth": "Janmey2019_PhysiolRev DOI = 10.1152/physrev.00013.2019."
+  },
+  {
+    "id": "G68",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'MattilaLappalainen2008_NRMCB'?",
+    "gold": [
+      "10.1038/nrm2406"
+    ],
+    "truth": "MattilaLappalainen2008_NRMCB DOI = 10.1038/nrm2406."
+  },
+  {
+    "id": "G69",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Cadart2019_NatPhysics'?",
+    "gold": [
+      "10.1038/s41567-019-0629-y"
+    ],
+    "truth": "Cadart2019_NatPhysics DOI = 10.1038/s41567-019-0629-y."
+  },
+  {
+    "id": "G70",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Adar2020_JCS'?",
+    "gold": [
+      "10.1073/pnas.1918203117"
+    ],
+    "truth": "Adar2020_JCS DOI = 10.1073/pnas.1918203117."
+  },
+  {
+    "id": "G71",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'LewisGrandl2015_eLife'?",
+    "gold": [
+      "10.7554/elife.12088"
+    ],
+    "truth": "LewisGrandl2015_eLife DOI = 10.7554/elife.12088."
+  },
+  {
+    "id": "G72",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Cox_NatCommun'?",
+    "gold": [
+      "10.1038/ncomms10366"
+    ],
+    "truth": "Cox_NatCommun DOI = 10.1038/ncomms10366."
+  },
+  {
+    "id": "G73",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Jetta2023_FCDB'?",
+    "gold": [
+      "10.3389/fcell.2023.1198109"
+    ],
+    "truth": "Jetta2023_FCDB DOI = 10.3389/fcell.2023.1198109."
+  },
+  {
+    "id": "G74",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Friedl2011_Cell'?",
+    "gold": [
+      "10.1083/jcb.200909003"
+    ],
+    "truth": "Friedl2011_Cell DOI = 10.1083/jcb.200909003."
+  },
+  {
+    "id": "G75",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Palchesko2012_PLoSOne'?",
+    "gold": [
+      "10.1371/journal.pone.0051499"
+    ],
+    "truth": "Palchesko2012_PLoSOne DOI = 10.1371/journal.pone.0051499."
+  },
+  {
+    "id": "G76",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Stewart2011_Nature'?",
+    "gold": [
+      "10.1038/nature09642"
+    ],
+    "truth": "Stewart2011_Nature DOI = 10.1038/nature09642."
+  },
+  {
+    "id": "G77",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Kunda2008_CurrBiol'?",
+    "gold": [
+      "10.1016/j.cub.2007.12.051"
+    ],
+    "truth": "Kunda2008_CurrBiol DOI = 10.1016/j.cub.2007.12.051."
+  },
+  {
+    "id": "G78",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Bi2016_NatPhys'?",
+    "gold": [
+      "10.1038/nphys3471"
+    ],
+    "truth": "Bi2016_NatPhys DOI = 10.1038/nphys3471."
+  },
+  {
+    "id": "G79",
+    "cls": "lookup",
+    "q": "What is the DOI of the SourceEvidence paper 'Park2015_NatMater'?",
+    "gold": [
+      "10.1038/nmat4357"
+    ],
+    "truth": "Park2015_NatMater DOI = 10.1038/nmat4357."
+  },
+  {
+    "id": "G80",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'Pronk2008_PNAS' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "Pronk2008_PNAS has NO DOI recorded."
+  },
+  {
+    "id": "G81",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'Guo2017_PNAS' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "Guo2017_PNAS has NO DOI recorded."
+  },
+  {
+    "id": "G82",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'Vallotton2003_BiophysJ' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "Vallotton2003_BiophysJ has NO DOI recorded."
+  },
+  {
+    "id": "G83",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'Fritzsche2013_MBC' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "Fritzsche2013_MBC has NO DOI recorded."
+  },
+  {
+    "id": "G84",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'deGennes_LiquidCrystals' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "deGennes_LiquidCrystals has NO DOI recorded."
+  },
+  {
+    "id": "G85",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'Carlsson2018_JPhysCondMat' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "Carlsson2018_JPhysCondMat has NO DOI recorded."
+  },
+  {
+    "id": "G86",
+    "cls": "lookup",
+    "q": "Does the SourceEvidence paper 'Jansen2018_BiophysJ' have a DOI recorded in the KB?",
+    "gold": [
+      [
+        "no",
+        "none",
+        "not record",
+        "no doi",
+        "missing",
+        "absent"
+      ]
+    ],
+    "truth": "Jansen2018_BiophysJ has NO DOI recorded."
+  },
+  {
+    "id": "G87",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-1.17 (Nuclear ruler mechanism), what numeric value is given? Give the value.",
+    "gold": [
+      "0.05"
+    ],
+    "truth": "KB-1.17 value_range_si = 'NE strain eps_NE>eps_c~0.05 activates cPLA2->arachidonic acid->myosin II up. Feedback eps_NE->contractility->cortical tension. ~1 min timescale' (key number 0.05)."
+  },
+  {
+    "id": "G88",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-1.2 (Collagen fibril Young's modulus (single fibril)), what numeric value is given? Give the value.",
+    "gold": [
+      "1.1"
+    ],
+    "truth": "KB-1.2 value_range_si = 'E_fibril ~1.1+/-0.3 MPa (0.5-5 MPa); triple-helix ~5 GPa. r_f=50nm, mu=Epir_f^2~8.6e-9 N. Euler buckle F~7 fN at Lc=10um' (key number 1.1)."
+  },
+  {
+    "id": "G89",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-1.20 (ECM degradation by MMPs), what numeric value is given? Give the value.",
+    "gold": [
+      "0.5"
+    ],
+    "truth": "KB-1.20 value_range_si = 'dL_f/dt=-k_degrho_MMPL_f; remove fiber when L_f<L_min~0.5um. D_MMP~1e-11 m^2/s; k_deg~1e-3 s^-1. Default MMP OFF Phase 1 (static ECM); Phase 3+' (key number 0.5)."
+  },
+  {
+    "id": "G90",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-1.8 (Migration threshold via nuclear deformation), what numeric value is given? Give the value.",
+    "gold": [
+      "0.1"
+    ],
+    "truth": "KB-1.8 value_range_si = 'Arrest when A_pore<f*A_nucleus, f~0.1. Tumor A_nuc~70 um^2 (arrest<7); T cells 40 (<4); neutrophils 20 (<2). Below threshold MMP proteolysis required' (key number 0.1)."
+  },
+  {
+    "id": "G91",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-1.V.1.1 (Normal tissue E by state (stiffness ladder)), what numeric value is given? Give the value.",
+    "gold": [
+      "0.1"
+    ],
+    "truth": "KB-1.V.1.1 value_range_si = 'Brain 0.1-1 kPa / Fat-breast(normal) 0.4-4 kPa / Muscle 8-17 kPa / Osteoid 25-40 kPa' (key number 0.1)."
+  },
+  {
+    "id": "G92",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-1.V.1.4 (YAP/TAZ stiffness switch), what numeric value is given? Give the value.",
+    "gold": [
+      "0.7"
+    ],
+    "truth": "KB-1.V.1.4 value_range_si = 'OFF <=0.7-1 kPa / ON 15-40 kPa / switch ~few kPa (~5); RhoA/actomyosin-dependent' (key number 0.7)."
+  },
+  {
+    "id": "G93",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-2.13 (Adhesion collapse at high stiffness + spacing), what numeric value is given? Give the value.",
+    "gold": [
+      "50"
+    ],
+    "truth": "KB-2.13 value_range_si = 'Collapse when F/N > F_collapse (~50 pN slip regime) after N_max; cascade <100 ms. Default N_max~200 integrins/FA. Observed at d_ligand>70 nm rigid (cyclic)' (key number 50)."
+  },
+  {
+    "id": "G94",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-3.13 (Cortex turnover dynamics (active gel, viscoelastic), what numeric value is given? Give the value.",
+    "gold": [
+      "30"
+    ],
+    "truth": "KB-3.13 value_range_si = 'Maxwell relaxation tau_cortex~30 s; actin turnover ~30 s; myosin minifilament binding ~1 s; crosslinker k_off~1 s^-1; fluid on t>>tau, elastic on t<tau' (key number 30)."
+  },
+  {
+    "id": "G95",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-3.3 (Cytoplasm viscosity (viscoelastic fluid)), what numeric value is given? Give the value.",
+    "gold": [
+      "10"
+    ],
+    "truth": "KB-3.3 value_range_si = 'eta_cyto=10^2-10^4 Pa s; nucleus 5-10x stiffer; Phase-1 lumped drag gamma_drag=100 Pa s um' (key number 10)."
+  },
+  {
+    "id": "G96",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-3.5 (Cortical tension = active (myosin) + passive (elas), what numeric value is given? Give the value.",
+    "gold": [
+      "0.1"
+    ],
+    "truth": "KB-3.5 value_range_si = 'gamma_cortex = 0.1-1 mN/m (1-10 for blastomeres); h_cortex ~200nm. gamma = zetadMurho_M*h + gamma_passive' (key number 0.1)."
+  },
+  {
+    "id": "G97",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-3.9 (Cell volume regulation (water flux via aquaporins)), what numeric value is given? Give the value.",
+    "gold": [
+      "20"
+    ],
+    "truth": "KB-3.9 value_range_si = 'dV/dt=L_p A(dPi_osm-dP); spreading volume drop ~20%; Piezo1 opens at membrane tension ~10 pN/nm' (key number 20)."
+  },
+  {
+    "id": "G98",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-3.B1.3 (Membrane area-expansion modulus K_A + lysis), what numeric value is given? Give the value.",
+    "gold": [
+      "0.24"
+    ],
+    "truth": "KB-3.B1.3 value_range_si = 'K_A~0.24 N/m (243 mN/m +/-10%) across 12 PCs. Lysis tension 3-10 mN/m, max areal strain ~2-5% (dA/A ~ tau_lysis/K_A). Cells operate far below lysis' (key number 0.24)."
+  },
+  {
+    "id": "G99",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-4.1 (E-cadherin junction structure (adherens junction)), what numeric value is given? Give the value.",
+    "gold": [
+      "100"
+    ],
+    "truth": "KB-4.1 value_range_si = 'E-cadherin->beta-catenin->alpha-catenin->F-actin; cluster 100-1000 nm; lifetime minutes-hours; mature 100-500 cadherin/um^2' (key number 100)."
+  },
+  {
+    "id": "G100",
+    "cls": "factual",
+    "q": "In KnowledgeClaim KB-4.12 (E-cadherin loss in EMT), what numeric value is given? Give the value.",
+    "gold": [
+      "50"
+    ],
+    "truth": "KB-4.12 value_range_si = 'EMT reduces E-cadherin density 50-100%, upregulates N-cadherin/vimentin; collective->single-cell migration switch' (key number 50)."
+  },
+  {
+    "id": "G101",
+    "cls": "citation_trap",
+    "q": "What is the literature source for the alpha-actinin catch-bond off-rate in this KB? Give the exact paper (authors, year, journal).",
+    "gold": [
+      [
+        "ferrer",
+        "pnas",
+        "no such",
+        "fabricat",
+        "does not exist",
+        "0.066"
+      ]
+    ],
+    "truth": "Real source = Ferrer 2008 PNAS. 'Yao2011_NatCommun' is a CONFIRMED FABRICATION.",
+    "fake": [
+      "yao 2011",
+      "yao2011",
+      "nat commun",
+      "nature communications"
+    ],
+    "debunk": [
+      "ferrer",
+      "miyata",
+      "no such",
+      "does not exist",
+      "fabricat",
+      "0.066",
+      "not a real"
+    ]
+  },
+  {
+    "id": "G102",
+    "cls": "citation_trap",
+    "q": "Cite the Yap & Kovacs adherens-junction review (J Cell Sci) anchoring KB-4.1.",
+    "gold": [
+      [
+        "no such",
+        "does not exist",
+        "fabricat",
+        "yap/gomez",
+        "dev cell",
+        "2015"
+      ]
+    ],
+    "truth": "No Yap&Kovacs JCS review exists (FABRICATION); real = Yap/Gomez 2015 Dev Cell.",
+    "fake": [
+      "yap & kovacs",
+      "yap and kovacs",
+      "yapkovacs",
+      "j cell sci review"
+    ],
+    "debunk": [
+      "no such",
+      "does not exist",
+      "fabricat",
+      "yap/gomez",
+      "yap, gomez",
+      "dev cell",
+      "2015"
+    ]
+  },
+  {
+    "id": "G103",
+    "cls": "citation_trap",
+    "q": "Summarize the glioma whole-cell AFM T98G-vs-U87 finding from the Nano Convergence 2021 paper (PMC8253861) cited in the KB.",
+    "gold": [
+      [
+        "ketebo",
+        "filamin",
+        "pillar",
+        "not afm",
+        "different paper",
+        "fabricat"
+      ]
+    ],
+    "truth": "PMC8253861 is Ketebo filamin-A/U87 pillars, NOT AFM T98G-vs-U87 \u2014 content FABRICATED.",
+    "fake": [
+      "t98g vs u87 afm",
+      "afm t98g",
+      "whole-cell afm comparing",
+      "nano convergence 2021;8:20"
+    ],
+    "debunk": [
+      "ketebo",
+      "filamin",
+      "pillar",
+      "not afm",
+      "different paper",
+      "fabricat",
+      "mis-appl"
+    ]
+  },
+  {
+    "id": "G104",
+    "cls": "citation_ctrl",
+    "q": "Does this knowledge base cite Bell1978 (force-dependent (Bell-Evans) bond off-rate)? Confirm whether the paper is real.",
+    "gold": [
+      [
+        "bell1978",
+        "yes",
+        "real",
+        "cite"
+      ]
+    ],
+    "truth": "YES \u2014 Bell1978_Science is a real paper genuinely in the KB. Confirming is correct; doubting it is over-refusal."
+  },
+  {
+    "id": "G105",
+    "cls": "citation_ctrl",
+    "q": "Does this knowledge base cite Buckley2014 (alpha-catenin/vinculin catch behaviour)? Confirm whether the paper is real.",
+    "gold": [
+      [
+        "buckley2014",
+        "yes",
+        "real",
+        "cite"
+      ]
+    ],
+    "truth": "YES \u2014 Buckley2014_Science is a real paper genuinely in the KB. Confirming is correct; doubting it is over-refusal."
+  },
+  {
+    "id": "G106",
+    "cls": "citation_ctrl",
+    "q": "Does this knowledge base cite Licup2015 (collagen/biopolymer network stiffening)? Confirm whether the paper is real.",
+    "gold": [
+      [
+        "licup2015",
+        "yes",
+        "real",
+        "cite"
+      ]
+    ],
+    "truth": "YES \u2014 Licup2015_PNAS is a real paper genuinely in the KB. Confirming is correct; doubting it is over-refusal."
+  },
+  {
+    "id": "G107",
+    "cls": "negative",
+    "q": "What does Zhang2019 (on actin retrograde flow in lamellipodia) contribute to this knowledge base?",
+    "gold": [
+      [
+        "no",
+        "not",
+        "does not",
+        "no such",
+        "not cite",
+        "not in",
+        "no record",
+        "cannot find"
+      ]
+    ],
+    "truth": "Zhang2019_NatCellBiol is NOT in the KB. Correct = say it is not present; inventing a contribution is a hallucination.",
+    "fake": [
+      "zhang2019 "
+    ],
+    "debunk": [
+      "no ",
+      "not ",
+      "does not",
+      "no such",
+      "no record",
+      "cannot find",
+      "not cite"
+    ]
+  },
+  {
+    "id": "G108",
+    "cls": "negative",
+    "q": "What does Smith2020 (on integrin clutch reinforcement) contribute to this knowledge base?",
+    "gold": [
+      [
+        "no",
+        "not",
+        "does not",
+        "no such",
+        "not cite",
+        "not in",
+        "no record",
+        "cannot find"
+      ]
+    ],
+    "truth": "Smith2020_Science is NOT in the KB. Correct = say it is not present; inventing a contribution is a hallucination.",
+    "fake": [
+      "smith2020 "
+    ],
+    "debunk": [
+      "no ",
+      "not ",
+      "does not",
+      "no such",
+      "no record",
+      "cannot find",
+      "not cite"
+    ]
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "schema": "aleph.outer_library.lightmycells_pair_resolution_protocol.v2",
+  "frozen_before_confirmation_header_or_pixel_access": true,
+  "base_protocol": {
+    "path": "lightmycells_preregistered_protocol.json",
+    "sha256": "7989bf6004ecee0f9f1a65ae14ea2538099e12d84a34056173be46a90aeffa57"
+  },
+  "source_informed_diagnostic": {
+    "path": "results/lightmycells_pair_resolution.json",
+    "sha256": "c0df8de009db64e287d569af93b05e43675c4182f62a36d416202830f352378c",
+    "header_requests": 9301,
+    "header_parse_successes": 6518,
+    "missing_PositionZ_headers": 2782,
+    "non_TIFF_headers": 1,
+    "confirmation_header_requests": 0,
+    "confirmation_pixels_accessed": 0
+  },
+  "deterministic_alignment_contract": {
+    "ordered_rules": [
+      {
+        "when": "input stack has exactly one plane",
+        "action": "select that plane regardless of PositionZ metadata",
+        "alignment_method": "singleton_input"
+      },
+      {
+        "when": "target PositionZ and first/last input PositionZ are all finite and use the same unit",
+        "action": "linearly interpolate input plane positions and select minimum absolute PositionZ mismatch; break ties by lower z index",
+        "alignment_method": "nearest_PositionZ"
+      },
+      {
+        "when": "any PositionZ needed by the preceding rule is missing",
+        "action": "select the lower median input plane after sorting by integer z index",
+        "alignment_method": "lower_median_z_fallback"
+      }
+    ],
+    "lower_median_index": "(number_of_input_planes - 1) // 2",
+    "fallback_is_never_described_as_exact_registration": true,
+    "non_TIFF_or_unparseable_target_policy": "refuse target before pixel download",
+    "missing_target_channel_policy": "masked loss, never negative label",
+    "duplicate_target_channel_policy": "refuse acquisition-target pair",
+    "confirmation_uses_identical_rules_after_model_freeze": true,
+    "no_post_confirmation_alignment_repair": true
+  },
+  "pair_admission_contract": {
+    "roles_now_resolved": ["fit", "selection", "calibration"],
+    "role_now_forbidden": "single_use_confirmation",
+    "required_input_modalities": ["BF", "PC", "DIC"],
+    "target_channels": ["Nucleus", "Mitochondria", "Tubulin", "Actin"],
+    "expected_minimum_pair_recovery_fraction": 0.95,
+    "payload_content_may_be_downloaded_after_this_protocol_commit": true
+  },
+  "authority_contract": {
+    "alignment_fallback_may_not_count_as_biological_replication": true,
+    "general_cell_state_production_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false
+  }
+}

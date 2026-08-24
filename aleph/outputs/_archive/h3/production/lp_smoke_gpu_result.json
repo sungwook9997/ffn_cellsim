@@ -1,0 +1,17 @@
+{
+  "scale": "smoke",
+  "device": "gpu",
+  "n_filaments": 300,
+  "n_part": 2100,
+  "n_snapshots": 30,
+  "L_p_mean_m": 2.4941190381821897e-05,
+  "L_p_mean_um": 24.941190381821897,
+  "KU11_band_um": [
+    15.299999999999999,
+    18.7
+  ],
+  "in_band": false,
+  "wall_s": 303.60569167137146,
+  "hoomd": "7.0.1",
+  "gpu_build": true
+}

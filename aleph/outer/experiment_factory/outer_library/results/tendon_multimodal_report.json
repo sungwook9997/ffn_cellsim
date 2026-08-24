@@ -1,0 +1,177 @@
+{
+  "TGF_beta_1_contrasts": {
+    "F_actin_relative_fluorescence": {
+      "bootstrap_ci95": [
+        -0.348016774625,
+        0.6244940789374999
+      ],
+      "control_mean": 1.21526876,
+      "control_n": 6,
+      "direction_probability": 0.731,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 0.15381632874999984,
+      "treated_mean": 1.36908508875,
+      "treated_n": 8
+    },
+    "alpha_SMA_relative_fluorescence": {
+      "bootstrap_ci95": [
+        1.1622262847083333,
+        3.384909971687499
+      ],
+      "control_mean": 0.5617357366666667,
+      "control_n": 6,
+      "direction_probability": 0.99995,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 2.2814324258333336,
+      "treated_mean": 2.8431681625,
+      "treated_n": 8
+    },
+    "nuclear_circularity": {
+      "bootstrap_ci95": null,
+      "control_mean": 0.5810600858369098,
+      "control_n": 233,
+      "direction_probability": null,
+      "evidence_eligible": false,
+      "inferential_unit_known": false,
+      "mean_difference": -0.10410729613733904,
+      "reason": "author biological-replicate identity is unavailable",
+      "treated_mean": 0.4769527896995708,
+      "treated_n": 233
+    }
+  },
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "dataset": "nature-2026-tendon-mechanoculture",
+  "human_fibrosis_force": {
+    "cell_type_holdout_passed": true,
+    "contrasts": {
+      "human dermal fibroblasts": {
+        "bootstrap_ci95": [
+          6.153343185984848,
+          14.696607825189394
+        ],
+        "control_mean": 12.256832181818181,
+        "control_n": 22,
+        "direction_probability": 1.0,
+        "evidence_eligible": true,
+        "inferential_unit_known": true,
+        "mean_difference": 10.622542651515152,
+        "treated_mean": 22.879374833333333,
+        "treated_n": 24
+      },
+      "human tendon fibroblasts": {
+        "bootstrap_ci95": [
+          1.2846289256333343,
+          6.806544162399996
+        ],
+        "control_mean": 4.962363988666667,
+        "control_n": 15,
+        "direction_probability": 0.9987,
+        "evidence_eligible": true,
+        "inferential_unit_known": true,
+        "mean_difference": 3.927605931333334,
+        "treated_mean": 8.88996992,
+        "treated_n": 15
+      }
+    },
+    "discovery_cell_type": "human tendon fibroblasts",
+    "equal_cell_type_bootstrap_ci95": [
+      4.669907477415907,
+      9.77348820428333
+    ],
+    "equal_cell_type_mean_difference": 7.26235679424617,
+    "held_out_cell_type": "human dermal fibroblasts",
+    "independent_lab_holdout": false,
+    "same_lab": true
+  },
+  "independent_lab_task_holdout_passed": false,
+  "lab_group": "hussien-snedeker-2026",
+  "limitations": [
+    "tendon and dermal fibroblast contrasts are a cell-type holdout in one lab, not a lab holdout",
+    "nuclear measurements lack biological-replicate IDs and remain descriptive",
+    "source-relative qPCR units are preserved without reverse-engineering normalization",
+    "observable evidence does not identify a unique Aleph parameter or numeric range"
+  ],
+  "matrix_tension_contrasts": {
+    "Acta2_relative_expression": {
+      "bootstrap_ci95": [
+        3.1242695833333336,
+        6.042661249999999
+      ],
+      "control_mean": 0.9568166666666666,
+      "control_n": 6,
+      "direction_probability": 1.0,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 4.57485,
+      "treated_mean": 5.531666666666666,
+      "treated_n": 6
+    },
+    "F_actin_relative_fluorescence": {
+      "bootstrap_ci95": [
+        -0.047598628000000254,
+        0.20730603000000003
+      ],
+      "control_mean": 0.9945226999999999,
+      "control_n": 5,
+      "direction_probability": 0.85315,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 0.07042384000000013,
+      "treated_mean": 1.06494654,
+      "treated_n": 5
+    },
+    "alpha_SMA_relative_fluorescence": {
+      "bootstrap_ci95": [
+        0.4643059120000004,
+        1.2547422909999995
+      ],
+      "control_mean": 0.807807028,
+      "control_n": 5,
+      "direction_probability": 1.0,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 0.8538022140000001,
+      "treated_mean": 1.6616092420000002,
+      "treated_n": 5
+    },
+    "nuclear_circularity": {
+      "bootstrap_ci95": null,
+      "control_mean": 0.5714593023255814,
+      "control_n": 172,
+      "direction_probability": null,
+      "evidence_eligible": false,
+      "inferential_unit_known": false,
+      "mean_difference": -0.09554572207866785,
+      "reason": "author biological-replicate identity is unavailable",
+      "treated_mean": 0.47591358024691355,
+      "treated_n": 162
+    },
+    "tissue_traction_force_per_cell": {
+      "bootstrap_ci95": [
+        90.00920077781488,
+        133.87772841420534
+      ],
+      "control_mean": 5.586472769999999,
+      "control_n": 6,
+      "direction_probability": 1.0,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 111.85828941142859,
+      "treated_mean": 117.44476218142859,
+      "treated_n": 7
+    }
+  },
+  "modalities": [
+    "RT_qPCR_derived",
+    "cantilever_post_force_derived",
+    "immunofluorescence_derived",
+    "nuclear_morphology_derived"
+  ],
+  "multimodal_primary_coherence_passed": true,
+  "observable_constraint_eligible": true,
+  "observation_count": 1147,
+  "task": "multimodal_tendon_mechanical_state_evidence"
+}

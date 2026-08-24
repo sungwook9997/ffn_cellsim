@@ -1,0 +1,75 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "resting inner-solve residual vs iteration budget (diagnostic)",
+  "build": {
+    "commit": "4c165576",
+    "dirty": null,
+    "branch": null,
+    "source": "declared",
+    "reason": "/home/sungwook/ffn is not a git repository; the commit is the caller's assertion and was not verified here"
+  },
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "one --from-resting outer step at full native under a raised inner budget; the step is REJECTED and no magnitude is claimed. What is measured is whether the residual descends as the budget grows.",
+  "config": {
+    "n_filaments": 70686,
+    "n_inner": 4000,
+    "record_every": 10,
+    "dt_phys": 0.05,
+    "inner_solver": "explicit",
+    "with_myosin": true,
+    "with_membrane": true,
+    "with_nucleus": true,
+    "with_pressure": true
+  },
+  "config_sha256": "sha256:98e39b7fe177eb4d850f21f4395bf965b9fe50e211f0927f618f29e15e2e1a7c",
+  "census": {
+    "n_filaments": 70686,
+    "n_actin": 494802,
+    "n_total": 511114
+  },
+  "parameter_provenance": {},
+  "t0": {
+    "residual_start_pn": 47.405172429438764,
+    "inner_tolerance_um": 7.449122950141183e-09,
+    "r_mean_start_um": 7.299813096203852
+  },
+  "timing": {
+    "wall_seconds": 34.036086082458496,
+    "n_inner_iterations": 4000,
+    "wall_seconds_per_inner_iteration": 0.008509021520614625,
+    "device_note": "build + one outer step; the step was rejected, so this cost belongs to a NON-converged attempt and is not an engine speed.",
+    "comparable": false,
+    "not_comparable_reason": "the gate verdict is absent, so this run did not establish the convergence its cost would have to be quoted at. Quoting it as the engine's speed compares the cost of NOT converging"
+  },
+  "measurements": {
+    "residual_start_pn": 47.405172429438764,
+    "residual_candidate_pn": 47.47151936642399,
+    "residual_end_pn": 47.405172429438764,
+    "budget_used": 4000,
+    "curve": {
+      "iteration": [],
+      "max_projected_force_pn": [],
+      "max_displacement_um": []
+    },
+    "curve_samples": 0,
+    "shape": null
+  },
+  "gate": null,
+  "notes": {
+    "kind": "diagnostic",
+    "no_threshold_declared": "This run scores nothing. Declaring a threshold after seeing the number is what the charter forbids; what the result licenses is the choice of next work, and that choice is the PI's.",
+    "curve_not_captured": "capture_convergence_history populates only on the accelerated-solver branch; this ran 'explicit', so curve_samples may be 0 and these are ENDPOINTS, not a shape.",
+    "verdict_of_the_step": {
+      "inner_converged": false,
+      "outer_accepted": false,
+      "inner_iters": 4000,
+      "inner_tolerance_um": 7.449122950141183e-09,
+      "residual_candidate": 47.47151936642399,
+      "residual_end": 47.405172429438764
+    },
+    "import_closure_verified_files": 69,
+    "import_closure_note": "run_provenance.remote_mismatches hash-compared the driver's first-party import closure against THIS host before launch: 0 mismatched, 0 unverifiable. The build is therefore established by CONTENT, not by the caller's assertion, even though the host is not a git checkout."
+  }
+}

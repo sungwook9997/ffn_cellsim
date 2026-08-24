@@ -1,0 +1,764 @@
+# Paper-clip query set — anchored to the ac/engine component/connector vocabulary.
+#
+# WHY THIS FILE IS NOT A KEYWORD LIST.  Every query names the component or connector it is trying to
+# constrain and the parameter axis it is hunting, so each arriving PDF carries its reason for
+# arriving.  That provenance is the seed of the paper -> connector edge; recording it at clip time
+# costs nothing and retrofitting it later costs a re-read of the whole corpus.
+#
+# `component` / `connector` / `connector_family` MUST be members of the enums in
+# `aleph/ac/engine/contracts.py` (ComponentRole / ConnectorFamily / reference_cell_architecture()).
+# A value not in those enums is a label this project cannot act on.
+#
+# `absence` records what the 2026-07-23 sourcing pass MEASURED about this axis, parsed out of
+# docs/v2_audit/PI_GAP_EVIDENCE_CARDS_2026-07-25.md.  The four kinds need different queries:
+#   none           — no value found in the literature at all (13 cards).  Widen: search the assay,
+#                    not the parameter name.
+#   proxy          — exists for another cell type only (2 cards).  Search the target line explicitly.
+#   paywalled      — exists but inaccessible (2 cards).  Look for a preprint or an SI-bearing copy.
+#   wrong_quantity — a number exists and is the WRONG PHYSICAL QUANTITY (2 cards).  The most
+#                    dangerous class: relevance ranking returns it confidently.  Name the quantity's
+#                    DIMENSION in the terms so the reviewer can reject on sight.
+#
+# Sources: PI_GAP_EVIDENCE_CARDS_2026-07-25.md (parameter axes, absence verdicts);
+#          CLAUDE.md §Active roadmap (the six stage-0 observables, K=2 x M=2 cell states).
+
+schema: ffn-ac-clip-queries-v1
+
+# ---------------------------------------------------------------------------------------------
+# RELEVANCE TRIAGE (PI 2026-07-28, after the year-only dry run).  Year is the only HARD filter and
+# fwci is reading order; subject-matter fitness is judged HERE, because a citation metric ranks
+# papers without knowing what they are about.  Measured failures that forced this:
+#   `WAVE complex density`        -> many-body-localization + ferromagnetic-soliton physics, and a
+#                                    run of EEG / epileptology / ECG papers (the word "wave")
+#   `filopodium tip complex`      -> Bordetella / Shigella type-III and type-VI secretion systems
+#   `microtubule number cell`     -> mitotic spindle, kinetochore, plant, and neuronal-axon work
+# An FWCI floor removes none of these: they are well cited, just not about our object.
+#
+#   anchors    — ANY match in title+abstract CONFIRMS the subject -> `candidate` (auto-fetched)
+#   off_topic  — ANY match DISQUALIFIES -> `off_topic`.  Checked BEFORE anchors, because a paper can
+#                be genuinely about microtubules and still be about the mitotic spindle.
+#   neither    — `needs_review`: PRESERVED for a human, never auto-fetched, never auto-dropped.
+#
+# ORGANISMS ARE PER-QUERY, NOT GLOBAL, and the reason is a near-miss: Arp2/3 and capping-protein
+# kinetics are measured in vitro on yeast and Acanthamoeba proteins, so a global yeast exclusion
+# would have gutted exactly the queries with 13 NOT-FOUND cards behind them.  An organism is
+# off-topic only where the card needs a MAMMALIAN CELL value (counts, densities, geometry).
+# ---------------------------------------------------------------------------------------------
+
+defaults:
+  # Never about our object under any query: condensed-matter physics and clinical electrophysiology.
+  # Both collide on single words ("wave", "density", "complex", "spin") rather than on meaning.
+  off_topic:
+    - many-body localization
+    - non-Hermitian
+    - charge density wave
+    - spin wave
+    - ferromagnetic
+    - antiferromagnetic
+    - soliton
+    - superconducting
+    - plasmonic
+    - photonic crystal
+    - electroencephalogram
+    - electroencephalography
+    - EEG
+    - epilepsy
+    - epileptology
+    - seizure
+    - electrocardiographic
+    - electrocardiogram
+    - post-stroke
+    - myocardial infarction
+
+queries:
+
+  # ---------------------------------------------------------------------------------------------
+  # A. wrong_quantity — a number exists but it does not have the right dimension
+  # ---------------------------------------------------------------------------------------------
+
+  - id: nmii-stall-force
+    anchors:
+      - non-muscle myosin
+      - myosin II
+      - myosin-2
+      - NM2A
+      - NM2B
+      - myosin heavy chain
+      - actomyosin
+    off_topic:
+      - kinesin
+      - dynein
+      - myosin V
+      - myosin VI
+      - Arabidopsis
+      - plant
+    component: nmii
+    connector: nmii_sf_motor
+    connector_family: motor
+    parameter_axis: F_stall_head
+    pi_gap_card: N1
+    absence: wrong_quantity
+    note: >
+      Card N1: the closest primary (Norstrom 2010) reports STEP SIZE (nm), not isometric stall FORCE
+      (pN).  Reject any hit whose number is a length.  Isoform matters: NM2A vs NM2B.
+    terms:
+      all: ["non-muscle myosin", "stall force"]
+      any: ["optical trap", "single molecule", "isometric", "NM2A", "NM2B"]
+
+  - id: linc-tether-stiffness
+    anchors:
+      - nesprin
+      - SUN domain
+      - SUN1
+      - SUN2
+      - LINC complex
+      - KASH
+      - nuclear envelope
+    off_topic:
+      - Arabidopsis
+      - plant
+      - Caenorhabditis
+      - C. elegans
+    component: nucleus
+    connector_family: linc
+    parameter_axis: k_linc
+    pi_gap_card: C1
+    absence: wrong_quantity
+    note: >
+      Card C1: Rief 1999 spectrin-repeat 25-35 pN is a RUPTURE scale, not a resting STIFFNESS
+      (pN/um).  Zero LINC/nesprin claim rows exist in the KB.
+    terms:
+      all: ["nesprin", "force"]
+      any: ["LINC complex", "SUN2", "stiffness", "tether", "nucleo-cytoskeletal"]
+
+  # ---------------------------------------------------------------------------------------------
+  # B. paywalled — the value exists; find a preprint or an SI-bearing open copy
+  # ---------------------------------------------------------------------------------------------
+
+  - id: keratin-axial-stiffness
+    anchors:
+      - keratin
+      - intermediate filament
+      - K8/K18
+      - keratin filament
+    off_topic:
+      - hair
+      - wool
+      - nail
+      - cornea
+      - keratinocyte differentiation
+      - Arabidopsis
+      - plant
+    component: intermediate_filament
+    parameter_axis: IF_KERATIN_WALL_EA_PN
+    pi_gap_card: I1
+    absence: paywalled
+    note: "Card I1: Lorenz 2019 PRL 123:188102 / Lorenz 2023 Matter 6:2019 are paywalled."
+    terms:
+      all: ["keratin", "single filament"]
+      any: ["force-extension", "stretching", "K8/K18", "mechanics", "AFM"]
+
+  - id: if-entropic-enthalpic-crossover
+    anchors:
+      - intermediate filament
+      - vimentin
+      - keratin
+      - desmin
+      - neurofilament
+      - force-extension
+    off_topic:
+      - Arabidopsis
+      - plant
+      - amyloid fibril
+      - silk
+    component: intermediate_filament
+    parameter_axis: crossover_ratio
+    pi_gap_card: I2
+    absence: paywalled
+    note: "Card I2: alpha-to-beta unfolding crossover.  Vimentin analogues are open; keratin is not."
+    terms:
+      all: ["intermediate filament", "unfolding"]
+      any: ["vimentin", "keratin", "alpha-helix", "strain stiffening", "force-extension"]
+
+  # ---------------------------------------------------------------------------------------------
+  # C. proxy — a value exists for another cell type; search the target line explicitly
+  # ---------------------------------------------------------------------------------------------
+
+  - id: mt-dynamic-instability-mcf7
+    anchors:
+      - microtubule
+      - dynamic instability
+      - catastrophe
+      - rescue frequency
+      - tubulin
+    off_topic:
+      - mitotic spindle
+      - kinetochore
+      - meiosis
+      - anaphase
+      - metaphase
+      - Arabidopsis
+      - plant
+      - fission yeast
+      - budding yeast
+      - Saccharomyces
+      - axon
+      - dendrite
+      - cilia
+      - flagella
+    component: microtubule
+    parameter_axis: f_catastrophe_per_s / f_rescue_per_s
+    pi_gap_card: M1
+    absence: proxy
+    cell_state: MCF7
+    note: "Card M1: currently a Rusan 2001 LLCPK-1alpha proxy.  MCF7-specific NOT FOUND."
+    terms:
+      all: ["microtubule dynamic instability", "catastrophe"]
+      any: ["MCF-7", "breast epithelial", "rescue frequency", "interphase", "live cell"]
+
+  - id: mt-growth-shrink-speed
+    anchors:
+      - microtubule
+      - plus end
+      - growth rate
+      - shrinkage
+      - EB1
+      - tubulin
+    off_topic:
+      - mitotic spindle
+      - kinetochore
+      - meiosis
+      - anaphase
+      - Arabidopsis
+      - plant
+      - fission yeast
+      - budding yeast
+      - axon
+      - dendrite
+      - cilia
+      - flagella
+    component: microtubule
+    parameter_axis: v_grow / v_shrink
+    pi_gap_card: M2
+    absence: proxy
+    note: "Card M2: same proxy dataset as M1; keep internally consistent with whatever M1 resolves to."
+    terms:
+      all: ["microtubule", "plus end"]
+      any: ["growth rate", "shrinkage rate", "EB1", "interphase", "mammalian"]
+
+  # ---------------------------------------------------------------------------------------------
+  # D. none — no value found at all.  Search the ASSAY, not the parameter name.
+  # ---------------------------------------------------------------------------------------------
+
+  - id: arp23-branch-nucleation-rate
+    anchors:
+      - Arp2/3
+      - branch nucleation
+      - branched actin
+      - actin nucleation
+      - dendritic network
+    off_topic:
+      - Arabidopsis
+      - plant
+      - trichome
+      - Alzheimer
+      - amyloid
+    component: lamellipodium
+    parameter_axis: k_arp0
+    pi_gap_card: L1
+    absence: none
+    terms:
+      all: ["Arp2/3", "branch"]
+      any: ["nucleation rate", "kinetics", "TIRF", "single filament", "branching frequency"]
+
+  - id: arp23-monomer-half-saturation
+    anchors:
+      - Arp2/3
+      - actin nucleation
+      - branched actin
+      - actin polymerization
+      - G-actin
+    off_topic:
+      - Arabidopsis
+      - plant
+      - trichome
+      - Alzheimer
+      - amyloid
+    component: lamellipodium
+    parameter_axis: K_m
+    pi_gap_card: L2
+    absence: none
+    terms:
+      all: ["Arp2/3", "actin concentration"]
+      any: ["Michaelis", "half-saturation", "nucleation", "dependence"]
+
+  - id: capping-protein-rate
+    anchors:
+      - capping protein
+      - CapZ
+      - barbed end
+      - gelsolin
+      - actin filament end
+    off_topic:
+      - mRNA
+      - messenger RNA
+      - translation initiation
+      - eIF4E
+      - 5' cap
+      - Arabidopsis
+      - plant
+    component: lamellipodium
+    parameter_axis: k_cap
+    pi_gap_card: L3
+    absence: none
+    note: "Do NOT tune this to a mesh size — the mesh must emerge."
+    terms:
+      all: ["capping protein", "barbed end"]
+      any: ["association rate", "kinetics", "CapZ", "on-rate", "single filament"]
+
+  - id: npf-areal-density
+    anchors:
+      - WAVE regulatory complex
+      - nucleation promoting factor
+      - N-WASP
+      - WASP family
+      - SCAR/WAVE
+      - Arp2/3
+      - lamellipodium
+      - lamellipodia
+      - CYFIP
+      - Abi1
+      - Sra1
+      - WAVE2
+    off_topic:
+      - Arabidopsis
+      - plant
+      - trichome
+      - Nicotiana
+      - Alzheimer
+      - amyloid
+      - psychiatric
+      - hippocampal
+      - autophagy
+      - Caenorhabditis
+      - platelet
+      - astrocyt
+    component: lamellipodium
+    parameter_axis: rho_NPF
+    pi_gap_card: L4
+    absence: none
+    terms:
+      all: ["WAVE complex", "density"]
+      any: ["leading edge", "WASP", "nucleation promoting factor", "molecules per", "quantitative"]
+
+  - id: filopodium-tip-nucleator-density
+    anchors:
+      - filopodia
+      - filopodium
+      - microspike
+      - tip complex
+      - formin
+      - mDia2
+      - FMNL2
+      - VASP
+      - fascin
+      - myosin-X
+      - myosin X
+      - IRSp53
+      - lamellipodin
+    off_topic:
+      - type III secretion
+      - type VI secretion
+      - Bordetella
+      - Shigella
+      - Salmonella
+      - biofilm
+      - tip streaming
+      - tissue engineering
+      - scaffold
+      - airineme
+      - stereocilia
+    component: filopodium
+    parameter_axis: rho_tip
+    pi_gap_card: F5
+    absence: none
+    terms:
+      all: ["filopodium", "tip complex"]
+      any: ["formin", "mDia2", "number of molecules", "VASP", "quantitative"]
+
+  - id: mt-number-per-cell
+    # The anchor here is the COUNT, not the object: "microtubule" cannot confirm a query whose own
+    # subject is microtubules, and letting it try admitted protofilament-number papers — the same
+    # object's DIFFERENT quantity, which is the `wrong_quantity` class this project already knows.
+    anchors:
+      - microtubule number
+      - number of microtubules
+      - microtubule count
+      - microtubule density
+      - centrosome nucleation
+      - nucleated microtubules
+      - interphase array
+    off_topic:
+      - protofilament
+      - mitotic spindle
+      - mitosis
+      - meiosis
+      - kinetochore
+      - chromosome
+      - anaphase
+      - metaphase
+      - spindle
+      - axon
+      - dendrite
+      - dendritic spine
+      - neuron
+      - Arabidopsis
+      - plant
+      - fission yeast
+      - budding yeast
+      - Plasmodium
+      - Ralstonia
+      - cilia
+      - flagella
+      - sperm
+      - cochlear
+      - chondrocyte
+      - microgravity
+      - Barthelonid
+    component: microtubule
+    parameter_axis: n_mt
+    pi_gap_card: M3
+    absence: none
+    terms:
+      all: ["microtubule number", "cell"]
+      any: ["electron tomography", "centrosome", "nucleated", "interphase", "counted"]
+
+  - id: erm-attach-detach-kinetics
+    anchors:
+      - ezrin
+      - radixin
+      - moesin
+      - ERM protein
+      - membrane-cortex attachment
+      - membrane to cortex
+    off_topic:
+      - Arabidopsis
+      - plant
+      - fission yeast
+      - budding yeast
+      - Drosophila
+      - zebrafish
+    component: cortex
+    connector: membrane_erm_cortex
+    connector_family: erm
+    parameter_axis: k_on / k_off0 / bell_force_pn
+    pi_gap_card: E1,E2,E3
+    absence: none
+    terms:
+      all: ["ezrin", "actin binding"]
+      any: ["kinetics", "unbinding force", "off-rate", "single molecule", "membrane"]
+
+  - id: erm-areal-density
+    anchors:
+      - ezrin
+      - radixin
+      - moesin
+      - ERM protein
+      - membrane-cortex attachment
+      - cortex linker
+    off_topic:
+      - Arabidopsis
+      - plant
+      - fission yeast
+      - budding yeast
+      - Drosophila
+      - zebrafish
+    component: cortex
+    connector: membrane_erm_cortex
+    connector_family: erm
+    parameter_axis: rho_0
+    pi_gap_card: E5
+    absence: none
+    note: "Alert 2015 gives ~100 um^-2 baseline; MCF7-direct NOT FOUND.  Also need available vs ACTIVE fraction."
+    terms:
+      all: ["ezrin", "density"]
+      any: ["membrane cortex attachment", "linker", "molecules per micron", "quantitative"]
+
+  - id: actin-axial-stretch-modulus
+    # Anchor on the MEASUREMENT.  "actin filament" is the query's own subject and confirms nothing;
+    # the card needs an axial EA, which is a mechanical quantity distinct from bending rigidity.
+    anchors:
+      - stretching modulus
+      - stretch modulus
+      - extensional stiffness
+      - Young's modulus
+      - persistence length
+      - force-extension
+      - filament stiffness
+      - extensibility
+      - elastic modulus
+    off_topic:
+      - Arabidopsis
+      - plant
+      - amyloid
+      - collagen fibril
+      - DNA stretching
+    component: sf_arc
+    parameter_axis: EA_actin
+    pi_gap_card: S1
+    absence: none
+    note: "Card S1: no sourced single-filament axial EA in the KB.  Distinguish from BENDING (44 pN um^2)."
+    terms:
+      all: ["actin filament", "stretching modulus"]
+      any: ["Young's modulus", "extensibility", "single filament", "longitudinal", "stiffness"]
+
+  - id: linc-areal-density
+    anchors:
+      - nesprin
+      - SUN domain
+      - SUN1
+      - SUN2
+      - LINC complex
+      - KASH
+      - nuclear envelope
+    off_topic:
+      - Arabidopsis
+      - plant
+      - Caenorhabditis
+      - C. elegans
+      - fission yeast
+      - budding yeast
+    component: nucleus
+    connector_family: linc
+    parameter_axis: LINC areal density
+    pi_gap_card: C2
+    absence: none
+    terms:
+      all: ["nesprin", "nuclear envelope"]
+      any: ["density", "number", "quantitative", "SUN", "stoichiometry"]
+
+  - id: resting-turgor-pressure
+    anchors:
+      - intracellular pressure
+      - hydrostatic pressure
+      - turgor
+      - osmotic pressure
+      - cell volume regulation
+    off_topic:
+      - Arabidopsis
+      - plant
+      - fungal
+      - bacteria
+      - bacterial
+      - blood pressure
+      - intraocular
+      - intracranial
+      - hypertension
+      - atmospheric
+    component: cytosol
+    parameter_axis: PI_0_PA
+    pi_gap_card: T1
+    absence: none
+    note: >
+      Named the worst convenience default in PARAM_PROVENANCE_AUDIT_2026-07-24 (40 Pa, a HeLa proxy).
+      Wanted: an animal-cell resting intracellular hydrostatic/osmotic pressure, MCF7 if it exists.
+    terms:
+      all: ["intracellular pressure", "cell"]
+      any: ["hydrostatic", "osmotic", "turgor", "mammalian", "measured"]
+
+  # ---------------------------------------------------------------------------------------------
+  # E. stage-0 observables — the six the measurement contract is written in (CLAUDE.md)
+  # ---------------------------------------------------------------------------------------------
+
+  - id: obs-cortical-tension-suspended
+    anchors:
+      - cortical tension
+      - cortex tension
+      - actomyosin cortex
+      - micropipette aspiration
+      - cell cortex
+      - surface tension
+    off_topic:
+      - Dictyostelium
+      - zebrafish
+      - Drosophila
+      - embryo
+      - tissue surface tension
+      - aggregate
+      - liquid-liquid phase
+      - droplet
+      - Arabidopsis
+      - plant
+    component: cortex
+    parameter_axis: "observable: gamma (cortical tension)"
+    cell_state: "MCF7 / MDA-MB-231, suspended"
+    note: "Gate VG-gamma-MCF7-suspended and VG-231-G1.  Protocol matters: AFM parallel-plate vs micropipette."
+    terms:
+      all: ["cortical tension", "breast cancer cell"]
+      any: ["MCF-7", "MDA-MB-231", "AFM", "micropipette aspiration", "parallel plate"]
+
+  - id: obs-intracellular-pressure-suspended
+    anchors:
+      - intracellular pressure
+      - hydrostatic pressure
+      - cortical tension
+      - Laplace
+      - cell pressure
+      - rounded cell
+      - mitotic rounding
+    off_topic:
+      - Arabidopsis
+      - plant
+      - fungal
+      - bacteria
+      - bacterial
+      - blood pressure
+      - intraocular
+      - intracranial
+      - hypertension
+    component: membrane
+    parameter_axis: "observable: dP (intracellular pressure)"
+    cell_state: "suspended"
+    note: "Gate VG-231-G0.  Self-consistency requirement gamma = dP*R/2."
+    terms:
+      all: ["intracellular pressure", "surface tension"]
+      any: ["rounded cell", "mitotic", "Laplace", "AFM", "confinement"]
+
+  - id: obs-afm-modulus-relaxation
+    anchors:
+      - atomic force microscopy
+      - AFM
+      - Young's modulus
+      - elastic modulus
+      - stress relaxation
+      - viscoelastic
+      - indentation
+      - cell stiffness
+    off_topic:
+      - Arabidopsis
+      - plant
+      - bacterial
+      - biofilm
+      - bone tissue
+      - dental
+      - erythrocyte membrane
+    component: cytosol
+    parameter_axis: "observable: E (apparent modulus), tau (relaxation)"
+    cell_state: "MCF7 / MDA-MB-231"
+    note: "Gate VG-231-G1.  The AFM 'too stiff' result was three PROTOCOL artifacts — capture the protocol."
+    terms:
+      all: ["AFM", "breast cancer cell stiffness"]
+      any: ["MCF-7", "MDA-MB-231", "Young's modulus", "stress relaxation", "viscoelastic"]
+
+  - id: obs-traction-vs-stiffness
+    anchors:
+      - traction force microscopy
+      - traction force
+      - cell traction
+      - contractile force
+      - substrate stiffness
+      - focal adhesion
+    off_topic:
+      - cardiomyocyte
+      - hiPSC
+      - trabecular meshwork
+      - platelet
+      - biofilm
+      - embryo
+      - monolayer stress
+      - bladder cancer
+      - glaucoma
+      - hepatic
+    component: focal_adhesion
+    connector: integrin_collagen_clutch
+    connector_family: fa_clutch
+    parameter_axis: "observable: total traction |F| vs substrate stiffness"
+    cell_state: "adherent on 2D collagen"
+    note: "Gate VG-231-G2.  Kraning-Rush 2012 anchors ~90/305/375 nN at 1/5/10 kPa."
+    terms:
+      all: ["traction force microscopy", "substrate stiffness"]
+      any: ["MDA-MB-231", "MCF-7", "breast cancer", "collagen", "total force"]
+
+  - id: obs-spreading-area-2d
+    anchors:
+      - cell spreading
+      - spread area
+      - spreading area
+      - spreading dynamics
+      - cell adhesion area
+    off_topic:
+      - bacterial
+      - biofilm
+      - Arabidopsis
+      - plant
+      - droplet spreading
+      - wetting transition
+      - tumour spreading
+      - metastatic spread
+    component: membrane
+    parameter_axis: "observable: spreading area A (top-down silhouette)"
+    cell_state: "adherent on 2D collagen"
+    note: "PI-ratified metric is the top-down xy silhouette, NOT a contact-patch proxy."
+    terms:
+      all: ["cell spreading area", "collagen"]
+      any: ["MCF-7", "MDA-MB-231", "substrate", "kinetics", "spread area"]
+
+  - id: obs-2d-migration-speed
+    anchors:
+      - cell migration
+      - migration speed
+      - migration persistence
+      - cell motility
+      - random walk
+      - persistent random walk
+      - chemotaxis
+    off_topic:
+      - bacterial
+      - Dictyostelium
+      - neural crest
+      - embryo
+      - collective migration
+      - germ cell
+      - leukocyte transmigration
+      - Arabidopsis
+      - plant
+    component: lamellipodium
+    parameter_axis: "observable: 2D migration speed, persistence, aspect ratio"
+    cell_state: "adherent on 2D collagen"
+    note: "Gate VG-231-G3.  Needs speed AND persistence AND shape together — a speed alone cannot grade it."
+    terms:
+      all: ["cell migration", "persistence"]
+      any: ["MDA-MB-231", "MCF-7", "2D", "collagen", "random walk", "speed"]
+
+  # ---------------------------------------------------------------------------------------------
+  # F. cross-cutting — the two cell states themselves (CellState is the 9th KB DB, all rows declared)
+  # ---------------------------------------------------------------------------------------------
+
+  - id: mda-mb-231-geometry
+    anchors:
+      - MDA-MB-231
+      - cell volume
+      - cell diameter
+      - cell radius
+      - nuclear volume
+      - morphometry
+      - cell size
+    off_topic:
+      - drug delivery
+      - nanoparticle
+      - IC50
+      - cytotoxicity
+      - apoptosis assay
+      - viability assay
+      - gene expression profil
+      - exosome
+    component: membrane
+    parameter_axis: "cell radius, nuclear volume, geometry setpoints"
+    cell_state: "MDA-MB-231"
+    absence: none
+    note: >
+      CellState carries an explicit PI-GAP here: MDA-MB-231's radius is not established, and MCF7's
+      7.5 um must NOT be carried over silently.
+    terms:
+      all: ["MDA-MB-231", "cell volume"]
+      any: ["diameter", "radius", "nuclear volume", "morphometry", "suspended"]

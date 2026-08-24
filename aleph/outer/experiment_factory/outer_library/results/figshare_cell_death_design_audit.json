@@ -1,0 +1,168 @@
+{
+  "aleph_authority": "none",
+  "author_label_count": 6,
+  "author_well_split_leakage_audit": {
+    "split_CellProfiler_moa": {
+      "compound_count": 50,
+      "compounds_crossing_author_roles": 47,
+      "compounds_in_all_three_author_roles": 39,
+      "well_disjoint_but_not_compound_disjoint": true
+    },
+    "split_DINO_moa": {
+      "compound_count": 53,
+      "compounds_crossing_author_roles": 45,
+      "compounds_in_all_three_author_roles": 37,
+      "well_disjoint_but_not_compound_disjoint": true
+    },
+    "split_DeepProfiler_moa": {
+      "compound_count": 50,
+      "compounds_crossing_author_roles": 47,
+      "compounds_in_all_three_author_roles": 44,
+      "well_disjoint_but_not_compound_disjoint": true
+    }
+  },
+  "calibration_missing_rare_labels": [
+    "pyroptosis inducer"
+  ],
+  "compound_assignments": {
+    "apoptosis": {
+      "2;3-DCPE HYDROCHLORIDE": "train",
+      "ANATOXIN A FUMARATE": "train",
+      "APOPTOSIS ACTIVATOR 2": "train",
+      "AT 101": "train",
+      "BETULINIC ACID": "train",
+      "BZ 423": "train",
+      "C 75": "train",
+      "CAMPTOTHECIN": "train",
+      "CLADRIBINE": "train",
+      "DOXORUBICIN": "calibration",
+      "EPIRUBICIN": "train",
+      "ETOPOSIDE": "train",
+      "FK 866": "train",
+      "FLUDARABINE": "train",
+      "G5": "sealed_test",
+      "KAEMPFEROL": "train",
+      "MITOMYCIN C": "selection",
+      "MPC 6827": "train",
+      "NARCICLASINE": "train",
+      "ONCRASIN 1": "train",
+      "RIFAXIMIN": "train",
+      "SMBA 1": "train",
+      "SN 38": "train",
+      "TOPOTECAN": "train"
+    },
+    "autophagy inducer": {
+      "DOMPERIDONE": "train",
+      "EVEROLIMUS": "train",
+      "L-690;330": "calibration",
+      "LOPERAMIDE": "train",
+      "PIMOZIDE": "selection",
+      "VU0359595": "sealed_test"
+    },
+    "ferroptosis inducer": {
+      "ERASTIN": "sealed_test",
+      "FIN 56": "train",
+      "L-BUTHIONINE SULFOXIMINE": "train",
+      "LOVASTATIN": "train",
+      "PRAVASTATIN": "calibration",
+      "SIMVASTATIN": "train",
+      "SORAFENIB": "train",
+      "SULFASALAZINE": "selection"
+    },
+    "immunogenic cell death": {
+      "AZD 2461": "train",
+      "BLEOMYCIN": "train",
+      "BORTEZOMIB": "selection",
+      "CARBOPLATIN": "train",
+      "CISPLATIN": "sealed_test",
+      "CRIZOTINIB": "train",
+      "CYCLOPHOSPHAMIDE": "train",
+      "DACTINOMYCIN (ACTINOMYCIN D)": "train",
+      "DAUNORUBICIN": "train",
+      "OLAPARIB": "calibration",
+      "OXALIPLATIN": "train",
+      "TENIPOSIDE": "train"
+    },
+    "necroptosis inducer": {
+      "HS-173": "sealed_test",
+      "QUERCETIN": "calibration",
+      "SHIKONIN": "train"
+    },
+    "pyroptosis inducer": {
+      "NIGERICIN": "sealed_test",
+      "POLYPHYLLIN VI": "train"
+    }
+  },
+  "compound_count": 55,
+  "cross_split_compound_overlap_count": 0,
+  "dataset_id": "figshare-28202864-mcf7-programmed-cell-death",
+  "eligible_qc_site_rows": 14436,
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "label_compound_counts": {
+    "apoptosis": 24,
+    "autophagy inducer": 6,
+    "ferroptosis inducer": 8,
+    "immunogenic cell death": 12,
+    "necroptosis inducer": 3,
+    "pyroptosis inducer": 2
+  },
+  "may_select_aleph_parameter": false,
+  "rare_label_conditional_calibration_authority": false,
+  "schema": "aleph.outer_library.figshare_cell_death_design_audit.v1",
+  "sealed_test_has_all_six_labels": true,
+  "selection_missing_rare_labels": [
+    "necroptosis inducer",
+    "pyroptosis inducer"
+  ],
+  "split_compound_counts": {
+    "calibration": 5,
+    "sealed_test": 6,
+    "selection": 4,
+    "train": 40
+  },
+  "split_label_coverage": {
+    "calibration": [
+      "apoptosis",
+      "autophagy inducer",
+      "ferroptosis inducer",
+      "immunogenic cell death",
+      "necroptosis inducer"
+    ],
+    "sealed_test": [
+      "apoptosis",
+      "autophagy inducer",
+      "ferroptosis inducer",
+      "immunogenic cell death",
+      "necroptosis inducer",
+      "pyroptosis inducer"
+    ],
+    "selection": [
+      "apoptosis",
+      "autophagy inducer",
+      "ferroptosis inducer",
+      "immunogenic cell death"
+    ],
+    "train": [
+      "apoptosis",
+      "autophagy inducer",
+      "ferroptosis inducer",
+      "immunogenic cell death",
+      "necroptosis inducer",
+      "pyroptosis inducer"
+    ]
+  },
+  "split_policy": "author_MoA_stratified_compound_identity_disjoint_v1",
+  "split_qc_site_counts": {
+    "calibration": 1412,
+    "sealed_test": 2298,
+    "selection": 706,
+    "train": 10020
+  },
+  "split_well_counts": {
+    "calibration": 169,
+    "sealed_test": 281,
+    "selection": 94,
+    "train": 1202
+  }
+}

@@ -1,0 +1,399 @@
+{
+  "results": [
+    {
+      "n_fil": 1000,
+      "subset_rows": [
+        {
+          "label": "none",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 0.518296480178833,
+          "steps_per_s": 7717.590516184559,
+          "us_per_step": 129.57412004470825,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [],
+          "kept_force_classes": [],
+          "nlist": {
+            "pair_force": null
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "bond",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 0.70320725440979,
+          "steps_per_s": 5688.223457474491,
+          "us_per_step": 175.8018136024475,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic"
+          ],
+          "kept_force_classes": [
+            "bond"
+          ],
+          "nlist": {
+            "pair_force": null
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "bond+angle",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 1.0410211086273193,
+          "steps_per_s": 3842.3812609086885,
+          "us_per_step": 260.25527715682983,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle"
+          ],
+          "nlist": {
+            "pair_force": null
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.3807499408721924,
+          "steps_per_s": 1680.1428538667074,
+          "us_per_step": 595.1874852180481,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        }
+      ],
+      "breakdown": {
+        "us_per_step": {
+          "none": 129.57412004470825,
+          "bond": 175.8018136024475,
+          "bond+angle": 260.25527715682983,
+          "full": 595.1874852180481
+        },
+        "per_force_us": {
+          "baseline(run-loop)": 129.57412004470825,
+          "bond_harmonic": 46.22769355773926,
+          "angle_harmonic": 84.45346355438232,
+          "lj+nlist": 334.93220806121826
+        },
+        "per_force_pct_of_full": {
+          "baseline(run-loop)": 21.770303183918344,
+          "bond_harmonic": 7.766912898177564,
+          "angle_harmonic": 14.189388327518788,
+          "lj+nlist": 56.273395590385306
+        },
+        "full_steps_per_s": 1680.1428538667074
+      },
+      "rbuff_sweep": [
+        {
+          "label": "full@rbuff=1e-08",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.3748083114624023,
+          "steps_per_s": 1684.3464715418684,
+          "us_per_step": 593.7020778656006,
+          "rbuff": 1e-08,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=2e-08",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.3858537673950195,
+          "steps_per_s": 1676.5486865388973,
+          "us_per_step": 596.4634418487549,
+          "rbuff": 2e-08,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=3e-08",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.392507553100586,
+          "steps_per_s": 1671.886048934798,
+          "us_per_step": 598.1268882751465,
+          "rbuff": 3e-08,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=5e-08",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.392347574234009,
+          "steps_per_s": 1671.9978497609134,
+          "us_per_step": 598.0868935585022,
+          "rbuff": 5e-08,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=1e-07",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.3845810890197754,
+          "steps_per_s": 1677.4434798710374,
+          "us_per_step": 596.1452722549438,
+          "rbuff": 1e-07,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        }
+      ]
+    }
+  ],
+  "steps": 4000,
+  "device": "gpu",
+  "seed": 1
+}

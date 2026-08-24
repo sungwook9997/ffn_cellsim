@@ -1,0 +1,85 @@
+{
+  "Allen_metadata_or_pixels_accessed": 0,
+  "OpenCell_is_pristine_confirmation": false,
+  "OpenCell_role": "consumed_development_only",
+  "admitted_projection_bytes": 3255606840,
+  "admitted_projection_count": 2260,
+  "admitted_target_count": 1130,
+  "aleph_authority": "none",
+  "all_development_gates_passed": true,
+  "class_split_support": {
+    "cytoskeleton_or_adhesion": {
+      "calibration": 17,
+      "selection": 15,
+      "train": 73
+    },
+    "cytosol": {
+      "calibration": 98,
+      "selection": 73,
+      "train": 361
+    },
+    "endoplasmic_reticulum": {
+      "calibration": 21,
+      "selection": 19,
+      "train": 76
+    },
+    "golgi": {
+      "calibration": 14,
+      "selection": 7,
+      "train": 67
+    },
+    "mitochondria": {
+      "calibration": 2,
+      "selection": 1,
+      "train": 9
+    },
+    "nuclear_envelope": {
+      "calibration": 4,
+      "selection": 4,
+      "train": 13
+    },
+    "nuclear_interior": {
+      "calibration": 85,
+      "selection": 74,
+      "train": 304
+    },
+    "plasma_membrane_or_junction": {
+      "calibration": 24,
+      "selection": 24,
+      "train": 108
+    },
+    "vesicular_organelle": {
+      "calibration": 56,
+      "selection": 37,
+      "train": 198
+    }
+  },
+  "development_gates": {
+    "calibration_target_minimum": true,
+    "projection_listing_errors_zero": true,
+    "selection_target_minimum": true,
+    "supported_class_minimum": true,
+    "train_target_minimum": true
+  },
+  "development_role_counts_before_projection": {
+    "excluded_mixed_mapped_unmapped": 151,
+    "in_domain": 1145,
+    "semantic_OOD": 14
+  },
+  "exact_HPA_gene_overlap_count": 278,
+  "listing_error_count": 0,
+  "manifest_sha256": "689d2f6ad69462a7b47673b9c27cffba66f05f83216762e7e8799a1283342565",
+  "may_emit_numeric_sweep_range": false,
+  "missing_projection_target_count": 29,
+  "model_predictions_made": 0,
+  "protocol_sha256": "41dc73848e0208dd1b4c7295e2740dd18accb07e26d0f9e2cc1155e59684f77a",
+  "released_target_count": 1310,
+  "schema": "aleph.outer_library.opencell_multiprovider_resolution.v1",
+  "split_target_counts": {
+    "calibration": 199,
+    "selection": 157,
+    "semantic_OOD": 13,
+    "train": 761
+  },
+  "supported_train_class_count": 8
+}

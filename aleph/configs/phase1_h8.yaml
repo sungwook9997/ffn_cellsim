@@ -1,0 +1,113 @@
+# Phase 1 — Unit H.8 plasma-membrane SURFACE mechanics (KU-3.B1) defaults.
+#
+# ADDITIVE, DEFAULT-OFF module (`aleph/cell/membrane_surface.py`; brief
+# `aleph/docs/briefs/H8_membrane_surface.md`; EXTEND memo
+# `aleph/docs/CELL_MECHANICS_EXTEND_VS_REBUILD.md` §B.4). Supplies the missing
+# plasma-membrane in-plane surface tension term so the whole-cell apparent
+# tension probed by micropipette aspiration / KU-3.5 is decomposed as a COMPOSITE
+# `γ_total = γ_membrane + γ_cortex` (Sens & Plastino 2015; Fischer-Friedrich 2014)
+# rather than attributed entirely to the cortex.
+#
+# DISTINCT from `cell/membrane.py` (the H.5 leading-edge load reservoir): that
+# module's `gamma_mem` is a Brownian-ratchet leading-edge load (different
+# semantics); THIS `gamma_mem` is the resting plasma-membrane in-plane surface
+# tension (the membrane part T_m of the apparent tension). Keep distinct.
+#
+# Per CLAUDE.md hard rules:
+# - No magic numbers — every parameter is a KU-3.B1 literature anchor with
+#   provenance (Magic-Number Block below + the module docstring), NONE tuned to
+#   make a gate pass.
+# - Default-off — `enabled: false`; if the Lead never calls
+#   `attach_membrane_surface(...)`, pre-H.8 builds are bit-for-bit identical.
+# - Sanity Gate §1-6 enforced in `aleph/cell/membrane_surface.py` +
+#   `aleph/tests/test_membrane_surface.py`; KU-3.B1 acceptance gate in
+#   `aleph/tests/test_h8b1_membrane_tension_gate.py`.
+
+cortex: null      # membrane-surface attaches to a host cortex shell separately.
+
+membrane_surface:
+
+  enabled: false               # default-off additive module (off-path bit-identical)
+
+  # ---- Bare in-plane membrane tension γ_mem (REQUIRED; the H.8 object) ----
+  # Magic-Number Block — gamma_mem (T_m):
+  #   Value: 3.0e-5 N/m (= 0.03 mN/m = 30 pN/µm).
+  #   Provenance: KU-3.B1.1 apparent (whole-cell) membrane tension band
+  #     T ≈ 0.03–0.30 mN/m, decomposed as T = T_m + γ_MCA (Sens & Plastino 2015,
+  #     J. Phys. Condens. Matter 27:273103, "Membrane tension and cytoskeleton
+  #     organization in cell motility"; Fischer-Friedrich et al. 2014, Sci. Rep.
+  #     4:6213, cortex/membrane tension). Resting HeLa/blebbing-cell static
+  #     membrane tension is at the bottom of this band (Lieber et al. 2013,
+  #     Curr. Biol. 23:1409, ~30–40 pN/µm). The default is the band FLOOR 0.03
+  #     mN/m — the canonical resting plasma-membrane in-plane tension, NOT a
+  #     value chosen to make a gate pass (the KU-3.B1 gate ASSERTS the recovered
+  #     γ lands anywhere inside [0.03, 0.30] mN/m, so the floor is a conservative
+  #     in-band anchor, not a fit). REQUIRED by the resolver (no silent default
+  #     in code — the apparent-tension decomposition is the object of study), so
+  #     this YAML key is what supplies it.
+  #   Grid-invariant: an intensive surface tension [N/m]; independent of bead
+  #     count N, ℓ₀, dt, box (the per-bead 1/N area share carries the count so
+  #     the TOTAL Laplace load ΔP·S is N-independent — verified in test §grid).
+  gamma_mem: 3.0e-5            # N/m  = 0.03 mN/m, KU-3.B1.1 band floor (Sens 2015)
+  gamma_mem_band_min: 3.0e-5  # N/m  = 0.03 mN/m  (KU-3.B1.1 band lower, range guard)
+  gamma_mem_band_max: 3.0e-4  # N/m  = 0.30 mN/m  (KU-3.B1.1 band upper, range guard)
+
+  # ---- Area-expansion (stretch) modulus K_A ----
+  # Magic-Number Block — K_A:
+  #   Value: 0.24 N/m.
+  #   Provenance: KU-3.B1.2 — Rawicz et al. 2000 (Biophys. J. 79:328, "Effect of
+  #     chain length and unsaturation on elasticity of lipid bilayers"); SOPC/
+  #     stearoyl-oleoyl-PC bilayer apparent area-expansion modulus K_A ≈ 0.2–0.27
+  #     N/m. Cross-check (consistency, not a fit): K_A · strain_max with strain_max
+  #     ∈ 2–5 % lands the lysis tension at 0.0048–0.012 N/m, squarely in the
+  #     KU-3.B1 lysis band 3–10 mN/m (Evans & Rawicz 1990, PRL 64:2094).
+  #   Grid-invariant: intensive material modulus [N/m]; independent of N/ℓ₀/dt.
+  K_A: 0.24                   # N/m  area-expansion modulus (Rawicz 2000)
+  lysis_tension_min: 3.0e-3   # N/m  3 mN/m  (KU-3.B1.2 lysis band, cross-check)
+  lysis_tension_max: 1.0e-2   # N/m  10 mN/m
+  max_areal_strain_min: 0.02  # —    2 %     (KU-3.B1.2 max areal strain)
+  max_areal_strain_max: 0.05  # —    5 %
+
+  # ---- Helfrich bending modulus κ_m (Tier-A MEASUREMENT-ONLY; NO runtime force) ----
+  # Magic-Number Block — kappa_m:
+  #   Value: 1.0e-19 J (≈ 24 k_BT at 300 K).
+  #   Provenance: KU-3.B1.2 — Rawicz et al. 2000; Helfrich bending modulus of a
+  #     fluid lipid bilayer κ_m ≈ 0.8–1.5×10⁻¹⁹ J (band 10–30 k_BT). 1.0e-19 J /
+  #     (k_B·300 K) = 24.1 k_BT — inside the 10–30 k_BT band.
+  #   Grid-invariant: a molecular bending modulus [J]; independent of grid/dt.
+  #   USAGE: in this version κ_m enters NO runtime force. It is used by (a) the
+  #     tether-force oracle f_t = 2π√(2κ_m(T_m+γ_MCA)) (KU-3.B1.4) and (b) the
+  #     Tier-A per-bead discrete mean-curvature MEASUREMENT (analytic-sphere:
+  #     per-bead H≈1/R; ∮(2H)²dA→16π ⇒ U_bend→8π·κ_m, R-independent). The bending
+  #     FORCE (Tier-B) is a later PI-gate (`docs/H8_HELFRICH_CURVATURE_DESIGN.md`).
+  kappa_m: 1.0e-19            # J    bending modulus, ≈24 k_BT (Rawicz 2000)
+  kappa_m_kT_min: 10.0       # —    KU-3.B1 bending band lower (10 k_BT)
+  kappa_m_kT_max: 30.0       # —    KU-3.B1 bending band upper (30 k_BT)
+
+  # ---- Membrane–cortex adhesion energy density γ_MCA (tether oracle) ----
+  # Magic-Number Block — gamma_mca:
+  #   Value: 1.0e-5 J/m².
+  #   Provenance: KU-3.B1.3 — membrane-to-cortex adhesion (MCA) energy density
+  #     ≈ 10⁻⁶–10⁻⁴ J/m² (Sens & Plastino 2015; Diz-Muñoz et al. 2010, PLoS Biol
+  #     8:e1000544, "Control of directed cell migration in vivo by membrane-to-
+  #     cortex attachment"). Mid-band 1e-5 J/m². Enters the tether oracle f_t =
+  #     2π√(2κ_m(T_m+γ_MCA)); NO runtime force.
+  gamma_mca: 1.0e-5          # J/m²  membrane–cortex adhesion (Diz-Muñoz 2010)
+  gamma_mca_min: 1.0e-6      # J/m²  KU-3.B1.3 band lower
+  gamma_mca_max: 1.0e-4      # J/m²  KU-3.B1.3 band upper
+
+  # ---- Membrane tether-force acceptance band (KU-3.B1.4 oracle) ----
+  # f_t = 2π√(2κ_m(T_m+γ_MCA)); Hochmuth 1996 (Biophys. J. 70:358); Derényi et
+  # al. 2002 (PRL 88:238101, "Formation and interaction of membrane tubes").
+  tether_force_min: 5.0e-12  # N    5 pN
+  tether_force_max: 4.0e-11  # N    40 pN
+
+  # ---- KU-3.B1 acceptance gate (membrane surface tension) ----
+  acceptance:
+    # KU-3.B1.1 — the membrane in-plane surface tension γ recovered from the
+    # shell's Young-Laplace / net-force balance must land in 0.03–0.30 mN/m.
+    # (A membrane Custom force is INVISIBLE to the harmonic-bond method-of-planes,
+    # so the gate measures γ on the LAPLACE / internal-pressure net_force path:
+    # γ = ⟨inward normal net_force⟩ · R / (2 · per-bead area).)
+    surface_tension_band_min: 3.0e-5   # N/m  0.03 mN/m (KU-3.B1.1 floor)
+    surface_tension_band_max: 3.0e-4   # N/m  0.30 mN/m (KU-3.B1.1 ceiling)

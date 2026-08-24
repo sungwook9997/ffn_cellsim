@@ -1,0 +1,107 @@
+{
+  "stage": {
+    "name": "incumbent build_cell",
+    "schema": "legacy"
+  },
+  "report": {
+    "source_note": "composed AssembledCell after one transactional --from-resting outer-step attempt",
+    "n_actin": 494802,
+    "n_total": 511114,
+    "n_myosin_particles": 15028,
+    "n_fibers": 70686,
+    "n_crosslinks": 70686,
+    "with_steric": true,
+    "with_myosin": true,
+    "with_pressure": true,
+    "dt_phys": 0.05,
+    "n_inner": 60,
+    "max_inner_retries": 0,
+    "n_biot_subcycles": 67,
+    "inner_iters": 60,
+    "inner_attempts": 1,
+    "residual_start_pN": 2634.1191655118346,
+    "residual_candidate_pN": 1896.6735345631516,
+    "residual_committed_pN": 2634.1191655118346,
+    "residual_end_pN": 2634.1191655118346,
+    "inner_converged": false,
+    "inner_finite": true,
+    "fluid_finite": true,
+    "outer_accepted": false,
+    "outer_rolled_back": true,
+    "com_drift_um": 0.0,
+    "r_mean_start_um": 7.3999869364342725,
+    "r_mean_end_um": 7.3999869364342725,
+    "r_min_end_um": 7.387963204119982,
+    "r_max_end_um": 7.412036744586812,
+    "n_interpenetrating_pre": 64517,
+    "n_interpenetrating_post": 64517,
+    "f_total_pre_pN": {
+      "min": 0.00010771281403339764,
+      "p50": 0.02360239293421572,
+      "p99": 1000.001023721788,
+      "p999": 1242.200303361745,
+      "max": 2634.1191655118346
+    },
+    "f_total_post_pN": {
+      "min": 0.00010771281403339764,
+      "p50": 0.02360239293421572,
+      "p99": 1000.001023721788,
+      "p999": 1242.200303361745,
+      "max": 2634.1191655118346
+    },
+    "f_steric_pre_pN": {
+      "min": 0.00011434731322697004,
+      "p50": 143.4773538805273,
+      "p99": 1092.6930786507658,
+      "p999": 1980.1898227194315,
+      "max": 2634.1198349272086
+    },
+    "f_steric_post_pN": {
+      "min": 0.00011434731322697004,
+      "p50": 143.4773538805273,
+      "p99": 1092.6930786507658,
+      "p999": 1980.1898227194315,
+      "max": 2634.1198349272086
+    },
+    "pos_finite": true,
+    "force_finite": true,
+    "stable": false,
+    "steric_sigma_um": 0.007,
+    "steric_force_cap_pN": 1000.0,
+    "wall_s": 10.14516019821167
+  },
+  "components": [
+    {
+      "key": "cortex",
+      "kind": "filaments",
+      "order": 0,
+      "n_actors": 70686
+    },
+    {
+      "key": "nmii",
+      "kind": "lines_raw",
+      "order": 1,
+      "n_actors": 442
+    },
+    {
+      "key": "nucleus",
+      "kind": "mesh",
+      "order": 2,
+      "n_actors": 1
+    },
+    {
+      "key": "membrane",
+      "kind": "mesh",
+      "order": 3,
+      "n_actors": 1
+    }
+  ],
+  "connectors": [
+    {
+      "key": "linc",
+      "family": "LINC",
+      "a_component": "nucleus",
+      "b_component": "cortex"
+    }
+  ]
+}

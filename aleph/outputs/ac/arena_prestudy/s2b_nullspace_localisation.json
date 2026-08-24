@@ -1,0 +1,52 @@
+{
+  "n_dof": 156,
+  "n_bound_heads": 20,
+  "measured_zero_modes": 40,
+  "zero_tolerance_pN_per_um": 1.5691834879507356e-08,
+  "condition_number": 2284142297095.014,
+  "lambda_max_pN_per_um": 453011.1648468505,
+  "predicted_basis_columns": 40,
+  "containment_residual_max": 0.9851845376057141,
+  "containment_residual_median": 0.4925920972703937,
+  "predicted_direction_stiffness_max_pN_per_um": 100.04204451156889,
+  "null_weight_on_bound_head_dof_min": 0.0002244727818440451,
+  "null_weight_on_bound_head_dof_median": 0.4420799466996035,
+  "null_weight_on_bound_head_dof_total_mean": 0.5243212669805326,
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "device": "cuda:0",
+  "build_commit": "c8a46ec1",
+  "wall_seconds": 6.046104592969641,
+  "translation_stiffness_max_pN_per_um": 9.745537710159624e-13,
+  "translation_containment_residual_max": 2.3002385327507038e-05,
+  "rotation_stiffness_max_pN_per_um": 0.016953736651119447,
+  "rotation_containment_residual_max": 0.56365420660025,
+  "translation_is_exact_zero_mode": true,
+  "rigid_body_modes_tested": 6,
+  "rigid_body_containment_residual_max": 0.6713587688143001,
+  "rigid_body_stiffness_max_pN_per_um": 0.024415780733514837,
+  "operator_is_raw_K_unmasked": true,
+  "anomaly_after_rigid_body": 34,
+  "n_pinned_nodes": 2,
+  "mask_zero_modes_by_construction": 6,
+  "mask_containment_residual_max": 0.9903384135973502,
+  "anomalous_zero_modes_after_mask": 34,
+  "null_weight_by_class_mean": {
+    "sf": 0.10865384615676472,
+    "backbone": 0.3670248868627025,
+    "head": 0.5243212669805326
+  },
+  "null_weight_by_class_max": {
+    "sf": 0.9468817095403501,
+    "backbone": 0.9943257297070445,
+    "head": 1.000000000000002
+  },
+  "null_weight_on_nmii_block_mean": 0.8913461538432351,
+  "null_weight_on_nmii_block_min": 0.053118290459649525,
+  "predicted_transverse_stiffness_is_k_head_arm": {
+    "measured_pN_per_um": 100.04204451156889,
+    "k_head_arm_input_pN_per_um": 100.0,
+    "note": "a bound head is NOT transversally free: the head-arm spring to the backbone carries it. M-H's 'no transverse channel' is a property of the CROSSBRIDGE BOND, not of the head's mobility, so 40 = 20x2 is arithmetic coincidence."
+  },
+  "verdict": "REFUTED"
+}

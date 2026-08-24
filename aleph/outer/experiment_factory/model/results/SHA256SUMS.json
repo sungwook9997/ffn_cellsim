@@ -1,0 +1,8 @@
+{
+  "config.json": "0359a8cd41961670e1f3e7196f76b132d2f25b0e015d08446fb0fb8d2fd1e0e7",
+  "feature_schemas.json": "223e747ac9b8428f35d802d96289fe754e49a3fb2dfbb9150a66cdf1bbcda195",
+  "gold_candidate_representation_audit.json": "1dced1776f081edbf8821971de3cf70b196fe294f82717c2f9669f2386d9543f",
+  "metrics.json": "96cefbbd9ebeb8daedf5dd13f04b1b944391093d4226dc93aa0fec75be1901cd",
+  "split_audit.json": "51a325163a0b087a434c626440413ba4fbc6b14ee60bb47eb1c72690cf462a58",
+  "weights.npz": "244227e416a1e8450999c27644397c954b17d7d3c2b1dedfb5577b2f1048138f"
+}

@@ -1,0 +1,7 @@
+[
+  {"id": "cortical_tension", "query": "actin cortical tension membrane pressure bleb"},
+  {"id": "traction_force_microscopy", "query": "traction force microscopy focal adhesion substrate"},
+  {"id": "nuclear_mechanics", "query": "nucleus chromatin lamin mechanical deformation"},
+  {"id": "osmotic_volume", "query": "osmotic cell volume pressure hydraulic deformation"},
+  {"id": "cell_state_routing", "query": "single cell epithelial immune stem cell state phenotype"}
+]

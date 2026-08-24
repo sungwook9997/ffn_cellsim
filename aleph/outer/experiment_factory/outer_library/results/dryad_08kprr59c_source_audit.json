@@ -1,0 +1,1147 @@
+{
+  "accession": "10.5061/dryad.08kprr59c",
+  "aleph_authority": "none",
+  "annotations": {
+    "Data_Fig2.xlsx": {
+      "author_excluded": [
+        {
+          "cell": "AA4",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB4",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AK4",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC4",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "V5",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "127.9109276*",
+          "style_id": 5
+        },
+        {
+          "cell": "W5",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AA5",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB5",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AK5",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC5",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AA6",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB6",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AK6",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC6",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AA7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AK7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AA8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AQ8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AY8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AA9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AQ9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AY9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AA10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AQ10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AY10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC10",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "258.481473*",
+          "style_id": 5
+        },
+        {
+          "cell": "AA11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AQ11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AY11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "218.013589*",
+          "style_id": 5
+        },
+        {
+          "cell": "AA12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AB12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AQ12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AU12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AY12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BI12",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "R13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AA13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "228.3571195*",
+          "style_id": 5
+        },
+        {
+          "cell": "AB13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AF13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AU13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AY13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BI13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AF14",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AG14",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AU14",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BI14",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AF15",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "228.3571195*",
+          "style_id": 5
+        },
+        {
+          "cell": "AG15",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "AU15",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BI15",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AU16",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "BC16",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "286.620735*",
+          "style_id": 5
+        },
+        {
+          "cell": "BI16",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AU17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 5
+        },
+        {
+          "cell": "AL24",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        },
+        {
+          "cell": "V25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "168.6511633*",
+          "style_id": 5
+        },
+        {
+          "cell": "W25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 7
+        },
+        {
+          "cell": "AA25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": "132.0152827*",
+          "style_id": 5
+        },
+        {
+          "cell": "AB25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 34,
+          "raw_value": null,
+          "style_id": 5
+        }
+      ],
+      "maximum_density_alignment": [
+        {
+          "cell": "N21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "4306.0351199999996",
+          "style_id": 3
+        },
+        {
+          "cell": "S21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "4425.9135999999999",
+          "style_id": 3
+        },
+        {
+          "cell": "X21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "4330.0108200000004",
+          "style_id": 3
+        },
+        {
+          "cell": "AC21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "4578.7700199999999",
+          "style_id": 3
+        },
+        {
+          "cell": "AH21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "4089.3792199999998",
+          "style_id": 3
+        },
+        {
+          "cell": "AN21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "4461.9835800000001",
+          "style_id": 3
+        },
+        {
+          "cell": "AR21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "3568.4746100000002",
+          "style_id": 3
+        },
+        {
+          "cell": "AV21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "3818.7312700000002",
+          "style_id": 3
+        },
+        {
+          "cell": "AZ21",
+          "fill": {
+            "theme": "9",
+            "tint": "0.39997558519241921"
+          },
+          "fill_id": 33,
+          "raw_value": "3972.5927700000002",
+          "style_id": 3
+        }
+      ]
+    },
+    "Data_Fig4.xlsx": {
+      "author_excluded": [
+        {
+          "cell": "I7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "736.114145*",
+          "style_id": 1
+        },
+        {
+          "cell": "J7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "12.77268365*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "521.614149*",
+          "style_id": 1
+        },
+        {
+          "cell": "R7",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "11.70171887*",
+          "style_id": 1
+        },
+        {
+          "cell": "E8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "14515.9625*",
+          "style_id": 1
+        },
+        {
+          "cell": "F8",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "24.59333646*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "357.032139*",
+          "style_id": 1
+        },
+        {
+          "cell": "R9",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "4.642565897*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "415.341423*",
+          "style_id": 1
+        },
+        {
+          "cell": "R11",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "4.174386181*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "450.907742*",
+          "style_id": 1
+        },
+        {
+          "cell": "R13",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "3.725035552*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q14",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "561.904057*",
+          "style_id": 1
+        },
+        {
+          "cell": "R14",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "3.796691024*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q16",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "432.082006*",
+          "style_id": 1
+        },
+        {
+          "cell": "R16",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "3.157084134*",
+          "style_id": 1
+        },
+        {
+          "cell": "E17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "444.071727*",
+          "style_id": 1
+        },
+        {
+          "cell": "F17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "3.810527573*",
+          "style_id": 1
+        },
+        {
+          "cell": "I17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "720.588752*",
+          "style_id": 1
+        },
+        {
+          "cell": "J17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "8.082451524*",
+          "style_id": 1
+        },
+        {
+          "cell": "M17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "894.564022*",
+          "style_id": 1
+        },
+        {
+          "cell": "Q17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "399.454568*",
+          "style_id": 1
+        },
+        {
+          "cell": "R17",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "3.191611569*",
+          "style_id": 1
+        },
+        {
+          "cell": "E25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "540.934204*",
+          "style_id": 1
+        },
+        {
+          "cell": "F25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "3.380154811*",
+          "style_id": 1
+        },
+        {
+          "cell": "I25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "10059.8926*",
+          "style_id": 1
+        },
+        {
+          "cell": "J25",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "12.5847536*",
+          "style_id": 1
+        },
+        {
+          "cell": "E30",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 1
+        },
+        {
+          "cell": "F30",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": null,
+          "style_id": 1
+        },
+        {
+          "cell": "E31",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": "Unable to link to next frame",
+          "style_id": 1
+        },
+        {
+          "cell": "F31",
+          "fill": {
+            "rgb": "FFFF0000"
+          },
+          "fill_id": 2,
+          "raw_value": null,
+          "style_id": 1
+        }
+      ],
+      "maximum_density_alignment": []
+    }
+  },
+  "author_annotation_contract": {
+    "green_fill": "maximum cell density used for time-series alignment",
+    "red_fill": "datapoint excluded due to stage motion artifact or inability to link PIV analysis to subsequent frame",
+    "style_is_data": true
+  },
+  "dataset_api_url": "https://datadryad.org/api/v2/datasets/doi%3A10.5061%2Fdryad.08kprr59c",
+  "dataset_id": "dryad-08kprr59c-c2c12-supracontractility",
+  "dataset_version_id": 289530,
+  "license": "cc0-1.0",
+  "paper_doi": "10.1126/sciadv.adn0235",
+  "provider": "Dryad Digital Repository",
+  "schema": "aleph.outer_library.dryad_08kprr59c_source_audit.v1",
+  "sources": {
+    "Data_Fig2.xlsx": {
+      "api_metadata_url": "https://datadryad.org/api/v2/files/3082702",
+      "file_id": 3082702,
+      "sha256": "d8de16a23e53801796a6802895230f1682167cd5e770c4e64e58e2a9732e2d44",
+      "size": 36747
+    },
+    "Data_Fig4.xlsx": {
+      "api_metadata_url": "https://datadryad.org/api/v2/files/3082704",
+      "file_id": 3082704,
+      "sha256": "07c9606199fb01cad84e9cfd16aa898fb99aaf054de9fde7e02d16b60e89b471",
+      "size": 25014
+    },
+    "README.md": {
+      "api_metadata_url": "https://datadryad.org/api/v2/files/3082804",
+      "file_id": 3082804,
+      "sha256": "770549fcd3daaf6a102db8b76fd05bd091063cf41cbab30850da830630b99766",
+      "size": 4586
+    }
+  }
+}

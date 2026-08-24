@@ -1,0 +1,239 @@
+# Which concurrent session may commit which paths — isolation WITHOUT a second working tree.
+#
+# The previous answer to parallel work was a git worktree per worker, which produced sibling
+# checkouts beside the repository (`ffn-cellsim_b`, …) and moved the integration problem rather
+# than removing it. This file replaces that: one tree, ownership declared, enforced at commit.
+#
+# HOW A SESSION DECLARES ITSELF
+#   export FFN_SESSION=sf-motor          # then commit as usual
+# Unset it and enforcement is off — the hook is a guard for deliberate parallel work, not a tax on
+# a single session working alone.
+#
+# THE LANES ARE COMPARTMENTS, on purpose. A compartment is the unit that owns state, owns its
+# tests, and owns its driver, so it is also the unit that can be worked on without reading anyone
+# else's diff. Connectors are the only coupling, and a connector's runtime lives with the
+# component that owns the port — if two lanes need to change one connector, that is a design
+# conversation, not a merge.
+#
+# ADDING A LANE: give it component modules + its tests + its drivers, and keep the globs disjoint.
+# Two sessions claiming one glob is rejected at load time, not discovered at commit time.
+
+sessions:
+
+  # Cortex and the incumbent it is being strangled out of. 7 of the 36 connectors terminate here,
+  # so this lane is the one that unblocks the most others.
+
+# ── RE-CUT 2026-08-09 for the layer structure ────────────────────────────────────────────────
+#
+# The old lanes were cut around `ac/` compartments and the rename rewrote their globs into paths
+# that still resolve but no longer describe a boundary anyone works along. These are cut around the
+# PROGRAMME instead — one lane per stage that can actually run now.
+#
+# **Sessions can message each other directly.** `ListAgents` / `SendMessage` reach other Claude
+# sessions on this machine, which removes the cause of the 2026-07-30 incident (a session could not
+# read the PI instruction another had received). It does **not** remove the reason this file exists:
+# messaging is coordination, not locking, and two sessions editing one file is still merged by
+# nothing. Declare here, announce in `docs/ACTIVE_SESSIONS.md`, and message for anything that
+# crosses a boundary.
+#
+# **How many lanes can run at once is set by the programme, not by this file.** Stages 1→2→3 are a
+# chain: stage 2 cannot pick what to reduce before C-1 names the experiment, and stage 3's sweep is
+# 14.9 years without stage 2's multipliers. Stage 4 is genuinely independent. So: **two lanes now**,
+# four once stage 2 opens (its four multipliers touch disjoint files).
+
+sessions:
+
+  # ⚠⚠ **THE ORDER OF THESE LANES IS LOAD-BEARING.** `OwnershipMap.owner_of` iterates
+  # `self.sessions.items()` and returns on the FIRST glob that matches, and a YAML mapping loads in
+  # document order — so **whichever lane is declared first wins any path both claim.**
+  #
+  # `card5` is therefore declared BEFORE `engine`, and its five specific globs resolve before
+  # `engine`'s `aleph/engine/**` is ever consulted. Alphabetising these blocks, or adding a lane at
+  # the top, silently reassigns paths. `tests/architecture/test_ownership_lanes.py` pins the
+  # resolution so that reordering fails loudly instead.
+  #
+  # This is an interim. Precedence-by-position is a proxy for specificity that agrees with it until
+  # somebody touches the file for an unrelated reason — the same shape as the seven in
+  # `docs/decisions/FINDING-2026-08-09-checks-that-pass-for-the-wrong-reason.md`. The fix is to score
+  # each matching glob by literal-segment count and refuse ties as ambiguous, which makes a carve-out
+  # expressible instead of implied.
+
+  # ── CARD-5 — the interior-column strangler transition. PI-approved 2026-08-09 22:04, cited in
+  # `docs/decisions/CITED-2026-08-09-four-pi-approvals-in-another-session.md`.
+  #
+  # Moves membrane / nucleus / cytosol off the shared `cell.pos_d` / `f_d` onto private arrays —
+  # `STATE.md` (c) 4, *"Arrays are still shared"*, being made false. Its own lane rather than a slice
+  # of `engine` because it edits the feature-frozen incumbent driver, and that approval is specific.
+  #
+  # ⚠ **These five paths are also inside `engine`'s globs and the loader does not notice.** It
+  # rejects two lanes declaring the *same glob string*; it does not resolve two globs that cover one
+  # path. `tests/architecture/test_ownership_lanes.py` is the check that does, and it names this
+  # pair as the one intended overlap — `card5` wins on these five, by agreement, and the test says so
+  # rather than the mechanism enforcing it. That is a gap in the mechanism, written down.
+  card5:
+    - "aleph/engine/cortex_state.py"
+    - "aleph/engine/interior_column_slice.py"
+    - "aleph/scripts/ac_gate_b_interior_column_native.py"
+    - "aleph/tests/ac/engine/test_cortex_state.py"
+    - "aleph/tests/ac/engine/test_interior_column_ownership.py"
+
+  # ── STAGE 1 — the engine is finished when C-1 ∧ C-2 ∧ C-3 hold ────────────────────────────
+  # ⚠ **"The only lane that may change what the simulation computes" was true until 2026-08-22 and
+  # is not now** — `world` is. What this lane still changes is `laws/`, the kernel library the arena
+  # binds, and the tests and drivers of two trees nobody may edit any more.
+  #
+  # NARROWED 2026-08-09 23:0x at `97fb3916`'s request, to open `card5` below. This is one edit, not
+  # two: `engine`'s globs were `aleph/engine/**`, `aleph/tests/ac/**` and `aleph/scripts/ac_gate_*`,
+  # which already covered every path `card5` needs, and two lanes claiming one glob is refused at
+  # load time. Adding without narrowing would have failed and left the new session blocked.
+  #
+  # NARROWED AGAIN 2026-08-22 by the PI ruling *"the arena is the engine, the rest is archived"*.
+  # `aleph/engine/**` and `aleph/components/**` LEFT this lane for `archive-readonly` below. They
+  # could not simply be ADDED there: `owner_of` returns on the first matching glob and this lane is
+  # declared first, so a duplicate entry would have loaded cleanly and enforced nothing — the exact
+  # failure this file's own header warns about. Moving is the only spelling that works.
+  #
+  # ⚠ `laws/` and `dcm/` STAY. Neither is covered by the ruling and both exemptions are measured,
+  # not preferred — `STATE.md` (a) states them. So this lane is now the SHARED KERNEL LIBRARY plus
+  # the archived trees' tests and drivers, which is a different thing from what its name says.
+  engine:
+    - "aleph/laws/**"
+    - "aleph/dcm/**"
+    - "aleph/tests/ac/cell/**"
+    - "aleph/tests/ac/motor/**"
+    - "aleph/tests/ac/ecm/**"
+    - "aleph/tests/ac/fluid/**"
+    - "aleph/tests/ac/solid/**"
+    - "aleph/tests/ac/nucleus/**"
+    - "aleph/tests/ac/weave/**"
+    - "aleph/tests/ac/emergence/**"
+    - "aleph/tests/ac/lane_d/**"
+    - "aleph/tests/ac/engine/**"
+    - "aleph/scripts/ac_gate_*.py"
+    - "aleph/scripts/ac_resting_*.py"
+    - "aleph/scripts/ac_observe_*.py"
+    - "aleph/scripts/ac_connector_*.py"
+
+  # ⚠ These four globs are an ALLOWLIST, and it does not cover the lane. **44 of the 72
+  # `aleph/scripts/*.py` are claimed by no lane at all** — including `ac_fullcell_step_timing.py` and
+  # `ac_composed_world_dump.py`, which are engine drivers by every other measure. So the guard is
+  # silently OFF for most of this lane's own drivers, and a session discovers it only when a commit is
+  # refused. `ac_connector_*` above was added for exactly that reason, one file at a time, which is the
+  # shape of the problem rather than its fix. **Redistributing the other 43 is a PI governance call**
+  # (`ff_*`, `ipc_*`, `h3_*`, `check_*` are not obviously this lane's) — surfaced, not decided here.
+
+  # ── STAGE 4 — the outer network. Independent: its inputs are literature, not simulation ─────
+  # Runs from now, in parallel with stage 1, and never touches the engine.
+  outer:
+    - "aleph/outer/**"
+    - "aleph/kb/**"
+    - "aleph/outputs/tag_kb/**"
+    - "aleph/tests/outer/**"
+    - "aleph/references/**"
+
+  # ── STAGE 2 — opens only after C-1. Four multipliers, disjoint files, four sub-lanes ────────
+  # Declared now so the boundaries are argued before anyone is inside them, not during.
+  inner:
+    - "aleph/inner/**"
+    - "aleph/infer/**"
+    - "aleph/campaign/**"
+    - "aleph/tests/inner/**"
+
+  # ── Cross-cutting. One lane, because a contract two sessions edit is not a contract ─────────
+  # Held by `5ccfd28d` from 2026-08-09 19:5x, handing `engine` to `97fb3916` on request.
+  contracts:
+    - "aleph/units/**"
+    - "aleph/state/**"
+    - "aleph/evidence/**"
+    - "aleph/artifacts/**"
+    - "aleph/tests/architecture/**"
+    - "aleph/tests/ports/**"
+    - "aleph/tests/units/**"
+    - "aleph/tests/scripts/**"
+    - "aleph/scripts/rename_package_to_aleph.py"
+    - "aleph/scripts/restructure_to_layers.py"
+    - "ports/**"
+    - "docs/decisions/**"
+    - "docs/gpu/**"
+    # Added 2026-08-21, PI decision 13. Claimed by NO lane until then, so under `FFN_SESSION` no
+    # session could commit a session prompt at all — the hook refused every name, including the one
+    # that wrote the file. Found by hitting it: the Lead had to take the documented opt-out to land a
+    # correction to a prompt it had authored. `contracts` for the same reason `ownership.yaml` itself
+    # is here — a prompt is what a parallel session is told to do, and two sessions editing one in
+    # parallel is the case this file exists to prevent.
+    - "docs/session_prompts/**"
+    - "pyproject.toml"
+    # This file itself, added 2026-08-15. Until then `ownership.yaml` was claimed by NO lane, so under
+    # `FFN_SESSION` a session could not amend its own claim — the guard refused the one edit that would
+    # have let it proceed, and the only way through was to unset the variable, i.e. to turn the guard
+    # off. A bootstrap, found by hitting it. `contracts` is the right home for the same reason the lane
+    # exists: a file that decides who may commit is not one two sessions may edit in parallel.
+    - "ownership.yaml"
+
+  # ── WORLD — the arena, CANONICAL since 2026-08-20 (`STATE.md` (a)). All new work lands here.
+  #
+  # Declared LAST on purpose. This file's own warning at the top of `sessions:` is that the order is
+  # load-bearing — `owner_of` returns on the FIRST matching glob — so "adding a lane at the top
+  # silently reassigns paths". Nothing else claims `aleph/world/**` or `aleph/tests/world/**`, so
+  # appending cannot change any existing resolution, while prepending could.
+  world:
+    - "aleph/world/**"
+    - "aleph/tests/world/**"
+  # ⚠ `aleph/units/provenance.py` is deliberately NOT claimed here. The arena READS it; `contracts`
+  # owns it, because a vocabulary at the bottom of the layer stack that everything reads is exactly
+  # what one lane must not be able to change alone. `test_every_path_level_overlap_is_declared`
+  # caught it the moment this lane was added, which is the check doing its job.
+
+  # ── Everything frozen. Touch only to report, never to fix ───────────────────────────────────
+  #
+  # `aleph/engine/**` and `aleph/components/**` joined 2026-08-22, PI ruling: *the arena is the
+  # engine, and everything else is now archived.* They were REMOVED from `engine` in the same edit
+  # rather than added here alongside it — see that lane for why a duplicate would have been inert.
+  #
+  # ⚠ **`card5` still punches two holes through this lane and WINS them**, because it is declared
+  # above and `owner_of` returns on the first match: `aleph/engine/cortex_state.py` and
+  # `aleph/engine/interior_column_slice.py` remain editable by that lane inside an archived tree.
+  # NOT closed here. `card5` is a specific PI approval of 2026-08-09 and retiring it is the PI's,
+  # not a side effect of transcribing a different ruling — even though its work has landed (the
+  # interior-column tier-(a) row, `89eb2a60`). Surfaced, not decided.
+  #
+  # ⚠ **The archived trees' TESTS are not here either** — `aleph/tests/ac/{cell,motor,ecm,fluid,
+  # solid,nucleus,weave,emergence,engine}/**` stay in `engine`. That is deliberate and not an
+  # oversight: some of them no longer test an archived tree at all. `tests/ac/cell/
+  # test_gpu_memory_accounting.py` tests `aleph/world/gpu_memory.py` as of `7e9855b6`. Sorting which
+  # of those tests followed their subject into the archive is a separate pass.
+  archive-readonly:
+    - "aleph/archive/**"
+    - "aleph/virtual_cell/**"
+    - "aleph/tests/ac/virtual_cell/**"
+    - "aleph/engine/**"
+    - "aleph/components/**"
+
+shared:
+  "aleph/outputs/tag_kb/results_manifest.yaml": "your own run's record.json, then `make state`"
+  "aleph/outputs/tag_kb/coverage_baseline.yaml": "declare the claim in results_manifest instead of widening the baseline"
+  "CLAUDE.md": "PI-authored; propose in your lane's REPORT.md and surface it"
+  "STRUCTURE.md": "PI-authored; read-only during unit work"
+
+# Unique per run by construction, so collision is impossible and ownership is pointless.
+#
+# STATE.md is here, NOT in `shared`, and the distinction is the honest one. Its tier-(a) block is
+# GENERATED, and `render_state_rows.py --check` in the pre-commit hook already refuses a commit whose
+# block has drifted from `docs/state_rows.yaml` — so the part that concurrent writers actually
+# destroyed is protected MECHANICALLY. The prose sections cannot be protected the same way without
+# serialising the whole project on one session, so they are protected by discipline instead:
+# read-then-write in one go, never hold the file open across a long turn. That is precisely what
+# went wrong twice on 2026-07-28, and a rule that refuses every STATE.md edit would have been
+# refused-by-default rather than correct — it fired on this very commit, which only touched prose.
+free:
+  - "STATE.md"
+  - "aleph/outputs/**"
+  - "aleph/docs/v2_audit/**"
+  - "aleph/docs/state_rows.yaml"
+  - ".gitignore"
+  # Added 2026-08-15, same bootstrap as `ownership.yaml` above and the opposite resolution. This file's
+  # own charter is *"every session appends a row before its first write"* — so a lane that owned it
+  # would forbid exactly the write it exists to receive, and under `FFN_SESSION` no session could
+  # register at all. `free` for the same reason `STATE.md` is: append-only by construction, protected
+  # by the discipline the file states (append, never rewrite; never edit another session's row).
+  - "docs/ACTIVE_SESSIONS.md"

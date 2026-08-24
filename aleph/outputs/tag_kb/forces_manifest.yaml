@@ -1,0 +1,570 @@
+# FORCES MANIFEST — the checked-in declaration of what a PRODUCTION configuration is supposed to be.
+# ============================================================================================
+# This is the DECLARATION half of the instrument the project designed on 2026-06-21 and never built
+# (ranked #1 on the 2026-07-25 audit's convert-to-structure list). The OBSERVER half is
+# aleph/ac/engine/forces_manifest.py; the checker is aleph/outputs/tag_kb/verify_forces.py.
+#
+# WHAT IT GUARDS. A lumped SettlingForce proxy running at 19,000-47,000x real buoyant weight was ON
+# in every committed spreading run while the artifact recorded it as `proxy_off`. It did the
+# flattening credited to the lamellipodium; the project's own regression gates locked the confound
+# in, so a CORRECT fix would have registered as a regression. It invalidated every pre-06-21 DCM
+# spreading run including the capstone A/A0 law. Four weeks later the same class recurred in a
+# different engine (Biot FSI default-off in every landed native run). The 06-20 closeout credits a
+# permanent `forces_manifest` recurrence gate; the 2026-07-25 audit found that gate existed ONLY in
+# that document and its Obsidian mirror. This file exists so the claim becomes checkable.
+#
+# THE TWO SHAPES THIS FILE MUST MAKE FAIL
+#   (i)  a channel declared off that is actually on;
+#   (ii) a channel declared on at a physiological value that is actually running at a
+#        convenience/default value.
+#
+# HOW TO READ A REQUIREMENT. Every requirement carries a `rationale` quoting the PI decision,
+# CLAUDE.md rule, or in-code physiological-baseline statement it comes from. A requirement WITHOUT
+# a ground is not written as a guess — it is written as `pi_undeclared: true` with `blocked_on`,
+# which the checker reports as INCOMPLETE (a PI queue item), never as PASS. Omitting a channel
+# entirely is NOT the same thing: an undeclared channel present in a dump is a BLOCKING
+# UNDECLARED_CHANNEL failure, so silence cannot be used to dodge a requirement.
+#
+# THIS FILE DECLARES NOTHING NEW ABOUT THE PHYSICS. It changes no default and no value. Every
+# `value:` below is transcribed from an existing PI decision or in-code declaration; where the two
+# disagree with the current code default, that disagreement is the FINDING the checker surfaces.
+
+meta:
+  schema: ffn-ac-forces-manifest-decl-v1
+  drafted_on: "2026-07-25"
+  observer: aleph/ac/engine/forces_manifest.py
+  checker: aleph/outputs/tag_kb/verify_forces.py
+  dump_schema: ffn-ac-forces-manifest-v1
+  owner: PI
+  scope: >
+    ac/cell + ac/engine composed Active Cell. Covers every term summed by
+    ac/cell/driver.py::_accumulate_all, the sub-channels inside each composed compartment, the
+    build-time choices that set the state the physics runs FROM, and the solver/preconditioner
+    paths that change a convergence claim.
+  # Substrings that disqualify a provenance/source label from certifying a PRODUCTION run. This is
+  # the direct generalization of the `proxy_off` mislabel: a run whose own source label says it is
+  # not physiological must not be reportable as production.
+  forbidden_production_source_substrings:
+    - "TEST"
+    - "NOT physiological"
+    - "not physiological"
+    - "proxy_off"
+    - "placeholder"
+    - "provisional"
+    - "diagnostic"
+
+# ============================================================================================
+# PROFILES. A dump declares which profile it claims (`profile_claim`). The checker verifies the
+# claim, so a parity/regression build can never be reported as production by omission.
+# ============================================================================================
+profiles:
+
+  # ------------------------------------------------------------------------------------------
+  resting_production:
+    description: >
+      The PI-ratified RESTING physiological baseline (GATE A). Every compartment at its
+      physiological setpoint from t=0, per the CLAUDE.md physiological-baseline HARD rule: the
+      realistic physiological state is the BASELINE, and perturbations are measured FROM it.
+    certifies_production: true
+    require_channel_coverage: true   # every channel in the declaration must appear in the dump
+
+    channels:
+
+      # ── FORCE terms (ac/cell/driver.py::_accumulate_all) ───────────────────────────────────
+      actin_bending_cytosim:
+        state: on
+        rationale: >
+          Cytosim filament bending is the structural mechanics of every actin filament; there is no
+          physiological configuration in which cortical filaments have no bending resistance.
+        owner: Lead
+
+      actin_crosslink_link_spring:
+        state: on
+        rationale: >
+          The crosslinked cortex is what carries cortical tension. A cortex with no crosslinks does
+          not percolate (2026-07-23 fragmentation diagnosis: degree-2 is below percolation).
+        owner: Lead
+
+      arp23_branch_angle:
+        pi_undeclared: true
+        blocked_on: >
+          PI A/B/C on cortex_arp23_fraction. Native cortex is ~1/3 Arp2/3-nucleated BY MASS
+          (Bovellan 2014, KB-3.18), so the formin-only default is a declared model simplification,
+          but the Arp2/3 length/seg/mother-fraction are flagged modelling choices with no ratified
+          production value. Until PI chooses, neither ON nor OFF is certifiable.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      nmii_minifilament_force:
+        state: on
+        provenance_allow: [PI_GAP]
+        rationale: >
+          CLAUDE.md I0-A contract: the NMII production primitive is the explicit Stam-Hocky
+          backbone + individual heads with Hill FV and per-head Bell kinetics. Provenance is
+          PI_GAP because every per-head magnitude (F_stall_head, k_xb, v0, kappa_hill, N_side) is an
+          open params_i0b3 GAP — the channel is required ON, and its magnitudes are separately
+          tracked as INCOMPLETE below.
+        owner: PI
+
+      nucleus_compartment_force:
+        state: on
+        provenance_allow: [PI_GAP]
+        rationale: >
+          CLAUDE.md physiological-baseline rule: EVERY compartment must be at its physiological
+          setpoint. Provenance is PI_GAP because every lamina modulus is an I0-B2 TEST value; the
+          code's defence is that epsilon=0 at rest so the moduli do not enter the resting result,
+          which holds for the resting baseline ONLY and stops holding the moment anything deforms.
+        owner: PI
+
+      membrane_compartment_force:
+        state: on
+        rationale: >
+          The plasma membrane is the turgor-bearing outer boundary; the measured MCF7 radius IS the
+          membrane (PI 2026-07-17 Option B), so it cannot be absent from a physiological baseline.
+        owner: Lead
+
+      membrane_pressure_traction:
+        state: on
+        rationale: >
+          NG-3: the live spatial pore-pressure field must load the membrane. Without it the
+          membrane feels no fluid pressure and the poroelastic coupling is one-way.
+        owner: Lead
+
+      steric_wca:
+        state: on
+        rationale: >
+          CLAUDE.md architectural-principle table, verbatim: "Excluded volume: EV-off (wrong) ->
+          LJ repulsive on from Phase 1 (right)."
+        owner: PI
+
+      biot_pressure_coupling:
+        state: on
+        rationale: >
+          The Biot poroelastic fluid->solid coupling is the exact channel whose default-off state
+          silently governed every landed native FF run four weeks after SettlingForce (the M6
+          recurrence). CLAUDE.md: "When a module is additive/default-off for backward-compat, the
+          production config must still turn it ON at its physiological value."
+        owner: PI
+
+      # ── turgor / geometry ─────────────────────────────────────────────────────────────────
+      osmotic_turgor:
+        state: on
+        pi_undeclared: true
+        blocked_on: >
+          The turgor must be NONZERO — Pi_0 = 0 is the 2026-06-04 documented failure (a force-free
+          unpressurised shell leaves the cortex un-pre-tensioned and floors myosin ~1000x under
+          band) — but its MAGNITUDE has no MCF7 grounding, and Pi_0 sets the ENTIRE resting cortical
+          tension through gamma = Delta-P*R/2, so the spread IS the uncertainty on the resting
+          baseline. THREE values are live in the tree and none is an MCF7 measurement:
+          40 Pa (ac/cell/assemble.py; AC_DECISION_CARDS_2026-07-22 §77 verbatim: "40 Pa stays a
+          HeLa diagnostic proxy only"), 133 Pa (configs/mcf7_baseline.yaml + common/production_policy.py,
+          which documents it as CIRCULAR by construction — Pi_0 was inverted FROM the cortical-tension
+          band it is then used to predict), and ~72 Pa (48-107, an MCF7-geometry estimate).
+          PI must pick one and record why.
+        rationale: >
+          Deliberately undeclared: the channel is required ON (see blocked_on) but its magnitude is
+          not certifiable. Declaring a value here would launder a HeLa proxy into a production
+          contract, which is the exact failure this manifest exists to prevent.
+        owner: PI
+
+      cell_radius:
+        state: on
+        value: 7.5
+        provenance_allow: [SOURCED]
+        rationale: >
+          MCF7 suspended outer (membrane) radius, Wagner 2011 Coulter measurement (dia 14.8 um /
+          vol 1.70 pL). Used consistently across dcm/geometry, dcm/nondim, tests and docs.
+        owner: PI
+
+      cortex_membrane_gap:
+        state: on
+        value: 0.10
+        provenance_allow: [DERIVED]
+        rationale: "= 1/2 * h_cortex with h_cortex ~200 nm KB-SOURCED (KB-3.1/3.5)."
+        owner: Lead
+
+      cortex_filament_count:
+        state: on
+        value: 70686
+        rationale: >
+          CLAUDE.md HARD rule: the first baseline is 70,686 active cortical F-actin filaments
+          (100 um^-2 x 4*pi*(7.5 um)^2), and no physics/debugging conclusion may be drawn from a
+          coarse or stripped configuration. Never lower a biological density to fit memory.
+        owner: PI
+
+      # ── build-time state the physics runs FROM ────────────────────────────────────────────
+      overlap_free_cortex:
+        state: on
+        rationale: >
+          assemble.py, verbatim: "Default ON = the PHYSIOLOGICAL BASELINE (h_cortex~0.2um,
+          KB-3.1/3.5)". OFF reproduces the legacy zero-thickness gamma-validation build and
+          reintroduces ~64k build interpenetrations (steric-only max 2634 pN) that dominate the
+          resting residual.
+        owner: PI
+
+      nmii_straddle_placement:
+        state: on
+        rationale: >
+          assemble.py, verbatim: "ON = the PHYSIOLOGICAL BASELINE (heads touch the actin they will
+          bind)". OFF is the legacy fixed perpendicular projection that left heads 0.13-0.6 um off
+          any actin (only ~17% seedable at native).
+        owner: PI
+
+      membrane_erm_radial_pairing:
+        state: on
+        rationale: >
+          compartments.py, verbatim: "Default off (backward-compat); the resting physiological
+          baseline turns it on" — the radial tether is what transmits the radial turgor load
+          between the membrane and cortex shells.
+        owner: PI
+
+      membrane_mesh_subdivisions:
+        state: on
+        value: 8
+        rationale: >
+          PI-ratified 2026-07-24 for the RESTING baseline: "8 = 655,362 verts (~33nm) is the
+          production RESTING config". A subdiv 6->8 sweep drops the Helfrich/Young-Laplace residual
+          10x (0.7766 -> 0.0768, 0 of 655,362 over the 0.21 gate) — textbook GRID CONVERGENCE, not
+          gate-loosening. The code default of 3 is the backward-compat gamma-validation sphere and
+          is NOT the production value. See docs/v2_audit/GATE_A_RESTING_CONVERGENCE_2026-07-23.md.
+        owner: PI
+
+      steric_sigma_ev:
+        state: on
+        value: 0.007
+        provenance_allow: [SOURCED]
+        rationale: >
+          F-actin steric diameter 7 nm — the physically faithful candidate. The node-vs-segment
+          discretization of EV remains a separate params_i0b2b PI GAP and is not this value.
+        owner: PI
+
+      steric_force_cap:
+        state: on
+        value: 1000.0
+        provenance_allow: [CONVENIENCE]
+        rationale: >
+          A DECLARED numerical CFL guard on the divergent r->0 WCA core, >> the ~0.02 pN physical
+          operating load. Explicitly not a physics magnitude tuned to an outcome and explicitly not
+          the steric verdict. Declared CONVENIENCE so it can never be mistaken for a sourced value.
+        owner: Lead
+
+      cortex_crosslinks_per_filament:
+        state: on
+        value: 20.0
+        provenance_allow: [DERIVED]
+        rationale: >
+          Crosslinks per filament; contour spacing = length/density. 20 is the value that makes the
+          cortex a single spanning network (2026-07-23 percolation fix: density_per_fil=1.0 gave
+          degree-2, below percolation, and produced 11,430 fragments). MUST be re-derived if
+          cortex_segment_length or cortex_filament_length changes — it is not independent of them.
+        owner: Lead
+
+      biot_storage_S:
+        state: on
+        provenance_allow: [DERIVED]
+        rationale: "S = 1/M, derived jointly with mobility so mobility/S = c_v = 50 um^2/s (params_i0b1)."
+        owner: Lead
+      biot_mobility:
+        state: on
+        provenance_allow: [DERIVED]
+        rationale: "k/mu, derived jointly with S from the same c_v anchor."
+        owner: Lead
+      biot_alpha:
+        state: on
+        value: 1.0
+        provenance_allow: [SOURCED]
+        rationale: "Biot-Willis coupling, PI-ratified 2026-07-16."
+        owner: PI
+
+      membrane_bending_kappa:
+        state: on
+        value: 0.0828
+        provenance_allow: [SOURCED]
+        rationale: "Helfrich kappa_m = 20 kBT (KB-3.B1.2), literature-anchored."
+        owner: Lead
+      membrane_area_tension_gamma:
+        state: on
+        value: 10.0
+        provenance_allow: [SOURCED]
+        rationale: >
+          In-plane bilayer tension plateau (KB-3.B1.1). The K_A reservoir upturn stays OFF — a
+          declared model limit (hard-truth #8), not a value choice.
+        owner: Lead
+      membrane_erm_stiffness:
+        state: on
+        value: 4600.0
+        provenance_allow: [SOURCED]
+        rationale: >
+          Single ezrin-F-actin linker 4.6 pN/nm, PI-ratified 2026-07-21 (Braunger 2014 single-bond
+          analysis, N~1). Replaces the retired provisional 1e2 bleb-PDE continuum value (~46x too
+          soft). CAVEAT: KB-3.B1.6 registration is PENDING, so the row is not yet SoT.
+        owner: PI
+
+      # ── explicitly UNDECLARED: no ratified production value exists ─────────────────────────
+      nucleus_mesh_subdivisions:
+        pi_undeclared: true
+        blocked_on: >
+          PI 2026-07-22 ratified 6 (dynamic) / 7 (validation) for the nucleus "as for the
+          membrane", but the 2026-07-24 RESTING ratification that set the membrane to 8 did not
+          state a nucleus value. GATE A localized the clean residual to the membrane and reports
+          nucleus 0.16 < 0.21, so the nucleus may already be adequate at a lower level — but that
+          is an inference, not a ratification.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      cortex_segment_length:
+        pi_undeclared: true
+        blocked_on: >
+          The coarse baseline is 0.5 um; the sourced physiological cortical mesh is 50-100 nm
+          (Morone 2006; Bovellan 2014; Chugh & Paluch 2018) => ~0.075 um. The fine-mesh multigrid
+          work (2026-07-24) showed 75 nm / 2.9M nodes is reachable and FITS in 16 GB, so memory is
+          not the blocker. PI must decide whether the resting production baseline is the coarse
+          representative mesh or the physiological one; CLAUDE.md forbids lowering a biological
+          density to fit memory, which points at 0.075.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      cortex_filament_length:
+        pi_undeclared: true
+        blocked_on: >
+          3.0 um are COARSE representative (Cytosim-style) filaments; native cortical filaments are
+          ~hundreds of nm (CORTEX_COUNT_CROSSCHECK_2026-07-21). The count 70,686 was derived
+          against the coarse length, so length and count cannot be re-decided independently.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      cortex_arp23_mass_fraction:
+        pi_undeclared: true
+        blocked_on: "Same PI A/B/C as arp23_branch_angle."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      cortex_overlap_resolution_mode:
+        pi_undeclared: true
+        blocked_on: >
+          'transverse' is the byte-identical historical default but knocks nodes off their
+          great-circle arc, a bending KINK whose force blows up x288 at the fine 75 nm mesh
+          (the fine-cortex GATE-A plateau). 'radial_span' is the opt-in smoothness-preserving fix.
+          The choice is coupled to cortex_segment_length and PI has chosen neither.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      steric_k_ev:
+        pi_undeclared: true
+        blocked_on: >
+          Self-labelled PROVISIONAL Magic-Number-Block scale (1e3 pN/um), to be closed at the
+          native gate from the measured passive F_op. Not tuned to a crowding outcome, but not
+          sourced either.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      membrane_hydraulic_Lp:
+        pi_undeclared: true
+        blocked_on: "Code labels L_P draft/MCF7; not an audited SourceEvidence row."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      membrane_erm_areal_density:
+        pi_undeclared: true
+        blocked_on: >
+          The Notion Contract-Graph has NO MCF7 ERM areal-density datum. `None` preserves the
+          diagnostic one-tether-per-membrane-node build, which is explicitly not a physiological
+          preload, and NG-3 must remain open until PI supplies a sourced density + source label.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      membrane_erm_bell_kinetics:
+        pi_undeclared: true
+        blocked_on: >
+          All-or-none source-gated contract with NO biological defaults: MCF7 k_on / k_off0 / F0 /
+          capture are all Contract-Graph GAPs (2026-07-21 audit). With them unset the ERM tethers
+          are permanent springs rather than a kinetic linkage — a declared model limit.
+        require_nonempty_source: membrane_erm_kinetics_source
+        rationale: "Deliberately undeclared, but any ON state must carry its source label."
+        owner: PI
+
+      resting_bound_myosin_setpoint:
+        pi_undeclared: true
+        blocked_on: >
+          GATE A 2026-07-24 closed the solver question and left a MODELLING question: how to
+          represent resting myosin in a static baseline (continuous prestress / dynamic modulator /
+          percentile). Both magnitudes (fraction, per-head force) are PI GAPs absent from the
+          Contract-Graph and are never defaulted.
+        require_nonempty_source: resting_bound_myosin_source
+        rationale: "Deliberately undeclared, but any ON state must carry its source label."
+        owner: PI
+
+      nmii_backbone_persistence_length:
+        pi_undeclared: true
+        blocked_on: >
+          A physical magnitude, not a rigid-rod convenience. No ratified NMII-minifilament value
+          exists; production-form bending stays opt-in and source-gated so the gap is explicit.
+          NMII_BACKBONE_LP_DIAGNOSTIC_UM = 1.0 is a convergence-sweep fixture and never a default.
+        require_nonempty_source: nmii_backbone_lp_source
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+
+      # ── NMII per-head magnitudes: required channels, all open GAPs ─────────────────────────
+      nmii_k_xb:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 MASTER force knob; PI must source a per-head crossbridge stiffness in 100-1000 pN/um."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_f_stall_head:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 conflicted claim_a 0.5 pN (AFINES) vs claim_b 2.0 pN (Billington); PI selects by isoform/assay."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_v0:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 conflicted 0.12 vs 0.2 um/s (assay temperature / load definition / isoform)."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_kappa_hill:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 THREE-way conflict: Hill-1938 muscle 0.25 / Kovacs-2003 NMIIA 0.5 / PI 2026-07-07 linear limit (kappa->inf)."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_n_side:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 conflicted 10 (AFINES model) vs 28-30 (Billington structural EM)."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_k_on:
+        pi_undeclared: true
+        blocked_on: "params_i0b3: 50/s is config-chosen, not an audited head-level SourceEvidence row."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_k_off0:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 draft/provisional (0.35/s may be the ADP-release rate, not detachment — PI 2026-07-21 flagged the mislabel)."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_backbone_length:
+        pi_undeclared: true
+        blocked_on: "params_i0b3 GAP; Billington 2013 EM 301 nm is the candidate, not yet ratified."
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      nmii_bell_force_f0:
+        state: on
+        provenance_allow: [DERIVED]
+        rationale: "f0 = kBT/x_beta ~ 7.13 pN — derived from the Veigel 2002 x_beta, physical."
+        owner: Lead
+      nmii_capture_reach:
+        state: on
+        value: 0.21
+        provenance_allow: [DERIVED]
+        rationale: >
+          Head->actin perpendicular capture = r0_head (0.200) + ~10 nm slack; reconciled 2026-07-24
+          with ff/hand_kmc capture_radius_um. Explicitly NOT the loose 0.6 diagnostic probe reach
+          that seed-probe scripts pass via resting_bound_myosin_capture_um.
+        owner: Lead
+
+      nucleus_chromatin_modulus:      {pi_undeclared: true, blocked_on: "I0-B2 PI GAP, TEST value.", rationale: "See blocked_on.", owner: PI}
+      nucleus_lamin_b_modulus:        {pi_undeclared: true, blocked_on: "I0-B2 PI GAP, TEST value.", rationale: "See blocked_on.", owner: PI}
+      nucleus_lamin_ac_modulus:       {pi_undeclared: true, blocked_on: "I0-B2 PI GAP, TEST value.", rationale: "See blocked_on.", owner: PI}
+      nucleus_lamin_ac_knee:          {pi_undeclared: true, blocked_on: "KB-3.B2.2 gives ~0.10 but the code marks it TEST; registration not closed.", rationale: "See blocked_on.", owner: PI}
+      nucleus_envelope_bending:       {pi_undeclared: true, blocked_on: "I0-B2 PI GAP, TEST (~20 kBT).", rationale: "See blocked_on.", owner: PI}
+      nucleus_volume_penalty:         {pi_undeclared: true, blocked_on: "I0-B2 PI GAP, TEST; p_vol = 0 at V = V0 so it does not enter the resting result.", rationale: "See blocked_on.", owner: PI}
+      nucleus_linc_stiffness:         {pi_undeclared: true, blocked_on: "PI GAP: the sourced 8 pN LINC datum is a TENSION, not a stiffness (Dejardin).", rationale: "See blocked_on.", owner: PI}
+      nucleus_rupture_strain:         {pi_undeclared: true, blocked_on: "PI GAP, TEST, explicitly never tuned.", rationale: "See blocked_on.", owner: PI}
+      membrane_erm_reach:             {state: on, provenance_allow: [DERIVED], rationale: "Membrane<->cortex ERM pairing reach spanning the submembranous gap at rest.", owner: Lead}
+
+      # ── solver / numeric paths: production must RECORD what it ran ─────────────────────────
+      # These are ProjectedAnalyticCG kwargs + env vars. The driver's report JSON records NEITHER,
+      # so a committed artifact cannot satisfy require_observation_in — which is the point: an
+      # uncertifiable run must not be certifiable. A compliant run emits a live dump.
+      fiber_quotient_coarse:
+        state: off
+        require_observation_in: [runtime, env, code-default]
+        rationale: >
+          GATE A 2026-07-24: the fiber-quotient coarse path does NOT close the native resting
+          plateau (1.36/1.51 vs OFF 1.48) — the residual is discrete-myosin local non-equilibrium,
+          not a collective mode. PI decision: keep the code flagged OFF. Preconditioning-only and
+          SPD, so ON could not move the fixed point, but ON is not the declared production path.
+        owner: PI
+      multigrid:
+        state: off
+        require_observation_in: [runtime, env, code-default]
+        rationale: >
+          Fiber-arclength multigrid is the path that broke the fine 75 nm (2.9M node) plateau and
+          is SPD/preconditioning-only. It is NOT part of the declared coarse resting production
+          path; it becomes production only together with a PI decision on cortex_segment_length.
+        owner: PI
+      mg_assembled_coarse:
+        state: off
+        require_observation_in: [runtime, env, code-default]
+        rationale: >
+          SPEED FIX2 (~40x with FIX1) held DEFAULT OFF pending a native A/B comparison
+          (2026-07-24 memory note: "FIX2-default=native A/B후"). Not yet the declared path.
+        owner: PI
+      cg_check_every:
+        state: off
+        require_observation_in: [runtime, env, code-default]
+        rationale: >
+          SPEED FIX1 host early-exit cadence, documented BIT-IDENTICAL to the fixed-budget loop.
+          Default-off is the declared path until the A/B lands; being bit-identical it is a
+          performance choice, but it must still be RECORDED rather than assumed.
+        owner: PI
+      mg_fiber_quotient:
+        require_observation_in: [runtime, env, code-default]
+        pi_undeclared: true
+        blocked_on: >
+          Only meaningful when multigrid is ON, which is itself not the declared production path.
+          Note the env override is INVERTED (AC_MG_FQ=0 disables) — an easy place to flip physics
+          by accident.
+        rationale: "Deliberately undeclared: see blocked_on."
+        owner: PI
+      fq_coarse_mode:      {pi_undeclared: true, blocked_on: "Only meaningful when fiber_quotient_coarse is ON.", rationale: "See blocked_on.", owner: PI, require_observation_in: [runtime, env, code-default]}
+      fq_coarse_iterations: {pi_undeclared: true, blocked_on: "Only meaningful when fiber_quotient_coarse is ON.", rationale: "See blocked_on.", owner: PI, require_observation_in: [runtime, env, code-default]}
+      multigrid_smooth:    {pi_undeclared: true, blocked_on: "Only meaningful when multigrid is ON.", rationale: "See blocked_on.", owner: PI, require_observation_in: [runtime, env, code-default]}
+      multigrid_omega:     {pi_undeclared: true, blocked_on: "Only meaningful when multigrid is ON.", rationale: "See blocked_on.", owner: PI, require_observation_in: [runtime, env, code-default]}
+      implicit_coarse_modes:
+        state: off
+        require_observation_in: [runtime, env, code-default]
+        rationale: >
+          Global l<=2 rigid-body/constant-strain deflation. Preconditioner-only (cannot move the
+          fixed point or relax a residual gate); 0 = off is the declared path.
+        owner: Lead
+
+      # ── numerical sizing (declared CONVENIENCE; must stay grid-invariant) ──────────────────
+      field_grid_resolution:      {state: on, provenance_allow: [CONVENIENCE], rationale: "Conservative field-grid resolution; numerical sizing, not literature. Must be grid-invariant per the Magic-Number Block.", owner: Lead}
+      field_grid_pad:             {state: on, provenance_allow: [CONVENIENCE], rationale: "Grid half-extent beyond R_cell; numerical sizing.", owner: Lead}
+      steric_hashgrid_dim:        {state: on, provenance_allow: [CONVENIENCE], rationale: "Hash-grid dimension; accelerator only, grid-invariant.", owner: Lead}
+      motor_segment_hashgrid_dim: {state: on, provenance_allow: [CONVENIENCE], rationale: "Segment-midpoint HashGrid dimension; accelerator only.", owner: Lead}
+      cortex_overlap_span:        {pi_undeclared: true, blocked_on: "Only meaningful under cortex_overlap_resolution_mode=radial_span.", rationale: "See blocked_on.", owner: PI}
+      rng_seed:                   {state: any, rationale: "Build RNG seed; a production CLAIM must be seed-robust, which is an ensemble property checked elsewhere, not a single-value requirement.", owner: Lead}
+
+      # ── provenance labels ─────────────────────────────────────────────────────────────────
+      membrane_erm_density_source:    {state: any, forbid_production_substrings: true, rationale: "Must be non-empty whenever membrane_erm_areal_density is non-null; must not carry a disqualifying label.", owner: PI}
+      membrane_erm_kinetics_source:   {state: any, forbid_production_substrings: true, rationale: "Must cover the complete ERM Bell kinetics contract.", owner: PI}
+      nmii_backbone_lp_source:        {state: any, forbid_production_substrings: true, rationale: "Must cover a non-null nmii_backbone_persistence_length.", owner: PI}
+      resting_bound_myosin_source:    {state: any, forbid_production_substrings: true, rationale: "Must cover the resting bound-myosin fraction AND per-head force. A label containing TEST or 'NOT physiological' disqualifies the run from being reported as production.", owner: PI}
+      membrane_erm_density_mcf7_latch: {state: any, rationale: "Explicit provenance latch; cross-cell proxies must keep it False.", owner: PI}
+
+  # ------------------------------------------------------------------------------------------
+  parity_regression:
+    description: >
+      The byte-identical historical build used for RNG/Gate-1 parity and regression. This profile
+      exists so a parity run has somewhere legitimate to be declared, and so it can NEVER be
+      reported as production: certifies_production is false, which the checker states in its
+      verdict line. This is the structural fix for "the regression gates locked the confound in".
+    certifies_production: false
+    require_channel_coverage: false
+    channels:
+      overlap_free_cortex:        {state: off, rationale: "Legacy zero-thickness gamma-validation / Gate-1 RNG-parity build.", owner: Lead}
+      membrane_mesh_subdivisions: {state: on, value: 3, rationale: "642-vert smooth resting sphere = the backward-compat parity mesh.", owner: Lead}
+      nmii_minifilament_force:    {state: any, rationale: "Parity builds may omit the motor.", owner: Lead}
+      biot_pressure_coupling:     {state: any, rationale: "Parity builds may omit the fluid.", owner: Lead}
+
+  # ------------------------------------------------------------------------------------------
+  legacy_unaudited:
+    description: >
+      Artifacts committed BEFORE this manifest existed. Their config records do not carry the
+      channels added later, so their force state is not reconstructible from disk. This profile
+      certifies nothing; the checker reports every such artifact as NON-CERTIFIABLE and lists which
+      channels are unobservable. Declaring an old run under this profile is how you say "we do not
+      know what this ran with" instead of silently reading absence as off.
+    certifies_production: false
+    require_channel_coverage: false
+    channels: {}

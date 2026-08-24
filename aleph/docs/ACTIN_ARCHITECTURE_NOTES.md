@@ -1,0 +1,564 @@
+# Actin cytoskeleton architecture — primary-literature study notes (PI reference papers)
+
+> PI 2026-06-04: "references/에 넣은 논문들을 하나하나 모든 부분 읽고 우리 구조에 넣을 것 +
+> 기록 다 해두고 계속 진행." Sequential deep reads (NOT parallel skims) of the PI-added
+> reference papers. Per paper: bibliographic · key architecture findings · quantitative
+> parameters · **what goes into OUR model structure** · Notion SE/KC status. Feeds the unified
+> actin-architecture framework ([[project-unified-actin-architecture]]) + the cortical-mesh
+> construction fix. Every source here must be registered into the Notion Contract-Graph
+> (SourceEvidence + KnowledgeClaim) per the PI's "all sources → Notion" directive.
+
+**Reading queue (PI reference set, architecture-priority first):**
+1. ⏳ Flormann 2024 PNAS — cortex structure/mechanics vs location & adhesion state  ← reading
+2. Fritzsche 2016 Sci Adv — actin kinetics shapes cortical network structure & mechanics
+3. Taeyoon Kim 2009 MIT thesis — simulation of actin cytoskeleton structure & rheology (network construction methodology)
+4. Banerjee/… J Indian Inst Sci 2021 — actomyosin cortex as a thin film of active matter (review)
+5. Nat Phys 2024 (s41567-024-02626-6) — energy partitioning in the cell cortex
+6. Sakamoto & Murrell 2024 (Cell Rep Phys Sci) — substrate geometry → F-actin reorganization in adherent model cortex
+7. Fritzsche 2017 Nat Commun (ncomms14347) — self-organizing actin patterns shape membrane architecture
+8. Li, Gao & Xu 2022 Biophys J — nonlinear power-law relaxation of cell cortex (network dynamics)
+9. Bächer 2021 Front Phys — 3D numerical model of active cell cortex (viscous limit)
+10. Garlick 2022 Sci Rep — quantifying super-resolved cortical actin
+11. Ray 2024 — actin capping protein regulates actomyosin contractility (germline architecture)
+12. Nat Commun 2024 (46726) — kinetic trapping organizes actin filaments in droplets
+13. Merino-Casallo 2022 — cell migration from the cell surface (review)
+14. + cortical-tension batch (Chugh emss-72183/ncb3525, Warmt, Dmitrieff, Winklbauer jcs174623, Bohec, Murrell-Gardel) — partly extracted; deepen.
+
+---
+
+## 1. Flormann et al. 2024, PNAS 121(31):e2320372121 — "The structure and mechanics of the cell cortex depend on the location and adhesion state" (`flormann-et-al-2024-...pdf`)
+
+**Cells:** hTERT-RPE1 (interphase) + HeLa confirmation. **Methods:** SEM + FiNTA mesh-tracing
+(mesh hole area MHA), expansion microscopy (thickness, side-view), AFM creep-compliance
+(stiffness, ~400 nm indentation = cortex not stress fibers), fluorescence (actin/myosin amount).
+**Comparison:** suspended vs adhered; within adhered: nuclear vs perinuclear region.
+
+### Key architecture findings
+- **Cortex architecture is NOT one fixed thing — it depends on ADHESION STATE + location.**
+  - **Suspended**: THICKER cortex, SMALLER mesh, denser actin, FEW bundles, LOWER stiffness.
+  - **Adhered**: THINNER cortex, LARGER mesh, MORE bundles (most in perinuclear), HIGHER stiffness.
+  - nuclear ≈ perinuclear thickness; perinuclear has larger mesh + more bundles + stiffer.
+- **Positive mesh-size ↔ stiffness correlation in LIVING cells (Pearson R=0.96)** — OPPOSITE to the
+  naive in-vitro "smaller mesh = stiffer." Cause: in cells a larger mesh comes WITH more
+  cross-linking/**bundling** → thicker bundles (higher bending rigidity) → stiffer. **Stiffness is
+  governed by BUNDLING (crosslink-induced), not actin density alone.**
+- **Myosin is NOT the bundler** (blebbistatin didn't change bundling; suspended cells have MORE
+  myosin yet FEWER bundles). Cross-linkers/bundling proteins do it. (Consistent w/ Chugh.)
+- Latrunculin A (depolymerization): adhered → larger mesh + softer (breaks thin filaments →
+  lowers connectivity); suspended → mesh robust (thick cortex), just thinner.
+
+### Quantitative anchors
+- **hξ⁻² = (cortex thickness)/(mesh hole area) = total F-actin length per unit area** =
+  **0.07 nm⁻¹ nuclear, 0.06 nm⁻¹ perinuclear, 0.10 nm⁻¹ suspended.** (constructable invariant.)
+- Thickness ~ Clark 2013 range (~200 nm; suspended thicker). ⚠️ exact MHA(nm²)/thickness(nm) live
+  in Fig 2E/3A panels (SI) — pull from SI if a precise mesh-size band is needed.
+- **Semiflexible cross-linked biopolymer theory (MacKintosh 1995; Gardel/Shin in vitro):**
+  - `G ~ K_B² / (kB T · ξ⁵)`, bundle bending rigidity `K_B ~ D_B⁴` (D_B = bundle thickness),
+    `D_B ~ ([crosslink]/[actin])^0.3`, mesh `ξ ~ D_B / [actin]^{1/2}`.
+  - Constant actin ⇒ **G ~ D_B³ ~ ξ³** (the positive mesh–stiffness correlation).
+
+### → WHAT GOES INTO OUR MODEL
+1. **Physiological-baseline (adhesion state matters):** the cortex must be built for the cell's
+   actual state. MCF7 in a spheroid = cell–cell ADHERED/cohesive (not suspended) → use the
+   ADHERED architecture (thinner, larger-mesh, MORE-bundled, stiffer) — NOT a generic shell.
+   This is a concrete instance of [[feedback-physiological-baseline]].
+2. **Cross-linkers must BUNDLE**, and stiffness must emerge from bundling, not density alone. Our
+   crosslinker model should permit multi-crosslink bundle formation (D_B grows with crosslink:actin).
+3. **Acceptance ORACLE (not runtime):** `G ~ K_B²/(kBT ξ⁵)` and the **positive G–ξ correlation at
+   constant actin** = a validation gate for the rebuilt connected mesh (the fragmented mesh would
+   fail this — no bundling, wrong G–ξ sense). Cross-read with Chugh (tension) + Head 2003 (L/lc).
+4. **hξ⁻² ≈ 0.06–0.10 nm⁻¹** = a constructable invariant tying thickness · mesh · filament length —
+   use to check the rebuilt mesh's areal contour-length density is physiological.
+5. Myosin ≠ bundler → keep bundling in the crosslinker layer, not myosin (matches current split).
+
+**Notion:** SourceEvidence row NEEDED (Flormann2024_PNAS; DOI 10.1073/pnas.2320372121; gbook/KAIST
+full-text present). Link to KnowledgeClaim: cortex-architecture (mesh/thickness/bundling↔stiffness)
++ the adhesion-state dependence. ⚠️ not yet in corpus — web-verify + register.
+
+**(감상평 below)**
+
+## 2. Fritzsche, Erlenkämper, Moeendarbary, Charras, Kruse 2016, Sci Adv 2:e1501337 — "Actin kinetics shapes cortical network structure and mechanics" (`sciadv.1501337.pdf`)
+
+**Cells:** HeLa (cervical cancer) + M2 melanoma. **Methods:** FSM single-molecule (formin Diaph1,
+Arp2/3) + FRAP + stochastic simulation + AFM (Hertz). The bottom-up "how nucleation+turnover set
+the cortex architecture" paper.
+
+### Key architecture findings (the filament-length answer)
+- Cortex = roughly **ISOTROPIC** semiflexible F-actin network, crosslinked, with motors. Nucleated
+  by **TWO pathways: Arp2/3 (branched) + formin Diaph1 (linear)** — these two alone make most
+  cortical actin (Bovellan 2014).
+- **Filament length is BIMODAL, EXPONENTIALLY distributed** (shorter filaments more abundant, from
+  turnover): **Arp2/3 ≈ 120 nm (HeLa) / 60 nm (M2); formin ≈ 1200 nm (HeLa) / 600 nm (M2)** — formin
+  filaments are **~10× longer** than Arp2/3. (Single formins add avg 3900 nm HeLa / 2500 nm M2.)
+- **<10 % of filaments are formin-nucleated BY COUNT, but they are the MAIN MECHANICAL contributors**
+  (because ~10× longer). The long sparse formin filaments dominate cortex mechanics.
+- Two subpopulations come from **two nucleation pathways** (turnover rates differ ~20×); severing
+  ALONE cannot generate the two distinct timescales.
+- Cortex elastic modulus **E = 4.0 ± 1.5 kPa (HeLa control)**, 3.0 ± 1.7 kPa perturbed (AFM/Hertz).
+- Kinetic anchors: r_on = 9 s⁻¹mM⁻¹, r_on,F = 45 s⁻¹mM⁻¹, formin detach w_off,F = 0.12 s⁻¹.
+
+### → WHAT GOES INTO OUR MODEL
+1. **Filament length = bimodal exponential, NOT uniform.** Seed Arp2/3-short (~120 nm, ~90% count)
+   + formin-long (~1200 nm, ~10% count). At ×40 mesoscale, conserve the SHAPE (bimodal exp) +
+   total contour (Chugh invariant, cortex-workflow FIX 3).
+2. **The LONG formin filaments are the PERCOLATION + mechanical backbone.** A ~1.2 µm filament
+   spans many mesh holes → reaches many distinct crosslink partners → ties the network together.
+   Our fragmented mesh (z=1.3) likely lacks this long connecting subpopulation (uniform L=3 µm
+   mis-represents it). **Including the long-formin subpopulation is part of the percolation fix**,
+   complementary to the bridge-different-filaments crosslink rule.
+3. Construction is STATIC (physiological-baseline) → seed the exponential bimodal length DIRECTLY
+   (the distribution turnover would produce), don't rely on dynamic turnover to grow it.
+4. **Cortex E ≈ 3–4 kPa (HeLa)** = stiffness anchor (consistent with Flormann AFM); an acceptance
+   cross-check (overlay; HeLa not MCF7).
+5. Kinetic rates (r_on, w_off,F) → feed the existing turnover module if dynamic turnover is on.
+
+**감상평 (Lead):** 필라멘트-길이 아키텍처의 정량적 정답. 가장 큰 통찰: **연결망을 잇는 건 "크로스링크를
+더"가 아니라 "긴 formin 필라멘트(개수 10%, 길이 ~1.2µm)가 역학·연결의 backbone"**이라는 것. 짧은
+Arp2/3(120nm)만으로는 percolate가 약하고, 긴 formin 필라멘트가 여러 mesh hole을 가로질러 서로 다른
+필라멘트들을 묶음. 우리 fragmented mesh는 이 long-subpopulation이 없/부족하거나 uniform-length로
+뭉개버린 게 원인일 수 있음 → cortex-workflow의 "contour 보존 + bimodal" FIX와 정확히 합치. 즉
+**percolation 수정 = (a) bridge-different-filament 규칙 + (b) 긴-formin 포함한 bimodal 길이분포** 둘 다.
+또 "formin 10%가 역학 지배"는 Chugh의 "intermediate length가 tension 최적"과도 연결(긴 필라멘트가
+force 전달). 한계: HeLa/M2 (MCF7 아님), turnover-kinetics 논문이라 우리가 원하는 건 그 함의(정적
+길이분포). E~4kPa는 Flormann과 일치 = 좋은 cross-check.
+
+## 3. Taeyoon Kim 2007, MIT MS thesis — "Simulation of Actin Cytoskeleton Structure and Rheology" (`181655768-MIT.pdf`, 153 pp)
+
+**What it is:** 3D **Brownian-dynamics** model — actin monomers polymerize into filaments, cross-
+linked by **two ACP types: PERPENDICULAR (large/long, e.g. filamin → isotropic NETWORKS) vs
+PARALLEL (small/short → BUNDLES)**. Evaluates how parameters set network morphology. The
+methodological backbone for crosslinked-actin-network simulation (Kim's foundational work; cf.
+later Kim 2009 Biophys J, Kim 2014 — the mature "Kim model" / AFINES lineage).
+
+### Key findings (methodology + connectivity logic)
+- **ACP binding-site geometry decides bundle vs network**: parallel-binding ACPs → bundles
+  (fascin-like); long ACPs forming ~perpendicular cross-links (filamin) → isotropic networks.
+- Network morphology (pore size, isotropy, extent of cross-linking) is set by **crosslinker
+  concentration + type + actin concentration** (R = ACP:actin ratio, CA = actin conc, Da).
+- **CONNECTIVITY + PERCOLATION are explicit, tunable outputs**: distribution of per-filament
+  connectivity (counts of crosslinks/filament), "connectivity 2", and a network that "nearly
+  percolates the simulation box" at given (Da, CA, R). Pore size Lpore ∝ crosslink spacing;
+  Lm (mean segment between crosslinks) = alt pore-size measure.
+- F-actin 7–9 nm diameter (excluded volume).
+
+### → WHAT GOES INTO OUR MODEL
+1. **Construction logic = ours**: a crosslinked network's connectivity/percolation/pore-size are
+   controlled OUTPUTS of crosslinker concentration + type. Validates measuring z + giant-component
+   (our viz_cortex_network) and tuning crosslink density to the percolation set-point.
+2. **Perpendicular(network, filamin) vs parallel(bundle, fascin) ACP distinction** = the unified
+   crosslinker/bundler axis: cortex = perpendicular/isotropic network (filamin/α-actinin);
+   filopodia/microvilli = parallel bundles (fascin/espin). One model, ACP-type parameterized.
+3. Self-assembly produces percolation at the right (R, CA); our STATIC construction should SEED
+   directly at that percolated morphology (physiological baseline), then optionally turn dynamics on.
+
+**감상평 (Lead):** 방법론적으로 가장 가까운 동족. Taeyoon Kim은 actin-network BD 시뮬레이션의 표준을
+세운 사람이라(이후 Kim 2009/2014 = 성숙한 모델, AFINES 계보), 우리 접근이 정통임을 확인해 줌. 가장
+유용: **perpendicular(network) vs parallel(bundle) ACP 이분법** — 이게 통합 프레임워크의 crosslinker
+축 그 자체(cortex=filamin 수직망, filopodia=fascin 평행다발). 그리고 **connectivity/percolation이
+crosslinker 농도·종류의 tunable 출력**임을 직접 보여줘 우리 viz의 z·giant-component 측정·튜닝을
+정당화. 한계: 2007 MS 논문(방법론·in-silico, 세포-특이 수치 아님) → HOW-TO + acceptance-logic 소스.
+**후속 Kim 2009 Biophys J / Kim 2014를 추가로 끌어오면** 성숙한 파라미터(crosslink stiffness, prestrain,
+network self-assembly protocol)를 얻을 수 있음 — references에 없으면 gbook/web으로.
+
+## 4. (Banerjee et al.) 2021, J. Indian Inst. Sci. — "The Actomyosin Cortex of Cells: A Thin Film of Active Matter" (`s41745-020-00220-2.pdf`) — REVIEW (continuum active-gel theory)
+
+**What it is:** review of the **hydrodynamic active-gel theory** of the cortex (Kruse-Jülicher-
+Joanny-Prost lineage): ATP-driven myosin generates active stress → large-scale mechanical FLOWS +
+orientation/mechanochemical PATTERNS. Continuum, not molecular-architecture numbers.
+
+### → WHAT GOES INTO OUR MODEL (mostly framing / acceptance at the continuum limit)
+- The cortex is an **active contractile gel**: coarse-grained, our fine-grained network should
+  reproduce its active-gel behavior (active stress, cortical flows). This is the CONTINUUM target
+  our mechanistic model maps onto — an acceptance-level cross-check, not a parameter source.
+- Confirms force-generation = ATP-myosin coordinated → net active stress (ties to the contractility
+  question), and that crosslinkers + motors + filaments together set the active-gel parameters.
+
+**감상평 (Lead):** 연속체 active-gel 이론 리뷰 — 우리 fine-grained 모델이 coarse-grain하면 닿아야 할
+"정답 거시 거동"(active stress, cortical flow)을 줌. 단 **분자 아키텍처 수치(길이/메시/밀도)는 없음** →
+construction 파라미터 소스가 아니라 framing/acceptance 소스. 우선순위는 낮되, "cortex=active gel"
+프레임은 통합 framework의 motor/contractility 축 근거로 등록 가치 있음. (Marchetti 2013, Prost-Jülicher-
+Joanny 2015 active-gel 원전이 더 1차적.)
+
+## 5. Chen, Seara, … Bement, Murrell 2024, Nat Phys 20:1824 — "Energy partitioning in the cell cortex" (`s41567-024-02626-6.pdf`)
+
+**What it is:** non-equilibrium thermodynamics of the cortex — entropy-production rate of the
+CHEMICAL (Rho-GTPase/actin/myosin) vs MECHANICAL subsystems across pattern regimes (pulses →
+choppy waves → labyrinthine/spiral), tuned via Rho-GAP. Onsager reciprocity holds at low drive,
+breaks at high drive. **Key principle: energy partitioning + chemical↔mechanical coupling are set
+by the COMPETING TIMESCALES of chemical reaction vs mechanical relaxation.** (Xenopus/starfish-type
+cortex with Rho waves; not molecular architecture.)
+
+### → WHAT GOES INTO OUR MODEL
+- Framing/validation, not construction params. The **chemical-reaction-vs-mechanical-relaxation
+  timescale competition** is exactly the regime our binding/turnover-vs-BAOAB-relaxation
+  accelerated-dynamics probes live in — a principled caution that the chem/mech timescale ratio
+  governs the emergent behavior (don't distort it when accelerating). Active/non-equilibrium frame.
+
+**감상평 (Lead):** 멋진 물리지만 우리 construction엔 직접 파라미터 없음(패턴 열역학). 단 한 줄이 값짐:
+**"energy partitioning은 화학반응 vs 역학완화 timescale 경쟁이 결정"** — 우리가 binding/turnover를
+가속할 때 chem/mech timescale 비를 왜곡하면 emergent 거동이 바뀐다는 경고와 정확히 같은 물리. Murrell
+그룹(§6 Sakamoto-Murrell와 같은 lab) active-cortex 라인. 우선순위 낮음, framing/acceptance로 등록.
+
+## 6. Sakamoto & Murrell 2024, Cell Rep Phys Sci — "Substrate geometry and topography induce F-actin reorganization and chiral alignment in an adherent model cortex" (`1-s2.0-S2666386424006520-main.pdf`)
+
+**What it is:** RECONSTITUTED "model cortex" inside model cells (the in-vitro analog of what WE
+simulate). Tests how a branched vs linear F-actin network responds to membrane shape/topography.
+
+### Key findings (functional roles of the two nucleator subpopulations)
+- **Branched (Arp2/3) network is INSENSITIVE to membrane shape** → stays disordered/ISOTROPIC,
+  robust. = the isotropic mesh backbone.
+- **Linear (formin) network ALIGNS with geometry/topography** (chiral alignment) → geometry-
+  responsive, orientable, spanning.
+- ⇒ the two subpopulations (Fritzsche §2) have DISTINCT architectural ROLES, not just lengths.
+
+### → WHAT GOES INTO OUR MODEL
+- The **bimodal architecture is functionally meaningful**: Arp2/3-branched short filaments =
+  isotropic disordered connectivity (robust mesh); formin-linear long filaments = the spanning /
+  orientable / geometry-responsive subpopulation. Our construction's long-formin filaments should
+  carry orientation/spanning; the short branched give isotropic infill.
+- This is a **reconstituted model cortex** = the direct in-vitro analog of our sim → strong
+  architecture/acceptance source (build a disordered branched mesh + spanning linear filaments).
+
+**감상평 (Lead):** Fritzsche를 기능적으로 보강 — 두 subpopulation은 길이만 다른 게 아니라 ROLE이 다름:
+Arp2/3-branched = isotropic·robust mesh(형태 무관), formin-linear = 정렬·spanning(형태 반응). 우리
+cortex(isotropic)에선 branched가 등방 연결을, 긴 linear가 가로지름. 결정적으로 **이게 "reconstituted
+model cortex" = 우리가 시뮬레이션하는 바로 그 시스템의 in-vitro 판** (Murrell lab) → construction의
+직접 acceptance 소스. 한계: 재구성계(세포 아님, 정량 nm은 본문 figure). 통합 framework의 nucleator
+축(Arp2/3 등방 vs formin 정렬)에 등록.
+
+## 7. Garlick, Faulkner, Briddon, Thomas 2022, Sci Rep 12:2715 — "Simple methods for quantifying super-resolved cortical actin" (`s41598-022-06702-w.pdf`)
+
+**What it is:** super-resolution (SRRF / 3D-SIM / ExM) quantification of the cortical-actin MESH
+("corrals" = fenced regions of the picket-fence model). A549 cells. Methods/quantification paper.
+
+### Key quantitative
+- Cortical actin lies **<10–20 nm from the plasma membrane** (Fujiwara picket-fence).
+- **Mesh "corral" sizes (cell-specific): EM 40 nm (PtK2) / 230 nm (NRK) (Fujiwara); STED 100 nm–1.5 µm
+  (Stanly). A549 control mean corral AREA = 0.20 µm² (≈ 450 nm char. length), ~386 corrals/10 µm² ROI.**
+- **Actin disruption (cytochalasin D) → larger mesh** (corral area 0.20 → 0.50 µm²; count 386 → 162).
+- Single actin filament 7 nm; their ground-truth sim used 70° Arp2/3 daughter branching.
+
+### → WHAT GOES INTO OUR MODEL
+- **Mesh-size acceptance numbers** (cell-specific 40–230 nm EM; A549 ~450 nm corral) — bracket the
+  rebuilt mesh's pore size. ⚠️ "corral" = picket-fence MEMBRANE-corral (may exceed the pure
+  mechanical mesh; partly a membrane-organization quantity, not just the load-bearing mesh).
+- **mesh ↑ on depolymerization** — matches Flormann's latrunculin result (connectivity ↓ → bigger mesh):
+  a consistency cross-check for our model (lower crosslink/filament density → larger pore).
+- A mirror-able OBSERVABLE: binarize our cortex (GSD) → pore/corral area distribution, like their
+  watershed workflow — a way to compare our mesh to super-res data.
+
+**감상평 (Lead):** 정량-방법 논문이라 메커니즘보다 **mesh-size 수치·관측법**이 가치. control corral
+~0.2µm²(~450nm) + cell-specific 40-230nm(EM)이 workflow의 mesh 범위와 일치. 단 "corral"은 picket-fence
+막-corral이라 순수 역학 mesh보다 클 수 있음(주의). cytochalasin→mesh↑가 Flormann latrunculin과 일치 =
+좋은 cross-check. 그들의 ground-truth sim(70° Arp2/3 분기)은 우리 construction의 미니판. 우리 GSD를
+binarize해 pore/corral 분포를 뽑으면 super-res 데이터와 직접 비교 가능(관측 프로토콜로 등록 가치).
+한계: A549(MCF7 아님), 막-corral 정의 ≠ 역학 mesh.
+
+## 8. Li, Gao & Xu 2022, Biophys J 121:4091 — "Network dynamics of the nonlinear power-law relaxation of cell cortex" (`1-s2.0-S0006349522007858-main.pdf`)
+
+**What it is:** network-dynamics THEORY explaining the universal power-law rheology of the cortex
+(stress stiffening, power-law relaxation, variable scaling exponent) from molecular structure.
+
+### Key findings
+- Power-law relaxation **originates from an EXPONENTIAL form of cortical DISORDER** (distribution of
+  filament orientations/lengths); scaling exponent (≈1/2 …) DECREASES with strain or crosslinker density.
+- **Stress stiffening (t=0) from chain reorientation**; relaxation (t>0) from disorder; under strain
+  the network solidifies toward a 1D limit (realignment / in-series → in-parallel).
+- **Crosslinker REBINDING is crucial** for moderating relaxation under small strains (dynamic
+  unbinding↔rebinding equilibrium). Shorter filaments load crosslinkers more → faster unbinding.
+
+### → WHAT GOES INTO OUR MODEL
+1. **The cortex must be DISORDERED (exponential disorder), NOT a regular lattice.** (Our prior CBM
+   aggregate kept a cubic lattice — unphysical; the cortex construction must seed disordered/isotropic
+   filament orientations + the exponential length disorder, consistent w/ Fritzsche §2.) Disorder is
+   not a nuisance — it's the origin of the correct (power-law) rheology.
+2. **Dynamic crosslinker REBINDING matters for rheology** → keep the dynamic xlink turnover (already
+   present); rebinding timescale sets relaxation. (Cross-read with the chem-vs-mech timescale point, §5.)
+3. **Power-law rheology + stress stiffening** = continuum acceptance behaviors a faithful connected
+   mesh should reproduce (the fragmented mesh won't).
+
+**감상평 (Lead):** 이론 논문이지만 우리 construction에 직접 두 교훈. (1) **DISORDER가 본질** — cortex는
+무질서 등방망이어야 하고(지수 길이·방향 분포), 정규 격자면 rheology가 틀림. 우리가 과거 cubic-lattice
+aggregate를 본 게 바로 그 함정. (2) **crosslinker rebinding이 rheology 결정** → 동적 turnover 유지 필수.
+Fritzsche(지수 길이)+ §5(chem-mech timescale)와 일관. 한계: 연속체/통계 이론(분자 파라미터 아님) →
+framing/acceptance. 하지만 "disorder + rebinding"은 construction 규칙으로 직접 반영(등방 무질서 시드 +
+동적 가교).
+
+## 9. Fritzsche, Li, … Betzig, Eggeling 2017, Nat Commun 8:14347 — "Self-organizing actin patterns shape membrane architecture but not cell mechanics" (`ncomms14347.pdf`)
+
+**What it is:** live-HeLa super-res (STED/lattice-light-sheet) of cortical actin SELF-ORGANIZATION
+during adhesion (vortices → stars → asters), + mechanics (AFM) + membrane fluidity.
+
+### Key architecture findings (reconfirm + add)
+- **Two subpopulations (HeLa):** formin (long F-actin) + **Arp2/3 (short, branched) = ~80 % of total
+  F-actin** (HeLa/melanoma/T cells); 20-fold differing turnover. Arp2/3 branches at **70°**.
+- Cortex is a **SELF-ORGANIZING (non-equilibrium)** system (vs self-assembly): patterns emerge from
+  **polarity sorting** (turnover + myosin motion + Arp2/3 nucleation). Pattern transitions are
+  **Arp2/3-driven, NOT myosin** (contrary to in-vitro predictions).
+- **Pattern/membrane-architecture changes are FUNCTIONALLY INDEPENDENT of macroscopic cortex
+  ELASTICITY** — bulk mechanics robust to the fine patterning.
+- Stars = large, multiple parallel-bundled arms; asters = individual filaments.
+
+### → WHAT GOES INTO OUR MODEL
+- Reconfirms the **two-subpopulation + 70° Arp2/3 branching + 80%-Arp2/3** architecture (consistent
+  Fritzsche2016 §2, cortex-workflow). Use for the bimodal construction + branch angle.
+- **Decoupling insight:** bulk cortex mechanics (our γ/stiffness target) is robust to the specific
+  self-organized pattern → for our MECHANICS target, the essential is the **connected mesh +
+  bundling/connectivity**, not reproducing vortices/asters. Lets us seed a disordered connected mesh
+  (static) without modeling pattern self-organization for the mechanics question.
+- Patterning is Arp2/3-driven, contractile tension is myosin-driven → distinct processes (don't
+  conflate; our tension lever is myosin, not the Arp2/3 patterning).
+
+**감상평 (Lead):** Fritzsche2016과 같은 그룹의 후속 — 두 subpopulation·70°·Arp2/3 80%를 재확인(좋은
+교차검증). 우리에게 가장 유용한 건 **"패턴/막 아키텍처는 bulk 역학과 독립"** — 즉 vortex/aster 같은
+self-organization을 재현 안 해도 **연결된 mesh + 번들링/connectivity만 맞으면 거시 역학(γ/stiffness)은
+잡힌다**는 허가. 정적 disordered 연결망 시드로 충분(패턴 동역학 불요). 또 patterning=Arp2/3,
+contractility=myosin 분리 = 우리 tension lever가 myosin인 것과 일관. 한계: HeLa, 패턴 동역학 논문(정적
+construction엔 architecture facts만 취함).
+
+## 10. Bächer, Khoromskaia, Salbreux, Gekle 2021, Front Phys 9:753230 — "A 3D Numerical Model of an Active Cell Cortex in the Viscous Limit" (`fphy-09-753230.pdf`)
+
+**What it is:** CONTINUUM 3D computational model — cortex as an active-gel VISCOUS THIN SHELL
+(force-balance for the velocity field on a discretized deforming surface; active gel + thin-shell
+theory). Validated on cytokinesis furrow; applied to folds + furrow under shear (axis reorientation).
+
+### → WHAT GOES INTO OUR MODEL (continuum acceptance, not architecture params)
+- This is the **coarse-grained active-gel limit** our fine-grained cortex should reproduce: active
+  myosin stress → cortical FLOWS → furrow constriction / shape change. A validation/acceptance
+  target (does our connected mesh produce the right emergent active-gel behavior?), not a
+  construction parameter source. Salbreux active-gel = the field-standard continuum cortex.
+- No molecular architecture numbers (continuum surface fields: tension, viscosity, active stress ζ).
+
+**감상평 (Lead):** 연속체 active-gel thin-shell 모델(Salbreux/Gekle) — JIISc(§4)와 같은 framing 계열,
+우리 fine-grained cortex가 coarse-grain하면 닿아야 할 거시 거동(active flow, furrow). construction
+파라미터는 없음 → acceptance/framing. 우리 cortex가 연결망으로 제대로 서면 "active-gel flow/furrow를
+내는가"를 이걸로 검증 가능. 우선순위 낮음(연속체). 등록은 cortex-active-gel KC에 framing으로.
+
+## 11. Ray, Agarwal, Nitzan, Nédélec, Zaidel-Bar 2024, Development — "Actin capping protein regulates actomyosin contractility to maintain germline architecture in C. elegans" (`Actin-capping_protein_regulates_actomyosin_contrac.pdf`)
+
+**What it is:** in-vivo role of capping protein CAP-1 (CAPZ) in the C. elegans germline cortex/rachis;
++ Cytosim (Nédélec) actomyosin simulation.
+
+### Key findings (length-control mechanism)
+- **Capping protein caps the barbed end → blocks elongation → CONTROLS FILAMENT LENGTH + amount.**
+- **60% CAP-1 reduction → 2× F-actin + 2× NMII activity → increased contractility** (rachis, laser
+  incision). Cytosim: increased myosin is the main driver of the extra contractility.
+- CP organizes F-actin in muscle sarcomere Z-lines; architecture defects need actomyosin contractility.
+
+### → WHAT GOES INTO OUR MODEL
+- **Capping = the filament-LENGTH-control knob** behind the bimodal distribution: capping truncates
+  Arp2/3 filaments short; processive formins make the long ones (Fritzsche §2). For our STATIC
+  construction, capping is implicit in the SEEDED exponential length distribution; the
+  **capping↔length↔(F-actin amount)↔contractility coupling** is the mechanistic link to keep in mind
+  (more/longer F-actin ↔ more contractility).
+- **Cytosim (Nédélec)** = a fine-grained actomyosin simulation methodologically adjacent to ours —
+  worth cross-referencing for actomyosin-network construction/contractility validation.
+
+**감상평 (Lead):** C. elegans 생식선(cortex/MCF7 아님)이라 직접성은 낮지만 **일반 메커니즘이 유용**:
+capping protein이 barbed-end를 막아 필라멘트 길이·양을 정함 → less capping이면 F-actin↑·길이↑·수축↑.
+이게 Fritzsche의 bimodal 분포 뒤의 길이-제어 손잡이(capping이 Arp2/3를 짧게 자르고, formin은 길게
+신장). 우리 정적 construction에선 capping은 시드 길이분포에 함축되지만, capping↔length↔contractility
+결합은 기억할 메커니즘. Cytosim(Nédélec)은 우리와 인접한 fine-grained actomyosin 시뮬레이터 → 교차참조
+가치. 한계: 생식선/C. elegans, overlay/mechanism only.
+
+## 12. Chandrasekaran, Graham, Stachowiak, Rangamani 2024, Nat Commun 15 — "Kinetic trapping organizes actin filaments within liquid-like protein droplets" (`s41467-024-46726-6.pdf`)
+
+**What it is:** computational modeling of actin self-organization inside **VASP condensate droplets**
+(VASP = processive actin polymerase + bundler that phase-separates). Reconstituted/in-silico.
+
+### Key findings
+- Actin shapes inside droplets (shells / rings / mixtures) depend on the **KINETICS of VASP-actin
+  interactions = KINETIC TRAPPING** (not equilibrium): shorter VASP residence → less bundling → shells.
+- Droplet shape transitions (sphere→ellipsoid→rod) gated by filament LENGTH range.
+
+### → WHAT GOES INTO OUR MODEL (peripheral)
+- General principle: **emergent actin network SHAPE depends on ABP interaction KINETICS (residence
+  time), not just equilibrium** — reinforces that our crosslinker/bundler ON/OFF kinetics (residence)
+  shape the network (cross-read Li-Gao-Xu §8 rebinding). VASP = processive polymerase+bundler
+  (relevant to the FILOPODIUM tip-complex in the unified framework). NOT cortex architecture.
+
+**감상평 (Lead):** 접선적 — ABP 응축물(VASP droplet)이 actin을 shell/ring으로 조직하는 재구성·전산 연구.
+우리 cortex construction엔 직접 파라미터 없음. 유용한 일반 원리 하나: **network shape는 ABP 상호작용
+KINETICS(residence time)가 결정(kinetic trapping)** — 평형이 아니라 동역학 → 우리 crosslinker/bundler
+ON/OFF kinetics가 망 구조를 형성(Li-Gao-Xu rebinding과 일관). VASP는 processive polymerase+bundler =
+통합 framework의 filopodium tip에 관련. 우선순위 낮음, peripheral/method 소스로 등록.
+
+## 13. Merino-Casallo, Gómez-Benito, et al. 2022, Cell Adh Migr — "Unravelling cell migration: defining movement from the cell surface" (`Merino-Casallo...2022...pdf`)
+
+**What it is:** broad integrative cell-migration REVIEW (receptors, adhesions, cytoskeleton, nucleus,
+ECM). Its value for us = the migration-MODE ↔ actin-structure taxonomy.
+
+### Key (the structure↔mode map)
+- **Mesenchymal migration:** strong ECM adhesion via mature **stress-fiber-linked focal adhesions**;
+  high protease activity. **Amoeboid:** few adhesions, **contraction-based blebs / cortex-driven**,
+  actin protrusions glide. **Lobopodial:** tightly adherent, actomyosin contractility + hydrostatic
+  pressure + **nuclear pistoning** → bleb-like blunt lobopodia.
+- EMT / mesenchymal↔amoeboid transitions (MAT/CAT) in cancer; fiber alignment modulates protrusion.
+
+### → WHAT GOES INTO OUR MODEL (framing for the UNIFIED framework)
+- Directly serves [[project-unified-actin-architecture]]: the SAME actin machinery is deployed as
+  different structures per migration MODE — stress-fibers+FA (mesenchymal), cortex+blebs (amoeboid),
+  lobopodia (lobopodial). Confirms the "one category, different architectures/usages" vision + maps
+  each structure to function. MCF7 epithelial/cohesive → EMT relevance (overlay). Review/framing,
+  not construction parameters.
+
+**감상평 (Lead):** 통합 migration 리뷰 — 우리에겐 **migration-mode↔actin-structure 매핑**이 가치
+(mesenchymal=stress-fiber+FA / amoeboid=cortex+bleb / lobopodial=lobopodia+nuclear-pistoning).
+이게 통합 framework "하나의 기계, 모드별 다른 직조/사용"을 직접 뒷받침. EMT/MAT는 MCF7(상피)
+맥락에 관련(overlay). construction 파라미터는 없음 → 통합 KC의 review citation으로 등록. 우선순위 중하.
+
+## 14. Kadzik, Maxian, Thomas, Kovar, Munro 2026, bioRxiv 2026.05.24.727551 — "Rapid actin filament turnover maintains cortical CONNECTIVITY while allowing for cell cortex deformation and flow" (`2026.05.24.727551v1.full.pdf`) ⭐ DIRECT VALIDATION
+
+**What it is:** C. elegans zygote cortex — quantitative assembly/disassembly manipulation + live
+contractility/flow imaging + computational fiber-network model (Maxian). THE connectivity paper.
+
+### Key findings (the smoking-gun for our γ-floor)
+- **CONNECTIVITY is required for FORCE TRANSMISSION + coherent cortical flow.** A poorly-connected
+  cortex cannot transmit large-scale flows / contractile force; loss of connectivity → chaotic flow,
+  cortex collapse + tearing + blebbing.
+- **Filament LENGTH sets connectivity:** shortened filaments (cofilin/severing↑) → LESS connected →
+  faster/chaotic flow → collapse. Profilin knockdown (assembly↓) → connectivity loss → chaotic flow.
+- **Both assembly↓ and disassembly↓ → cortex COLLAPSE** (connectivity must be actively maintained by
+  balanced rapid turnover, which simultaneously allows deformation/flow).
+- They feed MEASURED assembly/disassembly rates into a computational actin-network model → reproduce
+  connectivity ↔ flow-transmission.
+
+### → WHAT GOES INTO OUR MODEL (capstone)
+1. **DIRECT validation of our whole diagnosis:** a connected cortex network is the PREREQUISITE for
+   force transmission/aggregation. Our **fragmented mesh (z=1.3, giant 7%) IS the disconnected
+   "can't-transmit-force" regime** → that is *why* per-head myosin force doesn't aggregate into shell
+   tension (the γ-floor). Fixing connectivity is fixing force transmission — not a side issue.
+2. **Filament LENGTH ↔ connectivity** (longer → more connected) — reconfirms Fritzsche §2 (long-formin
+   backbone) + cortex-workflow L/lc. Short filaments = disconnected = our failure mode.
+3. **Balanced rapid turnover MAINTAINS connectivity** while allowing flow → for our STATIC construction,
+   seed connected; for dynamics, turnover must be BALANCED (assembly≈disassembly) or the cortex
+   collapses. Our dynamic turnover module must keep connectivity, not just sever.
+4. Maxian's computational model + measured assembly/disassembly rates = a direct method + parameter
+   reference for our construction/dynamics.
+
+**감상평 (Lead):** **오늘 읽은 것 중 우리 진단을 가장 직접적으로 검증하는 논문.** "connectivity가 force
+전달·coherent flow에 필수, 끊기면 전달 불가·붕괴" — 이게 정확히 우리 γ-floor의 정체: **fragmented mesh
+(z=1.3)는 force를 전달 못 하는 disconnected regime이라 myosin 힘이 shell tension으로 합산 안 됨.** 즉
+연결성 수정 = force-aggregation 수정 그 자체(곁가지 아님). 필라멘트 길이↔connectivity(Fritzsche
+long-formin과 일치), 균형 turnover가 연결 유지(우리 동적 turnover는 sever만 하면 안 되고 연결 유지해야).
+Maxian의 전산 모델 + 측정 assembly/disassembly rate는 직접 방법·파라미터 참조. **이 논문이 connectivity
+→ force transmission → 우리 floor를 잇는 capstone.** 한계: C. elegans zygote(MCF7 아님), 2026 preprint
+(peer-review 전 — 인용 시 플래그). ⭐ 최우선 등록 + KnowledgeClaim "cortex-connectivity↔force-transmission".
+
+## 15. Serwas, Akamatsu, … Rangamani, Drubin 2021/2022, (Nat Commun) bioRxiv 2021.06.28.450262 — "Actin force generation in vesicle formation: mechanistic insights from cryo-electron tomography" (`2021.06.28.450262v2.full.pdf`; supplement `media-1.pdf`)
+
+**What it is:** cryo-ET of the branched actin network at clathrin-mediated ENDOCYTOSIS (CME) sites in
+human cells + actin-dynamics simulation (Akamatsu). Endocytic actin, not cortex.
+
+### Key findings
+- Cryo-ET: filament number/organization/orientation at CME; **force generation ROBUST despite
+  network-organization variance**. Assembly from **~4 "mother" filaments**; measured branch angle.
+- **Hip1R filament-MEMBRANE anchoring points along the invagination are KEY to pulling-force
+  generation + robustness** (anchorage → force transmission to the membrane).
+
+### → WHAT GOES INTO OUR MODEL (peripheral, one transferable principle)
+- **Filament-MEMBRANE ANCHORING is key to force transmission** — the cortex analog is ERM
+  (cortex↔membrane) + FA (cortex↔substrate). Reinforces that force transmission needs anchoring
+  (cross-read FA/H.4). Cryo-ET = direct in-cell architecture; Akamatsu actin-dynamics sim =
+  methodologically adjacent. NOT cortex architecture (endocytic branched network).
+
+**감상평 (Lead):** endocytic(CME) actin이라 cortex엔 접선적. 가져갈 일반 원리 하나: **필라멘트-막
+ANCHORING(Hip1R)이 pulling-force 전달의 핵심** → cortex에선 ERM(막)·FA(기판) 앵커가 그 역할(force
+transmission엔 anchoring 필요). cryo-ET=직접 in-cell 구조, Akamatsu sim=인접 방법론. 우선순위 낮음,
+peripheral 등록. media-1.pdf는 같은 논문 supplement(별도 SE 불요).
+
+---
+
+**감상평 (Flormann, §1):** 우리에게 결정적으로 유용. 두 가지가 큼. (1) **"cortex 아키텍처는 단일 상수가
+아니라 adhesion-state의 함수"** — 우리가 MCF7 spheroid를 모델링하면서 generic shell을 쓴 게
+바로 physiological-baseline 위반의 교과서 사례. spheroid 내 세포는 cell-cell 접착 상태 → 그 상태의
+아키텍처(두께/메시/번들)를 써야 함. (2) **living-cell에선 mesh ↑ ↔ stiffness ↑ (양의 상관, R=0.96)**
+— in-vitro 단순 직관(메시 작을수록 뻣뻣)과 반대고, 그 이유가 **번들링(crosslink-induced)**이라는 게
+우리 fragmented-mesh 진단과 정확히 맞물림: 우리 cortex는 번들도 못 만들고(crosslink가 same-filament
+staple) percolate도 안 됨 → 이 논문의 G~ξ³(번들 기반)을 재현할 수 없음. 즉 **이 논문의 G–ξ 양상
+재현이 "연결된 그물 + 번들링"의 강력한 acceptance gate**가 됨. 한계: hTERT-RPE1/HeLa (MCF7 아님 —
+overlay-only), 절대 mesh/두께 nm는 figure에 있어 SI 필요. semiflexible-network scaling은 in-vitro
+유래라 living-cell엔 정성적 일치까지가 정직한 수준 (저자도 "aspects fit").
+
+---
+
+## 16. Miyazaki, Chiba, Eguchi, Ohki, Ishiwata 2015, Nat Cell Biol 17(4):480 — "Cell-sized spherical confinement induces the spontaneous formation of contractile actomyosin rings in vitro" (`Miyazaki2015_NatCellBiol_ContractileRing_confinement.pdf`, DOI 10.1038/ncb3142) ⭐ MECHANISM OF CONTRACTION
+
+**What it is:** MINIMAL in-vitro reconstitution — purified actin + bundling factor + myosin (HMM)
+inside cell-sized water-in-oil droplets. Bottom-up control of biochemistry AND the physical boundary.
+(PI 2026-06-05: fetched via gbook KAIST after the Lead wrongly dismissed the in-vitro line as
+"secondary"; this is the cleanest demonstration of the contraction mechanism.)
+
+### Key findings (the contraction-mechanism smoking-gun)
+- **Contraction is a THRESHOLD transition in effective myosin.** HMM 5 µM = weak/slow; 25 µM =
+  strong/fast → then disassembly. Rring/Rdroplet distribution is BIMODAL (contraction vs none). Below
+  the threshold: no contraction.
+- **Myosin must CO-LOCALIZE / OLIGOMERIZE on the actin to contract.** "Weak: HMM uniform, no
+  localization; Strong: HMM co-localization with actin." Discussion: "stepwise increase in myosin
+  DENSITY on actin filaments and myosin OLIGOMERIZATION … from self-assembly to contraction." → it is
+  the *effective density/oligomeric state ON the load-bearing bundle*, not the bulk amount, that
+  switches contraction on.
+- **Contraction = active REMODELLING / CONDENSATION (volume-conserving densification).** As the ring
+  radius shrinks, the bundle width grows (V = πRring·πd²/4 ≈ const) — the network physically condenses
+  as it contracts. NOT static force summation.
+- Contraction rate ∝ initial perimeter → constant contraction velocity per unit length = "contractile
+  units in series" (consistent with Lenz §below).
+- Confinement/boundary organizes a cortex-like shell (rigid-rod filaments localize at the boundary;
+  ring self-assembles at the EQUATOR to minimize bending elastic energy — pure physics, no signals).
+
+### → WHAT GOES INTO OUR MODEL (the root-cause link)
+- **Contraction requires the network to REMODEL/CONDENSE above a myosin-density threshold.** Our
+  constrained M-SHAKE backbone FORBIDS condensation (filaments can't be drawn together) →
+  **r/r0 = 1.000 (zero densification) → zero net contraction → g_soft floors.** Miyazaki proves, in the
+  minimal system, that "contraction = active condensation" — exactly the process our rigid backbone
+  removes.
+- Reframes "GENERATION-LIMITED": not merely too little force, but **below the myosin-density/oligomer
+  threshold AND the remodelling channel is structurally blocked.**
+
+**감상평 (Lead, 2026-06-05):** PI가 옳았고 내가 in-vitro를 안일하게 "부차적"으로 넘긴 게 실수였다. 이
+최소 재구성계가 우리 floor의 정체를 가장 깨끗하게 보여준다: **수축은 (1) 필라멘트 위 유효 myosin
+밀도/oligomer 임계 위에서, (2) 네트워크의 능동 응축(condensation)으로** 일어난다 — 정적 force 합산이
+아니다. 우리 rigid M-SHAKE backbone은 (2)를 구조적으로 금지(r/r0=1.000) → 그래서 모터·crosslink 수를
+아무리 sweep해도 g_soft가 안 오른 것. 한계: HMM(전장 myosin 아님)·droplet(세포 아님)·contractile RING
+(cytokinesis) 맥락 — 그러나 "수축=임계+응축"의 *메커니즘*은 cortex에 직접 이전된다. ⭐ 등록 +
+KnowledgeClaim "actomyosin-contraction-mechanism (threshold + condensation/remodelling)".
+
+---
+
+## ★ MECHANISM SYNTHESIS — the buckling/remodelling root-cause of the KU-3.5 γ-floor (2026-06-05)
+
+Five in-vitro/theory papers (Miyazaki §16; Lenz 2012 PRL; Murrell & Gardel 2012 PNAS; Stam 2017 PNAS;
+Ennomani 2016 Curr Biol — all reconstituted-actomyosin / Gardel·Dinner·Blanchoin·Murrell) CONVERGE on
+one principle and it pinpoints our floor:
+
+**Disordered / confined actomyosin (= the cortex) contracts ONLY by — above a myosin-density threshold
+— breaking the tension/compression symmetry via filament BUCKLING, and then actively REMODELLING /
+CONDENSING the network. It is NOT static force summation.**
+
+| Required ingredient | Source | Our model | Status |
+|---|---|---|---|
+| Active remodelling / condensation (densification) | Miyazaki2015 | rigid M-SHAKE → no condensation, **r/r0=1.000** | ✗ |
+| Filament BUCKLING (asymmetric: yield-compress/resist-extend) breaks symmetry | Lenz2012, Murrell2012, Stam2017 | per-filament load ~2pN < Euler F_B≈6.9pN (7-bead/3µm); rigid filaments SLIDE not bend (Stam) | ✗ |
+| Myosin effective-density / oligomer THRESHOLD | Miyazaki2015, Lenz2012, Ennomani2016 | recruitment ~31%, lumped (factor 10.6) — likely sub-threshold | ✗/? |
+| Dispersion of motor unloaded velocities | Lenz2012 | v0 = 0.2 µm/s single value | ✗ |
+| Intermittent motor detachment (stress relaxation) | Lenz2012, Miyazaki2015 | Bell-Evans unbinding | ✓ |
+| Intermediate connectivity window (mid=buckling, high=sarcomeric, too-high kills it) | Ennomani2016 | z=3.65 (window-position unverified) | ? |
+
+**Why every prior sweep was null (generation/measurement/percolation/turnover/coherence/motor-count/
+crosslink-count):** none of them is a symmetry-breaker. The missing ingredients are buckling +
+remodelling + the density threshold — and the constrained M-SHAKE backbone (chosen for numerical
+stability) structurally forbids buckling/condensation. Estimator signature: η_agg≈0.94 (instantaneous
+bond geometry fine) BUT r/r0=1.000 + ceiling≈realized (the network cannot ratchet into a condensed,
+tensed state). "Compliant backbone REFUTED" is consistent — compliance (axial stretch) ≠ buckling
+(transverse, load>F_B) ≠ condensation.
+
+**Levers (PI-gated, constrained-freeze):** (1) allow remodelling/buckling — relax M-SHAKE or run
+unconstrained with the cytoplasm-η stabilizer; (2) cross the buckling threshold — lower F_B=π²κ/L²
+(longer/softer sections) + raise per-section load; (3) myosin density/oligomer threshold + v0
+dispersion. CONFIRM with the aggregation estimator: success ⇔ r/r0 < 1 (densification) AND ceiling↑.
+
+(Reference PDF now in `references/` — staged for SE registration in
+`SE_REGISTRATION_CANDIDATES_2026-06-05_contraction-mechanism.md`; BM25 ingest + Notion SE row at next
+KB batch.)
+
+---

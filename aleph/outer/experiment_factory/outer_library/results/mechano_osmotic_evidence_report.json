@@ -1,0 +1,188 @@
+{
+  "AFM_membrane_tether_force": {
+    "method": "single-cell atomic force spectroscopy; per-cell tether pulls averaged by authors",
+    "observable_unit": "pN",
+    "spreading_phase_30_to_90_min": {
+      "Y27632_minus_control_mean_pN": 9.03612632809577,
+      "apparent_membrane_tension_ratio_if_bending_rigidity_constant": 2.200128348141777,
+      "cells_are_not_inference_units": true,
+      "force_to_tension_relation": "descriptive model-derived ratio only; tether force is proportional to the square root of apparent membrane tension when bending rigidity is constant",
+      "inference_unit": "matched_author_independent_experiment",
+      "matched_Y27632_mean_pN": 27.733508650793652,
+      "matched_control_mean_pN": 18.697382322697877,
+      "matched_experiment_ids": [
+        "author_experiment:200717",
+        "author_experiment:200719",
+        "author_experiment:200720"
+      ],
+      "matched_independent_experiments": 3,
+      "paired_experiment_bootstrap_95ci_pN": [
+        8.638099135802467,
+        9.604740800865798
+      ],
+      "paired_experiment_effects_pN": [
+        8.865539047619045,
+        9.604740800865798,
+        8.638099135802467
+      ]
+    },
+    "steady_state_nonspread_4_to_5_hour": {
+      "Y27632_minus_control_mean_pN": 0.2491307634164741,
+      "apparent_membrane_tension_ratio_if_bending_rigidity_constant": 1.0245933663201716,
+      "cells_are_not_inference_units": true,
+      "force_to_tension_relation": "descriptive model-derived ratio only; tether force is proportional to the square root of apparent membrane tension when bending rigidity is constant",
+      "inference_unit": "matched_author_independent_experiment",
+      "matched_Y27632_mean_pN": 20.632936507936506,
+      "matched_control_mean_pN": 20.383805744520032,
+      "matched_experiment_ids": [
+        "author_experiment:211026-1116_1",
+        "author_experiment:211026-1116_2",
+        "author_experiment:211026-1116_3"
+      ],
+      "matched_independent_experiments": 3,
+      "paired_experiment_bootstrap_95ci_pN": [
+        -2.2210884353741562,
+        2.0579365079364997
+      ],
+      "paired_experiment_effects_pN": [
+        0.9105442176870788,
+        2.0579365079364997,
+        -2.2210884353741562
+      ]
+    },
+    "steady_state_spread_4_to_5_hour": {
+      "Y27632_minus_control_mean_pN": -0.06732280848450618,
+      "apparent_membrane_tension_ratio_if_bending_rigidity_constant": 0.9935602047241401,
+      "cells_are_not_inference_units": true,
+      "force_to_tension_relation": "descriptive model-derived ratio only; tether force is proportional to the square root of apparent membrane tension when bending rigidity is constant",
+      "inference_unit": "matched_author_independent_experiment",
+      "matched_Y27632_mean_pN": 20.807330583049886,
+      "matched_control_mean_pN": 20.87465339153439,
+      "matched_experiment_ids": [
+        "author_experiment:201215",
+        "author_experiment:201216",
+        "author_experiment:201221"
+      ],
+      "matched_independent_experiments": 3,
+      "paired_experiment_bootstrap_95ci_pN": [
+        -0.624726333333335,
+        0.699978224206351
+      ],
+      "paired_experiment_effects_pN": [
+        -0.624726333333335,
+        -0.27722031632653454,
+        0.699978224206351
+      ]
+    }
+  },
+  "aleph_parameter_proposal_eligible": false,
+  "checks": {
+    "area_rate_increase_experiment_ci_excludes_zero": true,
+    "early_tether_force_increase_paired_experiment_ci_excludes_zero": true,
+    "force_unit_is_pN": true,
+    "spreading_units_have_author_source_locators": true,
+    "steady_tether_force_direction_is_reported_without_cell_pseudoreplication": true,
+    "volume_flux_decrease_experiment_ci_excludes_zero": true
+  },
+  "experiment_grouped_evidence_eligible": true,
+  "independent_lab_mechanism_holdout_passed": false,
+  "initial_spreading_area_rate": {
+    "Y27632_cells": 121,
+    "Y27632_experiment_means": {
+      "author_experiment_date:20180220": 27.30126719790691,
+      "author_experiment_date:20180308": 31.77113349355634,
+      "author_experiment_date:20180517": 44.71345232347993,
+      "author_experiment_date:20180605": 58.29274655406718
+    },
+    "Y27632_independent_experiments": 4,
+    "Y27632_minus_control_experiment_mean_difference": 25.360140641348032,
+    "cells_are_not_inference_units": true,
+    "control_cells": 194,
+    "control_experiment_means": {
+      "author_experiment_label:20180220 hela spreading 20xPA FN RICM 1": 12.743216629074205,
+      "author_experiment_label:20180220 hela spreading 20xPA FN RICM 2": 16.728670435233443,
+      "author_experiment_label:20180308 HeLa RICM 20xPA cntrl30minincub": 16.006640688406016
+    },
+    "control_independent_experiments": 3,
+    "direction": "increases",
+    "independent_experiment_bootstrap_95ci": [
+      14.165673066686349,
+      37.59064205781218
+    ],
+    "inference_unit": "author_independent_experiment"
+  },
+  "initial_volume_flux": {
+    "Y27632_cells": 121,
+    "Y27632_experiment_means": {
+      "author_experiment_date:20180220": -26.20233012387585,
+      "author_experiment_date:20180308": -14.46806739378782,
+      "author_experiment_date:20180517": -12.211249318286063,
+      "author_experiment_date:20180605": -17.577626891797227
+    },
+    "Y27632_independent_experiments": 4,
+    "Y27632_minus_control_experiment_mean_difference": -11.837259998581555,
+    "cells_are_not_inference_units": true,
+    "control_cells": 194,
+    "control_experiment_means": {
+      "author_experiment_label:20180220 hela spreading 20xPA FN RICM 1": -5.582182272903151,
+      "author_experiment_label:20180220 hela spreading 20xPA FN RICM 2": -5.167750134019922,
+      "author_experiment_label:20180308 HeLa RICM 20xPA cntrl30minincub": -6.582742893142485
+    },
+    "control_independent_experiments": 3,
+    "direction": "decreases",
+    "independent_experiment_bootstrap_95ci": [
+      -17.49120600799866,
+      -7.303621025267813
+    ],
+    "inference_unit": "author_independent_experiment"
+  },
+  "may_mutate_physics": false,
+  "observable_constraint_eligible": true,
+  "operator_assumptions": [
+    "constant membrane bending rigidity is required to interpret force squared as apparent membrane tension",
+    "the AFM tether-pull geometry must be represented by an Aleph measurement operator",
+    "Y-27632 also affects actomyosin, spreading, ion flux, and membrane reservoirs, so it does not identify one parameter"
+  ],
+  "source": {
+    "accession": "10.7554/eLife.72381",
+    "cell_type": "HeLa Kyoto",
+    "external_holdout_design": false,
+    "independent_lab_dataset_present": true,
+    "intervention": "Y27632_100_micromolar"
+  },
+  "source_reconciliation": {
+    "Y27632_area_rate_raw_table_minus_summary_mean": 0.6760719802659665,
+    "Y27632_volume_flux_reconciles": true,
+    "control_reconciles_after_one_explicit_author_summary_exclusion": true,
+    "policy": "preserve the per-cell raw dVdt_dAdt workbook; disclose rather than overwrite its Y-27632 area-rate mismatch with data_sum.xlsx",
+    "published_Figure2D_data_sum_means": {
+      "Y27632_100_micromolar:initial_spreading_area_rate": 34.17657354976074,
+      "Y27632_100_micromolar:initial_volume_flux": -16.23142630309834,
+      "vehicle_control:initial_spreading_area_rate": 15.429947335083202,
+      "vehicle_control:initial_volume_flux": -5.882967321817296
+    },
+    "raw_manifest_cell_means": {
+      "Y27632_100_micromolar:initial_spreading_area_rate": 34.852645530026706,
+      "Y27632_100_micromolar:initial_volume_flux": -16.231426303098345,
+      "vehicle_control:initial_spreading_area_rate": 15.4299473350832,
+      "vehicle_control:initial_volume_flux": -5.882967321817296
+    }
+  },
+  "task": "experiment_grouped_mechano_osmotic_and_membrane_tether_evidence",
+  "tether_force_is_apparent_membrane_tension_proxy": true,
+  "tether_force_is_direct_cortical_tension": false,
+  "unit_provenance": {
+    "initial_spreading_area_rate": {
+      "author_header": "dA/dt i (\u00b5m2/min)",
+      "source_locator": "zip:Figure2/Figure2D/data_sum.xlsx!Sheet1!B1",
+      "source_sha256": "e3d8035c3c008d7aed5bc88a817b9d94133e96aaf8ca7a0f9ecd574328011fc2",
+      "unit": "square_micrometre_per_minute"
+    },
+    "initial_volume_flux": {
+      "author_header": "dV/dt i (\u00b5m3/min)",
+      "source_locator": "zip:Figure2/Figure2D/data_sum.xlsx!Sheet1!E1",
+      "source_sha256": "e3d8035c3c008d7aed5bc88a817b9d94133e96aaf8ca7a0f9ecd574328011fc2",
+      "unit": "cubic_micrometre_per_minute"
+    }
+  }
+}

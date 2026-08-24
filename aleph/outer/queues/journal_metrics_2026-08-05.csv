@@ -1,0 +1,518 @@
+journal,candidate_count,earliest_year,latest_year,metric_name,metric_value,metric_year,metric_source,verified_at,status
+Scientific reports,41,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biophysical journal,38,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature communications,37,2020,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of molecular sciences,23,2021,2026,JIF,,,,,pending_licensed_jcr_lookup
+Acta biomaterialia,21,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Advanced science (Weinheim, Baden-Wurttemberg, Germany)",21,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Proceedings of the National Academy of Sciences of the United States of America,21,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+PLoS computational biology,16,2021,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in cell and developmental biology,13,2021,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell reports,12,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular biology of the cell,12,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+iScience,12,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Communications biology,11,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of cell science,11,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Soft matter,11,2021,2026,JIF,,,,,pending_licensed_jcr_lookup
+Science advances,10,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cells,8,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Methods in molecular biology (Clifton, N.J.)",8,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+Physical review. E,8,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of cell biology,8,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+ACS applied materials & interfaces,7,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+Advanced healthcare materials,7,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bio-protocol,7,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cellular and molecular bioengineering,7,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current biology : CB,7,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Nucleus (Austin, Tex.)",7,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+eLife,7,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cold Spring Harbor perspectives in biology,6,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Investigative ophthalmology & visual science,6,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature cell biology,6,2021,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature methods,6,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+PloS one,6,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+ACS nano,5,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+APL bioengineering,5,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomechanics and modeling in mechanobiology,5,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell communication and signaling : CCS,5,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Development (Cambridge, England)",5,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Developmental cell,5,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+FASEB journal : official publication of the Federation of American Societies for Experimental Biology,5,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in bioengineering and biotechnology,5,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Materials today. Bio,5,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Microscopy research and technique,5,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular biology reports,5,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Sensors (Basel, Switzerland)",5,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Ultrasonics,5,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+BMC bioinformatics,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomaterials,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomaterials advances,4,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Computer methods and programs in biomedicine,4,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Computers in biology and medicine,4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current protocols,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Discover oncology,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+EMBO reports,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in immunology,4,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in pharmacology,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Glia,4,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of biological macromolecules,4,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of colloid and interface science,4,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of materials chemistry. B,4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of the American Chemical Society,4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Journal of the Royal Society, Interface",4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of visualized experiments : JoVE,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Langmuir : the ACS journal of surfaces and colloids,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Mechanobiology in medicine,4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nanoscale,4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature materials,4,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Results and problems in cell differentiation,4,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The EMBO journal,4,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of biological chemistry,4,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+ACS biomaterials science & engineering,3,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+American journal of respiratory cell and molecular biology,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Annual International Conference of the IEEE Engineering in Medicine and Biology Society. IEEE Engineering in Medicine and Biology Society. Annual International Conference,3,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Artificial organs,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Bioengineering (Basel, Switzerland)",3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biology,3,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biology open,3,2020,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biotechnology and bioengineering,3,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Briefings in bioinformatics,3,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bulletin of mathematical biology,3,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Cancer cell international,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancers,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell biology international,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell death & disease,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Cytoskeleton (Hoboken, N.J.)",3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cytotechnology,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+European biophysics journal : EBJ,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in physiology,3,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+HardwareX,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biochemical and molecular toxicology,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of cellular physiology,3,2020,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of microscopy,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of molecular histology,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of translational medicine,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Medical engineering & physics,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Micromachines,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Oncogene,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Oncology reports,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Pathology, research and practice",3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Research (Washington, D.C.)",3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Scientific data,3,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Tissue & cell,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+microPublication biology,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+npj biological physics and mechanics,3,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Advanced materials (Deerfield Beach, Fla.)",2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Advances in experimental medicine and biology,2,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Aging and disease,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+American journal of physiology. Cell physiology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Annals of biomedical engineering,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Annual review of physiology,2,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bio Systems,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biochemical and biophysical research communications,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biochemical genetics,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bioconjugate chemistry,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biofabrication,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Bioinformatics (Oxford, England)",2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biology of reproduction,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biology of the cell,2,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Biomedical optics express,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomedicines,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomolecules,2,2021,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biosensors & bioelectronics,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bulletin of experimental biology and medicine,2,2023,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancer research,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancer research communications,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancer science,2,2019,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell calcium,2,2023,2025,JIF,,,,,pending_licensed_jcr_lookup
+Cell reports methods,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell systems,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cellular and molecular life sciences : CMLS,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Cellular physiology and biochemistry : international journal of experimental cellular physiology, biochemistry, and pharmacology",2,2021,2022,JIF,,,,,pending_licensed_jcr_lookup
+Cellular signalling,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Chemical biology & drug design,2,2024,2025,JIF,,,,,pending_licensed_jcr_lookup
+Chemistry & biodiversity,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Colloids and surfaces. B, Biointerfaces",2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Communications medicine,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current issues in molecular biology,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current opinion in biomedical engineering,2,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Current opinion in cell biology,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Developmental biology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Ecotoxicology and environmental safety,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Environmental toxicology and pharmacology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Experimental cell research,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Experimental eye research,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Experiments in fluids,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in medicine,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in molecular neuroscience,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in oncology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Genes,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+In vitro cellular & developmental biology. Animal,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Integrative and comparative biology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International dental journal,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International immunopharmacology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biomaterials science. Polymer edition,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biomechanics,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biomedical science,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of cancer research and clinical oncology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of controlled release : official journal of the Controlled Release Society,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of ethnopharmacology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of functional biomaterials,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of imaging,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of mathematical biology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of molecular and cellular cardiology,2,2022,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of nanobiotechnology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of ophthalmology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of orthopaedic research : official publication of the Orthopaedic Research Society,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of orthopaedic translation,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of the mechanical behavior of biomedical materials,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of thrombosis and haemostasis : JTH,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Materials (Basel, Switzerland)",2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Matrix biology : journal of the International Society for Matrix Biology,2,2024,2025,JIF,,,,,pending_licensed_jcr_lookup
+MedComm,2,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Membranes,2,2022,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Microscopy (Oxford, England)",2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Microsystems & nanoengineering,2,2023,2024,JIF,,,,,pending_licensed_jcr_lookup
+Molecular neurobiology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular systems biology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+NPJ systems biology and applications,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nano letters,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Nanomaterials (Basel, Switzerland)",2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature cardiovascular research,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature protocols,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Naunyn-Schmiedeberg's archives of pharmacology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Oncology research,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+PLoS biology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+PLoS pathogens,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Pakistan journal of pharmaceutical sciences,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Phytotherapy research : PTR,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Placenta,2,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+STAR protocols,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Science immunology,2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Signal transduction and targeted therapy,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Small (Weinheim an der Bergstrasse, Germany)",2,2024,2026,JIF,,,,,pending_licensed_jcr_lookup
+Small methods,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Steroids,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of experimental biology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of physiology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Review of scientific instruments,2,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+The journal of physiological sciences : JPS,2,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Theranostics,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Translational cancer research,2,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Ultrasonics sonochemistry,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Vascular pharmacology,2,2025,2026,JIF,,,,,pending_licensed_jcr_lookup
+Zhongguo Zhong yao za zhi = Zhongguo zhongyao zazhi = China journal of Chinese materia medica,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Zhonghua kou qiang yi xue za zhi = Zhonghua kouqiang yixue zazhi = Chinese journal of stomatology,2,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+ACS measurement science au,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+ACS omega,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+ACS sensors,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+ACS synthetic biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Acta biochimica Polonica,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Acta biochimica et biophysica Sinica,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Acta neuropathologica,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Acta of bioengineering and biomechanics,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Acta physiologica (Oxford, England)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Advanced biotechnology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Advanced functional materials,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Advances in protein chemistry and structural biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Ageing research reviews,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+American journal of respiratory and critical care medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Analytical and bioanalytical chemistry,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Analytical chemistry,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Analytical methods : advancing methods and applications,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Anatomical record (Hoboken, N.J. : 2007)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Angewandte Chemie (International ed. in English),1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Angiogenesis,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Annals of clinical and laboratory science,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Annual review of biomedical engineering,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Annual review of biophysics,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Annual review of cell and developmental biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Anticancer research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Antioxidants (Basel, Switzerland)",1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Apoptosis : an international journal on programmed cell death,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Applied biochemistry and biotechnology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Applied optics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Arab journal of gastroenterology : the official publication of the Pan-Arab Association of Gastroenterology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Archives of biochemistry and biophysics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Arteriosclerosis, thrombosis, and vascular biology",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Autoimmunity,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+BMB reports,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+BMC biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+BMC complementary medicine and therapies,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+BMC medicine,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+BMC molecular and cell biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+BMC pulmonary medicine,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Bio-medical materials and engineering,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"BioFactors (Oxford, England)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bioactive materials,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biochemical Society transactions,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biochemical pharmacology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biochemistry and biophysics reports,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biochimica et biophysica acta. Biomembranes,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Biochimica et biophysica acta. General subjects,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Bioinformatics advances,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Bioinspiration & biomimetics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomacromolecules,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomaterials research,1,2022,2022,JIF,,,,,pending_licensed_jcr_lookup
+Biomaterials science,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+"Biomedical materials (Bristol, England)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Biomedical microdevices,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Biomedicine & pharmacotherapy = Biomedecine & pharmacotherapie,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Biomimetics (Basel, Switzerland)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Bioorganic chemistry,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Biophysical reviews,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Biophysics reports,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Bioresource technology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Biotechnology journal,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Birth defects research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Brain research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Brazilian journal of medical and biological research = Revista brasileira de pesquisas medicas e biologicas,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Brazilian journal of otorhinolaryngology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancer biology & medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancer biology & therapy,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+"Cancer immunology, immunotherapy : CII",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cancer letters,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell and tissue research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Cell biochemistry and biophysics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cell chemical biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Cell death discovery,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cellular immunology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Cellular oncology (Dordrecht, Netherlands)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Chem & bio engineering,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Chemical & biomedical imaging,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Chemical science,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Chemistry of materials : a publication of the American Chemical Society,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Chinese journal of traumatology = Zhonghua chuang shang za zhi,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Chonnam medical journal,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Circulation. Genomic and precision medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Clinical & experimental metastasis,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Clinical & translational oncology : official publication of the Federation of Spanish Oncology Societies and of the National Cancer Institute of Mexico,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Clinical breast cancer,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Clinical ophthalmology (Auckland, N.Z.)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Communications engineering,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Communications physics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Comptes rendus biologies,1,2021,2021,JIF,,,,,pending_licensed_jcr_lookup
+Computational and structural biotechnology journal,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Computational biology and chemistry,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Critical reviews in oncology/hematology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cryobiology,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Current cancer drug targets,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current eye research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current opinion in genetics & development,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Current opinion in nephrology and hypertension,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Current topics in developmental biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Current topics in membranes,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+"Cyborg and bionic systems (Washington, D.C.)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Cytometry. Part A : the journal of the International Society for Analytical Cytology,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+DNA and cell biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Daru : journal of Faculty of Pharmacy, Tehran University of Medical Sciences",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Dental materials journal,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Digestive diseases and sciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Drug design, development and therapy",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Einstein (Sao Paulo, Brazil)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Entropy (Basel, Switzerland)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Environmental pollution (Barking, Essex : 1987)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Environmental research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Environmental toxicology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Epigenomics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+European journal of cell biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+European journal of histochemistry : EJH,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+European journal of medical research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+European journal of medicinal chemistry,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+European journal of pharmaceutical sciences : official journal of the European Federation for Pharmaceutical Sciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+European journal of pharmacology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Experimental & molecular medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Experimental and molecular pathology,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Experimental thermal and fluid science,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+"Explore (New York, N.Y.)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+FASEB bioAdvances,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+FEBS letters,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Faraday discussions,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Fish physiology and biochemistry,1,2021,2021,JIF,,,,,pending_licensed_jcr_lookup
+Food microbiology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Free radical biology & medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in cellular neuroscience,1,2022,2022,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in genome editing,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in molecular biosciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers in rehabilitation sciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Frontiers of medicine,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Gels (Basel, Switzerland)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Gene,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Genome biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Geobiology,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+GeroScience,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Graefe's archive for clinical and experimental ophthalmology = Albrecht von Graefes Archiv fur klinische und experimentelle Ophthalmologie,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Handbook of clinical neurology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Handbook of experimental pharmacology,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Heliyon,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+"Hepatology (Baltimore, Md.)",1,2021,2021,JIF,,,,,pending_licensed_jcr_lookup
+Hereditas,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Human cell,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+IBRO neuroscience reports,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+IEEE journal of biomedical and health informatics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Immunology letters,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Interdisciplinary cardiovascular and thoracic surgery,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Interdisciplinary sciences, computational life sciences",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of biomaterials,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of cancer,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of endocrinology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"International journal of hyperthermia : the official journal of European Society for Hyperthermic Oncology, North American Hyperthermia Group",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of nephrology and renovascular disease,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+International journal of oncology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of ophthalmology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+International journal of pharmaceutics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+JCI insight,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+JHEP reports : innovation in hepatology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+JID innovations : skin science from molecules to population health,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+JOR spine,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Journal of advanced research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of agricultural and food chemistry,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of applied crystallography,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of applied physics,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Journal of bioenergetics and biomembranes,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biological inorganic chemistry : JBIC : a publication of the Society of Biological Inorganic Chemistry,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biological physics,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biomechanical engineering,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biomedical materials research. Part A,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Journal of biomedical materials research. Part B, Applied biomaterials",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of biophotonics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of chemical information and modeling,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of chemical theory and computation,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of clinical periodontology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of dentistry,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of diabetes investigation,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of environmental management,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of enzyme inhibition and medicinal chemistry,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Journal of experimental zoology. Part A, Ecological and integrative physiology",1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Journal of functional morphology and kinesiology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Journal of fungi (Basel, Switzerland)",1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Journal of inflammation research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of lipid research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of medical ultrasound,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of medicinal chemistry,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Journal of molecular medicine (Berlin, Germany)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Journal of neuroimmune pharmacology : the official journal of the Society on NeuroImmune Pharmacology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of oral biosciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of pharmaceutical analysis,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Journal of pharmaceutical and biomedical analysis,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of pharmacological sciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of physical therapy science,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of the American Society for Mass Spectrometry,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of theoretical biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Journal of tissue engineering,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Lab on a chip,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Life (Basel, Switzerland)",1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Life science alliance,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Life sciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Lung cancer (Amsterdam, Netherlands)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Marine drugs,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Matrix biology plus,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Matter,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Mechanisms of ageing and development,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Mediators of inflammation,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Medical image analysis,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Methods and applications in fluorescence,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Methods in enzymology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Microbiological research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Microbiology and molecular biology reviews : MMBR,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+"Micron (Oxford, England : 1993)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Microscopy and microanalysis : the official journal of Microscopy Society of America, Microbeam Analysis Society, Microscopical Society of Canada",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular & cellular proteomics : MCP,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular and cellular biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular carcinogenesis,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Molecular cell,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Molecular genetics and metabolism,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Molecular medicine (Cambridge, Mass.)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Molecular reproduction and development,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Mutagenesis,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+NPJ cardiovascular health,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+NPJ precision oncology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nan fang yi ke da xue xue bao = Journal of Southern Medical University,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nano convergence,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Nanomedicine : nanotechnology, biology, and medicine",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Nature machine intelligence,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature metabolism,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Nature reviews. Cardiology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Nature reviews. Gastroenterology & hepatology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Nature reviews. Molecular cell biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Nephrology, dialysis, transplantation : official publication of the European Dialysis and Transplant Association - European Renal Association",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Neuro-oncology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Neurobiology of disease,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Neuroinformatics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Neurological research,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Neuromolecular medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Non-coding RNA,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Npj imaging,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Nucleic acids research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Oncogenesis,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Ophthalmic genetics,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Ophthalmologica. Journal international d'ophtalmologie. International journal of ophthalmology. Zeitschrift fur Augenheilkunde,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Optics letters,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Oral diseases,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Oral oncology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+PLoS neglected tropical diseases,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+PNAS nexus,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+"Patterns (New York, N.Y.)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Pflugers Archiv : European journal of physiology,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+"Pharmaceuticals (Basel, Switzerland)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Pharmaceutics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Pharmacological research,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+Pharmacology research & perspectives,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Physical biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Physical review letters,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Physics in medicine and biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Physiology (Bethesda, Md.)",1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Plant reproduction,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Proceedings. Biological sciences,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Proceedings. IEEE International Symposium on Biomedical Imaging,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Progress in biomedical engineering (Bristol, England)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Progress in biophysics and molecular biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Protein science : a publication of the Protein Society,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Quarterly reviews of biophysics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+RNA biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Recent patents on anti-cancer drug discovery,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Redox biology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Reports on progress in physics. Physical Society (Great Britain),1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+"Retina (Philadelphia, Pa.)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+SLAS discovery : advancing life sciences R & D,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+"Science (New York, N.Y.)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Science signaling,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Sheng wu gong cheng xue bao = Chinese journal of biotechnology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Stem cell reviews and reports,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Studies in health technology and informatics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Talanta,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Analyst,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The British journal of dermatology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"The European physical journal. E, Soft matter",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The FEBS journal,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of chemical physics,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of pharmacology and experimental therapeutics,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Journal of the Acoustical Society of America,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+The New phytologist,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+The Science of the total environment,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+The international journal of biochemistry & cell biology,1,2023,2023,JIF,,,,,pending_licensed_jcr_lookup
+The journal of gene medicine,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+The journal of physical chemistry letters,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+The journal of physical chemistry. B,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Therapeutic advances in endocrinology and metabolism,1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+Theriogenology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Tissue engineering and regenerative medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Tissue engineering. Part A,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Toxicological sciences : an official journal of the Society of Toxicology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Toxicology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Toxicology and applied pharmacology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Toxicology in vitro : an international journal published in association with BIBRA,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Traffic (Copenhagen, Denmark)",1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Translational oncology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Translational research : the journal of laboratory and clinical medicine,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Trends in biochemical sciences,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Trends in cell biology,1,2025,2025,JIF,,,,,pending_licensed_jcr_lookup
+Tropical life sciences research,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Viruses,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+"Waste management (New York, N.Y.)",1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Water environment research : a research publication of the Water Environment Federation,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+World journal of surgical oncology,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+Zhonghua zhong liu za zhi [Chinese journal of oncology],1,2024,2024,JIF,,,,,pending_licensed_jcr_lookup
+mBio,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup
+npj computational materials,1,2026,2026,JIF,,,,,pending_licensed_jcr_lookup

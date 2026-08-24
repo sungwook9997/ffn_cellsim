@@ -1,0 +1,60 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "a2_crosslink_prestretch_t0",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "evidence_basis": "one host readback of the builder's own t0 output; no step taken, no parameter changed, no force assembled",
+ "stamp": {
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "python": "3.13.14",
+  "device": "cuda:0"
+ },
+ "census": {
+  "n_crosslinks": 1413720,
+  "n_nodes": 511114,
+  "n_degenerate_pairs": 0
+ },
+ "parameter_provenance": {
+  "k_crosslink_pN_per_um": {
+   "value": 820000.0,
+   "status": "SOURCED",
+   "note": "alpha-actinin 455 pN/nm, Ferrer 2008 PNAS AFM, PI-approved 2026-06-30",
+   "matches_ALPHA_ACTININ_link_k": false
+  }
+ },
+ "extension_um": {
+  "p0": 0.0,
+  "p1": 0.0,
+  "p5": 0.0,
+  "p25": 0.0,
+  "p50": 0.0,
+  "p75": 0.0,
+  "p95": 0.0,
+  "p99": 0.0,
+  "p100": 0.0
+ },
+ "tension_pN": {
+  "p0": 0.0,
+  "p1": 0.0,
+  "p5": 0.0,
+  "p25": 0.0,
+  "p50": 0.0,
+  "p75": 0.0,
+  "p95": 0.0,
+  "p99": 0.0,
+  "p100": 0.0
+ },
+ "summary": {
+  "median_abs_tension_pN": 0.0,
+  "mean_abs_tension_pN": 0.0,
+  "frac_stretched": 0.0,
+  "frac_slack": 0.0,
+  "total_abs_tension_pN": 0.0
+ },
+ "reading": "A force-free crosslink population reads ~0 at every percentile. A large median |tension| at t0 means the builder handed the relaxer a pre-stressed network, which is the state hand_kmc.py:141 warns about and gamma_floor.py's crosslink_turnover exists to avoid. It would not be a solver defect; it would be an initial condition.",
+ "timing": {
+  "comparable": false,
+  "not_comparable_reason": "no solve; one host readback at t0"
+ }
+}

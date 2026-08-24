@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aleph.external_training.visual_observation_candidate.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority_status", "source_family_id", "pmcid", "source_xml_sha256",
+    "experiment_candidate_id", "observation_candidate_id", "figure_id", "exact_locator",
+    "caption_sha256", "graphics", "proposed_modality_tags", "asset_state",
+    "scientific_value_state"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.external_training.visual_observation_candidate.v1"},
+    "authority_status": {"const": "proposed"},
+    "source_family_id": {"type": "string", "minLength": 1},
+    "pmcid": {"type": "string", "pattern": "^PMC[0-9]+$"},
+    "acquisition_pass": {"enum": ["initial", "second_pass"]},
+    "source_xml_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "experiment_candidate_id": {"type": "string", "pattern": "^aleph:experiment-candidate:[0-9a-f]{16}$"},
+    "experiment_link_state": {"type": "string"},
+    "observation_candidate_id": {"type": "string", "pattern": "^aleph:observation-candidate:[0-9a-f]{16}$"},
+    "observation_type": {"const": "visual_figure"},
+    "figure_id": {"type": "string", "minLength": 1},
+    "figure_ordinal": {"type": "integer", "minimum": 0},
+    "exact_locator": {"type": "string", "pattern": "^fig\\[id=.+\\]$"},
+    "figure_label_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "caption_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "caption_bytes": {"type": "integer", "minimum": 0},
+    "graphics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["asset_candidate_id", "ordinal", "exact_locator", "href", "href_sha256"],
+        "properties": {
+          "asset_candidate_id": {"type": "string", "pattern": "^aleph:visual-asset-candidate:[0-9a-f]{16}$"},
+          "ordinal": {"type": "integer", "minimum": 0},
+          "exact_locator": {"type": "string"},
+          "href": {"type": ["string", "null"]},
+          "href_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "proposed_modality_tags": {"type": "array", "items": {"type": "object"}},
+    "asset_state": {"enum": ["not_in_annotation_selection", "selected_pending_acquisition"]},
+    "scientific_value_state": {"const": "refused_without_calibration"}
+  }
+}

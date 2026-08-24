@@ -1,0 +1,26 @@
+{
+  "device": "GPU",
+  "on_gpu": true,
+  "n_cells": 200,
+  "nodes": 8400,
+  "active": true,
+  "steps": 600,
+  "warmup": 100,
+  "total_ms_per_step": 38.8605,
+  "per_step_ms": {
+    "set_forces_active": 22.0831,
+    "set_forces_substrate": 0.3589,
+    "set_forces_tent": 13.9882,
+    "set_forces_turgor": 1.0198,
+    "baoab_act": 1.1101,
+    "empty_ctx_per_force": 0.2184
+  },
+  "sum_custom_ms": 37.45,
+  "baoab_ms": 1.1101,
+  "hoomd_internal_ms": 0.3005,
+  "empty_ctx_floor_ms": 0.2184,
+  "n_custom_forces": 4,
+  "py_overhead_separate_ms": 0.8738,
+  "kernel_compute_ms": 36.5762,
+  "_note": "Active (production) per-step profile, gbook RTX A5000, 2026-06-11. Captured from scripts/dcm_gpu_profile.py --n-cells 200 --active (the run before the passive re-run overwrote the untagged profile_n200_GPU.json). Authoritative numbers reproduced here so the figure shows the active breakdown."
+}

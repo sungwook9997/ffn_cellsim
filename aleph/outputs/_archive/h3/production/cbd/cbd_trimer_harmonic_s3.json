@@ -1,0 +1,11 @@
+{
+  "mode": "harmonic",
+  "seed": 3,
+  "n_step": 2000000,
+  "samples": 400,
+  "kth": 2.0,
+  "fixman_sign": -1.0,
+  "theta_mean": 2.3566952301903616,
+  "E_bend": 0.7905594122018662,
+  "E_bend_sem": 0.0400826249379629
+}

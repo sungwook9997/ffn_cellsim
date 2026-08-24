@@ -1,0 +1,102 @@
+{
+  "OOD_refusal_validated": false,
+  "aleph_authority": "none",
+  "design_audit": {
+    "TGFB1_replicates": 3,
+    "biological_replicate_is_test_unit": true,
+    "biological_samples": 6,
+    "control_replicates": 3,
+    "genes": 2,
+    "observations": 12,
+    "protocol_frozen_before_expression_access": true,
+    "sample_exclusions": 0
+  },
+  "freeze_proof": {
+    "expression_downloaded_after_protocol_commit": true,
+    "protocol_commit_before_download": "7984e5b",
+    "protocol_sha256": "9eb83ce6f04bf9db7d1b63a0744a9021689de522fe28067778116414d99027e3"
+  },
+  "frozen_primary_test": {
+    "alpha": 0.05,
+    "directions": {
+      "CDH1": "decrease",
+      "VIM": "increase"
+    },
+    "exact_assignment_count": 20,
+    "exact_one_sided_p": 0.05,
+    "oriented_composite_score": 87.42216925478374,
+    "passed": true
+  },
+  "may_select_aleph_parameter": false,
+  "numeric_uncertainty_promotion_passed": false,
+  "pre_sweep_role": {
+    "may_emit_sweep_axis": false,
+    "numeric_range": null,
+    "remaining_blockers": [
+      "Aleph CDH1/VIM-compatible observation operators",
+      "monotonic Aleph forward sensitivity",
+      "multiple independently frozen semantic OOD contexts",
+      "numeric cross-assay calibration rather than direction-only evidence"
+    ],
+    "supported_action": "confirm retrospective CDH1-down/VIM-up filter on an outcome-blind external lab"
+  },
+  "pristine_external_direction_holdout_passed": true,
+  "raw_FPKM": {
+    "CDH1": {
+      "TGFB1": [
+        0.849858787524687,
+        0.865265210994075,
+        1.0167075482225103
+      ],
+      "control": [
+        17.068787742100106,
+        17.614548265799904,
+        18.6002989647795
+      ]
+    },
+    "VIM": {
+      "TGFB1": [
+        410.7021074708269,
+        416.33995678187813,
+        413.4404950085009
+      ],
+      "control": [
+        211.40606784930407,
+        217.31956315745796,
+        206.59375024034003
+      ]
+    }
+  },
+  "sample_ids": [
+    "GSM9600356",
+    "GSM9600357",
+    "GSM9600358",
+    "GSM9600359",
+    "GSM9600360",
+    "GSM9600361"
+  ],
+  "schema": "aleph.outer_library.gse325309_pristine_evaluation.v1",
+  "secondary_diagnostics": {
+    "all_nine_pairwise_differences_expected": {
+      "CDH1": true,
+      "VIM": true
+    },
+    "bootstrap": {
+      "CDH1": {
+        "bootstrap_percentile_95": [
+          -3.3765850496107697,
+          -3.2152765921390203
+        ],
+        "log2_FPKM_plus_1_mean_difference": -3.295930820874895
+      },
+      "VIM": {
+        "bootstrap_percentile_95": [
+          0.9280762552003647,
+          0.9964393856142886
+        ],
+        "log2_FPKM_plus_1_mean_difference": 0.9623198193622722
+      }
+    }
+  },
+  "task": "outcome_blind_preregistered_external_EMT_direction_holdout"
+}

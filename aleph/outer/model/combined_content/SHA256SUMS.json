@@ -1,0 +1,11 @@
+{
+  "config.json": "b93b68e94ba17c4a3324577699b8707117a38eb72c8f78f32284cfea67bd773b",
+  "example_inference.json": "1c92d17d992ad29bcac14b918b189bca2413c4870ce579808c02c57cc6f32726",
+  "infer.py": "1dc56818c8cc75a22969272a23a6f9a558a248ea5cbcb67f8e173ae821d64c95",
+  "metrics.json": "47ca953aee944782a15c94c16dc482d85e1a50c1a3755218cca89eed98cffea8",
+  "splits.jsonl": "fcc7afd0bec12ebf199bef39039d8f0b694e494465a2e1a1ac59ff63166b0a5d",
+  "taxonomy.json": "2b0d69827c88eee5dcd8f4cc8956a05eb33dd93ed26362e7ddf4ccc98a2ae403",
+  "train.py": "d2f416547666540be12e296eb5a47fee0ba4d099540ce62da2e372a99d387dd3",
+  "weights_combined_content.npz": "ff2f0fb927ce484095bd881449b83ebf36b35e2414c7d7578f3718a173062bdb",
+  "weights_title_only.npz": "a0e8606465ab8102a5cd5309e3c912638552aad38bd5e547e93939611605ae52"
+}

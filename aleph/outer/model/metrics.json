@@ -1,0 +1,328 @@
+{
+  "authority": "external_non_authoritative_weak_supervision",
+  "input": {
+    "duplicate_snapshot_rows": 0,
+    "seed_overlaps": 5,
+    "seed_rows": 18,
+    "snapshot_files": [
+      "external-training-corpus/corpus/external_training/snapshots/europe_pmc_2026-08-05.jsonl",
+      "external-training-corpus/corpus/external_training/snapshots/europe_pmc_cell_states_2010s.jsonl",
+      "external-training-corpus/corpus/external_training/snapshots/europe_pmc_cell_states_2026-08-05.jsonl",
+      "external-training-corpus/corpus/external_training/snapshots/europe_pmc_expansion_2026-08-05.jsonl",
+      "external-training-corpus/corpus/external_training/snapshots/europe_pmc_historical_2010_2021.jsonl"
+    ],
+    "snapshot_rows": 7200,
+    "unique_source_families": 7213
+  },
+  "label_count": 29,
+  "label_counts_by_split": {
+    "test": {
+      "adhesion_traction": 67,
+      "biomaterials_mechanoresponse": 21,
+      "cancer_cell_states": 49,
+      "cancer_invasion_mechanics": 35,
+      "cell_division_cytokinesis": 26,
+      "cortex_membrane_pressure": 40,
+      "cytoskeleton_networks": 45,
+      "developmental_morphogenesis": 37,
+      "ecm_invasion": 48,
+      "endothelial_vascular_states": 48,
+      "epithelial_states": 52,
+      "fibroblast_stromal_states": 42,
+      "fluid_shear_endothelium": 21,
+      "general_cell_biology": 96,
+      "immune_cell_mechanics": 18,
+      "immune_cell_states": 43,
+      "mechanical_measurement_modalities": 45,
+      "mechanotransduction_signalling": 52,
+      "molecular_state": 33,
+      "muscle_cardiac_states": 46,
+      "neural_glial_states": 61,
+      "nucleus_chromatin": 42,
+      "observation_inference_methods": 37,
+      "organelle_mechanics": 17,
+      "osmotic_poroelastic_volume": 19,
+      "protrusion_migration": 21,
+      "single_cell_multimodal_state": 20,
+      "stem_cell_states": 42,
+      "tissue_organoid_mechanics": 23
+    },
+    "train": {
+      "adhesion_traction": 311,
+      "biomaterials_mechanoresponse": 106,
+      "cancer_cell_states": 203,
+      "cancer_invasion_mechanics": 119,
+      "cell_division_cytokinesis": 108,
+      "cortex_membrane_pressure": 162,
+      "cytoskeleton_networks": 189,
+      "developmental_morphogenesis": 120,
+      "ecm_invasion": 178,
+      "endothelial_vascular_states": 203,
+      "epithelial_states": 201,
+      "fibroblast_stromal_states": 211,
+      "fluid_shear_endothelium": 135,
+      "general_cell_biology": 403,
+      "immune_cell_mechanics": 107,
+      "immune_cell_states": 217,
+      "mechanical_measurement_modalities": 172,
+      "mechanotransduction_signalling": 247,
+      "molecular_state": 125,
+      "muscle_cardiac_states": 201,
+      "neural_glial_states": 200,
+      "nucleus_chromatin": 182,
+      "observation_inference_methods": 156,
+      "organelle_mechanics": 109,
+      "osmotic_poroelastic_volume": 70,
+      "protrusion_migration": 149,
+      "single_cell_multimodal_state": 109,
+      "stem_cell_states": 218,
+      "tissue_organoid_mechanics": 114
+    },
+    "validation": {
+      "adhesion_traction": 60,
+      "biomaterials_mechanoresponse": 23,
+      "cancer_cell_states": 48,
+      "cancer_invasion_mechanics": 35,
+      "cell_division_cytokinesis": 19,
+      "cortex_membrane_pressure": 30,
+      "cytoskeleton_networks": 40,
+      "developmental_morphogenesis": 27,
+      "ecm_invasion": 34,
+      "endothelial_vascular_states": 49,
+      "epithelial_states": 47,
+      "fibroblast_stromal_states": 47,
+      "fluid_shear_endothelium": 24,
+      "general_cell_biology": 81,
+      "immune_cell_mechanics": 25,
+      "immune_cell_states": 40,
+      "mechanical_measurement_modalities": 42,
+      "mechanotransduction_signalling": 58,
+      "molecular_state": 22,
+      "muscle_cardiac_states": 53,
+      "neural_glial_states": 39,
+      "nucleus_chromatin": 42,
+      "observation_inference_methods": 23,
+      "organelle_mechanics": 24,
+      "osmotic_poroelastic_volume": 16,
+      "protrusion_migration": 20,
+      "single_cell_multimodal_state": 21,
+      "stem_cell_states": 40,
+      "tissue_organoid_mechanics": 13
+    }
+  },
+  "limitations": [
+    "Labels are weak discovery/query provenance and title rules, not reviewed biological ground truth.",
+    "Metadata-only metrics do not validate article quality, mechanism, trajectories, or physical parameters.",
+    "This external model does not unseal Aleph MTG-PN and cannot satisfy R5."
+  ],
+  "retrieval": {
+    "fixed_hashed_baseline": {
+      "hit_rate_at_k": 0.6701570680628273,
+      "k": 5,
+      "precision_at_k": 0.28935427574171024,
+      "queries": 1146
+    },
+    "neural_hidden": {
+      "hit_rate_at_k": 0.7617801047120419,
+      "k": 5,
+      "precision_at_k": 0.6075043630017453,
+      "queries": 1146
+    }
+  },
+  "runtime": {
+    "device": "cpu",
+    "numpy_version": "2.5.1",
+    "seconds": 17.825128958007554
+  },
+  "schema_version": "1.0.0",
+  "splits": {
+    "test": 1146,
+    "train": 5025,
+    "validation": 1042
+  },
+  "tagging": {
+    "majority_macro_f1": 0.005330667999333666,
+    "nearest_centroid_macro_f1": 0.5052566610690035,
+    "neural_accuracy": 0.6396160558464223,
+    "neural_macro_f1": 0.6054840610991945,
+    "per_domain": {
+      "adhesion_traction": {
+        "f1": 0.6962962962962963,
+        "test_support": 67
+      },
+      "biomaterials_mechanoresponse": {
+        "f1": 0.42857142857142855,
+        "test_support": 21
+      },
+      "cancer_cell_states": {
+        "f1": 0.5094339622641509,
+        "test_support": 49
+      },
+      "cancer_invasion_mechanics": {
+        "f1": 0.40625,
+        "test_support": 35
+      },
+      "cell_division_cytokinesis": {
+        "f1": 0.6666666666666666,
+        "test_support": 26
+      },
+      "cortex_membrane_pressure": {
+        "f1": 0.7045454545454546,
+        "test_support": 40
+      },
+      "cytoskeleton_networks": {
+        "f1": 0.5238095238095238,
+        "test_support": 45
+      },
+      "developmental_morphogenesis": {
+        "f1": 0.3835616438356164,
+        "test_support": 37
+      },
+      "ecm_invasion": {
+        "f1": 0.5806451612903226,
+        "test_support": 48
+      },
+      "endothelial_vascular_states": {
+        "f1": 0.6896551724137931,
+        "test_support": 48
+      },
+      "epithelial_states": {
+        "f1": 0.68,
+        "test_support": 52
+      },
+      "fibroblast_stromal_states": {
+        "f1": 0.7816091954022989,
+        "test_support": 42
+      },
+      "fluid_shear_endothelium": {
+        "f1": 0.5,
+        "test_support": 21
+      },
+      "general_cell_biology": {
+        "f1": 0.7864077669902912,
+        "test_support": 96
+      },
+      "immune_cell_mechanics": {
+        "f1": 0.47058823529411764,
+        "test_support": 18
+      },
+      "immune_cell_states": {
+        "f1": 0.7317073170731707,
+        "test_support": 43
+      },
+      "mechanical_measurement_modalities": {
+        "f1": 0.6666666666666666,
+        "test_support": 45
+      },
+      "mechanotransduction_signalling": {
+        "f1": 0.6226415094339622,
+        "test_support": 52
+      },
+      "molecular_state": {
+        "f1": 0.5806451612903226,
+        "test_support": 33
+      },
+      "muscle_cardiac_states": {
+        "f1": 0.7272727272727273,
+        "test_support": 46
+      },
+      "neural_glial_states": {
+        "f1": 0.8793103448275862,
+        "test_support": 61
+      },
+      "nucleus_chromatin": {
+        "f1": 0.6764705882352942,
+        "test_support": 42
+      },
+      "observation_inference_methods": {
+        "f1": 0.5882352941176471,
+        "test_support": 37
+      },
+      "organelle_mechanics": {
+        "f1": 0.4,
+        "test_support": 17
+      },
+      "osmotic_poroelastic_volume": {
+        "f1": 0.6428571428571429,
+        "test_support": 19
+      },
+      "protrusion_migration": {
+        "f1": 0.4583333333333333,
+        "test_support": 21
+      },
+      "single_cell_multimodal_state": {
+        "f1": 0.5777777777777777,
+        "test_support": 20
+      },
+      "stem_cell_states": {
+        "f1": 0.8354430379746836,
+        "test_support": 42
+      },
+      "tissue_organoid_mechanics": {
+        "f1": 0.36363636363636365,
+        "test_support": 23
+      }
+    }
+  },
+  "training": {
+    "best_validation_macro_f1": 0.591864315425719,
+    "epochs_completed": 11,
+    "history": [
+      {
+        "epoch": 1,
+        "train_cross_entropy": 2.7739218175411224,
+        "validation_macro_f1": 0.3626406284491021
+      },
+      {
+        "epoch": 2,
+        "train_cross_entropy": 1.3330641284584999,
+        "validation_macro_f1": 0.5557069030237762
+      },
+      {
+        "epoch": 3,
+        "train_cross_entropy": 0.6775691345334053,
+        "validation_macro_f1": 0.5865964435503856
+      },
+      {
+        "epoch": 4,
+        "train_cross_entropy": 0.3868053749203682,
+        "validation_macro_f1": 0.591864315425719
+      },
+      {
+        "epoch": 5,
+        "train_cross_entropy": 0.24498738013207913,
+        "validation_macro_f1": 0.5718679296951664
+      },
+      {
+        "epoch": 6,
+        "train_cross_entropy": 0.17408384736627341,
+        "validation_macro_f1": 0.5783975326430134
+      },
+      {
+        "epoch": 7,
+        "train_cross_entropy": 0.13758098650723696,
+        "validation_macro_f1": 0.5879187965232076
+      },
+      {
+        "epoch": 8,
+        "train_cross_entropy": 0.11888214331120253,
+        "validation_macro_f1": 0.5763483736389113
+      },
+      {
+        "epoch": 9,
+        "train_cross_entropy": 0.10569452028721571,
+        "validation_macro_f1": 0.5816969719863411
+      },
+      {
+        "epoch": 10,
+        "train_cross_entropy": 0.09634818639606238,
+        "validation_macro_f1": 0.5759076556093098
+      },
+      {
+        "epoch": 11,
+        "train_cross_entropy": 0.09294208930805326,
+        "validation_macro_f1": 0.5623820377436918
+      }
+    ]
+  }
+}

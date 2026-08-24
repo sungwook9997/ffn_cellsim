@@ -1,0 +1,8 @@
+[force-budget sweep] n_fil=300 n_xl=450 motors=[100] | signed γ + engaged-head + F/F_stall vs motor count
+
+  n_motors= 100: signed γ=+1.8809e-04 mN/m  bound_frac=0.120  n_bound=241  F/F_stall=0.407
+
+=== FORCE-BUDGET VERDICT ===
+  inconclusive
+
+[json] /Users/sw1/ffn_cellsim/ffn_sim/outputs/h3/production/stage2_forcebudget_sweep.json

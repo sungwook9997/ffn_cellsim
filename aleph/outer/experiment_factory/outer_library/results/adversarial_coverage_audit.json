@@ -1,0 +1,427 @@
+{
+  "adversarial_findings": [
+    "329,303 observation rows are not 329,303 independent samples; time points and derived observables inflate row count",
+    "cell_state currently mixes perturbation, phenotype, motion mode, and assay context; it is not a controlled ontology",
+    "HPA contributes 81k images but only one provider/annotation lineage and cannot validate universal state transfer",
+    "strong HPA macro AUROC coexists with modest macro F1, exposing rare-label and threshold failure",
+    "cross-species force datasets cannot be pooled as one traction-state target without a declared measurement bridge",
+    "missing units and biological replicate IDs block several otherwise large imaging datasets from inferential authority",
+    "no paired multi-omic samples justify a shared latent space; task-scoped late fusion remains mandatory",
+    "ExIF EMT labels are author treatment conditions, not per-cell EMT ground truth, and one plate date cannot support uncertainty or OOD authority",
+    "M-TRACK contributes ten correlated frames from one treated trajectory; its late VIM-RFP intensity conflicts with the ExIF fixed-IF treatment direction and therefore blocks intensity-only sweep conditioning",
+    "LINCS MCF10A C1-to-C2 transfer is a same-site collection holdout, not an independent-lab holdout; its TGFB condition also carries an unresolved companion-EGF dose conflict",
+    "Karacosta HCC827 CyTOF reproduces E-cadherin-down/Vimentin-up across an independent lab, cell line, and modality, but 90,066 cells belong to one released biological experiment and CCAST labels are circular with the six clustering markers",
+    "Five biologically replicated GEO studies retrospectively reproduce CDH1-down/VIM-up at nominal study-level one-sided p=0.03125, but outcome-informed literature selection blocks confirmatory authority; RNA magnitude is not a protein or Aleph parameter scale and one OOD context cannot establish general refusal",
+    "Protocol-frozen GSE325309 passes its exact 20-assignment CDH1/VIM composite at p=0.05 after zero sample exclusions, establishing a pristine direction holdout but not numeric cross-assay calibration or OOD authority"
+  ],
+  "authority": "none",
+  "counts": {
+    "HPA_embedding_images_separate_from_physical_observations": 81007,
+    "canonical_observations": 329303,
+    "canonical_samples": 193832,
+    "conservative_lab_groups_including_HPA": 37,
+    "datasets_including_HPA_embedding_source": 38,
+    "observations_per_sample": 1.698909364810764
+  },
+  "missing_state_axes": [
+    "hypoxia_state",
+    "differentiation_and_stemness",
+    "DNA_damage_and_genotoxic_stress",
+    "infection_response"
+  ],
+  "missing_state_axis_count": 4,
+  "modality_gap_status": {
+    "PIV_collective_velocity": "C2C12_replicates_plus_NIH3T3_sequence_present_aligned_external_same_task_holdout_still_missing",
+    "RT_qPCR": "present_condition_level",
+    "bulk_RNA_seq": "present_small_marker_panel",
+    "electron_microscopy": "missing",
+    "flow_cytometry_or_CyTOF": "imaging_flow_cytometry_plus_90066_cell_HCC827_CyTOF_one_released_biological_experiment",
+    "live_fluorescence_state_trajectory": "paper_linked_MTRACK_A549_VIM_RFP_single_treated_trajectory_no_control_or_biological_replicates",
+    "live_multichannel_apoptosis_imaging": "author_processed_profiles_present_raw_archive_indexed_not_local",
+    "metabolomics": "missing",
+    "proteomics_phosphoproteomics": "missing",
+    "raw_multichannel_IF_for_trainable_encoder": "HPA_pilot_plus_independent_provider_ExIF_raw_five_channel_pilot_and_MCF10A_author_well_phenotypes_but_no_raw_common_task_holdout",
+    "single_cell_RNA_seq": "missing",
+    "spatial_transcriptomics": "missing",
+    "traction_force_microscopy": "exact_Pa_two_lab_stiffness_direction_plus_mN_per_m_NIH3T3_source_added_but_replication_mapping_and_Aleph_operator_blocked",
+    "western_blot": "missing"
+  },
+  "per_modality": {
+    "3D_CDM_cell_migration_trajectory_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 106,
+      "sample_count": 53
+    },
+    "AFM_membrane_tether_force_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 314,
+      "sample_count": 314
+    },
+    "FLIM_FRET_vinculin_tension_sensor_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 266,
+      "sample_count": 266
+    },
+    "FXm_RICM_cell_spreading_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 630,
+      "sample_count": 315
+    },
+    "IF_FKHR_EGFP_DRAQ_field": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 1152,
+      "sample_count": 96
+    },
+    "IF_NFkB_FITC_DAPI_field": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 1152,
+      "sample_count": 96
+    },
+    "RT_qPCR_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 210,
+      "sample_count": 210
+    },
+    "TOM20_super_resolution_IF_image": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 58,
+      "sample_count": 58
+    },
+    "author_supervised_migration_mode_derived": {
+      "dataset_count": 2,
+      "lab_group_count": 1,
+      "observations": 948,
+      "sample_count": 316
+    },
+    "brightfield_single_cell_patch_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 58186,
+      "sample_count": 58186
+    },
+    "bulk_RNA_expression_derived": {
+      "dataset_count": 5,
+      "lab_group_count": 5,
+      "observations": 144,
+      "sample_count": 72
+    },
+    "bulk_RNA_seq_author_processed": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 12,
+      "sample_count": 6
+    },
+    "bulk_RNA_seq_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 40,
+      "sample_count": 8
+    },
+    "cantilever_post_force_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 89,
+      "sample_count": 89
+    },
+    "contour_model_from_TFM_MSM_and_actin_tracking": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 476,
+      "sample_count": 1
+    },
+    "counting_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 72,
+      "sample_count": 72
+    },
+    "fixed_IF_author_well_level_population_summary": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 1263,
+      "sample_count": 159
+    },
+    "high_content_live_cell_imaging_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 3,
+      "observations": 2916,
+      "sample_count": 162
+    },
+    "imaging_flow_cytometry_multichannel": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 32266,
+      "sample_count": 32266
+    },
+    "immunofluorescence_derived": {
+      "dataset_count": 2,
+      "lab_group_count": 2,
+      "observations": 7438,
+      "sample_count": 7294
+    },
+    "immunofluorescence_fibronectin_orientation_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 720,
+      "sample_count": 4
+    },
+    "immunofluorescence_pixel_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 17,
+      "sample_count": 1
+    },
+    "live_VIM_RFP_single_trajectory_with_segmentation": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 10,
+      "sample_count": 10
+    },
+    "live_cell_FRET_imaging_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 1452,
+      "sample_count": 132
+    },
+    "live_cell_calcium_imaging_derived": {
+      "dataset_count": 3,
+      "lab_group_count": 3,
+      "observations": 97722,
+      "sample_count": 782
+    },
+    "live_cell_tracking_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 3138,
+      "sample_count": 830
+    },
+    "live_multichannel_morphology_to_AnnexinV_endpoint_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 30,
+      "sample_count": 30
+    },
+    "multiscale_live_cell_imaging_derived": {
+      "dataset_count": 3,
+      "lab_group_count": 1,
+      "observations": 21388,
+      "sample_count": 367
+    },
+    "nuclear_morphology_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 800,
+      "sample_count": 800
+    },
+    "optical_tweezers_membrane_tether_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 376,
+      "sample_count": 188
+    },
+    "paired_FA_TFM_FLIM_FRET_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 492,
+      "sample_count": 3
+    },
+    "particle_image_velocimetry_and_live_actin_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 1435,
+      "sample_count": 16
+    },
+    "particle_image_velocimetry_derived": {
+      "dataset_count": 2,
+      "lab_group_count": 2,
+      "observations": 1212,
+      "sample_count": 121
+    },
+    "raw_five_channel_4plex_IF_field": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 48,
+      "sample_count": 48
+    },
+    "single_cell_mass_cytometry_CyTOF_nontransformed": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 90066,
+      "sample_count": 90066
+    },
+    "single_cell_tracking_velocity_field_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 16,
+      "sample_count": 2
+    },
+    "traction_force_and_monolayer_stress_microscopy_derived": {
+      "dataset_count": 1,
+      "lab_group_count": 1,
+      "observations": 120,
+      "sample_count": 1
+    },
+    "traction_force_microscopy_derived": {
+      "dataset_count": 4,
+      "lab_group_count": 4,
+      "observations": 2523,
+      "sample_count": 784
+    }
+  },
+  "priority_queue": [
+    {
+      "priority": 1,
+      "reason": "ExIF adds independent-provider raw IF state training, but its EMT treatment task cannot validate the HPA localization head",
+      "target": "common-task independent-provider raw IF localization holdout"
+    },
+    {
+      "priority": 2,
+      "reason": "GSE325309 now supplies a preregistered outcome-blind CDH1/VIM direction holdout, but protein-scale uncertainty, multi-context OOD, and Aleph observation operators remain unresolved; M-TRACK is still one uncontrolled trajectory",
+      "target": "independent cell-cycle/apoptosis panels plus replicated protein EMT, culture-context OOD, and controlled trajectories"
+    },
+    {
+      "priority": 3,
+      "reason": "adds molecular state coverage and independent donor holdouts absent from bulk marker panels",
+      "target": "single-cell transcriptomic state source with donor/batch hierarchy"
+    },
+    {
+      "priority": 4,
+      "reason": "a second lab now reproduces the same-unit stiffness-to-mean-traction direction and adds paired TFM-FRET, but released cell-to-replicate mapping, aligned intervention validation, and direct Aleph force/flow operators remain missing",
+      "target": "aligned independent-lab TFM/PIV with biological replicate IDs and exact units"
+    },
+    {
+      "priority": 5,
+      "reason": "orthogonal protein-level validation is currently absent",
+      "target": "WB/proteomics mechanism confirmation"
+    }
+  ],
+  "production_eligible": false,
+  "provenance_defects": {
+    "biological_replicate_unreported_fraction": 0.7229542397123622,
+    "biological_replicate_unreported_observations": 238071,
+    "unknown_or_author_processed_unit_observations": 29055,
+    "unknown_unit_fraction": 0.08823181082468122
+  },
+  "schema": "aleph.outer_library.adversarial_coverage_audit.v1",
+  "scope": "canonical_manifests_plus_HPA_embedding_receipt",
+  "state_axis_coverage": {
+    "DNA_damage_and_genotoxic_stress": {
+      "datasets": [],
+      "status": "missing"
+    },
+    "EMT_epithelial_mesenchymal_state": {
+      "datasets": [
+        "figshare-26500210-exif-a549-emt-4plex",
+        "github-mtrack-a549-tgfb4ng-xy01",
+        "lincs-mcf10a-ligand-if-phenotypes",
+        "nature-2019-karacosta-hcc827-emt-cytof"
+      ],
+      "status": "ten_lab_sources_with_preregistered_GSE325309_direction_holdout_passed_but_no_numeric_OOD_or_Aleph_operator"
+    },
+    "apoptosis_and_cell_death": {
+      "datasets": [
+        "biad2515-hela-staurosporine-apoptosis"
+      ],
+      "status": "author_AnnexinV_endpoint_single_provider_well_holdout_training_only"
+    },
+    "cell_cycle_and_proliferation": {
+      "datasets": [
+        "bbbc048-v1-jurkat-cell-cycle"
+      ],
+      "status": "author_labelled_single_provider_training_only"
+    },
+    "differentiation_and_stemness": {
+      "datasets": [],
+      "status": "missing"
+    },
+    "fibrotic_myofibroblast_state": {
+      "datasets": [
+        "nature-2026-tendon-mechanoculture",
+        "geo-gse226374-tgfb-celastrol-rnaseq"
+      ],
+      "status": "covered_condition_level_two_labs"
+    },
+    "focal_adhesion_load_transfer": {
+      "datasets": [
+        "zenodo-7432971-tfm-tether",
+        "zenodo-14692589-tfm-fret"
+      ],
+      "status": "two_lab_same_unit_stiffness_direction_and_TFM_FRET_identifiability_replication_blocked"
+    },
+    "hypoxia_state": {
+      "datasets": [],
+      "status": "missing"
+    },
+    "immune_activation_and_inflammation": {
+      "datasets": [
+        "bbbc054-v1-LPS-microglia-timecourse"
+      ],
+      "status": "single_annotated_replicate_training_only"
+    },
+    "infection_response": {
+      "datasets": [],
+      "status": "missing"
+    },
+    "mechano_osmotic_membrane_state": {
+      "datasets": [
+        "elife-72381-hela-mechano-osmotic"
+      ],
+      "status": "single_lab_operator_and_identifiability_blocked"
+    },
+    "mechanosensitive_calcium": {
+      "datasets": [
+        "zenodo-18495219-hela-mechanotransduction",
+        "zenodo-19890985-eahy926-piezo1",
+        "zenodo-8215150-mdck-mechanocalcium"
+      ],
+      "status": "covered_but_external_classifier_failed"
+    },
+    "migration_and_ROCK_cytoskeletal_state": {
+      "datasets": [
+        "scilifelab-21407402-multisite-live-cell-2d",
+        "dryad-9jh6m-ROCK-modulation",
+        "elife-71032-nih3t3-3d-cdm-migration"
+      ],
+      "status": "covered_context_dependent"
+    },
+    "mitochondrial_metabolic_stress": {
+      "datasets": [
+        "bbbc053-v1-CAD-FCCP-mitochondria"
+      ],
+      "status": "FCCP_single_provider_training_only_no_biological_replicate_ids"
+    },
+    "senescence": {
+      "datasets": [
+        "geo-gse63577-replicative-senescence",
+        "geo-gse297406-replicative-senescence",
+        "geo-gse282425-doxorubicin-senescence",
+        "geo-gse301164-postfreeze-senescence-confirmation"
+      ],
+      "status": "directionally_confirmed_across_labs_absolute_state_OOD_blocked"
+    },
+    "subcellular_localization_state": {
+      "datasets": [
+        "hpa-v25.1-subcellular-image-embeddings",
+        "bbbc013-v1-fkhr-translocation",
+        "bbbc014-v1-nfkb-translocation"
+      ],
+      "status": "training_signal_present_no_independent_provider_head"
+    },
+    "supracellular_contractility_and_ECM_alignment": {
+      "datasets": [
+        "dryad-08kprr59c-c2c12-supracontractility",
+        "dataverse-data2772-nih3t3-cellular-nematics",
+        "dryad-sj3tx9683-opto-mdck-force-propagation"
+      ],
+      "status": "three_lab_cross_cell_type_direction_operator_and_biological_replication_blocked"
+    }
+  }
+}

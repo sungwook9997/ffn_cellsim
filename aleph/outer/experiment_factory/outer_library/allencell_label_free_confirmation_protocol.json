@@ -1,0 +1,69 @@
+{
+  "schema": "aleph.outer_library.allencell_label_free_confirmation.v1",
+  "frozen_before_any_Allen_image_header_or_pixel_access": true,
+  "scope": "non_disease_normal_WTC11_hiPSC_brightfield_to_TOMM20_external_transfer",
+  "candidate_artifacts": {
+    "metadata_audit_protocol_sha256": "81c5f027ca92af8665f9860b0bd0428cd00d90b8e35bcef6088412699c2a0171",
+    "metadata_audit_report_sha256": "16c139e93947dce1ce9504ae964e29498894ae66471816e09e10b1cf4441a036",
+    "candidate_manifest_sha256": "148da06db99cdb76c1ade1d9a844c183e80187a52d8251e060adfcdf71210d55",
+    "candidate_count": 32,
+    "biological_grouping_unit": "PlateId",
+    "technical_independence_unit": "FOVId"
+  },
+  "frozen_models": {
+    "v2": {
+      "protocol_sha256": "dcdcddb0f6515b1d34437b28798bfe119bfd542cc92d611ccf51db653ca24a05",
+      "report_sha256": "301fb4a1dba9428bd8209f4078b2a066c975ac6becab9ff47eb107454e7cf83d",
+      "checkpoint_sha256": "150c4a5884b4b4dabc1a412f0bc8b9bd43d3d339f9c4e46d12beb665a04ac383"
+    },
+    "v3": {
+      "protocol_sha256": "4e9709e7a814d1fb422bc59dce895b0d14091a4dc5e71e7156a36bda3f71bc9f",
+      "report_sha256": "551ae3e7b169519d695a63bcf40f961fc2dbde6520b1b566b5169d712639a7c8",
+      "checkpoint_sha256": "79a9e635d7e8fb396497d399cf6c2d2b05b5116235b9bd120d4d2aa5d8b50629"
+    }
+  },
+  "source_contract": {
+    "base_url": "https://allencell.s3.amazonaws.com/aics/hipsc_single_cell_image_dataset/",
+    "input": "raw FOV brightfield channel",
+    "target": "raw crop TOMM20 fluorescence channel",
+    "forbidden_as_ground_truth": "any predicted channel from aics/label-free-imaging-collection",
+    "single_use": true,
+    "consumed_after_first_image_pixel_decode_even_if_evaluation_refuses": true
+  },
+  "geometry_contract": {
+    "resolver_control_channel": "DNA only, never TOMM20",
+    "candidate_conventions": "all axis permutations of three ROI coordinates plus either end coordinates or positive extents",
+    "acceptance": "exact array_equal match between the official crop_raw DNA volume and the candidate FOV DNA crop after singleton-axis removal",
+    "unique_match_required": true,
+    "failure": "refuse candidate without target-guided alignment or replacement",
+    "plane": "lower central z plane of the resolved crop for both brightfield and TOMM20"
+  },
+  "preprocessing": {
+    "per_image_percentiles": [1.0, 99.5],
+    "clip_range": [0.0, 1.0],
+    "resize": "Pillow_BOX",
+    "spatial_side_length": 64,
+    "absolute_intensity_prediction_permitted": false,
+    "model_condition": {"target": "Mitochondria", "modality": "BF"}
+  },
+  "evaluation": {
+    "aggregation": "macro over PlateId after image metrics",
+    "endpoint_denominators": {
+      "Pearson": 0.35,
+      "global_SSIM": 0.25,
+      "relative_MAE_improvement": 0.10
+    },
+    "v3_pixel_interval_coverage_range": [0.85, 0.95],
+    "v3_embedding_OOD_AUROC_minimum": 0.70,
+    "v3_minimum_endpoint_ratio_improvement_over_v2": 0.05,
+    "all_endpoints_must_pass": true,
+    "no_candidate_or_endpoint_replacement_after_opening": true
+  },
+  "authority_contract": {
+    "passing_scope": "Allen_normal_hiPSC_TOMM20_spatial_transfer_only",
+    "general_cell_state_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "failure_status": "blocked_external_spatial_transfer"
+  }
+}

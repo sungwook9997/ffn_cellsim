@@ -1,0 +1,17 @@
+{
+  "n_filaments": 70686,
+  "patch_half_angle_deg": 30.0,
+  "equilibrate_steps": 3,
+  "growth_steps": 12,
+  "inner_solver": "explicit",
+  "max_inner_retries": 0,
+  "n_inner": 6000,
+  "resting_converged": false,
+  "blocked_on": "resting-convergence",
+  "equilibrate_accepted": [
+    false
+  ],
+  "equilibrate_last_residual_pN": 47.4959983251441,
+  "bleb_deadhered": false,
+  "wall_s": 115.87060689926147
+}

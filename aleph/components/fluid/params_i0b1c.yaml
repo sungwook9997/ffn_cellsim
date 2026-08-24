@@ -1,0 +1,85 @@
+# I0-B1c parameter gate — I1c conservative G-actin monomer transport
+# ============================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §4C (② monomer-transport unknowns) + §3 I1c.
+# Format: claim ID · evidence status · owner · provisional policy · blocking increment.
+#
+# I1c advances d(phi c)/dt + div(phi c v_f - phi D_c grad c) = R on the moving domain, with barbed-end
+# consumption + pointed-end release conserving total actin. New parameters: D_c (draft), c_0 (GAP), and
+# phi (shared with I0-B1b, referenced).
+#
+# HARD rules: no empirical magic numbers; c_0 is UNSOURCED for MCF7 -> value: null + GAP; D_c has a draft
+# claim -> provisional value with owner + expiry, NEVER tuned to a FRAP/streaming band. The analytic gates
+# (transport_analytic/transport_reference) are c_0-agnostic and pass; the NATIVE run is blocked on c_0.
+# ============================================================================
+
+meta:
+  increment: I1c
+  gate: I0-B1c
+  decided_by: PI
+  decided_on: null                            # OPEN — awaiting PI on c_0 (and D_c ratification)
+  native_run_blocked_on: ["c_0", "phi_porosity"]   # need initial pool + porosity for a native monomer run
+  analytic_build_unblocked: true              # conservation/FRAP/advection gates need no physio magnitude
+  units_convention: "SI/um-pN-s; concentration in uM (umol/L); convert at load"
+
+parameters:
+
+  # ---- monomer diffusivity (DRAFT claim -> provisional) -----------------------------------------
+  D_c:
+    title: "G-actin monomer diffusivity in crowded cytoplasm"
+    symbol: "D_c"
+    value: 3.0
+    range: [2.0, 6.0]
+    unit: "um^2/s"
+    kb_claim: "KB-DRAFT-7-03"
+    source: >
+      crowded-cytoplasm G-actin diffusivity (macromolecular-crowding-reduced). NOT the free-solution
+      50-80 um^2/s value (must NOT be substituted silently — NEW_ENGINE_BUILD_PLAN §4C).
+    evidence_status: "draft/Medium (ratification + MCF7/assay applicability OPEN)"
+    provisional: true
+    owner: PI
+    expiry_trigger: "MCF7 (or matched-assay) G-actin FRAP/FCS diffusivity lands + KB SourceEvidence"
+    policy: >
+      USE 3.0 um^2/s provisionally as the FRAP recovery scale (tau ~ w^2/D_c). Kept in [2,6]; NEVER tuned
+      to hit a recovery band. The analytic gate reads D_c back from the cosine-mode recovery D_c|k|^2 (any
+      value passes); the magnitude verdict is HELD until ratified.
+
+  # ---- initial free-monomer pool (HARD GAP, MCF7-specific) --------------------------------------
+  c_0:
+    title: "initial free G-actin monomer concentration (MCF7)"
+    symbol: "c_0"
+    value: null
+    unit: "uM"
+    order_of_magnitude: >
+      total actin ~100 uM; thymosin-b4-buffered FREE monomer ~tens uM. The free pool (not total) sets the
+      barbed-end growth rate v+ = delta(k_on c - k_off) -> MUST be the free concentration, MCF7-specific.
+    evidence_status: "GAP — PI"
+    decision: "DO NOT CHOOSE (analytic gates are c_0-agnostic; native run blocked)"
+    owner: PI
+    blocking_increment: I1c
+    expiry_trigger: "MCF7 free G-actin datum + thymosin-b4 buffering capacity lands"
+    policy: >
+      Surface to PI. Sets the initial u = phi*c_0 field + the barbed-growth flux limit. The finite-pool
+      buffering (thymosin-b4, H10) lands WITH the conserved pool. A provisional PI value must carry owner +
+      expiry-trigger and NEVER be tuned to a growth/emergence outcome.
+
+  # ---- porosity (shared with I0-B1b — referenced, not re-decided) --------------------------------
+  phi_porosity:
+    title: "cytoplasm porosity (see params_i0b1b.yaml)"
+    symbol: "phi"
+    value: null
+    unit: "dimensionless"
+    evidence_status: "GAP — PI (I0-B1b)"
+    owner: PI
+    policy: "Same gap as I0-B1b; u = phi*c and the diffusive flux phi*D_c*grad c both use it. Do NOT choose."
+
+  # ---- reaction kinetics (from ff/polymerization_warp.py — audited at I3/I4, referenced here) -----
+  k_on_koff_ref:
+    title: "barbed-end on/off rate constants (polymerization_warp.py resolve_polymerization)"
+    symbol: "k_on, k_off"
+    value: "see ff/polymerization_warp.py (k_on, k_off; v0 = (k_on*G - k_off)*delta)"
+    evidence_status: "existing FF params — audited at I3/I4, not re-decided in I1c"
+    owner: PI
+    policy: >
+      I1c wires the EXISTING barbed-growth kinetics to the LOCAL transported c (replacing the fixed scalar
+      G_actin) — the rate constants themselves are the I3/I4 evidence record. The I1c change is the
+      scalar->field swap + exact monomer accounting (INTEGRATION.md), not a kinetics re-decision.

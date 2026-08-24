@@ -1,0 +1,24 @@
+{
+  "adt_feature_count": 8,
+  "aleph_authority": "none",
+  "classification_metric_authority": "none_capture_is_fully_confounded_with_state",
+  "condition_rows": {
+    "IR_10_Gy_day_10_senescent": 4949,
+    "untreated_proliferating": 8664
+  },
+  "eligible_role": "multimodal_senescence_representation_training_only",
+  "external_validation_eligible": false,
+  "features": 43,
+  "label_source": "author_condition_IR_10_Gy_day_10_versus_untreated",
+  "may_select_aleph_parameter": false,
+  "normalization": {
+    "ADT": "cellwise_CLR_log1p",
+    "RNA": "log1p_CPM_10000"
+  },
+  "rna_marker_count": 35,
+  "rows": 13613,
+  "schema": "aleph.outer_library.gse250041_senescence_tensor.v1",
+  "split_group": "capture_id",
+  "valid_dataset_split_count": 0,
+  "valid_lab_split_count": 0
+}

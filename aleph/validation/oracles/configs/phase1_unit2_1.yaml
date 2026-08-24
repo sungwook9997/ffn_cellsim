@@ -1,0 +1,107 @@
+# Phase 1 — Unit 2.1 bridge (motor-clutch + catch-slip + linear substrate).
+#
+# All values SI (m, s, J, N, K). Every parameter is either a literature
+# constant (KU tag) or a property derived at config-resolve time from
+# the primary scales. No hand-tuned numbers.
+#
+# Hard rule reference: ActiveCellSim CLAUDE.md Magic-Number Block.
+
+bridge:
+
+  # ---- Substrate stub (KU-1.21 / KU-1.5 PAA mid-range) ----
+  substrate:
+    young_modulus: 5.0e+3       # Pa  E, PAA mid-range, KU-1.5 (sign needed: PyYAML 1.1)
+    poisson_ratio: 0.45         # —   ν, PAA, KU-1.21
+    thickness: 100.0e-6         # m   carried for traceability, not used by stub
+    # contact_radius is the *substrate-compliance length scale* in the
+    # Boussinesq form k_sub = π·E_eff·a. It is an INDEPENDENT model
+    # parameter — NOT a geometric projection of motor_clutch.fa_area.
+    # Phase 1 sets a = 1 μm per Brief Task 2; the alternative
+    # a = √(A/π) = 0.564 μm shifts k_sub by ×1.77 and is not what
+    # Phase 1 uses. Unit 2.2's ECM adapter obviates this parameter.
+    contact_radius: 1.0e-6      # m   a (substrate-compliance length, KU-1.21 stub)
+
+  # ---- Single-FA motor-clutch (KU-2.4 / KU-2.18) ----
+  motor_clutch:
+    n_clutches: 50              # integrins per FA, KU-2.18
+    n_motors:   50              # myosins per FA,    KU-2.18
+    k_on: 1.0                   # s⁻¹  clutch on-rate, KU-2.18
+    k_int: 1.0e-3               # N/m  integrin spring (1 pN/nm), KU-2.18
+    v_unloaded: 100.0e-9        # m/s  unloaded actin retrograde flow, KU-2.18
+    F_stall_per_motor: 2.0e-12  # N    myosin stall (2 pN), KU-2.18
+    fa_area: 1.0e-12            # m²   FA area (1 μm²), KU-2.18 / KU-2.2
+
+  # ---- Catch-slip bond (Pereverzev, KU-2.5 / KU-2.18) ----
+  catch_bond:
+    k_off_slip:  0.5            # s⁻¹  k_s, KU-2.18
+    F_s: 30.0e-12               # N    slip characteristic force, KU-2.18
+    k_off_catch: 0.4            # s⁻¹  k_c, KU-2.18
+    F_c: 7.0e-12                # N    catch characteristic force, KU-2.18
+
+  # ---- Integration ----
+  dynamics:
+    dt: 1.0e-4                  # s   timestep; Sanity Gate verifies dt ≪ 1/max(k_on, k_off(F_s))
+    n_steps: 200000             # 20 s total — enough to settle past the engagement transient
+    burn_in_fraction: 0.5       # discard the leading half before averaging
+    seed: 42
+
+  # ---- Substrate-stiffness sweep for the biphasic regression (KU-2.4 / KU-2.8) ----
+  biphasic_sweep:
+    log10_E_min:   0.0          # 10^0 Pa
+    log10_E_max:   5.0          # 10^5 Pa  (covers PAA soft → glass-like)
+    n_points: 12                # 5 decades / 12 points ≈ 0.45 dec spacing
+    n_steps_per_E: 50000        # 5 s sim time per stiffness, dt = 1e-4
+    n_seeds: 5                  # replicated-seed validation; argmax_E spread
+                                # decides "true peak" vs "weakly peaked / saturating"
+    seed: 1234                  # root seed; per-(seed, E) sub-seed derived by hash
+
+  # ---- Sanity Gate acceptance ranges ----
+  acceptance:
+    # KU-2.8: biphasic peak E* should land within a factor of 2 of the
+    # closed-form k_sub* / (π a) · (1 − ν²) ⇒ E* ≈ 2.5·10² Pa for the
+    # default KU-2.18 parameters (see REPORT.md derivation).
+    biphasic_peak_factor: 2.0
+    # KU-2.5: simulated peak τ should agree with analytic F* within ±20 %.
+    # Note: the analytic F* with KU-2.18 defaults is ≈ 7 pN, *not* the
+    # experimental F* ≈ 30 pN; the gate uses the analytic value as the
+    # ground truth and logs the experimental-vs-analytic gap as info.
+    catch_peak_tolerance: 0.20
+    # Per-clutch force histogram on E = 5 kPa substrate.
+    #
+    # The KU-2.12 literature window 5–20 pN is the **mature-FA** range
+    # (Plotnikov 2012 Cell, Trichet 2012 PNAS) and requires the
+    # vinculin/talin reinforcement of k_int^eff that enters at Unit 2.2
+    # (KU-2.7). Phase 1 Unit 2.1 has no FA growth, no talin unfolding,
+    # no vinculin recruitment — per-clutch force at steady state is
+    # force-balance-limited at ~2–4 pN.
+    #
+    # Per the PI's post-review reclassification (2026-05-18):
+    #   * Unit 2.1 acceptance moves to the **nascent-FA 1–8 pN band**;
+    #   * the mature-FA 5–20 pN band moves to the Unit 2.2 contract.
+    # Both are tracked: Unit 2.1's gate uses ``clutch_force_band_pN``;
+    # the mature-FA target is logged as info under ``ku_2_12_mature_band_pN``.
+    clutch_force_band_pN: [1.0, 8.0]
+    # Mass threshold derived from the expected exponential-tail clutch-force
+    # distribution. With Phase 1 / KU-2.18 defaults the mean per-clutch
+    # force at E=5 kPa is ≈ 3.6 pN; an exponential f(F)∝exp(-F/3.6 pN) has
+    # fraction in [1,8] pN of  exp(-1/3.6) − exp(-8/3.6) = 0.649. The
+    # threshold 0.55 leaves ~10 pp margin for stochastic + non-exponential
+    # tail effects.
+    clutch_force_band_mass: 0.55
+    ku_2_12_mature_band_pN: [5.0, 20.0]   # Unit 2.2 inherits this
+    # Performance gate (Brief Task 7): 50 clutches × 1000 steps < 1 s.
+    perf_budget_seconds: 1.0
+    perf_test_steps: 1000
+
+  # ---- Demo-mode opt-out (same convention as Unit 1.1) ----
+  demo_mode: false
+
+  # ---- Derived parameters (filled by resolve_bridge_config(); do NOT edit) ----
+  derived:
+    substrate_stiffness: null         # k_sub = π · E / (1−ν²) · a            [N/m]
+    catch_peak_force: null            # F* analytic from Pereverzev params    [N]
+    catch_peak_lifetime: null         # τ(F*) analytic                        [s]
+    bond_event_rate_max: null         # max(k_on, k_off(F_s)) sets dt budget  [s⁻¹]
+    cfl_safe_dt: null                 # 0.1 / bond_event_rate_max             [s]
+    biphasic_kSubStar: null           # N_m·F_stall / (v_unloaded·τ_max)      [N/m]
+    biphasic_EStar: null              # k_sub* / (π·a) · (1−ν²)                [Pa]

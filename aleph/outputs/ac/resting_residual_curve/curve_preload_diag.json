@@ -1,0 +1,101 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "resting inner-solve residual vs iteration budget (diagnostic)",
+  "build": {
+    "commit": "58a74d3b97a345ceaf429268f162f0e46f92578b",
+    "dirty": null,
+    "branch": null,
+    "source": "declared",
+    "reason": "/home/sungwook/ffn is not a git repository; the commit is the caller's assertion and was not verified here"
+  },
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "one --from-resting outer step at full native under a raised inner budget; the step is REJECTED and no magnitude is claimed. What is measured is whether the residual descends as the budget grows.",
+  "config": {
+    "n_filaments": 70686,
+    "n_inner": 60,
+    "record_every": 10,
+    "dt_phys": 0.05,
+    "inner_solver": "explicit",
+    "with_myosin": true,
+    "with_membrane": true,
+    "with_nucleus": true,
+    "with_pressure": true
+  },
+  "config_sha256": "sha256:1cb534515139e0c79ae9b1d2a270907fc15baa2299389d2ee8182e207a4a731f",
+  "census": {
+    "n_filaments": 70686,
+    "n_actin": 494802,
+    "n_total": 511114
+  },
+  "parameter_provenance": {},
+  "t0": {
+    "residual_start_pn": 47.405172429438764,
+    "inner_tolerance_um": 7.449122950141183e-09,
+    "r_mean_start_um": 7.299813096203852
+  },
+  "timing": {
+    "wall_seconds": 14.961980104446411,
+    "n_inner_iterations": 60,
+    "wall_seconds_per_inner_iteration": 0.24936633507410685,
+    "device_note": "build + one outer step; the step was rejected, so this cost belongs to a NON-converged attempt and is not an engine speed.",
+    "comparable": false,
+    "not_comparable_reason": "the gate verdict is absent, so this run did not establish the convergence its cost would have to be quoted at. Quoting it as the engine's speed compares the cost of NOT converging"
+  },
+  "measurements": {
+    "residual_start_pn": 47.405172429438764,
+    "residual_candidate_pn": 47.40610862408854,
+    "residual_end_pn": 47.405172429438764,
+    "budget_used": 60,
+    "curve": {
+      "iteration": [],
+      "max_projected_force_pn": [],
+      "max_displacement_um": []
+    },
+    "curve_samples": 0,
+    "shape": null,
+    "preload_erm_balance": true,
+    "cortex_prestrain": 0.0,
+    "erm_preload_ledger": {
+      "n_erm": 642,
+      "res_before": 47.405172429438764,
+      "res_after": 47.405172429438764,
+      "residual_unchanged": true,
+      "f_in_pN": {
+        "min": -47.39767963656912,
+        "p50": -37.28847443893447,
+        "max": -25.06565349766478
+      },
+      "rest_delta_um": {
+        "min": -0.010303843399254164,
+        "p50": -0.008106190095420539,
+        "max": -0.0054490551081879945
+      },
+      "n_clipped_at_zero": 0,
+      "n_clipped_at_length": 0,
+      "k_erm_pN_per_um": 4600.0,
+      "erm_tether_length_um": {
+        "min": 0.10046826075235318,
+        "p50": 0.12299041805738525,
+        "max": 0.16370018756057686
+      }
+    }
+  },
+  "gate": null,
+  "notes": {
+    "kind": "diagnostic",
+    "no_threshold_declared": "This run scores nothing. Declaring a threshold after seeing the number is what the charter forbids; what the result licenses is the choice of next work, and that choice is the PI's.",
+    "curve_not_captured": "capture_convergence_history populates only on the accelerated-solver branch; this ran 'explicit', so curve_samples may be 0 and these are ENDPOINTS, not a shape.",
+    "verdict_of_the_step": {
+      "inner_converged": false,
+      "outer_accepted": false,
+      "inner_iters": 60,
+      "inner_tolerance_um": 7.449122950141183e-09,
+      "residual_candidate": 47.40610862408854,
+      "residual_end": 47.405172429438764
+    },
+    "import_closure_verified_files": null,
+    "import_closure_note": "run_provenance.remote_mismatches hash-compared the driver's first-party import closure against THIS host before launch: 0 mismatched, 0 unverifiable. The build is therefore established by CONTENT, not by the caller's assertion, even though the host is not a git checkout."
+  }
+}

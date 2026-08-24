@@ -1,0 +1,105 @@
+{
+  "schema": "aleph.outer_library.allencell_if_replacement_protocol.v1",
+  "frozen_before_allencell_feature_index_or_image_content_access": true,
+  "objective": "evaluate the frozen HPA raw-IF CNN on an independent Allen Cell endogenous-tag imaging domain after the preregistered OpenCell primary holdout was refused before image download",
+  "prior_source": {
+    "dataset": "OpenCell final raw confocal projections",
+    "status": "retired_before_projection_download_and_before_model_prediction",
+    "reason": "literal frozen ontology yielded five rather than six sufficiently supported common classes",
+    "may_be_reused_as_pristine": false
+  },
+  "frozen_model": {
+    "checkpoint": "results/hpa_raw_if_cnn_checkpoint.pt",
+    "checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+    "training_report": "results/hpa_raw_if_cnn_training_report.json",
+    "commit": "e755bd9",
+    "weights_thresholds_temperature_and_conformal_values_may_change": false
+  },
+  "source_contract": {
+    "provider": "Allen Institute for Cell Science",
+    "dataset": "hiPSC Single-cell Image Dataset",
+    "official_download_page": "https://www.allencell.org/data-downloading.html",
+    "feature_index_url": "https://www.allencell.org/uploads/8/1/9/9/81996008/aics_cfe_cell-features_v1.8.csv.zip",
+    "feature_index_expected_size_bytes": 1580806,
+    "feature_index_expected_etag": "d65ed18d4ab01862d49f301aade8467f",
+    "quilt_bucket": "allencell",
+    "quilt_package": "aics/hipsc_single_cell_image_dataset",
+    "quilt_version": "1657796402",
+    "quilt_manifest_hash": "c791759a51d817abaa3218e92109770dfdd8d3425dffef786a3f4485af376921",
+    "crop_prefix": "aics/hipsc_single_cell_image_dataset/crop_raw/",
+    "crop_suffix": "_raw.ome.tif",
+    "role": "single_use_independent_provider_replacement_holdout"
+  },
+  "fixed_structure_mapping": [
+    {"line_ids": ["AICS-7", "AICS-16", "AICS-24"], "official_structures": ["actin", "myosin"], "canonical": "cytoskeleton_or_adhesion"},
+    {"line_ids": ["AICS-10"], "official_structures": ["endoplasmic reticulum"], "canonical": "endoplasmic_reticulum"},
+    {"line_ids": ["AICS-11"], "official_structures": ["mitochondria"], "canonical": "mitochondria"},
+    {"line_ids": ["AICS-12"], "official_structures": ["microtubules"], "canonical": "cytoskeleton_or_adhesion"},
+    {"line_ids": ["AICS-13"], "official_structures": ["nuclear envelope"], "canonical": "nuclear_envelope"},
+    {"line_ids": ["AICS-14"], "official_structures": ["nucleolus"], "canonical": "nuclear_interior"},
+    {"line_ids": ["AICS-17", "AICS-23"], "official_structures": ["cell-cell junction", "tight junctions"], "canonical": "plasma_membrane_or_junction"},
+    {"line_ids": ["AICS-25"], "official_structures": ["golgi apparatus"], "canonical": "golgi"}
+  ],
+  "feature_index_contract": {
+    "column_resolution": "Unicode casefold and remove non-alphanumeric characters; resolve exact aliases for cell identifier, Allen cell-line identifier, and tagged structure; ambiguous or missing columns refuse",
+    "cell_id_aliases": ["cellid", "cellidentifier", "celluuid"],
+    "line_id_aliases": ["celllineid", "allencelllineid", "structureid", "aicscelllineid"],
+    "structure_aliases": ["structure", "structureofinterest", "taggedstructure", "proteinstructure"],
+    "manual_column_choice_after_access": "forbidden",
+    "duplicate_cell_identifier": "refuse"
+  },
+  "sampling_contract": {
+    "salt": "aleph-allencell-if-v1-20260807",
+    "in_domain_cells_per_line": 24,
+    "minimum_cells_per_line": 12,
+    "selection": "salted SHA-256 order within every fixed line; select at most 24 cells whose crop object resolves exactly",
+    "wildtype_OOD": "select up to 128 rows explicitly labelled wildtype, untagged, parental, or no structure by the same salted order",
+    "minimum_in_domain_lines": 8,
+    "minimum_in_domain_cells": 160,
+    "minimum_OOD_cells_for_AUROC": 30,
+    "cell_images_are_not_independent_biological_replicates": true,
+    "cell_line_is_reporting_and_replication_unit": true
+  },
+  "image_contract": {
+    "input_channels": ["nucleus", "target_protein"],
+    "channel_resolution": "resolve nucleus by OME channel name containing DNA, Hoechst, nucleus, or 405 and target by channel name containing structure, GFP, EGFP, tagged, or 488; if either is absent or ambiguous refuse the image",
+    "z_projection": "maximum intensity projection per selected channel",
+    "per_channel_scaling": "finite p1/p99 clipping to [0,1] with all-zero output when p99 is not above p1",
+    "geometry": "center-crop to square then area-resize to 128x128",
+    "input_shape": [2, 128, 128],
+    "segmentation_channels_used": false,
+    "absolute_intensity_claim": false
+  },
+  "evaluation_contract": {
+    "primary_unit": "cell image with mandatory metrics by whole cell line",
+    "primary_classes": ["nuclear_interior", "nuclear_envelope", "endoplasmic_reticulum", "golgi", "mitochondria", "plasma_membrane_or_junction", "cytoskeleton_or_adhesion"],
+    "model_output_classes_not_in_primary_source": ["cytosol", "vesicular_organelle"],
+    "prediction_aggregation": "no cell-level fitting; report cell-level metrics and arithmetic-mean logits per cell line",
+    "thresholds_temperature_and_conformal": "use frozen HPA checkpoint values unchanged",
+    "external_labels_may_select_or_change_nothing": true
+  },
+  "frozen_endpoints": {
+    "cell_level_macro_average_precision_minimum": 0.45,
+    "cell_level_macro_F1_minimum": 0.45,
+    "multilabel_ECE_maximum": 0.20,
+    "positive_label_conformal_coverage_minimum": 0.85,
+    "mean_prediction_set_size_maximum": 4.0,
+    "wildtype_OOD_AUROC_minimum_if_evaluable": 0.65,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_validated_if_endpoints_pass": true,
+    "uncertainty_authority": false,
+    "reason_uncertainty_authority_false": "most canonical structures have one gene-edited line, so many cell images cannot substitute for independent biological lines",
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_delete_sweep_axis": false,
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  },
+  "failure_policy": {
+    "feature_schema_or_channel_mismatch": "refuse before prediction",
+    "endpoint_failure": "retain as independent-provider diagnostic only and permanently consume selected cells",
+    "endpoint_success": "promote raw-IF localization representation to independent-provider domain-shift validated, while retaining uncertainty and Aleph authority blocks"
+  }
+}

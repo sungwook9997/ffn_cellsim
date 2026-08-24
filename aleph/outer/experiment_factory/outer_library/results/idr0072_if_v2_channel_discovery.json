@@ -1,0 +1,28 @@
+{
+  "aleph_parameter_authority": "none",
+  "downloaded_file_bytes": 5404992,
+  "external_labels_used_for_model_selection": false,
+  "file_name": "011008001.flex",
+  "image_files_opened_for_metadata": 1,
+  "image_id": 12795401,
+  "model_predictions_made": 0,
+  "observed_channels": [
+    {
+      "buffer": 0,
+      "camera": "Exp1Cam3",
+      "emission_filter": "690/70",
+      "excitation_nm": 640
+    },
+    {
+      "buffer": 1,
+      "camera": "Exp2Cam1",
+      "emission_filter": "520/35",
+      "excitation_nm": 488
+    }
+  ],
+  "pixel_arrays_loaded": 0,
+  "protocol_commit": "0364f2f",
+  "reason": "The generic v2 channel-name tokens do not match the instrument labels Exp1Cam3 and Exp2Cam1. The FLEX optical metadata nevertheless identifies the declared DRAQ5 and EGFP channels without inspecting pixel values.",
+  "schema": "aleph.outer_library.idr0072_if_channel_discovery.v1",
+  "status": "v2_refused_before_model_prediction"
+}

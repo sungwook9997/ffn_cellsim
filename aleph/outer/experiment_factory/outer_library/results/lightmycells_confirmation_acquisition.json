@@ -1,0 +1,63 @@
+{
+  "aleph_authority": "none",
+  "alignment_method_counts": {
+    "nearest_PositionZ": 140,
+    "singleton_input": 86
+  },
+  "all_confirmation_labs_independent": false,
+  "base_protocol_sha256": "7989bf6004ecee0f9f1a65ae14ea2538099e12d84a34056173be46a90aeffa57",
+  "checkpoint_sha256": "150c4a5884b4b4dabc1a412f0bc8b9bd43d3d339f9c4e46d12beb665a04ac383",
+  "confirmation_consumed": true,
+  "confirmation_experimenter_groups": [
+    "Centre de Biologie Int\u00e9grative (CBI), Toulouse",
+    "Centre de Recherche Saint Antoine (CRSA) , Paris Centre ",
+    "Institut Genetique et D\u00e9veloppement de Rennes (IGDR) , Bretagne-Loire",
+    "Institut de Biologie du D\u00e9veloppement de Marseille (IBDM), Marseille",
+    "Montpellier Ressources Imagerie (MRI), Montpellier"
+  ],
+  "experimenter_group_overlap": [
+    "Centre de Biologie Int\u00e9grative (CBI), Toulouse",
+    "Institut de Biologie du D\u00e9veloppement de Marseille (IBDM), Marseille",
+    "Montpellier Ressources Imagerie (MRI), Montpellier"
+  ],
+  "header_error_count": 0,
+  "header_refusals": [],
+  "header_request_count": 387,
+  "integrity_inconsistent_payloads": [],
+  "integrity_refused_pair_count": 0,
+  "may_be_reused_as_pristine": false,
+  "may_emit_numeric_sweep_range": false,
+  "metadata_manifest_sha256": "a3578d8b2af4c2d40a868c7e8d93573d9b71683f9e864213fda06fe8a20232b6",
+  "model_predictions_made": 0,
+  "model_protocol_sha256": "dcdcddb0f6515b1d34437b28798bfe119bfd542cc92d611ccf51db653ca24a05",
+  "model_report_sha256": "301fb4a1dba9428bd8209f4078b2a066c975ac6becab9ff47eb107454e7cf83d",
+  "novel_confirmation_experimenter_groups": [
+    "Centre de Recherche Saint Antoine (CRSA) , Paris Centre ",
+    "Institut Genetique et D\u00e9veloppement de Rennes (IGDR) , Bretagne-Loire"
+  ],
+  "pair_count": 226,
+  "pair_manifest_sha256": "8440af2b0903deb7e6ffb389c1b38ad6e92fa396212446ea7583b71856c1eaa7",
+  "resolution_protocol_sha256": "ac166b06d7a59e84a67a267984251ec0edb018c2f41cf41c8d4680d950db44c0",
+  "schema": "aleph.outer_library.lightmycells_confirmation_acquisition.v1",
+  "study_count": 6,
+  "study_holdout": true,
+  "target_pair_counts": {
+    "Actin": 10,
+    "Mitochondria": 91,
+    "Nucleus": 102,
+    "Tubulin": 23
+  },
+  "training_experimenter_groups": [
+    "Centre de Biologie Int\u00e9grative (CBI), Toulouse",
+    "Centre de Biologie Structurale (CBS), Montpellier",
+    "Genethons Imaging Cytometry Platform (ImCy), Ile de France Sud",
+    "Institut de Biologie du D\u00e9veloppement de Marseille (IBDM), Marseille",
+    "Institut de G\u00e9n\u00e9tique Humaine (IGH) , Montpellier",
+    "Institut de g\u00e9n\u00e9tique et de biologie mol\u00e9culaire et cellulaire (IGBMC), Alsace",
+    "Montpellier Ressources Imagerie (MRI), Institut de G\u00e9n\u00e9tique Humaine (IGH), Montpellier",
+    "Montpellier Ressources Imagerie (MRI), Montpellier",
+    "Plateforme Imagerie et Cytometrie (PFIC), Ile de France Sud"
+  ],
+  "unique_payload_bytes": 1536818955,
+  "unique_payload_count": 386
+}

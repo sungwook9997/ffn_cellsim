@@ -1,0 +1,375 @@
+rows:
+- headline: '**PHASE 4 runs at native — its gate is EXACT (0.000% over 5 runs) about a residual that swings 1037%**, and 626x looser than faces-only. **0 accepted.**'
+  claim: 'Two results from one run, both FULL NATIVE on a 4090. (1) **The step machinery runs**: ten steps at 0.1475 s/step static and 0.2694 s/step with relaxation over 4,361,496 nodes, assert_partitioned re-asserted every step, and a sign gate passing BEFORE any step (mean radial force -1.1504e-03 pN under a positive surface tension — a closed surface pulled inward) whose two arms agree to 15 digits. **Zero steps accepted and zero rejected**: every one records ACCEPTANCE_UNDEFINED, and accepted_step_evidence is None. (2) **The balance gate cannot see divergence.** Frozen geometry holds the residual at ~2e-13 pN — not a small force but float64 SUMMATION ERROR on an internally closed system, where every force appears with both signs so |sum F| is zero by construction. With relaxation on it climbs 1.8e-13 -> 7.1e-9 pN, four orders, and the tolerance is 2.683e-06 throughout: **all twenty steps are inside it**, the static arm by seven orders and the moving arm by 380x. NOT a bug in ledger.py, which does what its docstring says (adjoint closure); the defect is that a convergence gate rested on it. Also measured: the static residual is NOT bit-identical across steps while nothing moves (atomic-add ordering), so **any residual-DIFFERENCE criterion must clear a ~1e-13 pN floor**. (3) **The gate is exact about the wrong thing.** FIVE runs per configuration on ONE cell (an earlier single-run table compared two different builds and is superseded): binding all seven strand populations gives 8,489,866 force terms and a tolerance of 1.75492e-03 pN against faces-only 2.80399e-06, **626x**, with a spread across the five runs of **exactly 0.000%** - while the residual it bounds spreads **149% / 1037% / 18%** in the three configurations. The tolerance is a deterministic function of the configuration; the imbalance it is meant to bound is stochastic and never consulted. Wall clock: faces-only .1423-.1547 vs all-seven .1595-.1813 s/step, DISJOINT (median +10.6%), but the intermediate steps OVERLAP so no per-population attribution is quotable. NO magnitude anywhere here: the coefficients are declared test points, so the residual is not a physical residual and neither the growth nor the tolerance is a physics result.'
+  population: 4,361,496 nodes; 4090 — FULL NATIVE
+  build: '2026-08-21 `world/`'
+  artifact: '`world_phase4/*.json` + `BALANCE_GATE_MEASURED_2026-08-21.md`'
+- headline: '**The engine is BITWISE DETERMINISTIC for a fixed seed** — same closure digest, same gamma.'
+  claim: 'Two 12-step runs of the identical FULL-NATIVE configuration and seed, compared per step on the gamma trace: **worst relative difference exactly 0.000000e+00** - np.array_equal True, and BOTH RUNS CARRY THE SAME closure_digest, argv and warp version. ⚠ The first version of this row said 2.168718e-16, from a pair whose stamps later showed DIFFERENT closure digests under one hand-written commit stamp: the code had changed between them and the row claimed they were identical. run_provenance caught its own author''s claim; re-measured on a verified-identical closure the answer is stronger, not weaker. NOT implied by the earlier result that the static residual is not bit-identical: that is |sum F|, a CANCELLING sum where atomic-add order shows at the 1e-13 floor; gamma does not cancel that way. Measured because a device/host gamma A/B disagreed by 15%, and its two candidate causes - a wrong estimator or a nondeterministic engine - are otherwise indistinguishable. It was the estimator: the paths were handed DIFFERENT CUT CENTRES (origin vs actin centroid, 2.05e-02 um apart), and a centre offset does not perturb the sum, it flips which elements CROSS a plane. Same explicit centre on both, neither defaulting: **3.419992e-16** at **27.2x** (8.0000 -> 0.2943 s/step). ⚠ THE CONSEQUENCE IS NOT THE SPEEDUP - it is that SEEDS DEFINE REPLICATES. (e) 1 D-2 asks for the scatter of CONFIGURATIONS and calls within-run variance the likeliest way to write the amendment and measure nothing; at 1e-1 nondeterminism, observe_gamma_seed_scatter would have measured execution noise. NO magnitude: no gamma value is quotable, (c) 3 and (c) 17 stand, coefficients are test points, mobility UNSOURCED.'
+  population: 4,558,554 nodes; 4090 — NATIVE
+  build: '`ccbda122`'
+  artifact: '`world_phase4/det_[ab].json`'
+- headline: '**Every node lies inside the built membrane**, enforced on built positions. Geometry; no force evaluated.'
+  claim: '**Eleven populations stand at native with n_outside = 0 against the built membrane radius**, checked by assert_inside_membrane on the positions the builders actually produced. This closed a defect the RENDER found and the numbers confirmed: the previous placement put **95.5% of the stress fibres and 92.7% of the lamellipodium OUTSIDE the cell** while assert_partitioned reported success - partition is a property of ID ranges and says nothing about where a node is. The counts had gone through BondCount and were labelled PI_GAP; the GEOMETRY went through nothing and was unlabelled constants at two duplicated call sites. n_stress_fibres is now DERIVED from the basal contact disc and **inherits the pitch source class**, so the derivation does not launder its input.'
+  population: 4,588,662 nodes / 11 populations + 63³ field; 4090
+  build: '2026-08-21 `world/`'
+  artifact: '`world_phase1/phase1_inside.json`'
+- headline: '**The `nmii_sf_motor` force field is non-conservative**, and the crossbridge is why. Quote the attribution and the scaling exponents;
+    **no magnitude**.'
+  claim: '**The `nmii_sf_motor` force field is non-conservative, and the crossbridge is why.** Loop work `∮F·dx` scales as `a²` and is exactly
+    segment-independent with heads bound (circulation), and as `a³`/`N⁻²` both at t0 and — the control, same configuration, heads detached — as
+    quadrature, dropping 8,170×. **Population-independent**: whether a force law is a gradient is a property of its differential form, and ONE
+    bound head settles it. So an energy ledger for this lane MUST carry an active-work term, and the symmetric tangent is a quasi-Newton operator
+    that cannot represent what it differentiates. Quote the attribution + the scaling exponents; **no magnitude**.'
+  population: 904 nodes / 2,712 DOF; 320 heads / 16 minifilaments; A5000
+  build: '`db841185` (self-stamped)'
+  artifact: '`observe/sf_operator_observables.json` + `.npz` + `REPORT.md` + 4 figs'
+- headline: The assembled tangent is **exactly multilinear** in its stiffness families and **symmetric to round-off**, which licenses the analytic
+    Hellmann-Feynman gradient.
+  claim: 'The assembled tangent is **exactly multilinear** in its stiffness families (`‖K − Σ_j K_j‖/‖K‖ = 9.35e-17`) and **symmetric to round-off**
+    (max asymmetry 1.02e-10 / 5.82e-11 vs a derived floor of 3.0e-7). Both are per-contribution algebraic properties, so they survive population
+    change — but **only for the families this slice launches**: the cortex-only paths (multigrid, fiber-block, ERM, membrane) are untested. Licenses
+    the analytic Hellmann-Feynman gradient, which FD confirms (median 2.0e-9, 88.3% within 1e-6).'
+  population: same run
+  build: '`db841185`'
+  artifact: same artifact (`multilinearity`, `symmetry`)
+- headline: '**A built bipolar minifilament has 19 INTERNAL zero-stiffness directions**, 95.6% of that subspace on the heads. A single-object
+    property, so it transfers.'
+  claim: '**A built bipolar minifilament has 19 INTERNAL zero-stiffness directions** beyond its 6 rigid-body modes, with **95.6% of that subspace
+    on the heads**. Population-INDEPENDENT by construction, not by assertion: the 102-DOF block was verified **exactly** decoupled (max off-block
+    0.0 pN/µm) before the count was taken, all 16 blocks agree, and the count is cross-checked two ways (eigenvalues under the derived floor;
+    projection onto the six explicitly built rigid-body motions). This is the retracted floppy FRACTION restated in the form that transfers —
+    see (c) 14. **Not** quotable: the per-mode participation figure in the same record, because the null space is degenerate and that number describes
+    the eigensolver''s basis, not the object.'
+  population: 102 DOF / 34 particles (14 backbone + 20 heads) per block, 16 blocks; A5000
+  build: '`49d2215a` (self-stamped)'
+  artifact: '`observe/sf_operator_observables.json` (`minifilament_internal_floppiness`) + `REPORT.md` §1b'
+- headline: '**The `nmii_sf_motor` lane accepts on a DEVICE PREDICATE, and that predicate can say no** — a positive control injects one head''s
+    stall force one-sidedly and the same path rejects it. **The predicate tests ADJOINT CLOSURE, not convergence** (`sf_motor_slice.py`''s own
+    docstring says so), so a non-converged step is not what it rejects. **Not** the tension, **not** rung `CONNECTED`.'
+  claim: '**The `nmii_sf_motor` lane accepts on physics, and the gate can say no.** The predicate is the device force-balance flag, not `accepted_d
+    = ones`: each body reduces its own force array into one half of it, the tolerance is derived on-device from the ledger''s own Σ\|f\| (D8),
+    and 20/20 steps were admitted with the Newton residual 3–4 decades under that floor. The **positive control** injects one head''s stall force
+    one-sidedly and the same path rejects it, reproducing the injection to 14 digits and bit-restoring the step. Its **energy ledger closes with
+    no energy function**, and halving the mobility halves the residual (**exponent 1.0025**) — first-order integrator consistency, not a leak.
+    Quote the mechanism + the exponent + the control. **Not** the tension (same run''s D7 verdict is `VOID`, residual 22.9% of signal) and **not**
+    rung `CONNECTED`, which needs the native inventory. Re-measured in the same run and superseding the `fd482920` row this replaces: ownership
+    is physically split (two never-merged device arrays), tension is exactly 0 while no head is bound (5.55e-14), heads go 0 → 316/320 by events,
+    the FA reaction is 100% inward, and a rejected step bit-restores the binding SoA **and both** position arrays.
+
+
+    **SCOPED 2026-07-28 (night) after a cross-lane adversarial audit, verified against the code:** `balance_ok_d` is the D8 connector adjoint/conservation
+    gate — it checks that two independent bodies'' resultants cancel. `ac/engine/sf_motor_slice.py:65` states it verbatim: "The gate tests the
+    adjoint wiring, not the convergence". So "accepts on physics" must not be read as "accepts on convergence": this row''s positive control demonstrates
+    the gate rejecting a BROKEN ADJOINT, and nothing here shows it rejecting an unconverged solve. The distinction matters beyond this row — the
+    PROPOSED gate amendment''s stage-1 inner gate is written as "accept on `balance_ok_d`", which as written would rest the convergence gate on
+    a predicate that cannot fail for non-convergence.'
+  population: 904 nodes / 2,712 DOF; 320 heads / 16 minifilaments — **0.18% of native**; A5000
+  build: '`49d2215a` (self-stamped)'
+  artifact: '`gate_b_sf_motor/sf_motor_native_gate.json` + `REPORT.md` §7'
+- headline: 'GATE-B cortex-motor: NMII binding and cortical tension **EMERGE from `k_on` events**. Quote the **mechanism** — tension is event-generated,
+    not a static prestress. Not the magnitude.'
+  claim: 'GATE-B cortex-motor dynamic slice: NMII head binding **emerges 0 → 85.24%** (7,535/8,840) from `k_on` Poisson events and cortical tension
+    **emerges 0 → 3.72 pN/µm**; 30 steps @ `dt_phys` 0.01. Quote the **mechanism** (tension is event-generated, not a static prestress). Not the
+    magnitude — see (c).'
+  population: 70,686 cortical filaments / 494,802 actin nodes; A5000 `cuda:0`
+  build: '`ec409751` + `bc3fef26` (`r0_bind` attach-unstrained fix)'
+  artifact: '**None in a clean checkout.** `cell_assembled/gate_b_dynamic_v2.npz` is on disk but gitignored (`.gitignore:158`) and self-stamps
+    `"evidence": "CONNECTED"`, which is wrong'
+- headline: Native ECM constitutive force over genuinely private device SoA. **Existence and sign only.**
+  claim: 'Native ECM constitutive force over genuinely private device SoA: relaxed state force-free, shear input yields an emergent restoring
+    force. Quote existence + sign only.'
+  population: 200–220 collagen fibers, **zero crosslink bonds**; A5000 `cuda:0`
+  build: '`8b2e7adb` + `f47c03aa`'
+  artifact: None — 6 CUDA-gated tests, no run artifact (the merge's "22 CUDA tests" headline is not the count; see (c) 5)
+- headline: '**Negative result, do not re-queue:** the fiber-quotient coarse operator does not close the static resting residual at full native.'
+  claim: '**Negative result, do not re-queue:** the fiber-quotient inter-fiber coarse operator does **not** close the static resting residual
+    at full native — max\|PF\| OFF 1.48 / Path A 1.36 / Path B 1.51. The residual is local non-equilibrium at discrete myosin attachment points,
+    not a collective mode.'
+  population: 70,686 filaments / 1,413,720 inter-fiber crosslinks; A5000
+  build: '`adea8103` + `d567eaf8` (fiber-arclength multigrid speed fix: `09c14eb8`)'
+  artifact: None — numbers live in the commits + `GATE_A_RESTING_CONVERGENCE_2026-07-23.md` §10
+- headline: '**Negative result:** the fine-75 nm residual plateau is a **construction** artifact, not a solver wall.'
+  claim: '**Negative result:** the fine-75 nm max\|PF\| ≈ 3.42 plateau is a **construction** artifact, not a solver wall — smooth arcs (`--no-overlap-free`)
+    collapse it 3.42 → 0.13 with the same solver, and the `radial_span` fix gives 3.42 → 0.28 at span 8 with steric ON — do **not** score fine
+    rungs against the frozen 0.21 literal, see (c) 1.'
+  population: fine 75 nm cortex rung (~2.9 M nodes); A5000
+  build: '`21a56220` (measurement), `3a1f8866` (fix, default-off byte-identical), `831e51a7` → `6cbefe57` (native validation)'
+  artifact: None
+- headline: The mixed formin + Arp2/3 cortex **builds** natively with its branch-angle harmonic force-evaluated. Quote build and wiring; **not**
+    convergence.
+  claim: The mixed formin + Arp2/3 cortex **builds** natively and its 70° branch-angle harmonic is force-evaluated in the executable path (sourced
+    Faessler anchors, one of which is DOI_DEAD). Quote build + wiring; **not** convergence — the residual plateaus at 47.5 pN after the steric
+    fix, and the production default is still `arp23_fraction = 0.0`.
+  population: 302,286 actin nodes / 70,686 fibers (6,514 long formin + 64,172 short Arp2/3, ~⅓ by mass); A5000
+  build: '`e2ddda48` (branch force wired) + `9e694ec4` / `32afc076` (overlap + unified relax) + `0dae82c4` (recording)'
+  artifact: None — `NATIVE_QUEUE_RESULTS_2026-07-24.md` §Arp2/3
+- headline: 'GPU residency, non-vacuously: zero hot-loop D2H copies **with** a positive control at one. **Quote the residency gate only.**'
+  claim: 'GPU residency, non-vacuously: `hot_loop_dtoh_copies = 0` **with** `profiler_positive_control_dtoh_copies = 1`. Quote the residency gate
+    only.'
+  population: 70,686 filaments / 494,802 actin + 511,114 total nodes; `cuda`
+  build: added `34a3890d`, last touched `19103665` (2026-07-20) — i.e. **before** `bc5ff3b0` and `81805535`
+  artifact: '`foundation-hardening/native_gates.json` (`ng6` PASS) + `native_resting_70686.json`'
+- headline: The full-native cell **builds and steps** with every compartment present — **not** that the step converged.
+  claim: The full-native cell **builds and steps** with membrane / nucleus / fluid / monomer compartments present. Quote that it builds and steps
+    — **not** that the step converged.
+  population: same run as the row above
+  build: '`34a3890d` / `19103665` (same run as the row above)'
+  artifact: 'same artifacts: they also record `inner_converged: false`, `residual_start = residual_end = 2634.12`, `N_crosslinks = 70,686` (1
+    per filament — the pre-`bc5ff3b0` cortex), `overall_status: INCOMPLETE_OR_FAIL`, `exact_peak_gpu_bytes: None`'
+- headline: '**The SF motor DOES build tension** once the α-actinin crosslink is out of the operator and the clock passes the induction period
+    — first non-`VOID` verdict and first `comparable: true` cost. **Not** the tension as a physical SF magnitude.'
+  claim: '**The SF motor DOES build tension — once the α-actinin crosslink is out of the operator and the clock passes the induction period.**
+    Two native measurements, one A/B. **(1) The crosslink is what blocks convergence:** at identical 10,400 nodes / 4,000 heads / 200 stations
+    / identical budget, 0 α-actinin dorsal↔arc joints gives a free-node residual of **1.33e-12 pN** and 160 joints gives **1.46e-02** — **ten
+    decades**, one stiffness family. **(2) On the crosslink-free topology carried to 5.0 s the tension emerges 0 → 5.00 pN** with 3,933/4,000
+    heads bound, residual **1.18e-07 pN**, **D7 = PASS** at residual/signal 2.36e-08 — this lane''s FIRST non-`VOID` verdict, all twelve mechanism
+    predicates true, and a `comparable: true` timing block: **1.122 s per accepted step at that stated convergence**, 4,008 inner iterations,
+    real-time factor 112. Population scaling is exact where it must be: 904 → 9,040 nodes moved `T_max` by **+0.03%** while the FA traction resultant
+    scaled **×10.2** (intensive vs extensive). **RETRACTS the row this replaces**, whose reading — the converged equilibrium carries no tension
+    — was a DURATION artifact: every run behind it was 20 steps = 0.20 s, and 0.20 s is inside the induction period (converged `T_max` there is
+    3.7e-06 pN, at 0.50 s it is 0.947). What survives from it: at 0.20 s the tension a non-converged solve reports IS its residual, so those magnitudes
+    meant nothing. **NOT** quotable: 5.00 pN as an SF tension — every constant is a PI-GAP, the trace is still rising ≈0.7 pN/s at 5.0 s (no steady
+    state), and this is a deliberately REDUCED architecture (ventral only, no dorsal/arc/cap) at an SF inventory the KB has no axis for.'
+  population: 200 ventral sarcomeres / 10,400 nodes / 4,000 heads / 0 crosslinks; A5000 — native SCALE, but a reduced architecture and an inventory
+    that is still a PI-GAP
+  build: '`2001c119` (the topology A/B + the PASS run) + `576ebf42` (the population scaling); `source: declared` — gbook is not a git checkout'
+  artifact: '`gate_b_sf_motor/inner_solve_convergence_2026-07-28/` — 16 `run-record@2` artifacts + 7 figs; `REPORT.md` §9 (superseded) + §10'
+- headline: '**The production explicit inner step is stable at full native, and `kmax` was never a bound** — the ratio to it IS the per-node bond
+    accumulation, measured. **Not** `λ_min`, the condition number, or any eigenvalue as a material property.'
+  claim: '**The production explicit inner step is stable at full native, and the constant it is sized by was never a bound.** `λ_max(P K P \|range(P))
+    = 8.331e6 pN/µm` — measured on the operator the inner iteration `pos += dt_mu·P F` actually linearises to, restricted to the constraint tangent
+    space — resolved to a Parlett bound of 6.9e-18, with two independent random starts agreeing to 2.2e-16. That is **2.9459× the build''s own
+    `kmax`**, so the largest SINGLE stiffness bounds nothing: a node accumulates one contribution per incident bond and this ratio IS that accumulation,
+    measured. Hence `dt_mu·λ_max = 0.2946 < 2` — **stable, with 6.79× headroom**, i.e. the `0.1` in `dt_mu = 0.1/kmax` does exactly the work of
+    covering it. FIRE''s 10× multiplier puts the product at 2.9459, the SAME number by identity and not a second fact; reported and **NOT adjudicated**,
+    since FIRE is damped MD with a differently-scaled bound. Same run, **population-independent** by per-contribution algebra: the cortex tangent
+    is exactly multilinear (`‖K − Σ_j K_j‖/‖K‖ = 1.0160e-16`, each family assembled ALONE, never differenced) with all five exercised families
+    symmetric against their own derived floors — which **removes the "cortex-only paths untested" caveat** on the multilinearity row above. Lanczos
+    agrees with the dense eigensolve to 5.29e-16 on the same Warp operator. **NOT** quotable: `λ_min`, the condition number or its decades — the
+    folded small end did NOT resolve (bound 25× the value), so (c) 14''s condition number is now re-measurABLE but still not re-measurED; and
+    no eigenvalue as a cortical material property (`k_xb`/`k_backbone`/`k_linc` are PI-GAPs). `steric_wca` and `myosin` are recorded UNCERTIFIED
+    with their reasons, not assumed.'
+  population: 551,434 nodes / 1,654,302 DOF; 70,686 fibers / 1,413,720 crosslinks / 8,840 heads — **FULL NATIVE**; A5000 `cuda:0`
+  build: '`a44a1de3` (self-stamped, `source: declared`; the driver''s whole first-party import closure was verified 79/79 against the run host
+    before launch)'
+  artifact: '`observe/native_cortex_spectrum/record.json` + `REPORT.md` + 3 figs'
+- headline: '**The cortex owns its device arrays, and they are the incumbent''s cortex** — node-by-node force parity with a control that demonstrably
+    fails. **Not** rung `CONNECTED`, and not a physics magnitude.'
+  claim: '**The cortex owns its device arrays, and they are the incumbent''s cortex.** Measured at full native: the engine cortex allocates position/force
+    of length **exactly 494,802** at device pointers distinct from `cell.pos_d`/`cell.f_d`, launches the incumbent''s own `cytosim_bending` +
+    `link_spring` kernels over them, and the two force fields agree node-by-node — max delta **9.97e-18 pN** against a 0.0356 pN reference field
+    (**2.80e-16** relative, vs T2''s pre-declared 1e-12 criterion). The comparison is demonstrably able to fail: injecting a known 0.3564 pN recovers
+    it exactly and fails parity. A rejected step restores every node exactly and an accepted step keeps the candidate. This ends the bind-target
+    port, so the **nine** connectors terminating on the cortex have a cortex-owned force array to close an adjoint pair against for the first
+    time. Quote the mechanism + the parity ratio + the control. **Not** rung `CONNECTED` — no connector was dispatched inside an accepted-step
+    transaction; and **not** a physics magnitude, since these are the incumbent''s own forces. Note what the parity arm does NOT discriminate:
+    with the compartments off `n_total == n_actin`, so the length limb is only discriminating against the composed build, where it is (myosin
+    arm: n_total 509,830 while the engine array stays 494,802).'
+  population: 70,686 filaments / 494,802 actin nodes / 1,413,720 crosslinks / 353,430 bending triples; A5000 `cuda:0`
+  build: '`576ebf42` (`source: declared` — gbook is not a git checkout, so the commit is the caller''s assertion)'
+  artifact: '`cortex_ownership/native_record.json` (`run-record@2`, verdict PASS, rung CUDA_UNIT / QuantitativeClaim BLOCKED, `timing` 29.7 s
+    `comparable: true`)'
+- headline: '**Negative result, do not re-queue: 66× the inner budget ends HIGHER than the start** (60 iterations −0.52%, 4,000 **+0.14%**). With
+    the same day''s uniformity result, construction and budget are both excluded. Quote the **exclusion** — not a rate, not an operator property,
+    **not a curve**.'
+  claim: '**Negative result, do not re-queue: the resting residual does not descend, and the iteration budget is not why.** One `--from-resting`
+    outer step at full native, inner budget raised 60 → 4,000: the candidate goes 47.405172429438764 → **47.471519** pN (+0.14%), against 47.405172
+    → 47.157182 (−0.52%) at 60. The step is rejected and rolled back both times, so `residual_end` returns to start. **66× the budget ends higher
+    than it began**, which is neither of the two readings that were posed before the run — not a stall, not a slow descent. Taken with the same
+    day''s uniformity measurement on the same configuration (per-node |F| p50 0.02373, p99 0.02436, max 0.03564, max/p50 = 1.50; median flat across
+    five radial shells 0.02416 → 0.02363; top 0.4% of nodes carrying 0.80% of |F|²; `f_steric` zero everywhere, zero interpenetration), **construction
+    is excluded and budget is excluded**, and the operator/preconditioner is what remains. **This is the third independent result pointing there**
+    — `STATE.md` (b) already carries the fiber-quotient coarse operator failing to close the same static residual. ⚠ **NOT A CURVE.** `capture_convergence_history`
+    populates only on the accelerated-solver branch and this ran `explicit`, so `curve_samples: 0`: these are two ENDPOINTS, not a shape. Anyone
+    re-running for the shape needs the accelerated path. ⚠ The record **declares no threshold, deliberately** — it self-stamps `kind: diagnostic`
+    and scores nothing, because declaring a threshold after seeing the number is what the charter forbids. What it licenses is the choice of next
+    work, and that choice is the PI''s. ⚠ The artifact''s own `import_closure_note` says the build is "established by CONTENT, not by the caller''s
+    assertion"; that overreaches — the closure check establishes the host matched the local working tree, not that either matches `4c165576`.
+    The authoring session withdrew the phrasing in prose; the record still carries it. **Not** quotable: a convergence rate, any operator property,
+    or the wall time as an engine speed — `timing` stamps itself `comparable: false` because the gate verdict is absent, so the cost belongs to
+    a step that established no convergence.'
+  population: 70,686 filaments / 494,802 actin / 511,114 total nodes; 4,000 inner iterations; RTX 4090-1 `cuda:0`
+  build: '`4c165576` (`source: declared`) — **the only row whose closure was content-checked**: 69 files hash-compared against the run host pre-launch,
+    0 mismatched.'
+  artifact: '`resting_residual_curve/residual_curve.json` (`kind: diagnostic`, `timing.comparable: false`) @ `2e2a2c9d`'
+- headline: '**Membrane, cortex and nucleus address DISJOINT blocks at full native**, control refuses the arrangement they replaced. **Slice views,
+    NOT private allocations.** **Not** `CONNECTED`, no magnitude.'
+  claim: '**The three interior-column surface components address disjoint blocks, and the check that says so can fail.** At full native the driver
+    derives the blocks from the built cell — cortex `[0, 494802)`, nucleus `[494802, 495444)`, membrane `[495444, 536406)` — and `assert_component_state_disjoint`
+    certifies them on the device BYTE SPANS read off the arrays, not on a declaration: cortex position ends at address 146046871984, which is
+    exactly where nucleus position begins. The positive control rebuilds the pre-Card-5 arrangement (membrane and cortex both handed the whole
+    `cell.pos_d`/`cell.f_d`) and the same call refuses it, with its refusal message stored in the artifact. Two defects were closed to make the
+    check mean anything: the guard compared `storage_key` (device pointer) for EXACT equality, so two OVERLAPPING slice views — different pointers,
+    same nodes — passed it, and `PressureCoupling.accumulate` launches `dim=node_pos.shape[0]` while indexing `node_volume[i]`, so the global
+    position array it was handed ran that launch 495k elements past the end of the weights (latent: this driver never calls the slice''s own force
+    pass). ⚠ **These are SLICE VIEWS of the one array the incumbent''s inner solve relaxes, and the record self-stamps `arrays_private: false`
+    / `ownership_class: disjoint_slice_views`.** A private allocation here would be a set of arrays the solve never reads and never writes — distinct
+    arrays under a no-op mechanics, which is verbatim the T2 negative control — so it would pass this gate while meaning nothing. What is bought
+    is exclusive ADDRESSING: a kernel over the membrane''s view cannot reach a cortex node, and each owner''s snapshot/reject-restore covers its
+    own block instead of restoring the whole cell three times over. **Quote the disjoint addressing and the control. NOT** rung `CONNECTED`, **not**
+    private device allocations, **not** any physics magnitude, and **not** `STATE.md` (c) 4 being closed — closing it needs the inner solve split,
+    which is new physics and a PI decision. The record carries all four in its own `may_not_be_quoted_for` field. ⚠ **Provenance:** the code landed
+    in `54755105`, a commit whose message describes a one-line `ownership.yaml` edit and not the 491 lines of Card-5 it actually carried — a bare
+    `git commit` in a parallel session swept this session''s stage, which is the failure `CLAUDE.md` names. Recorded rather than rewritten: three
+    commits already sat on top of it. The gate itself ran at `89eb2a60`, verified by content (84/84 closure files), and its artifact is committed
+    at `23474924`.'
+  population: 70,686 filaments / 494,802 actin / 536,406 total nodes; 40,962 membrane + 642 nucleus verts — FULL NATIVE; RTX 4090-1 `cuda:0`
+  build: '`89eb2a60` (`source: declared`; 84/84 closure files hash-matched). ⚠ Code landed in `54755105` under a mislabelled message — see the
+    claim.'
+  artifact: '`interior_column_ownership/` — `native_record.json` (`run-record@2`, gate, PASS, 13.2 s `comparable: true`) + 1 fig @ `23474924`'
+- headline: '**The composed native cell bound 2 of 38 connectors and 3 of 14 components**; the other 36 had no runtime object. Quote the census
+    + both controls; **no magnitude**.'
+  claim: '**MEASURED, not asserted: the REAL-owner composed native world binds TWO connector runtimes (`nmii_cortex_motor`, `dorsal_arc_crosslink`)
+    and three components (`ecm`, `nmii`, `sf_arc`); the other 36 declared connectors are `NOT_BOUND` — no runtime object exists for them here.**
+    The first pass found ONE; the second is the same census after the same-day fix recorded below. `NOT_BOUND` is WEAKER than a stub: `assert_fully_bound`
+    tests only that hooks are CALLABLE, so a stub at least has an object whose method returns, and these do not. The one bound edge launched **3
+    Warp kernels** (`_refresh_bound_walk_dir`, `crossbridge_segment_split_r0bind`, `refresh_segment_barbed`) inside its own `accumulate_candidate`.
+
+
+    **Both controls PASS, and without them no row is attributable.** POSITIVE: `nmii_cortex_motor` → `DEVICE_RUN`. NEGATIVE: the SAME edge with
+    its mechanics hooks nulled → `STUB`, 0 kernels — same world, same call site, verdict flips. A different edge could not serve as the negative
+    control because only one runtime is bound, and the A/B on one edge is the stronger test anyway.
+
+
+    **This does NOT contradict (f)''s "38 OBJECTS"** — that sentence is about the census-double world (`ac_composed_world_dump.py`, host counters
+    with no geometry and no kernel). Both are true of different worlds, and neither statement named its world, which is how the strong reading
+    arose. It makes **(c) 4 stricter, never looser**.
+
+
+    **NOT quotable:** any force magnitude. The verdict is the kernel-LAUNCH observation ALONE. An earlier draft folded the force delta in and
+    read `l1_delta = 2.7e-21 pN` over ~5e5 nodes as a moving force channel; the record therefore reports `ZERO`/`NONZERO` plus per-node magnitude
+    as a FACT and declines to grade it, because deciding whether ~5e-27 pN/node is physical needs a chosen scale. Verdicts describe THIS composed
+    configuration on THIS build, not a connector class forever. ⚠ **Attribution unit:** one runtime object serves several declared edges (`ImmersedPorousTransfer`
+    7, `ContractJointConnector` 6, `FilamentCrosslinkConnector` 5), so a shared object''s observation attributes to the SET it serves; rows carry
+    `shared_with`. Not exercised here — the single bound runtime serves one edge.
+
+
+    **ACTED ON, same day (`73a93883`):** one of the 37 was not unbuilt but UNCOUNTED. `dorsal_arc_crosslink` is built by `build_sf_arc_state_owner`
+    (`with_internal_arc` defaults True) and `SFArcStateOwner.accumulate` already launches its `link_spring_kernel`, so its joint force has been
+    in every composed run — attributed to the `sf_arc` COMPONENT, because nothing handed the object to `compose_native_cell_world` and the actor
+    never knew the edge existed. Two slots had been reserved and left unfilled: the `DORSAL_ARC_CROSSLINK` constant, and that function''s own
+    `sf_internal_arc_connector` parameter — accepted, documented, and read by nothing. Registering it changes NO physics: same object, same launch,
+    now counted under its declared name. **So the census also measured its own instrument — a bound-connector count can read LOW as well as high**,
+    and only a run could tell which way. Two tests pin it, including the zero-joint case (a connector that launches nothing must not be counted).'
+  population: 70,686 filaments / 551,434 nodes / 8,840 heads — FULL NATIVE; RTX 4090-1 `cuda:0`
+  build: '`73a93883` (re-run after the fix; first pass `d58bab03`; 122/122 hash-matched)'
+  artifact: '`connector_devicerun/` — 2 × `run-record@2` (`comparable: false`) + 1 fig'
+- headline: '**Both wired power ports close their adjoints** — but 1.74e-15 at **95.0 pN** and 6.40e-17 at **9.0e-10 pN**, which is not a force.
+    The second is near-vacuous until something moves (row below).'
+  claim: '**MEASURED, and the first non-vacuous interface reading in this repository.** After 30 force-accepted steps at `dt`=0.01 (NMII heads
+    0 -> **8,754 / 8,840** by `k_on` events), the `cortex`/`nmii` two-body cut carries **95.0155709 pN** of force and it cancels to **2.343e-13
+    pN** — a dimensionless cancellation of **2.47e-15**, i.e. round-off. `nmii_cortex_motor` is the only power port bound in this world, and its
+    adjoint closes EXACTLY.
+
+
+    **The vacuity controls are the point, because without them this row would be worthless.** The SAME measurement at `--steps 0` returns `BALANCED`
+    on every cut with cancellation **1.0** and 0/8,840 heads bound: at rest there is no force, so the two channels are both zero and the gate
+    compares nothing. That is the trap this lane already paid for on 2026-07-28f (*"my negative control was vacuous — at resting all heads are
+    unbound so myosin''s force on actin is exactly 0"*). The artifact therefore reports **`cancellation` = residual/scale** beside every verdict
+    — dimensionless, no chosen threshold, both halves supplied by the run — plus a structural **`unwired`** flag. **Read `cancellation` BEFORE
+    `status`.** The instrument itself passed three CUDA controls first (`gate_controls.json`): a genuine pair balances; a withheld reaction is
+    caught AND returns the injected 0.5 pN exactly; a sign flip is caught.
+
+
+    **What this CORRECTS.** The session''s working diagnosis was that the empty `SOLVE_COUPLED` phase is what blocks the composed cell. The measurement
+    says otherwise: where a connector IS wired the adjoint already closes to round-off, so an interface iteration would have nothing to converge.
+    The two other measured cuts (`nmii`/`sf_arc`, `cortex`/`sf_arc`) each carry **47.5 pN with cancellation 1.0 and `unwired: true`** — force
+    on one side and nothing crossing to meet it. That is an ABSENT CONNECTOR, not a solver failure, and 47.5 pN is the size of the absence.
+
+
+    **So wiring now has an acceptance criterion it never had**: a newly bound connector must move its cut''s cancellation from ~1 to ~0. **NOT
+    quotable:** convergence (`ledger.py` states this gate tests the adjoint wiring, not the solve, and `sf_motor_slice.py:65` says the same),
+    any physics magnitude (every NMII constant is a PI-GAP and all 30 steps are force-accepted), and anything about the 24 cuts reported `UNBOUND`
+    — absence was kept distinct from balance throughout, which is the whole reason the reading is readable.
+
+
+    **⚠ CORRECTED the same day; the first pass''s root cause was wrong and so was the criterion built on it.** A whole-body reduction sums EVERY
+    edge on both bodies, so a component on two edges carries both into every cut it appears in. That produced a 47.5 pN "unpaired force" read
+    as `sf_arc`''s — and it was not: `47.5077854660593 = 95.0155709321186 / 2` to 2e-15, i.e. the motor''s per-side half, inherited by every cut
+    touching `cortex` or `nmii`. `sf_arc`''s own resultant is 1e-13…1e-9 pN. **The acceptance criterion "move the cut''s cancellation from ~1
+    to ~0" was therefore already failing on a CORRECTLY wired connector** and would have failed every future one.
+
+
+    **The measurement now used is LEAVE-ONE-IN** — the distinction this lane adopted 2026-07-28e: zero the watched arrays, re-run ONLY that cut''s
+    connectors, then score, so the number belongs to the connector and not to the bodies. Records stamp `isolated`; a non-isolated reading may
+    not be quoted as a connector result. Under it **both bound power ports close**: `nmii_cortex_motor` A=B=**4.7508e+01 pN**, cancellation **1.74e-15**;
+    `sf_cortex_transient` A=B=**4.5140e-10 pN**, cancellation **6.40e-17**. The second is small because its rest length is the separation at bind,
+    so its joints are unstrained — it shows the scatter CONSERVES, not that the edge carries a physical load. ⚠ Isolation RAISES on a connector
+    it has no accumulate call for: a predecessor silently skipped the motor and reported `0 pN`, which made "could not isolate" and "carries no
+    force" the same value.
+
+
+    **CORRECTED 2026-08-11 (same lane, same instrument).** The headline originally read as if both closures were equally established. They are
+    not, and the artifact said so all along: `cortex`/`nmii` closes at a scale of **95.0155709 pN**, while `cortex`/`sf_arc` closes at a scale
+    of **9.028e-10 pN** — 0.9 nanopiconewtons, which is not a force. `sf_cortex_transient` was wired and its adjoint was exact, but it was carrying
+    nothing, so the closure was very nearly the vacuous PASS this instrument exists to expose. It became non-vacuous only once a component could
+    MOVE: at a 0.05 µm perturbation with the relax attached the same connector carries **157.99 pN** and closes to **8.99e-17** (row below, `perturb_relax_on.json`).
+    Quote THAT closure, not this one.'
+  population: same native cell; 8,754 of 8,840 heads bound
+  build: '`0673ad9e` (isolated re-measure; first pass `ae523fa5`; 126/126 hash-matched)'
+  artifact: '`interface_residual/` — isolated + steps30/steps0 (vacuity) + `gate_controls.json`'
+- headline: '**A component now advances its own positions in the accepted step, and it is LIVE** (0.0 → 0.0516 µm, same perturbation). Its bound
+    was NOT a bound: `dt` 459× over. **No** convergence.'
+  claim: '**The keystone landed and its first version was wrong in the way this repository keeps being wrong: silently.** `overdamped_relax` gives
+    any filament-graph component its own explicit integrator with both constants DERIVED — γ from NF2007 §5.2, `dt_max = 2γ/λ_max` with no safety
+    factor, because a safety factor inside a stability statement reads as physics and is not. **But the first cut summed only axial links and
+    bending triples**, leaving α-actinin''s `arc_joints` (4.6e5 pN/µm, ~460× the axial k) outside the Gershgorin row sums. Omitting a term does
+    not loosen a Gershgorin bound — it reverses the inequality, so the result is not an upper bound at all. On the real native `sf_arc` topology
+    λ_max went **4,009.25 → 1,842,000.69 pN/µm**: the admitted `dt` was **459.4× the true stability limit**, and nothing raised. A second omission
+    is structural and was found only by the pre-attachment audit — stiffness a CONNECTOR scatters into the component''s `force_d` while owning
+    no array here (`sf_cortex_transient` borrows via `BorrowedSegmentActorView`) can never appear on a topology object, so `borrowed_pairs` is
+    now REQUIRED with no default. **Separately**, `r0_bind` held only because nothing moved: `rest_um` was the separation at BUILD, and a rebind
+    at that stale rest injects `k·Δ` from nowhere (~311,000 pN at α-actinin stiffness for the drift this gate measured). Rest is now taken at
+    the moment of binding, gated on `accepted`. Four device gates PASS: bound-is-a-bound, refuses-unstable-`dt`, step-descends (0.400000 → 3.815e-07
+    µm), rebind-rest (engaged keeps, rejected keeps, accepted refreshes; force after rebind 0.0 pN exactly). **NOT** quotable: any trajectory,
+    any coupled-solve result, or that `sf_arc` is stepping — the integrator is verified IN ISOLATION and is **not yet attached**. Whether attaching
+    it lowers the interface residual is the open question.
+
+
+    **ATTACHED AND MEASURED (Slurm jobs 106/107).** `sf_arc` advances its own positions in the transaction''s `solve()` slot — the only window
+    between the `position_d` snapshot and the ledger reduction — subcycled **477×** per `dt`=0.01 s outer step from its own derived bound. Deriving
+    `borrowed_pairs` from the bound connectors took λ_max **1.842e6 → 3.682e6 pN/µm**: `sf_cortex_transient`''s α-actinin doubles the bound and
+    it is invisible to any topology scan. **The positive control is what makes this readable.** Unperturbed, the relax ran 14,310 force assemblies
+    and moved 4.55e-15 µm — correct (nothing loads `sf_arc`: it is built AT rest, and `nmii_sf_motor` is UNWIRED) but indistinguishable from never
+    having attached. Under an identical 0.05 µm perturbation the two runs separate completely: relax OFF moves **exactly 0.0 µm** and `sf_cortex_transient`
+    carries **exactly 0 pN**; relax ON moves **0.0516 µm** and the same connector carries **157.99 pN**, closing to **8.99e-17**. That is the
+    first non-vacuous closure for this connector and it corrects the row above. **NOT** quotable: any convergence or restoring claim. The relax
+    did NOT return the cell toward its built rest — offset went 0.05000 → 0.05072 µm. Likely mechanism, and an OPEN question for PI: α-actinin
+    rebinds force-free at the CURRENT separation (`r0_bind`), ~3 times per joint over this 0.3 s window, so the cortex re-anchors the SF wherever
+    it currently is and the restoring force is erased as fast as it builds. The deferred capture-radius veto belongs exactly here.'
+  population: composed native `sf_arc` + cortex PORT + nmii + ecm; 8,754/8,840 heads; 4090-1
+  build: '`b4a0e8f4` + `a9f38bf0` + `ed646e92`; Slurm jobs 104/106/107'
+  artifact: '`relax_bound_rebind/gate.json`; `interface_residual/perturb_relax_{on,off}.json`'
+- headline: '**6/11 components step in 243 ms; the real-time ceiling is MEASURED at ~0.64.** Quote the curve + the ceiling; **no** physics.'
+  claim: '**CARD-5 landed and the step finally has a number.** The composed native world went 3/11 components and 3/31 in-cell connectors to **6/11
+    and 8/31**: the interior fluid column (membrane / cortex / cytosol / nucleus + its three fluid connectors) binds into the SAME world and transaction,
+    cortex is PROMOTED from PORT to component, and `sf_cytosol_transfer` + `nmii_cytosol_transfer` join the `immersed_transfer` family with the
+    cortex edge''s own `dx³` volume convention. Double counting is prevented by D2''s `omit=`, not a build flag; ordering is the correctness (the
+    incumbent zeroes the ONE global force array first, so the cortex port leaves the engine''s zero list).
+
+
+    **The cost, at native, RTX 4090:** 3/11 = **4.9 ms/step (RTF 2.054)** — faster than real time and that is NOT good news, it is the cost of
+    not doing the expensive part. 6/11 = **243 ms/step (RTF 0.0411)**, a 48× multiplier that lands exactly where CLAUDE.md''s profile says it
+    should: **three kernels are 84%** of the step (`_interp_grad_force` 36.5%, `wca_steric` 24.4%, `membrane_pressure_traction` 23.4%), all per-iteration
+    and position-dependent, so none is hoistable.
+
+
+    **THE CEILING IS MEASURED, NOT ARGUED.** Four runs give `ms/step = 15.54 + 5.697·n_inner` (40→243.3, 20→130.2, 10→71.3, 5→44.6 ms). The 15.5
+    ms intercept is one force assembly + the transaction + the connectors at ZERO inner iterations, so **RTF for this configuration cannot exceed
+    ≈0.64** however the iteration budget is cut. Real time is not reachable by kernel tuning or by spending iterations — it needs a larger stable
+    `dt`, and `outputs/ac/implicit/REPORT.md` already measured that path closing at zero accepts across seven preconditioners.
+
+
+    **Decision input, both axes on the SAME cell:** with the pre-registered swing (40→20 = +0.32% max|PF|), 40→20 buys **1.87×** — measured, replacing
+    this lane''s ~1.7× estimate from an older profile. The verdict is NOT re-litigated: `n_inner` stays 40.
+
+
+    **NOT quotable:** any physics from these runs (force-accepted, PI-GAP constants), any RTF as *the cell''s* RTF (6 of 11 components), or that
+    the remaining 5 components are merely unwired — `nmii_sf_motor` is blocked because the SF population REFUSES a motor station in writing (`N_stations:
+    0`, *"curved sarcomere … a rigid bipolar minifilament cannot straddle them"*), and the last four bindable edges are blocked by force-channel
+    granularity in the frozen driver (ERM and LINC live inside `membrane_/nucleus_compartment_force`, which has no finer `omit` channel). Both
+    are PI items.'
+  population: 70,686 cortical filaments + membrane/nucleus/Biot grid; 4090
+  build: '`d226b9ab`→`58b04dc8`; Slurm 110-117'
+  artifact: '`fullcell_timing/` — 9 records (baseline, card5, profile, 4x ninner)'

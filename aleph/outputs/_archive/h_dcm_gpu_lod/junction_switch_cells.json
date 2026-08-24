@@ -1,0 +1,3793 @@
+{
+  "summary": {
+    "n_cells": 250,
+    "steps": 600,
+    "dt_s": 1e-09,
+    "r_cell_um": 22.0,
+    "device": "CPU",
+    "N_particles": 10500,
+    "finite": true,
+    "R_spheroid_um": 178.13649565311826,
+    "cluster_centroid_um": [
+      5.0710195846008065e-05,
+      3.5643132061287386e-05,
+      182.51808419755494
+    ],
+    "P_switch_kPa": 0.5,
+    "cadherin_weak_factor": 0.3,
+    "integrin_strong_factor": 3.0,
+    "contact_factor": 2.5,
+    "crowd_lo": 4.0,
+    "crowd_hi": 12.0,
+    "P_min_kPa": 0.0,
+    "P_max_kPa": 6.0,
+    "n_switched": 246,
+    "pressure_lo_kPa": 0.0,
+    "pressure_hi_kPa": 6.0,
+    "mean_P_switched_kPa": 4.134146341463414,
+    "mean_P_unswitched_kPa": 0.0,
+    "mean_r_switched_um": 133.68856294587584,
+    "mean_r_unswitched_um": 177.2144009840495,
+    "switched_high_pressure": true,
+    "switched_interior": true,
+    "t_sim_s": 6.000000000000001e-07,
+    "accel_factor": 600000.0,
+    "t_real_s": 0.36000000000000004,
+    "t_sim_human": "0.6 \u00b5s",
+    "t_real_human": "360 ms",
+    "realtime_basis": "spreading_front",
+    "realtime_detail": "real-time equiv. via spreading-front accel S=6\u00d710\u2075 (v_sim/v_real; v_real~0.1-12.0 \u00b5m/min). MAPPING not a native real-time integration."
+  },
+  "cells": [
+    {
+      "cell": 0,
+      "centroid_um": [
+        -13.255693790406683,
+        -16.725974918521178,
+        164.97885030630127
+      ],
+      "r_from_centroid_um": 27.624245094950407,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 1,
+      "centroid_um": [
+        -13.267984997127925,
+        19.329705766917005,
+        201.0379749542069
+      ],
+      "r_from_centroid_um": 29.877470981719416,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 2,
+      "centroid_um": [
+        22.780067436949267,
+        -16.734207634873307,
+        201.0391386215247
+      ],
+      "r_from_centroid_um": 33.79339457844216,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 3,
+      "centroid_um": [
+        22.77557486127045,
+        19.32256643634584,
+        164.97705084712882
+      ],
+      "r_from_centroid_um": 34.63773300335399,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 4,
+      "centroid_um": [
+        -49.37212130320751,
+        -16.761307138016992,
+        201.08424303556973
+      ],
+      "r_from_centroid_um": 55.34669127551043,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 5,
+      "centroid_um": [
+        -49.38142039653598,
+        19.383874692687826,
+        164.94903425701312
+      ],
+      "r_from_centroid_um": 55.88322128132312,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 6,
+      "centroid_um": [
+        -13.285746507258244,
+        -52.854243514745185,
+        201.09574698840177
+      ],
+      "r_from_centroid_um": 57.57791927269119,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 7,
+      "centroid_um": [
+        -13.294731573771651,
+        19.367921378819066,
+        128.8297099120034
+      ],
+      "r_from_centroid_um": 58.602967222438444,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 8,
+      "centroid_um": [
+        -13.303537028804634,
+        -16.78196015219105,
+        237.18895364793036
+      ],
+      "r_from_centroid_um": 58.715626506608274,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 9,
+      "centroid_um": [
+        -13.323882517672068,
+        55.47932960404333,
+        164.9377915811256
+      ],
+      "r_from_centroid_um": 59.703818500504376,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 10,
+      "centroid_um": [
+        22.85542777413876,
+        -52.87818290414084,
+        164.91249943077193
+      ],
+      "r_from_centroid_um": 60.23645800052113,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 11,
+      "centroid_um": [
+        22.8434021271168,
+        -16.797983068115485,
+        128.80271601440862
+      ],
+      "r_from_centroid_um": 60.7398791209806,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 12,
+      "centroid_um": [
+        22.836344929851272,
+        19.38695687392415,
+        237.19658788181673
+      ],
+      "r_from_centroid_um": 62.34651404565804,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 13,
+      "centroid_um": [
+        22.830314374947648,
+        55.48046907342295,
+        201.1047825888769
+      ],
+      "r_from_centroid_um": 62.80736254377346,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 14,
+      "centroid_um": [
+        58.92140180361709,
+        -16.80202401648625,
+        164.91231399988865
+      ],
+      "r_from_centroid_um": 63.74949386256035,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 15,
+      "centroid_um": [
+        58.918743282254574,
+        19.384220937473373,
+        201.102288217363
+      ],
+      "r_from_centroid_um": 64.74976148972269,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 16,
+      "centroid_um": [
+        -49.4186271580613,
+        -52.89833989087651,
+        164.95551617880108
+      ],
+      "r_from_centroid_um": 74.49085616232989,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 17,
+      "centroid_um": [
+        -49.41443559337696,
+        -16.75652580732009,
+        128.77130105551524
+      ],
+      "r_from_centroid_um": 74.90854761912159,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 18,
+      "centroid_um": [
+        -49.433930277598094,
+        19.363565025075903,
+        237.23487797882677
+      ],
+      "r_from_centroid_um": 76.24035852571264,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 19,
+      "centroid_um": [
+        -49.498505572563744,
+        55.595889332661294,
+        201.05876219282763
+      ],
+      "r_from_centroid_um": 76.7122073862397,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 20,
+      "centroid_um": [
+        -13.254957896205342,
+        -52.959912012415955,
+        128.70363800678385
+      ],
+      "r_from_centroid_um": 76.65798019549922,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 21,
+      "centroid_um": [
+        -13.291441035519629,
+        55.593158362435425,
+        237.28713711249017
+      ],
+      "r_from_centroid_um": 79.16380614718396,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 22,
+      "centroid_um": [
+        22.814872872850284,
+        -52.98997492040884,
+        237.29483682714135
+      ],
+      "r_from_centroid_um": 79.55469790327047,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 23,
+      "centroid_um": [
+        22.80592889241912,
+        55.573201050461726,
+        128.72418098269628
+      ],
+      "r_from_centroid_um": 80.63664685577155,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 24,
+      "centroid_um": [
+        59.027606792858215,
+        -52.99072690092082,
+        201.0621989900216
+      ],
+      "r_from_centroid_um": 81.46261403569267,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 25,
+      "centroid_um": [
+        59.012015587708696,
+        19.339219277046023,
+        128.70827588235653
+      ],
+      "r_from_centroid_um": 82.17001577978095,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 26,
+      "centroid_um": [
+        59.01640808424746,
+        -16.76222836650434,
+        237.29864870634128
+      ],
+      "r_from_centroid_um": 82.24849044409162,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 27,
+      "centroid_um": [
+        59.01851535819292,
+        55.572290487199716,
+        164.95499932090385
+      ],
+      "r_from_centroid_um": 82.94526284391007,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 28,
+      "centroid_um": [
+        -85.6793470582863,
+        -16.79684713494708,
+        164.90384188920012
+      ],
+      "r_from_centroid_um": 89.06938870974557,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 29,
+      "centroid_um": [
+        -85.6816708762041,
+        19.436016008115335,
+        201.1177754859982
+      ],
+      "r_from_centroid_um": 89.80569727351802,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 30,
+      "centroid_um": [
+        -49.58526387815452,
+        -53.08615222644157,
+        237.46513769802635
+      ],
+      "r_from_centroid_um": 91.08252002296055,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 31,
+      "centroid_um": [
+        -49.604307985338416,
+        55.747886731470494,
+        128.6457816680938
+      ],
+      "r_from_centroid_um": 92.03608141586955,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 32,
+      "centroid_um": [
+        -13.313318724248784,
+        -89.14178433428098,
+        164.88254179269748
+      ],
+      "r_from_centroid_um": 91.83965499988034,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 33,
+      "centroid_um": [
+        -13.351251745539669,
+        -16.879848531718835,
+        92.38875150863146
+      ],
+      "r_from_centroid_um": 92.66328495133097,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 34,
+      "centroid_um": [
+        -13.380978720275236,
+        19.475277176193597,
+        273.5612962631287
+      ],
+      "r_from_centroid_um": 94.05957391253303,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 35,
+      "centroid_um": [
+        -13.428593713578246,
+        91.84793990459605,
+        201.17692481941523
+      ],
+      "r_from_centroid_um": 94.6811403693217,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 36,
+      "centroid_um": [
+        22.952870697316218,
+        -89.2444670042907,
+        201.18104865642732
+      ],
+      "r_from_centroid_um": 94.01978217662564,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 37,
+      "centroid_um": [
+        22.903280002801054,
+        19.43978620377181,
+        92.39690540781807
+      ],
+      "r_from_centroid_um": 94.99625613855137,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 38,
+      "centroid_um": [
+        22.90838621792274,
+        -16.879391358351207,
+        273.5608363871651
+      ],
+      "r_from_centroid_um": 95.3860032598691,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 39,
+      "centroid_um": [
+        22.91216323075105,
+        91.83899441235417,
+        164.85395071332883
+      ],
+      "r_from_centroid_um": 96.28800994785395,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 40,
+      "centroid_um": [
+        59.248078003217685,
+        -53.213228218353215,
+        128.48563926645357
+      ],
+      "r_from_centroid_um": 96.236610986356,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 41,
+      "centroid_um": [
+        59.23882461474343,
+        55.8013448569898,
+        237.52046405116215
+      ],
+      "r_from_centroid_um": 98.22565974965589,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 42,
+      "centroid_um": [
+        95.2710179401013,
+        19.449437653509825,
+        164.83359883008478
+      ],
+      "r_from_centroid_um": 98.83105513043596,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 43,
+      "centroid_um": [
+        95.27313481011976,
+        -16.871373762273716,
+        201.18162263712813
+      ],
+      "r_from_centroid_um": 98.53899063985492,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 44,
+      "centroid_um": [
+        -85.87014707097092,
+        -53.11387384506724,
+        201.22214968665162
+      ],
+      "r_from_centroid_um": 102.68700167946157,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 45,
+      "centroid_um": [
+        -85.85177725731151,
+        19.51457439970031,
+        128.57097035657904
+      ],
+      "r_from_centroid_um": 103.25524044819853,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 46,
+      "centroid_um": [
+        -85.89952456019194,
+        55.876636692535044,
+        164.85136459356627
+      ],
+      "r_from_centroid_um": 103.98579017362476,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 47,
+      "centroid_um": [
+        -85.85548786683603,
+        -16.943026921507013,
+        237.503813126335
+      ],
+      "r_from_centroid_um": 103.35217104275442,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 48,
+      "centroid_um": [
+        -49.65637156492994,
+        -89.31842367884622,
+        201.24063038311488
+      ],
+      "r_from_centroid_um": 103.89456763704213,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 49,
+      "centroid_um": [
+        -49.60473244531972,
+        19.43998079145684,
+        92.29624333969056
+      ],
+      "r_from_centroid_um": 104.77846413771012,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 50,
+      "centroid_um": [
+        -49.798803768679086,
+        92.03794204253293,
+        164.8489737917651
+      ],
+      "r_from_centroid_um": 106.12775124502087,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 51,
+      "centroid_um": [
+        -49.68209701056921,
+        -16.937103836215517,
+        273.7200983129971
+      ],
+      "r_from_centroid_um": 105.22827507188411,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 52,
+      "centroid_um": [
+        -13.341299921826385,
+        -89.39466885194523,
+        237.5823292547558
+      ],
+      "r_from_centroid_um": 105.83702524243688,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 53,
+      "centroid_um": [
+        -13.354997357423143,
+        55.82784123564206,
+        92.28836077594318
+      ],
+      "r_from_centroid_um": 106.94159235257374,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 54,
+      "centroid_um": [
+        -13.401320488539906,
+        -53.265147944248554,
+        273.74702698247887
+      ],
+      "r_from_centroid_um": 106.48707214614642,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 55,
+      "centroid_um": [
+        -13.413902103206274,
+        92.01974063432257,
+        128.47061275607993
+      ],
+      "r_from_centroid_um": 107.55784214069642,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 56,
+      "centroid_um": [
+        22.96630692354706,
+        -53.25863743613406,
+        92.24755209052357
+      ],
+      "r_from_centroid_um": 107.29727000025686,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 57,
+      "centroid_um": [
+        23.030523922313623,
+        -89.36457682335697,
+        128.40669614639933
+      ],
+      "r_from_centroid_um": 106.978871626516,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 58,
+      "centroid_um": [
+        59.33708384725829,
+        -89.4103942026599,
+        164.78976008552647
+      ],
+      "r_from_centroid_um": 108.76305412473144,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 59,
+      "centroid_um": [
+        22.948200035713608,
+        91.99730650210557,
+        237.59096190081385
+      ],
+      "r_from_centroid_um": 109.65006731180658,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 60,
+      "centroid_um": [
+        22.956511813299258,
+        55.87970090795816,
+        273.7181480930872
+      ],
+      "r_from_centroid_um": 109.39372811563048,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 61,
+      "centroid_um": [
+        59.2864241918406,
+        -16.923256411728588,
+        92.25895163732358
+      ],
+      "r_from_centroid_um": 109.30682917871417,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 62,
+      "centroid_um": [
+        59.310696402291455,
+        19.506172524050015,
+        273.71298092676676
+      ],
+      "r_from_centroid_um": 110.52036580595457,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 63,
+      "centroid_um": [
+        59.31264100241857,
+        91.99507539759655,
+        201.23001161536087
+      ],
+      "r_from_centroid_um": 111.04596766334117,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 64,
+      "centroid_um": [
+        95.43177667022181,
+        -53.291399856704935,
+        164.7901116628044
+      ],
+      "r_from_centroid_um": 110.73153312194158,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 65,
+      "centroid_um": [
+        95.42839871739865,
+        -16.93145050993174,
+        128.4164682665803
+      ],
+      "r_from_centroid_um": 110.99653000467126,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 66,
+      "centroid_um": [
+        95.42819969583005,
+        55.869641213003106,
+        201.22514115883598
+      ],
+      "r_from_centroid_um": 112.15123015602627,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 67,
+      "centroid_um": [
+        95.43145447986606,
+        19.50944555559794,
+        237.59440623051447
+      ],
+      "r_from_centroid_um": 111.89803907692355,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 68,
+      "centroid_um": [
+        -85.90139684515522,
+        -53.08069695085996,
+        128.60044663072856
+      ],
+      "r_from_centroid_um": 114.47154452355076,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 69,
+      "centroid_um": [
+        -85.9199532056042,
+        55.79113191504028,
+        237.32702684633213
+      ],
+      "r_from_centroid_um": 116.18482555992144,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 70,
+      "centroid_um": [
+        -49.53339195559626,
+        -89.39881850203673,
+        128.5119390107674
+      ],
+      "r_from_centroid_um": 115.59576455359795,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 71,
+      "centroid_um": [
+        -49.47458621369522,
+        -53.128581181004144,
+        92.13970590831501
+      ],
+      "r_from_centroid_um": 115.92515208784368,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 72,
+      "centroid_um": [
+        -49.49954891793961,
+        55.76008960869536,
+        273.8156278493622
+      ],
+      "r_from_centroid_um": 117.87550830618675,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 73,
+      "centroid_um": [
+        -49.61417948579689,
+        92.14961280012858,
+        237.3612709827869
+      ],
+      "r_from_centroid_um": 118.15621670023992,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 74,
+      "centroid_um": [
+        59.11752984236812,
+        -89.52651090102576,
+        237.36710887770892
+      ],
+      "r_from_centroid_um": 120.49188513518335,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 75,
+      "centroid_um": [
+        59.07348815015549,
+        55.65101311137398,
+        92.17537009621333
+      ],
+      "r_from_centroid_um": 121.44343660873709,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 76,
+      "centroid_um": [
+        59.086579207311544,
+        -53.0904167517797,
+        273.82666240467313
+      ],
+      "r_from_centroid_um": 121.02508186133268,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 77,
+      "centroid_um": [
+        59.109288380339024,
+        92.1018734775813,
+        128.6523505104928
+      ],
+      "r_from_centroid_um": 121.97609510094246,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 78,
+      "centroid_um": [
+        95.54114651175136,
+        -53.064716199885545,
+        237.38907824635277
+      ],
+      "r_from_centroid_um": 122.28979868748766,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 79,
+      "centroid_um": [
+        95.53695654550933,
+        55.6406935122077,
+        128.62550333437616
+      ],
+      "r_from_centroid_um": 122.99428221174897,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 80,
+      "centroid_um": [
+        -122.1926516944959,
+        19.50233660873364,
+        164.8364308705394
+      ],
+      "r_from_centroid_um": 124.99614845382725,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 81,
+      "centroid_um": [
+        -122.20275743610016,
+        -16.883353437686168,
+        201.1957961478573
+      ],
+      "r_from_centroid_um": 124.76951578568055,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 82,
+      "centroid_um": [
+        -85.9568656557799,
+        -89.37688320529234,
+        164.99040375718278
+      ],
+      "r_from_centroid_um": 125.23595600148144,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 83,
+      "centroid_um": [
+        -85.81873970046587,
+        -16.75170487485992,
+        92.2021156800124
+      ],
+      "r_from_centroid_um": 125.70783494752008,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 84,
+      "centroid_um": [
+        -86.44551013411689,
+        92.47420255047325,
+        201.0265247906537
+      ],
+      "r_from_centroid_um": 127.93306417061557,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 85,
+      "centroid_um": [
+        -85.82785156839293,
+        19.33740058352033,
+        273.78727989610394
+      ],
+      "r_from_centroid_um": 126.76919411213744,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 86,
+      "centroid_um": [
+        -13.238521929065696,
+        -89.87659457018553,
+        91.82593876212276
+      ],
+      "r_from_centroid_um": 128.3671831415959,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 87,
+      "centroid_um": [
+        -13.327979306598193,
+        -125.63545378938177,
+        201.26001206346987
+      ],
+      "r_from_centroid_um": 127.72303022245838,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 88,
+      "centroid_um": [
+        -13.368911683517883,
+        19.41162428484073,
+        55.88260124271331
+      ],
+      "r_from_centroid_um": 128.81026539948374,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 89,
+      "centroid_um": [
+        22.90873750172303,
+        -16.87170367720634,
+        55.916669928619626
+      ],
+      "r_from_centroid_um": 129.75893654427168,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 90,
+      "centroid_um": [
+        23.01625718964917,
+        -125.60369821631355,
+        164.86960210119025
+      ],
+      "r_from_centroid_um": 128.90893157747053,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 91,
+      "centroid_um": [
+        -13.423441902885289,
+        -16.883706952408804,
+        309.94137023376777
+      ],
+      "r_from_centroid_um": 129.23600404775925,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 92,
+      "centroid_um": [
+        -13.4372742988499,
+        128.2088163473458,
+        164.83633119009724
+      ],
+      "r_from_centroid_um": 130.11801390459598,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 93,
+      "centroid_um": [
+        22.792547685867603,
+        -89.95892967377384,
+        274.09587703483345
+      ],
+      "r_from_centroid_um": 130.37870033184785,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 94,
+      "centroid_um": [
+        -13.291302576316749,
+        92.54627845542096,
+        274.08216450827615
+      ],
+      "r_from_centroid_um": 130.8642347396959,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 95,
+      "centroid_um": [
+        22.784920557047457,
+        92.52626701052493,
+        91.92521504732586
+      ],
+      "r_from_centroid_um": 131.4812599797432,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 96,
+      "centroid_um": [
+        22.9053851312769,
+        128.19175505894802,
+        201.19368605666963
+      ],
+      "r_from_centroid_um": 131.554359017575,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 97,
+      "centroid_um": [
+        22.918112203299835,
+        19.468853864649667,
+        309.91531368486693
+      ],
+      "r_from_centroid_um": 130.89815318249157,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 98,
+      "centroid_um": [
+        95.9697028331885,
+        -89.78095243050547,
+        201.04332201878802
+      ],
+      "r_from_centroid_um": 132.7176867807005,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 99,
+      "centroid_um": [
+        95.77830000085028,
+        19.315527001664243,
+        91.75464682107979
+      ],
+      "r_from_centroid_um": 133.3587747694077,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 100,
+      "centroid_um": [
+        95.96447577898077,
+        92.35679414597215,
+        164.97481194496916
+      ],
+      "r_from_centroid_um": 134.338036762723,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 101,
+      "centroid_um": [
+        95.79367727887018,
+        -16.745709919459813,
+        274.25062793466304
+      ],
+      "r_from_centroid_um": 133.68507196432273,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 102,
+      "centroid_um": [
+        131.62303809461525,
+        19.471487405767622,
+        201.1866418854568
+      ],
+      "r_from_centroid_um": 134.35871124675987,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 103,
+      "centroid_um": [
+        131.62218415559502,
+        -16.894061706192737,
+        164.82944366190438
+      ],
+      "r_from_centroid_um": 133.875630874205,
+      "pressure_kPa": 6.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 104,
+      "centroid_um": [
+        -122.66995185210874,
+        -53.432474406735366,
+        164.94384936737714
+      ],
+      "r_from_centroid_um": 134.95116297657916,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 105,
+      "centroid_um": [
+        -122.51400996308868,
+        -16.76567071470357,
+        128.10492727045644
+      ],
+      "r_from_centroid_um": 135.09839236314937,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 106,
+      "centroid_um": [
+        -122.58322631164377,
+        56.1478727127324,
+        201.06578021838385
+      ],
+      "r_from_centroid_um": 136.10017061226827,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 107,
+      "centroid_um": [
+        -122.49401827662504,
+        19.36776824891732,
+        237.90420804711783
+      ],
+      "r_from_centroid_um": 135.8216798538302,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 108,
+      "centroid_um": [
+        -86.33673834434242,
+        -89.64113383746512,
+        237.45374670964588
+      ],
+      "r_from_centroid_um": 136.04230013396327,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 109,
+      "centroid_um": [
+        -86.09901027012398,
+        -53.60219348427218,
+        274.51794562613134
+      ],
+      "r_from_centroid_um": 136.93144917073226,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 110,
+      "centroid_um": [
+        -86.16357067029956,
+        55.71627087636985,
+        91.92615114393593
+      ],
+      "r_from_centroid_um": 136.87719624670225,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 111,
+      "centroid_um": [
+        -50.13206980228989,
+        -125.94946600572287,
+        164.93759192314064
+      ],
+      "r_from_centroid_um": 136.69520906485363,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 112,
+      "centroid_um": [
+        -86.30117251817258,
+        92.78890695610288,
+        128.40062942015496
+      ],
+      "r_from_centroid_um": 137.79105443326745,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 113,
+      "centroid_um": [
+        -49.82763388925869,
+        -17.32470092107244,
+        55.175134156285736
+      ],
+      "r_from_centroid_um": 137.83748247401715,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 114,
+      "centroid_um": [
+        -50.05291565149103,
+        92.78045289695498,
+        92.15311500907424
+      ],
+      "r_from_centroid_um": 138.85003753630284,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 115,
+      "centroid_um": [
+        -49.86201860080102,
+        -89.7551155007196,
+        274.5039616535921
+      ],
+      "r_from_centroid_um": 137.85359902515202,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 116,
+      "centroid_um": [
+        -13.669965493107608,
+        -53.55016769834597,
+        55.26890235399529
+      ],
+      "r_from_centroid_um": 138.73300941292786,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 117,
+      "centroid_um": [
+        -13.287206040639852,
+        -126.00685424759837,
+        128.1634170061502
+      ],
+      "r_from_centroid_um": 137.87210500092343,
+      "pressure_kPa": 5.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 118,
+      "centroid_um": [
+        -49.88521983104579,
+        19.971624943179638,
+        310.73824273057795
+      ],
+      "r_from_centroid_um": 139.0245073732549,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 119,
+      "centroid_um": [
+        -50.203023785718706,
+        128.92782102728745,
+        201.49156978209223
+      ],
+      "r_from_centroid_um": 139.65212382248907,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 120,
+      "centroid_um": [
+        23.176131035652293,
+        56.1227992956315,
+        55.28846779998151
+      ],
+      "r_from_centroid_um": 140.97613481692568,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 121,
+      "centroid_um": [
+        -13.72695117442782,
+        56.23792467209457,
+        310.63717255860934
+      ],
+      "r_from_centroid_um": 140.5902967691655,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 122,
+      "centroid_um": [
+        23.42330881269424,
+        -126.35974688184498,
+        237.77128289792324
+      ],
+      "r_from_centroid_um": 139.88695302464106,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 123,
+      "centroid_um": [
+        23.213787581226608,
+        -53.64945016615111,
+        310.63360485964256
+      ],
+      "r_from_centroid_um": 140.82163023355372,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 124,
+      "centroid_um": [
+        -13.93095110873231,
+        128.92755141750112,
+        237.7584794974438
+      ],
+      "r_from_centroid_um": 140.95346185290077,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 125,
+      "centroid_um": [
+        59.96803193574273,
+        -90.0033771833916,
+        91.67488635399327
+      ],
+      "r_from_centroid_um": 141.2418482148038,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 126,
+      "centroid_um": [
+        59.423322365609344,
+        19.860890552114014,
+        55.28960175004649
+      ],
+      "r_from_centroid_um": 141.81912959063266,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 127,
+      "centroid_um": [
+        59.68010026488163,
+        -126.32680795293194,
+        201.49011349812895
+      ],
+      "r_from_centroid_um": 140.99687097086942,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 128,
+      "centroid_um": [
+        23.39698648845449,
+        128.92719329614533,
+        128.26226373872245
+      ],
+      "r_from_centroid_um": 141.82144632585707,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 129,
+      "centroid_um": [
+        96.028993930339,
+        -53.938819454864344,
+        91.69067236894408
+      ],
+      "r_from_centroid_um": 142.7605574545862,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 130,
+      "centroid_um": [
+        96.03466513956806,
+        -90.02564497091798,
+        127.76969048179762
+      ],
+      "r_from_centroid_um": 142.56457117066884,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 131,
+      "centroid_um": [
+        59.47491602284704,
+        -17.37241377706503,
+        310.6405843866621
+      ],
+      "r_from_centroid_um": 142.31808267933866,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 132,
+      "centroid_um": [
+        59.96030831719207,
+        92.59551236637523,
+        274.32401133030777
+      ],
+      "r_from_centroid_um": 143.51823249540925,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 133,
+      "centroid_um": [
+        59.66263520408606,
+        128.89966875886148,
+        164.53431137894546
+      ],
+      "r_from_centroid_um": 143.17176918181738,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 134,
+      "centroid_um": [
+        96.03036043863355,
+        92.60393240975064,
+        238.24366178572188
+      ],
+      "r_from_centroid_um": 144.5774604855025,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 135,
+      "centroid_um": [
+        96.03869707907481,
+        56.52397189170569,
+        274.31444710901985
+      ],
+      "r_from_centroid_um": 144.3778002643508,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 136,
+      "centroid_um": [
+        132.35250007065255,
+        -53.45888077197149,
+        201.6691011812794
+      ],
+      "r_from_centroid_um": 144.0200959849013,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 137,
+      "centroid_um": [
+        132.33118194495552,
+        19.762235904403113,
+        128.06992549746798
+      ],
+      "r_from_centroid_um": 144.45301948684778,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 138,
+      "centroid_um": [
+        132.33372780784998,
+        -17.185702556736953,
+        237.94580820716
+      ],
+      "r_from_centroid_um": 144.49838850501268,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 139,
+      "centroid_um": [
+        132.3514461938269,
+        56.034432346478816,
+        164.34739362364274
+      ],
+      "r_from_centroid_um": 144.86862840624056,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 140,
+      "centroid_um": [
+        -122.72607659300925,
+        -53.369056728590444,
+        237.8949744499047
+      ],
+      "r_from_centroid_um": 144.83287719797858,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 141,
+      "centroid_um": [
+        -122.6946924123819,
+        56.02785541403911,
+        128.21894310397272
+      ],
+      "r_from_centroid_um": 145.40121492510758,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 142,
+      "centroid_um": [
+        -50.39167911529096,
+        -53.87513374523485,
+        310.3748924386873
+      ],
+      "r_from_centroid_um": 147.61173301956651,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 143,
+      "centroid_um": [
+        -50.03204667599532,
+        -126.1328980530465,
+        237.74345694696308
+      ],
+      "r_from_centroid_um": 146.50109053169865,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 144,
+      "centroid_um": [
+        -49.79841131835166,
+        56.061532709204464,
+        55.49296519817707
+      ],
+      "r_from_centroid_um": 147.50647148686068,
+      "pressure_kPa": 4.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 145,
+      "centroid_um": [
+        -50.39852832032603,
+        128.63350155341226,
+        127.85957711035925
+      ],
+      "r_from_centroid_um": 148.57367774066844,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 146,
+      "centroid_um": [
+        59.92663639708823,
+        -125.93093590536783,
+        127.80023449134495
+      ],
+      "r_from_centroid_um": 149.81271088832523,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 147,
+      "centroid_um": [
+        59.85967252399585,
+        -53.78996454576886,
+        55.700059734578645
+      ],
+      "r_from_centroid_um": 150.19770228836785,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 148,
+      "centroid_um": [
+        59.92615802918035,
+        56.465482802516945,
+        310.2251019110447
+      ],
+      "r_from_centroid_um": 151.94922650210935,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 149,
+      "centroid_um": [
+        59.90052352320516,
+        128.5040238058473,
+        238.20971367084053
+      ],
+      "r_from_centroid_um": 152.32497894414777,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 150,
+      "centroid_um": [
+        131.93826318367744,
+        -53.91234183525081,
+        127.83010049114709
+      ],
+      "r_from_centroid_um": 152.65979142505583,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 151,
+      "centroid_um": [
+        131.93946818694346,
+        56.49058604338125,
+        238.1852403144551
+      ],
+      "r_from_centroid_um": 153.9416267250997,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 152,
+      "centroid_um": [
+        -122.86116516912985,
+        -89.91979505962469,
+        201.46460131796505
+      ],
+      "r_from_centroid_um": 153.42563290386875,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 153,
+      "centroid_um": [
+        -122.97200261937095,
+        19.881921691033607,
+        91.86587018903604
+      ],
+      "r_from_centroid_um": 154.0624522638721,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 154,
+      "centroid_um": [
+        -122.63012155111569,
+        92.95069474528835,
+        164.9360770596015
+      ],
+      "r_from_centroid_um": 154.87772968171782,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 155,
+      "centroid_um": [
+        -122.91445949995779,
+        -17.34919233549368,
+        274.15428122954626
+      ],
+      "r_from_centroid_um": 154.29246623909486,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 156,
+      "centroid_um": [
+        -86.40286400389336,
+        -126.43232732467594,
+        201.61264652099868
+      ],
+      "r_from_centroid_um": 154.3217689991843,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 157,
+      "centroid_um": [
+        -86.32343102986769,
+        -89.84176552734921,
+        91.76063472231034
+      ],
+      "r_from_centroid_um": 154.14346360626175,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 158,
+      "centroid_um": [
+        -86.33816474838919,
+        19.673433003013734,
+        55.36894727618945
+      ],
+      "r_from_centroid_um": 154.94590356669968,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 159,
+      "centroid_um": [
+        -86.34885745287846,
+        -17.199207118761517,
+        310.53185063902936
+      ],
+      "r_from_centroid_um": 155.368826638647,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 160,
+      "centroid_um": [
+        -86.59830045225648,
+        128.84638209504868,
+        164.94170997464445
+      ],
+      "r_from_centroid_um": 156.23566925925246,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 161,
+      "centroid_um": [
+        -86.28762685054922,
+        92.48503956590645,
+        274.12996861966553
+      ],
+      "r_from_centroid_um": 156.17866889173072,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 162,
+      "centroid_um": [
+        -13.281432904306945,
+        92.5793607152338,
+        55.44587799029819
+      ],
+      "r_from_centroid_um": 157.7804640257715,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 163,
+      "centroid_um": [
+        -13.330050689869351,
+        -90.0395762922129,
+        310.55202063650216
+      ],
+      "r_from_centroid_um": 157.09077694395657,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 164,
+      "centroid_um": [
+        22.908383052444606,
+        -125.99771064505676,
+        91.42170755160514
+      ],
+      "r_from_centroid_um": 157.15843470341153,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 165,
+      "centroid_um": [
+        -13.277408474209155,
+        -126.06304622792403,
+        274.5870669252467
+      ],
+      "r_from_centroid_um": 156.66808581754657,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 166,
+      "centroid_um": [
+        22.847759171951346,
+        -89.94212019186274,
+        55.509742554991185
+      ],
+      "r_from_centroid_um": 157.29821367388143,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 167,
+      "centroid_um": [
+        -13.327814317423874,
+        128.62768759962916,
+        91.49626450720011
+      ],
+      "r_from_centroid_um": 158.13815635000827,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 168,
+      "centroid_um": [
+        22.83998482290311,
+        92.60775331926801,
+        310.46473019059215
+      ],
+      "r_from_centroid_um": 159.5875815479491,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 169,
+      "centroid_um": [
+        96.14858306330584,
+        -16.81239129070163,
+        55.66708283567348
+      ],
+      "r_from_centroid_um": 160.05741007393124,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 170,
+      "centroid_um": [
+        22.83676667904524,
+        128.5762921066702,
+        274.5087309668183
+      ],
+      "r_from_centroid_um": 159.7361838014381,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 171,
+      "centroid_um": [
+        96.04520557833543,
+        -126.1679800787872,
+        164.89446885823958
+      ],
+      "r_from_centroid_um": 159.54194364642652,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 172,
+      "centroid_um": [
+        95.80134091995123,
+        -89.78823399219546,
+        274.0860240741836
+      ],
+      "r_from_centroid_um": 160.07656975088494,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 173,
+      "centroid_um": [
+        95.79926323971247,
+        92.36292324519508,
+        91.93145438644409
+      ],
+      "r_from_centroid_um": 160.9792832261408,
+      "pressure_kPa": 3.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 174,
+      "centroid_um": [
+        132.17207026224332,
+        -16.82321284637837,
+        91.68814608340044
+      ],
+      "r_from_centroid_um": 161.25303749085714,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 175,
+      "centroid_um": [
+        132.00951691108946,
+        -90.21069838323974,
+        164.89668543956125
+      ],
+      "r_from_centroid_um": 160.85704645557152,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 176,
+      "centroid_um": [
+        96.22157149223904,
+        19.399401360571098,
+        310.29375159947193
+      ],
+      "r_from_centroid_um": 161.1258440842233,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 177,
+      "centroid_um": [
+        96.03979215915672,
+        128.7424635796454,
+        201.12150576891608
+      ],
+      "r_from_centroid_um": 161.6920900438032,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 178,
+      "centroid_um": [
+        132.00834460500442,
+        92.78504514735235,
+        201.11962569253194
+      ],
+      "r_from_centroid_um": 162.42310485797813,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 179,
+      "centroid_um": [
+        132.17693816798388,
+        19.40165269110137,
+        274.3239102133037
+      ],
+      "r_from_centroid_um": 162.0970758913891,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 180,
+      "centroid_um": [
+        -159.24845624923253,
+        -16.815133036514972,
+        164.94319272234202
+      ],
+      "r_from_centroid_um": 161.0953558514261,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 181,
+      "centroid_um": [
+        -159.23250699123406,
+        19.40979796887057,
+        201.07398769922128
+      ],
+      "r_from_centroid_um": 161.48085911476943,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 182,
+      "centroid_um": [
+        -122.72276783083868,
+        -89.76944695507788,
+        128.53433605475544
+      ],
+      "r_from_centroid_um": 161.3496057018771,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 183,
+      "centroid_um": [
+        -85.82622424143595,
+        -53.12178564380849,
+        55.19565235923895
+      ],
+      "r_from_centroid_um": 162.4779339422353,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 184,
+      "centroid_um": [
+        -86.22481505499765,
+        -126.24527707748761,
+        128.36503875603356
+      ],
+      "r_from_centroid_um": 162.18865185562203,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 185,
+      "centroid_um": [
+        -122.78998239576548,
+        -53.310334780313404,
+        91.98956959616008
+      ],
+      "r_from_centroid_um": 161.60074189428403,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 186,
+      "centroid_um": [
+        -122.75979555602385,
+        55.91889680417956,
+        273.98188065634656
+      ],
+      "r_from_centroid_um": 162.98013667778557,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 187,
+      "centroid_um": [
+        -122.51048078682007,
+        92.79518047425556,
+        237.04498826100107
+      ],
+      "r_from_centroid_um": 163.07345737015197,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 188,
+      "centroid_um": [
+        -49.29475920457848,
+        -89.41797514068035,
+        55.25052529928505
+      ],
+      "r_from_centroid_um": 163.1643051803682,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 189,
+      "centroid_um": [
+        -49.29897451548239,
+        -125.95777731189985,
+        91.49673712880426
+      ],
+      "r_from_centroid_um": 163.0357327545923,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 190,
+      "centroid_um": [
+        -85.95874812794236,
+        129.02080062587152,
+        237.07681463789984
+      ],
+      "r_from_centroid_um": 164.35305887536447,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 191,
+      "centroid_um": [
+        -85.83647065021867,
+        55.71406749397401,
+        310.8037364261737
+      ],
+      "r_from_centroid_um": 164.10109783927604,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 192,
+      "centroid_um": [
+        -13.297188087960151,
+        -162.631752358108,
+        164.9294586384043
+      ],
+      "r_from_centroid_um": 164.11969649373435,
+      "pressure_kPa": 3.0,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 193,
+      "centroid_um": [
+        -49.301198898785806,
+        92.02978331498642,
+        310.72505346582005
+      ],
+      "r_from_centroid_um": 165.33939227693494,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 194,
+      "centroid_um": [
+        -13.7706429980893,
+        -17.126850698620373,
+        17.044716152595964
+      ],
+      "r_from_centroid_um": 166.92632438627876,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 195,
+      "centroid_um": [
+        -49.27216539486627,
+        128.86512588345974,
+        274.0076659885755
+      ],
+      "r_from_centroid_um": 165.54246083361087,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 196,
+      "centroid_um": [
+        23.190880383062865,
+        -162.49142867483374,
+        201.61655895861213
+      ],
+      "r_from_centroid_um": 165.24540022436756,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 197,
+      "centroid_um": [
+        23.24640147371544,
+        19.690327111217673,
+        17.058972134627087
+      ],
+      "r_from_centroid_um": 168.24035831681786,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 198,
+      "centroid_um": [
+        -13.831925409300682,
+        19.715835953076652,
+        346.77286656871377
+      ],
+      "r_from_centroid_um": 166.01105347846175,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 199,
+      "centroid_um": [
+        23.29650844477583,
+        -17.13556151104833,
+        346.75854272216003
+      ],
+      "r_from_centroid_um": 166.76714859102782,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 200,
+      "centroid_um": [
+        -13.69965919144564,
+        165.03756393525435,
+        201.5779880542404
+      ],
+      "r_from_centroid_um": 166.6983735109263,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 201,
+      "centroid_um": [
+        58.77220558512256,
+        91.98112777709484,
+        55.323030083422175
+      ],
+      "r_from_centroid_um": 167.61046891496989,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 202,
+      "centroid_um": [
+        58.731997589887314,
+        -126.27645644837449,
+        274.0045672404527
+      ],
+      "r_from_centroid_um": 166.62824076000334,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 203,
+      "centroid_um": [
+        58.78361563804261,
+        -89.41665892338942,
+        310.6977382636887
+      ],
+      "r_from_centroid_um": 166.97567634042596,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 204,
+      "centroid_um": [
+        23.14949662540688,
+        165.0361458495002,
+        164.44064728109853
+      ],
+      "r_from_centroid_um": 167.62937762724715,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 205,
+      "centroid_um": [
+        95.42959638039157,
+        -126.39808434816734,
+        237.06671154499688
+      ],
+      "r_from_centroid_um": 167.5077182390262,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 206,
+      "centroid_um": [
+        58.72803996274592,
+        128.84918750571947,
+        92.01557024392226
+      ],
+      "r_from_centroid_um": 168.05292526249946,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 207,
+      "centroid_um": [
+        95.6981564927011,
+        55.281083591942696,
+        55.449163657711054
+      ],
+      "r_from_centroid_um": 168.40615273747994,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 208,
+      "centroid_um": [
+        95.71552556436637,
+        -52.715615351817796,
+        310.5697552719809
+      ],
+      "r_from_centroid_um": 168.33782240285066,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 209,
+      "centroid_um": [
+        132.28404935851006,
+        -89.70311337827079,
+        237.01122005467812
+      ],
+      "r_from_centroid_um": 168.86448145861252,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 210,
+      "centroid_um": [
+        95.42725906548573,
+        128.9735969177159,
+        128.95056815724467
+      ],
+      "r_from_centroid_um": 169.14493896378227,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 211,
+      "centroid_um": [
+        132.40846643266292,
+        -52.768935169376235,
+        273.7130880366367
+      ],
+      "r_from_centroid_um": 169.21312466813905,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 212,
+      "centroid_um": [
+        132.40551036828677,
+        55.34440016487676,
+        92.30400782345704
+      ],
+      "r_from_centroid_um": 169.50747478390934,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 213,
+      "centroid_um": [
+        132.28302581603555,
+        92.27929476063377,
+        129.00537903277328
+      ],
+      "r_from_centroid_um": 169.93486040297935,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 214,
+      "centroid_um": [
+        168.4668901410863,
+        -17.27972831260682,
+        201.4323513860785
+      ],
+      "r_from_centroid_um": 170.40368462412525,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 215,
+      "centroid_um": [
+        168.46711313293736,
+        19.85609713013665,
+        164.5843493420512
+      ],
+      "r_from_centroid_um": 170.5785248646239,
+      "pressure_kPa": 2.25,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 216,
+      "centroid_um": [
+        -158.79766150226146,
+        -53.67404269637351,
+        201.0639413200055
+      ],
+      "r_from_centroid_um": 168.646283403792,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 217,
+      "centroid_um": [
+        -158.87997485864224,
+        19.366353633205165,
+        128.29253172412209
+      ],
+      "r_from_centroid_um": 168.99209253185873,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 218,
+      "centroid_um": [
+        -158.88210980419464,
+        -16.783282508798468,
+        237.73028641222882
+      ],
+      "r_from_centroid_um": 169.03729757453976,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 219,
+      "centroid_um": [
+        -158.72544103015335,
+        56.28396165424343,
+        164.96761121549076
+      ],
+      "r_from_centroid_um": 169.32123658104462,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 220,
+      "centroid_um": [
+        -49.97285032095668,
+        -162.29947113787273,
+        201.08603207241364
+      ],
+      "r_from_centroid_um": 170.83087960644073,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 221,
+      "centroid_um": [
+        -50.07398946883337,
+        19.254576440914043,
+        17.32228597870127
+      ],
+      "r_from_centroid_um": 173.68879811418094,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 222,
+      "centroid_um": [
+        -50.169294911328656,
+        -16.7153024472749,
+        346.38283462061565
+      ],
+      "r_from_centroid_um": 172.18601046188553,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 223,
+      "centroid_um": [
+        -13.212371418336101,
+        -162.082245975692,
+        237.95555078874952
+      ],
+      "r_from_centroid_um": 171.80962375640118,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 224,
+      "centroid_um": [
+        -13.234653287075615,
+        55.95820146586891,
+        17.27886993363169
+      ],
+      "r_from_centroid_um": 174.9584854835542,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 225,
+      "centroid_um": [
+        -49.98824429301893,
+        164.67805475433292,
+        165.00521086425292
+      ],
+      "r_from_centroid_um": 172.98664788967312,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 226,
+      "centroid_um": [
+        22.74507621693924,
+        -53.37815761425817,
+        17.335609932958263
+      ],
+      "r_from_centroid_um": 175.076604676067,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 227,
+      "centroid_um": [
+        22.821885638519593,
+        -162.09111725834137,
+        128.04095492274237
+      ],
+      "r_from_centroid_um": 172.51705890273323,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 228,
+      "centroid_um": [
+        -13.274656036259174,
+        -53.42641108003112,
+        346.4030372737131
+      ],
+      "r_from_centroid_um": 172.88400994146895,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 229,
+      "centroid_um": [
+        -13.266546263853195,
+        164.59953630684143,
+        128.08571805944206
+      ],
+      "r_from_centroid_um": 173.87317417418907,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 230,
+      "centroid_um": [
+        59.554126410844404,
+        -16.71953750292989,
+        17.423166823350208
+      ],
+      "r_from_centroid_um": 176.3024781491757,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 231,
+      "centroid_um": [
+        59.45296842414168,
+        -162.10173774245723,
+        165.00178144571439
+      ],
+      "r_from_centroid_um": 173.54669464310837,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 232,
+      "centroid_um": [
+        22.734617494976217,
+        56.00287465546238,
+        346.3858206965625
+      ],
+      "r_from_centroid_um": 174.6591353741361,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 233,
+      "centroid_um": [
+        22.71921658913808,
+        164.58687690997448,
+        237.93278026818317
+      ],
+      "r_from_centroid_um": 175.1450180765407,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 234,
+      "centroid_um": [
+        59.64812852522263,
+        19.28340124153998,
+        346.30764155664
+      ],
+      "r_from_centroid_um": 175.37605445360657,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 235,
+      "centroid_um": [
+        59.436509394817314,
+        164.6617180535048,
+        201.01754785742838
+      ],
+      "r_from_centroid_um": 176.0352022491131,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 236,
+      "centroid_um": [
+        168.09626701265486,
+        -16.720214549459396,
+        128.29552818327696
+      ],
+      "r_from_centroid_um": 177.41474088256436,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 237,
+      "centroid_um": [
+        168.01954819799724,
+        -53.635045251106824,
+        165.01295615968277
+      ],
+      "r_from_centroid_um": 177.23911234884682,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 238,
+      "centroid_um": [
+        168.02122958049333,
+        56.211684377210844,
+        201.00443270680492
+      ],
+      "r_from_centroid_um": 178.13649565311826,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 239,
+      "centroid_um": [
+        168.09585926958167,
+        19.297331193083618,
+        237.72102255696254
+      ],
+      "r_from_centroid_um": 177.97738866015655,
+      "pressure_kPa": 1.5,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 240,
+      "centroid_um": [
+        -158.59726343158314,
+        -53.09622804024787,
+        128.715152043656
+      ],
+      "r_from_centroid_um": 175.69028652284166,
+      "pressure_kPa": 0.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 241,
+      "centroid_um": [
+        -122.11557688555774,
+        -125.8032166586083,
+        165.08958755789627
+      ],
+      "r_from_centroid_um": 176.18864120004645,
+      "pressure_kPa": 0.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 242,
+      "centroid_um": [
+        -158.53360010337238,
+        55.702725891447926,
+        237.28386425501319
+      ],
+      "r_from_centroid_um": 176.73426042078003,
+      "pressure_kPa": 0.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 243,
+      "centroid_um": [
+        -122.2980830765743,
+        -16.647356871048775,
+        56.16903595642609
+      ],
+      "r_from_centroid_um": 176.62970077732408,
+      "pressure_kPa": 0.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 244,
+      "centroid_um": [
+        -122.294396492069,
+        19.223881709288595,
+        309.8402582315879
+      ],
+      "r_from_centroid_um": 177.58497705277716,
+      "pressure_kPa": 0.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 245,
+      "centroid_um": [
+        -122.02409279214065,
+        91.98414018827143,
+        92.79190603567292
+      ],
+      "r_from_centroid_um": 177.20540097296055,
+      "pressure_kPa": 0.0,
+      "switched": false,
+      "state": 0,
+      "state_name": "cadherin-dominant",
+      "cad_mult": 1.0,
+      "integrin_gain": 1.0
+    },
+    {
+      "cell": 246,
+      "centroid_um": [
+        -122.14372731438743,
+        -88.98789886050693,
+        273.5959571367425
+      ],
+      "r_from_centroid_um": 176.44583853542542,
+      "pressure_kPa": 0.0,
+      "switched": false,
+      "state": 0,
+      "state_name": "cadherin-dominant",
+      "cad_mult": 1.0,
+      "integrin_gain": 1.0
+    },
+    {
+      "cell": 247,
+      "centroid_um": [
+        -49.54367501191866,
+        -161.9682405431651,
+        128.59608205443374
+      ],
+      "r_from_centroid_um": 177.75231521505285,
+      "pressure_kPa": 0.75,
+      "switched": true,
+      "state": 1,
+      "state_name": "switched / integrin-dominant",
+      "cad_mult": 0.3,
+      "integrin_gain": 3.0
+    },
+    {
+      "cell": 248,
+      "centroid_um": [
+        -85.5227101030659,
+        91.85981355769819,
+        56.15010536188438
+      ],
+      "r_from_centroid_um": 178.10454090406645,
+      "pressure_kPa": 0.0,
+      "switched": false,
+      "state": 0,
+      "state_name": "cadherin-dominant",
+      "cad_mult": 1.0,
+      "integrin_gain": 1.0
+    },
+    {
+      "cell": 249,
+      "centroid_um": [
+        -85.49021866112237,
+        -125.46449757050733,
+        273.70536754199355
+      ],
+      "r_from_centroid_um": 177.10182352374548,
+      "pressure_kPa": 0.0,
+      "switched": false,
+      "state": 0,
+      "state_name": "cadherin-dominant",
+      "cad_mult": 1.0,
+      "integrin_gain": 1.0
+    }
+  ]
+}

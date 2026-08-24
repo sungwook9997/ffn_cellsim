@@ -1,0 +1,2588 @@
+{
+  "calibration_requests": [
+    {
+      "candidate_parameters": [
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness",
+        "aleph.vertical.nmii.MotorKinetics.attachment_rate",
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um"
+      ],
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "parameter": "mechanism_family:supracellular_contractility",
+      "required_before_unblock": [
+        "implement unit- and geometry-matched Aleph order/correlation observation operators",
+        "pass grouped biological-replicate validation in an aligned independent lab",
+        "separate nonmuscle-myosin, stress-fibre, focal-adhesion, and ECM-remodelling contributions",
+        "show monotonic replicated forward sensitivity over a declared safe range"
+      ],
+      "required_forward_observables": [
+        "live_actin_orientation_order",
+        "nematic_correlation_length",
+        "velocity_correlation_length",
+        "fibronectin_orientation_distribution"
+      ],
+      "status": "blocked_directional_constraint_only"
+    },
+    {
+      "candidate_parameters": [
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness",
+        "aleph.vertical.nmii.MotorKinetics.attachment_rate",
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um"
+      ],
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "parameter": "mechanism_family:cross_cell_type_actomyosin_contractility",
+      "required_before_unblock": [
+        "implement unit- and geometry-matched Aleph PIV, TFM, MSM, and contour operators",
+        "acquire at least two independent biological cultures per intervention in an aligned external task",
+        "pass dataset/lab holdout with calibrated uncertainty and OOD refusal",
+        "show monotonic forward sensitivity and separate motor/cortex/stress-fibre/adhesion confounding"
+      ],
+      "required_forward_observables": [
+        "geometry_matched_maximum_principal_monolayer_tension_mN_per_m",
+        "geometry_matched_mean_traction_magnitude_Pa",
+        "micropattern_contour_surface_tension_x_mN_per_m",
+        "micropattern_contour_surface_tension_y_mN_per_m",
+        "live_actin_orientation_order",
+        "nematic_correlation_length",
+        "velocity_correlation_length",
+        "fibronectin_orientation_distribution"
+      ],
+      "status": "blocked_directionally_ranked_but_not_numerically_calibrated"
+    },
+    {
+      "candidate_parameters": [
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um",
+        "aleph.vertical.focal_adhesion.ClutchCard.anchor_stiffness_pn_per_um",
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness"
+      ],
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "parameter": "mechanism_family:focal_adhesion_load_transfer",
+      "required_before_unblock": [
+        "implement the author-equivalent cell-mask and focal-adhesion traction operators",
+        "implement or validate a relative vinculin-tension observation bridge",
+        "acquire released cell-to-biological-replicate mapping or a replicate-complete aligned lab",
+        "pass calibrated dataset/lab uncertainty and OOD refusal",
+        "separate active tension from clutch bond and anchor stiffness by forward sensitivity"
+      ],
+      "required_forward_observables": [
+        "cell_mask_mean_traction_stress_Pa",
+        "focal_adhesion_mean_traction_normalized_per_cell",
+        "vinculin_tension_sensor_relative_FRET",
+        "focal_adhesion_area_orientation_and_vinculin_density"
+      ],
+      "status": "blocked_directionally_ranked_and_multiscale_identifiability_constrained"
+    },
+    {
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "parameter": "mechanism_family:EMT_spatial_dispersion_and_cell_cell_adhesion",
+      "required_before_unblock": [
+        "independent_lab_common_observable_holdout",
+        "calibrated_semantic_OOD_refusal",
+        "resolve_TGFB_companion_EGF_dose_conflict",
+        "Aleph_forward_sensitivity"
+      ],
+      "required_forward_observables": [
+        "KRT5_IF_proxy_or_declared_unavailable",
+        "cell_centroid_neighbor_distance",
+        "cell_cluster_size",
+        "population_cell_count"
+      ],
+      "status": "blocked_collection_validated_but_independent_lab_and_operator_missing"
+    },
+    {
+      "candidate_mechanism_families": [
+        "cell_cell_adhesion",
+        "intermediate_filament_remodelling",
+        "growth_factor_conditioned_state",
+        "EMT_MET_hysteresis"
+      ],
+      "may_emit_sweep_axis": false,
+      "newly_supported_action": "reject EMT-state candidates that require E-cadherin increase or Vimentin decrease during progressive TGF-beta EMT",
+      "numeric_range": null,
+      "parameter": "mechanism_family:EMT_marker_direction_conditioning",
+      "required_before_unblock": [
+        "replicate-complete aligned external EMT experiment",
+        "cross-modality uncertainty calibration and semantic OOD refusal",
+        "Aleph observation operators with exact declared semantics",
+        "monotonic forward sensitivity for candidate parameter axes"
+      ],
+      "required_forward_observables": [
+        "E_cadherin_observation_bridge_or_declared_unavailable",
+        "Vimentin_observation_bridge_or_declared_unavailable",
+        "cell_cell_contact_and_dispersion_observables"
+      ],
+      "status": "direction_filter_admitted_numeric_sweep_blocked_by_replication_OOD_operator_and_forward_sensitivity"
+    },
+    {
+      "current_operator_resolution": {
+        "CDH1_RNA_abundance": {
+          "external_observable": "CDH1_RNA_abundance",
+          "forbidden_shortcut_recorded": true,
+          "operator_id": null,
+          "promotable_to_numeric_sweep": false,
+          "required_validation_fields_present": false,
+          "source_exists": null,
+          "source_path": null,
+          "source_sha256": null,
+          "source_symbol_present": null,
+          "status": "unavailable",
+          "status_allowed": true
+        },
+        "VIM_RNA_abundance": {
+          "external_observable": "VIM_RNA_abundance",
+          "forbidden_shortcut_recorded": true,
+          "operator_id": null,
+          "promotable_to_numeric_sweep": false,
+          "required_validation_fields_present": false,
+          "source_exists": null,
+          "source_path": null,
+          "source_sha256": null,
+          "source_symbol_present": null,
+          "status": "unavailable",
+          "status_allowed": true
+        }
+      },
+      "may_emit_sweep_axis": false,
+      "newly_supported_action": "reject EMT candidates with CDH1-up or VIM-down endpoint response across compatible A549 TGFB contexts",
+      "numeric_range": null,
+      "parameter": "mechanism_family:replicated_EMT_RNA_direction_conditioning",
+      "required_before_unblock": [
+        "preregistered outcome-blind external EMT study evaluated after protocol freeze",
+        "trained and sealed validation of culture-context semantic OOD refusal",
+        "Aleph CDH1/VIM-compatible observation operators",
+        "monotonic Aleph forward sensitivity linking candidate axes to the observables"
+      ],
+      "required_forward_observables": [
+        "CDH1_RNA_or_declared_protein_surrogate_observation_operator",
+        "VIM_RNA_or_declared_protein_surrogate_observation_operator"
+      ],
+      "status": "retrospective_direction_constraint_admitted_numeric_sweep_blocked_by_preregistered_holdout_numeric_uncertainty_OOD_operator_and_sensitivity"
+    },
+    {
+      "current_operator_resolution": {
+        "CDH1_RNA_abundance": {
+          "external_observable": "CDH1_RNA_abundance",
+          "forbidden_shortcut_recorded": true,
+          "operator_id": null,
+          "promotable_to_numeric_sweep": false,
+          "required_validation_fields_present": false,
+          "source_exists": null,
+          "source_path": null,
+          "source_sha256": null,
+          "source_symbol_present": null,
+          "status": "unavailable",
+          "status_allowed": true
+        },
+        "VIM_RNA_abundance": {
+          "external_observable": "VIM_RNA_abundance",
+          "forbidden_shortcut_recorded": true,
+          "operator_id": null,
+          "promotable_to_numeric_sweep": false,
+          "required_validation_fields_present": false,
+          "source_exists": null,
+          "source_path": null,
+          "source_sha256": null,
+          "source_symbol_present": null,
+          "status": "unavailable",
+          "status_allowed": true
+        }
+      },
+      "may_emit_sweep_axis": false,
+      "newly_supported_action": "confirm retrospective CDH1-down/VIM-up filter on an outcome-blind external lab",
+      "numeric_range": null,
+      "parameter": "mechanism_family:preregistered_EMT_direction_confirmation",
+      "required_before_unblock": [
+        "Aleph CDH1/VIM-compatible observation operators",
+        "monotonic Aleph forward sensitivity",
+        "multiple independently frozen semantic OOD contexts",
+        "numeric cross-assay calibration rather than direction-only evidence"
+      ],
+      "required_forward_observables": [
+        "CDH1_RNA_abundance",
+        "VIM_RNA_abundance"
+      ],
+      "status": "pristine_direction_holdout_passed_numeric_sweep_blocked_by_operator_OOD_and_scale"
+    },
+    {
+      "candidate_parameters": [
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness",
+        "aleph.vertical.nmii.MotorKinetics.attachment_rate",
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um",
+        "aleph.vertical.focal_adhesion.ClutchCard.anchor_stiffness_pn_per_um"
+      ],
+      "evaluator": "evaluate_sweep_calibration.py",
+      "external_target_constraints": {
+        "Acta2_relative_expression": {
+          "bootstrap_ci95": [
+            3.1242695833333336,
+            6.042661249999999
+          ],
+          "mean_difference": 4.57485
+        },
+        "alpha_SMA_relative_fluorescence": {
+          "bootstrap_ci95": [
+            0.4643059120000004,
+            1.2547422909999995
+          ],
+          "mean_difference": 0.8538022140000001
+        },
+        "tissue_traction_force_per_cell": {
+          "bootstrap_ci95": [
+            90.00920077781488,
+            133.87772841420534
+          ],
+          "mean_difference": 111.85828941142859
+        }
+      },
+      "parameter": "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+      "required_before_unblock": [
+        "one-at-a-time Aleph forward sensitivity is monotonic over a declared safe range",
+        "traction measurement operator has matched units and geometry"
+      ],
+      "required_forward_observables": [
+        "tissue_traction_force_per_cell",
+        "nuclear_circularity"
+      ]
+    },
+    {
+      "candidate_parameters": [
+        "requested_nonexistent_axis:membrane_cortex_attachment_energy_pn_per_um",
+        "aleph.vertical.membrane.MembraneMaterial.tension_pn_per_um",
+        "aleph.vertical.membrane.MembraneMaterial.bending_rigidity_pn_um"
+      ],
+      "evaluator": "evaluate_sweep_calibration.py",
+      "external_target_constraints": {
+        "AFM_membrane_tether_force_spreading_phase_Y27632_minus_control_pN": [
+          8.638099135802467,
+          9.604740800865798
+        ],
+        "initial_spreading_area_rate_Y27632_minus_control": [
+          14.165673066686349,
+          37.59064205781218
+        ],
+        "initial_volume_flux_Y27632_minus_control": [
+          -17.49120600799866,
+          -7.303621025267813
+        ]
+      },
+      "parameter": "requested_nonexistent_axis:membrane_cortex_attachment_energy_pn_per_um",
+      "required_before_unblock": [
+        "PI decides whether membrane-cortex attachment energy W enters Aleph or remains out of scope",
+        "add an independent observable that separates sigma_bilayer from W",
+        "reproduce the transient-versus-steady-state contrast in matched geometry",
+        "show that actomyosin, ion-flux, and membrane-reservoir effects are not collapsed into one tension parameter",
+        "pass an independent-lab confirmatory experiment"
+      ],
+      "required_forward_observables": [
+        "membrane_tether_plateau_force:pN",
+        "initial_spreading_area_rate_square_micrometre_per_minute",
+        "initial_volume_flux_cubic_micrometre_per_minute"
+      ],
+      "status": "blocked_missing_W_axis_and_second_identifying_observable"
+    }
+  ],
+  "checks": {
+    "EMT_marker_operators_are_explicitly_unavailable": true,
+    "ece_at_most_0_15": false,
+    "exif_emt_constraint_is_non_authoritative": true,
+    "external_lab_uncertainty_holdout_passed": true,
+    "geo_emt_rna_direction_constraint_is_non_authoritative": true,
+    "gse325309_preregistered_direction_holdout_is_non_authoritative": true,
+    "independent_dataset_task_holdout_passed": false,
+    "independent_dataset_task_holdout_present": true,
+    "independent_lab_task_holdout_passed": false,
+    "independent_lab_task_holdout_present": true,
+    "independent_multisite_migration_external_evaluation_passed": true,
+    "independent_multisite_migration_pristine_confirmation_present": false,
+    "independent_multisite_migration_retrospective_uncertainty_passed": true,
+    "karacosta_emt_direction_filter_is_non_authoritative": true,
+    "lincs_mcf10a_constraint_is_non_authoritative": true,
+    "macro_f1_at_least_0_70": false,
+    "model_has_no_aleph_authority": true,
+    "mtrack_emt_constraint_is_non_authoritative": true,
+    "multitask_model_admits_only_externally_validated_evidence_heads": true,
+    "multitask_model_contract_is_non_authoritative": true,
+    "nematic_tfm_constraint_is_non_authoritative": true,
+    "observation_operator_registry_passed": true,
+    "opto_force_constraint_is_non_authoritative": true,
+    "piv_contractility_constraint_is_non_authoritative": true,
+    "semantic_ood_auroc_at_least_0_70": false,
+    "tfm_fret_constraint_is_non_authoritative": true
+  },
+  "context_heterogeneity_audit": {
+    "aleph_parameter_proposal_eligible": false,
+    "context_heterogeneity_detected": true,
+    "dryad_H1299_PL_2D": {
+      "Y27632_minus_DMSO_date_effects": [
+        -6376.798800000001,
+        6876.625500000002,
+        17365.454999999998,
+        13276.777200000002
+      ],
+      "direction": "increases",
+      "experimental_date_bootstrap_95ci": [
+        -1463.4048000000005,
+        15321.116100000001
+      ],
+      "inference_unit": "author_experimental_date",
+      "mean_date_effect_source_unit": 7785.514725000001,
+      "paired_experimental_dates": 4
+    },
+    "elife_NIH3T3_3D_CDM": {
+      "Y27632_cells": 9,
+      "cell_bootstrap_speed_difference_95ci_descriptive_only": [
+        -0.5533279583333334,
+        -0.19375341666666687
+      ],
+      "control_cells": 24,
+      "direction": "decreases",
+      "independent_experiment_identifiers_reported": false,
+      "inference_unit": "unknown; cells cannot be promoted to biological replicates",
+      "persistent_speed_Y27632_minus_control_micrometre_per_minute": -0.36734500000000014,
+      "persistent_speed_hedges_g": -0.9372043647388244,
+      "speed_oscillation_period_Y27632_minus_control_minute": 9.036111111111108
+    },
+    "eligible_as_context_diversity_training": true,
+    "failure_reason": "independent eLife experiment identifiers are not reported and the context-specific speed direction reverses",
+    "independent_lab_dataset_present": true,
+    "independent_lab_mechanism_holdout_passed": false,
+    "interpretation": "ROCK inhibition has opposite migration-speed directions in H1299-PL 2D and NIH3T3 3D CDM contexts; a universal speed constraint or one-parameter Aleph mapping is rejected.",
+    "may_mutate_physics": false,
+    "observable_constraint_eligible": false,
+    "speed_direction_consistent_across_contexts": false,
+    "task": "ROCK_inhibition_migration_speed_context_transfer"
+  },
+  "evidence_exclusions": [
+    {
+      "dryad_2D_direction": "increases",
+      "elife_3D_CDM_direction": "decreases",
+      "may_select_aleph_parameter": false,
+      "observable": "universal_ROCK_inhibition_migration_speed_direction",
+      "reason": "ROCK inhibition has opposite migration-speed directions in H1299-PL 2D and NIH3T3 3D CDM contexts; a universal speed constraint or one-parameter Aleph mapping is rejected.",
+      "status": "rejected_context_dependent"
+    },
+    {
+      "may_select_aleph_parameter": false,
+      "observable": "AFM_membrane_tether_force_as_direct_cortical_tension",
+      "reason": "Tether force is a pN-scale proxy for apparent membrane tension only under a constant-bending-rigidity tether model; it is not a direct measurement of Aleph cortical or Helfrich surface tension.",
+      "status": "rejected_operator_mismatch"
+    },
+    {
+      "may_select_aleph_parameter": false,
+      "observable": "C2C12_blebbistatin_PIV_IF_direction_as_one_Aleph_parameter",
+      "reason": "blebbistatin is a multiscale nonmuscle-myosin-II perturbation and does not identify one Aleph parameter",
+      "replicated_author_direction": true,
+      "status": "rejected_pending_operator_and_aligned_external_lab"
+    },
+    {
+      "may_select_aleph_parameter": false,
+      "observable": "NIH3T3_blebbistatin_TFM_MSM_as_one_Aleph_parameter",
+      "published_direction_reproduced": true,
+      "reason": "TFM/MSM jointly constrain an effective contractility/load-transfer family; they do not separately identify motor, stress-fibre, cortex, or adhesion axes",
+      "status": "rejected_pending_biological_replication_and_forward_operator"
+    },
+    {
+      "may_select_aleph_parameter": false,
+      "observable": "opto_MDCK_RhoA_contour_response_as_one_Aleph_parameter",
+      "reason": "relative contour response does not identify motor kinetics, cortical material, stress-fibre line tension, and adhesion load transfer separately",
+      "status": "rejected_pending_sample_hierarchy_and_forward_operator",
+      "usually_positive_in_both_axes": true
+    }
+  ],
+  "exif_emt_audit": {
+    "OOD_refusal_validated": false,
+    "TGF_beta1_marker_direction_check": {
+      "all_expected_directions_reproduced": false,
+      "directions_reproduced": 4,
+      "inferential_test_permitted": false,
+      "paper_expected_marker_count": 5,
+      "reason": "two wells and one admitted field per condition/marker are technical measurements from one plate date",
+      "rows": [
+        {
+          "TGF_beta1_minus_control": 82.43699645996094,
+          "direction_reproduced": null,
+          "marker": "CD44_standard",
+          "n_fields_per_condition": 2,
+          "observed_direction": "increase",
+          "paper_expected_direction": null,
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 232.48818969726562,
+            "TGF_beta1_10ng_per_mL_48h": 176.187744140625,
+            "untreated_control": 93.75074768066406
+          }
+        },
+        {
+          "TGF_beta1_minus_control": 63.91839599609375,
+          "direction_reproduced": null,
+          "marker": "CD44_total",
+          "n_fields_per_condition": 2,
+          "observed_direction": "increase",
+          "paper_expected_direction": null,
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 210.46588134765625,
+            "TGF_beta1_10ng_per_mL_48h": 222.57650756835938,
+            "untreated_control": 158.65811157226562
+          }
+        },
+        {
+          "TGF_beta1_minus_control": -9.04525375366211,
+          "direction_reproduced": true,
+          "marker": "CD44_variant_9",
+          "n_fields_per_condition": 2,
+          "observed_direction": "decrease",
+          "paper_expected_direction": "decrease",
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 389.9606628417969,
+            "TGF_beta1_10ng_per_mL_48h": 188.94374465942383,
+            "untreated_control": 197.98899841308594
+          }
+        },
+        {
+          "TGF_beta1_minus_control": -113.54332733154297,
+          "direction_reproduced": true,
+          "marker": "E_cadherin",
+          "n_fields_per_condition": 2,
+          "observed_direction": "decrease",
+          "paper_expected_direction": "decrease",
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 162.19938278198242,
+            "TGF_beta1_10ng_per_mL_48h": 102.8218002319336,
+            "untreated_control": 216.36512756347656
+          }
+        },
+        {
+          "TGF_beta1_minus_control": 46.82235336303711,
+          "direction_reproduced": false,
+          "marker": "EpCAM",
+          "n_fields_per_condition": 2,
+          "observed_direction": "increase",
+          "paper_expected_direction": "decrease",
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 104.32395553588867,
+            "TGF_beta1_10ng_per_mL_48h": 152.47961807250977,
+            "untreated_control": 105.65726470947266
+          }
+        },
+        {
+          "TGF_beta1_minus_control": 19.441251754760742,
+          "direction_reproduced": true,
+          "marker": "N_cadherin",
+          "n_fields_per_condition": 2,
+          "observed_direction": "increase",
+          "paper_expected_direction": "increase",
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 67.31975555419922,
+            "TGF_beta1_10ng_per_mL_48h": 82.7984619140625,
+            "untreated_control": 63.35721015930176
+          }
+        },
+        {
+          "TGF_beta1_minus_control": -51.030006408691406,
+          "direction_reproduced": null,
+          "marker": "PTEN",
+          "n_fields_per_condition": 2,
+          "observed_direction": "decrease",
+          "paper_expected_direction": null,
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 161.29723358154297,
+            "TGF_beta1_10ng_per_mL_48h": 148.33028030395508,
+            "untreated_control": 199.36028671264648
+          }
+        },
+        {
+          "TGF_beta1_minus_control": 6.887928009033203,
+          "direction_reproduced": true,
+          "marker": "Vimentin",
+          "n_fields_per_condition": 2,
+          "observed_direction": "increase",
+          "paper_expected_direction": "increase",
+          "raw_field_mean_intensity_medians": {
+            "EGF_0.1ug_per_mL_48h": 55.95860290527344,
+            "TGF_beta1_10ng_per_mL_48h": 60.21028518676758,
+            "untreated_control": 53.322357177734375
+          }
+        }
+      ]
+    },
+    "aleph_authority": "none",
+    "design_audit": {
+      "biological_replicates_released": false,
+      "common_task_with_HPA_localization_labels": false,
+      "condition_is_confounded_with_plate_column_pair": true,
+      "field_samples": 48,
+      "fields_are_technical_measurements": true,
+      "plate_dates": 1,
+      "well_split_groups": 48
+    },
+    "independent_dataset_holdout": false,
+    "independent_lab_holdout": false,
+    "limitations": [
+      "the author labels are treatment conditions that weakly or strongly drive EMT, not per-cell EMT ground truth",
+      "all admitted fields come from one released plate date",
+      "paired-column transfer cannot remove plate-position confounding",
+      "this source is an independent provider from HPA but does not share HPA localization labels",
+      "no numeric Aleph parameter range is identified"
+    ],
+    "may_select_aleph_parameter": false,
+    "mean_paired_transfer_accuracy": 0.6875,
+    "mean_paired_transfer_macro_f1": 0.6925647451963242,
+    "observable_evidence_eligible": false,
+    "paired_well_column_transfer_general_channels_only": [
+      {
+        "accuracy": 0.6666666666666666,
+        "confusion_rows_true_columns_predicted": [
+          [
+            5,
+            3,
+            0
+          ],
+          [
+            3,
+            4,
+            1
+          ],
+          [
+            0,
+            1,
+            7
+          ]
+        ],
+        "macro_f1": 0.6666666666666666,
+        "test_columns": [
+          "02",
+          "04",
+          "06"
+        ],
+        "test_samples": 24,
+        "train_columns": [
+          "01",
+          "03",
+          "05"
+        ],
+        "train_samples": 24
+      },
+      {
+        "accuracy": 0.7083333333333334,
+        "confusion_rows_true_columns_predicted": [
+          [
+            6,
+            2,
+            0
+          ],
+          [
+            3,
+            5,
+            0
+          ],
+          [
+            2,
+            0,
+            6
+          ]
+        ],
+        "macro_f1": 0.7184628237259817,
+        "test_columns": [
+          "01",
+          "03",
+          "05"
+        ],
+        "test_samples": 24,
+        "train_columns": [
+          "02",
+          "04",
+          "06"
+        ],
+        "train_samples": 24
+      }
+    ],
+    "pre_sweep_role": {
+      "candidate_mechanism_families": [
+        "cell_cell_adhesion",
+        "intermediate_filament_remodelling",
+        "actomyosin_contractility",
+        "growth_factor_signalling_context"
+      ],
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "required_before_promotion": [
+        "independent-lab raw-IF EMT condition holdout",
+        "biological-replicate-complete uncertainty calibration",
+        "orthogonal migration or force observables aligned to the same state",
+        "Aleph observation operators and forward sensitivity"
+      ],
+      "role": "future_state_conditioning_and_sweep_space_reduction"
+    },
+    "representation_training_eligible": true,
+    "schema": "aleph.outer_library.figshare_exif_emt_evaluation.v1",
+    "source": {
+      "dataset_doi": "10.6084/m9.figshare.26500210.v1",
+      "dataset_id": "figshare-26500210-exif-a549-emt-4plex",
+      "lab_group": "Lock_Lab_UNSW_Sydney",
+      "paper_doi": "10.1038/s41467-025-59592-7"
+    },
+    "state_axis": "EMT_epithelial_mesenchymal_state",
+    "state_axis_status": "author_treatment_labelled_raw_IF_training_only",
+    "task": "raw_multichannel_IF_EMT_condition_representation",
+    "uncertainty_holdout_passed": false
+  },
+  "failed_checks": [
+    "macro_f1_at_least_0_70",
+    "ece_at_most_0_15",
+    "semantic_ood_auroc_at_least_0_70",
+    "independent_dataset_task_holdout_passed",
+    "independent_lab_task_holdout_passed",
+    "independent_multisite_migration_pristine_confirmation_present"
+  ],
+  "geo_emt_rna_audit": {
+    "OOD_refusal_validated": false,
+    "aleph_authority": "none",
+    "cross_assay_bridge": {
+      "RNA_direction_agrees_with_independent_IF_and_CyTOF_protein_direction": true,
+      "RNA_protein_absolute_scale_transfer_permitted": false
+    },
+    "design_audit": {
+      "biological_replicates_not_expression_features": true,
+      "cross_platform_absolute_scale_pooling_forbidden": true,
+      "independent_lab_groups": 5,
+      "observations": 144,
+      "outer_holdout_unit": "study_and_lab_group",
+      "samples": 72,
+      "samples_by_study": {
+        "GSE125369": 4,
+        "GSE17708": 26,
+        "GSE42373": 8,
+        "GSE49644": 18,
+        "GSE69667": 16
+      },
+      "studies": 5
+    },
+    "directional_pre_sweep_filter_eligible": true,
+    "endpoint_contrasts": [
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 3,
+        "control_condition": "untreated",
+        "control_mean": 3.9413068103333337,
+        "direction": "decrease",
+        "gene": "CDH1",
+        "study": "GSE17708",
+        "treated_biological_n": 3,
+        "treated_condition": "TGFB1_72h",
+        "treated_mean": 2.659501605333334,
+        "treated_minus_control": -1.281805205
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 3,
+        "control_condition": "untreated",
+        "control_mean": 4.201547025333333,
+        "direction": "increase",
+        "gene": "VIM",
+        "study": "GSE17708",
+        "treated_biological_n": 3,
+        "treated_condition": "TGFB1_72h",
+        "treated_mean": 4.466044850333334,
+        "treated_minus_control": 0.2644978250000003
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 2,
+        "control_condition": "3d_control",
+        "control_mean": 12.760740535,
+        "direction": "decrease",
+        "gene": "CDH1",
+        "study": "GSE42373",
+        "treated_biological_n": 2,
+        "treated_condition": "3d_treated",
+        "treated_mean": 11.848253060000001,
+        "treated_minus_control": -0.9124874749999989
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 2,
+        "control_condition": "3d_control",
+        "control_mean": 14.77092759,
+        "direction": "increase",
+        "gene": "VIM",
+        "study": "GSE42373",
+        "treated_biological_n": 2,
+        "treated_condition": "3d_treated",
+        "treated_mean": 15.08713143,
+        "treated_minus_control": 0.31620384
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 2,
+        "control_condition": "control",
+        "control_mean": 25.20746193860445,
+        "direction": "decrease",
+        "gene": "CDH1",
+        "study": "GSE125369",
+        "treated_biological_n": 2,
+        "treated_condition": "TGFB3_21d",
+        "treated_mean": 0.7451481203228356,
+        "treated_minus_control": -24.462313818281615
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 2,
+        "control_condition": "control",
+        "control_mean": 1015.9806945696946,
+        "direction": "increase",
+        "gene": "VIM",
+        "study": "GSE125369",
+        "treated_biological_n": 2,
+        "treated_condition": "TGFB3_21d",
+        "treated_mean": 1710.55618789027,
+        "treated_minus_control": 694.5754933205753
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 2,
+        "control_condition": "untreated",
+        "control_mean": 21.035,
+        "direction": "decrease",
+        "gene": "CDH1",
+        "study": "GSE69667",
+        "treated_biological_n": 2,
+        "treated_condition": "TGFB1_96h",
+        "treated_mean": 1.84,
+        "treated_minus_control": -19.195
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 2,
+        "control_condition": "untreated",
+        "control_mean": 524.1949999999999,
+        "direction": "increase",
+        "gene": "VIM",
+        "study": "GSE69667",
+        "treated_biological_n": 2,
+        "treated_condition": "TGFB1_96h",
+        "treated_mean": 895.515,
+        "treated_minus_control": 371.32000000000005
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 3,
+        "control_condition": "A549_parental",
+        "control_mean": 9.324775695666666,
+        "direction": "decrease",
+        "gene": "CDH1",
+        "study": "GSE49644",
+        "treated_biological_n": 3,
+        "treated_condition": "A549_TGFB_EMT_3week",
+        "treated_mean": 3.5127403736666665,
+        "treated_minus_control": -5.812035322
+      },
+      {
+        "absolute_scale_transfer_permitted": false,
+        "all_between_group_pairwise_differences_have_expected_sign": true,
+        "control_biological_n": 3,
+        "control_condition": "A549_parental",
+        "control_mean": 5.582270622333333,
+        "direction": "increase",
+        "gene": "VIM",
+        "study": "GSE49644",
+        "treated_biological_n": 3,
+        "treated_condition": "A549_TGFB_EMT_3week",
+        "treated_mean": 6.371497472333334,
+        "treated_minus_control": 0.7892268500000013
+      }
+    ],
+    "independent_study_direction_holdout": true,
+    "limitations": [
+      "five retrospective study-level EMT signatures give nominal one-sided p=0.03125, but literature-based study selection prevents confirmatory inference",
+      "RNA expression constrains marker direction but is not interchangeable with protein abundance",
+      "GSE42373 combines TGF-beta and TNF-alpha and contributes the only sealed OOD context, so general OOD validation remains unproven",
+      "the data can compress a future sweep but cannot issue a numeric Aleph parameter range"
+    ],
+    "may_select_aleph_parameter": false,
+    "numeric_uncertainty_promotion_passed": false,
+    "pre_sweep_role": {
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "purpose": "reduce_and_rank_future_Aleph_EMT_sweep_not_replace_it",
+      "remaining_blockers": [
+        "preregistered outcome-blind external EMT study evaluated after protocol freeze",
+        "trained and sealed validation of culture-context semantic OOD refusal",
+        "Aleph CDH1/VIM-compatible observation operators",
+        "monotonic Aleph forward sensitivity linking candidate axes to the observables"
+      ],
+      "supported_action": "reject EMT candidates with CDH1-up or VIM-down endpoint response across compatible A549 TGFB contexts"
+    },
+    "replicated_direction": {
+      "all_ten_between_group_ranges_completely_separated": true,
+      "all_ten_study_gene_directions_expected": true,
+      "confirmatory_direction_threshold_0_05_passed": false,
+      "confirmatory_failure_reason": "GSE69667 and GSE49644 were selected from literature reporting successful EMT, so the nominal sign test is subject to study-selection and publication bias",
+      "independent_labs": 5,
+      "independent_studies": 5,
+      "nominal_exact_one_sided_sign_test_p_for_five_retrospective_study_signatures": 0.03125,
+      "retrospective_direction_replication_passed": true,
+      "study_gene_contrasts": 10,
+      "study_level_signature_successes": 5,
+      "study_selection_was_outcome_blind": false
+    },
+    "representation_training_eligible": true,
+    "sample_identity_count": 72,
+    "schema": "aleph.outer_library.geo_emt_rna_evaluation.v1",
+    "semantic_OOD_challenge": {
+      "OOD_refusal_model_validated": false,
+      "at_least_one_marker_direction_changes_by_culture_context": true,
+      "challenge_defined": true,
+      "dataset": "GSE42373",
+      "diagnostic_passed": true,
+      "held_context": "2d_TGFB_TNFA",
+      "reference_context": "3d_TGFB_TNFA",
+      "rows": {
+        "CDH1": {
+          "2d_treated_minus_control": 0.04167947000000005,
+          "direction": "increase",
+          "expected_3d_EMT_direction": "decrease"
+        },
+        "VIM": {
+          "2d_treated_minus_control": 0.07885004000000073,
+          "direction": "increase",
+          "expected_3d_EMT_direction": "increase"
+        }
+      },
+      "sealed_direction_hamming_diagnostic": {
+        "held_2d_context_refused": true,
+        "held_2d_context_score": 1,
+        "held_OOD_context_count": 1,
+        "threshold_max_training_ID_score": 0,
+        "training_ID_study_scores": {
+          "GSE125369": 0,
+          "GSE17708": 0,
+          "GSE42373": 0,
+          "GSE49644": 0,
+          "GSE69667": 0
+        }
+      }
+    },
+    "study_level_direction_inference_passed": false,
+    "task": "replicated_multi_study_RNA_EMT_direction_constraint_before_Aleph_sweep",
+    "within_GSE49644_cross_cell_line_transfer": {
+      "all_four_marker_directions_agree": true,
+      "counts_as_additional_independent_study_or_lab": false,
+      "rows": [
+        {
+          "cell_line": "HCC827",
+          "control_biological_n": 3,
+          "direction": "decrease",
+          "direction_agrees": true,
+          "expected_direction": "decrease",
+          "gene": "CDH1",
+          "independent_study_or_lab": false,
+          "treated_biological_n": 3,
+          "treated_minus_control": -2.9470933306666662
+        },
+        {
+          "cell_line": "HCC827",
+          "control_biological_n": 3,
+          "direction": "increase",
+          "direction_agrees": true,
+          "expected_direction": "increase",
+          "gene": "VIM",
+          "independent_study_or_lab": false,
+          "treated_biological_n": 3,
+          "treated_minus_control": 2.025506973666667
+        },
+        {
+          "cell_line": "NCI-H358",
+          "control_biological_n": 3,
+          "direction": "decrease",
+          "direction_agrees": true,
+          "expected_direction": "decrease",
+          "gene": "CDH1",
+          "independent_study_or_lab": false,
+          "treated_biological_n": 3,
+          "treated_minus_control": -3.941110611000001
+        },
+        {
+          "cell_line": "NCI-H358",
+          "control_biological_n": 3,
+          "direction": "increase",
+          "direction_agrees": true,
+          "expected_direction": "increase",
+          "gene": "VIM",
+          "independent_study_or_lab": false,
+          "treated_biological_n": 3,
+          "treated_minus_control": 2.3074330489999997
+        }
+      ]
+    }
+  },
+  "gse325309_emt_audit": {
+    "OOD_refusal_validated": false,
+    "aleph_authority": "none",
+    "design_audit": {
+      "TGFB1_replicates": 3,
+      "biological_replicate_is_test_unit": true,
+      "biological_samples": 6,
+      "control_replicates": 3,
+      "genes": 2,
+      "observations": 12,
+      "protocol_frozen_before_expression_access": true,
+      "sample_exclusions": 0
+    },
+    "freeze_proof": {
+      "expression_downloaded_after_protocol_commit": true,
+      "protocol_commit_before_download": "7984e5b",
+      "protocol_sha256": "9eb83ce6f04bf9db7d1b63a0744a9021689de522fe28067778116414d99027e3"
+    },
+    "frozen_primary_test": {
+      "alpha": 0.05,
+      "directions": {
+        "CDH1": "decrease",
+        "VIM": "increase"
+      },
+      "exact_assignment_count": 20,
+      "exact_one_sided_p": 0.05,
+      "oriented_composite_score": 87.42216925478374,
+      "passed": true
+    },
+    "may_select_aleph_parameter": false,
+    "numeric_uncertainty_promotion_passed": false,
+    "pre_sweep_role": {
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "remaining_blockers": [
+        "Aleph CDH1/VIM-compatible observation operators",
+        "monotonic Aleph forward sensitivity",
+        "multiple independently frozen semantic OOD contexts",
+        "numeric cross-assay calibration rather than direction-only evidence"
+      ],
+      "supported_action": "confirm retrospective CDH1-down/VIM-up filter on an outcome-blind external lab"
+    },
+    "pristine_external_direction_holdout_passed": true,
+    "raw_FPKM": {
+      "CDH1": {
+        "TGFB1": [
+          0.849858787524687,
+          0.865265210994075,
+          1.0167075482225103
+        ],
+        "control": [
+          17.068787742100106,
+          17.614548265799904,
+          18.6002989647795
+        ]
+      },
+      "VIM": {
+        "TGFB1": [
+          410.7021074708269,
+          416.33995678187813,
+          413.4404950085009
+        ],
+        "control": [
+          211.40606784930407,
+          217.31956315745796,
+          206.59375024034003
+        ]
+      }
+    },
+    "sample_ids": [
+      "GSM9600356",
+      "GSM9600357",
+      "GSM9600358",
+      "GSM9600359",
+      "GSM9600360",
+      "GSM9600361"
+    ],
+    "schema": "aleph.outer_library.gse325309_pristine_evaluation.v1",
+    "secondary_diagnostics": {
+      "all_nine_pairwise_differences_expected": {
+        "CDH1": true,
+        "VIM": true
+      },
+      "bootstrap": {
+        "CDH1": {
+          "bootstrap_percentile_95": [
+            -3.3765850496107697,
+            -3.2152765921390203
+          ],
+          "log2_FPKM_plus_1_mean_difference": -3.295930820874895
+        },
+        "VIM": {
+          "bootstrap_percentile_95": [
+            0.9280762552003647,
+            0.9964393856142886
+          ],
+          "log2_FPKM_plus_1_mean_difference": 0.9623198193622722
+        }
+      }
+    },
+    "task": "outcome_blind_preregistered_external_EMT_direction_holdout"
+  },
+  "may_mutate_physics": false,
+  "may_write_decision_authority": false,
+  "mechano_osmotic_audit": {
+    "AFM_membrane_tether_force": {
+      "method": "single-cell atomic force spectroscopy; per-cell tether pulls averaged by authors",
+      "observable_unit": "pN",
+      "spreading_phase_30_to_90_min": {
+        "Y27632_minus_control_mean_pN": 9.03612632809577,
+        "apparent_membrane_tension_ratio_if_bending_rigidity_constant": 2.200128348141777,
+        "cells_are_not_inference_units": true,
+        "force_to_tension_relation": "descriptive model-derived ratio only; tether force is proportional to the square root of apparent membrane tension when bending rigidity is constant",
+        "inference_unit": "matched_author_independent_experiment",
+        "matched_Y27632_mean_pN": 27.733508650793652,
+        "matched_control_mean_pN": 18.697382322697877,
+        "matched_experiment_ids": [
+          "author_experiment:200717",
+          "author_experiment:200719",
+          "author_experiment:200720"
+        ],
+        "matched_independent_experiments": 3,
+        "paired_experiment_bootstrap_95ci_pN": [
+          8.638099135802467,
+          9.604740800865798
+        ],
+        "paired_experiment_effects_pN": [
+          8.865539047619045,
+          9.604740800865798,
+          8.638099135802467
+        ]
+      },
+      "steady_state_nonspread_4_to_5_hour": {
+        "Y27632_minus_control_mean_pN": 0.2491307634164741,
+        "apparent_membrane_tension_ratio_if_bending_rigidity_constant": 1.0245933663201716,
+        "cells_are_not_inference_units": true,
+        "force_to_tension_relation": "descriptive model-derived ratio only; tether force is proportional to the square root of apparent membrane tension when bending rigidity is constant",
+        "inference_unit": "matched_author_independent_experiment",
+        "matched_Y27632_mean_pN": 20.632936507936506,
+        "matched_control_mean_pN": 20.383805744520032,
+        "matched_experiment_ids": [
+          "author_experiment:211026-1116_1",
+          "author_experiment:211026-1116_2",
+          "author_experiment:211026-1116_3"
+        ],
+        "matched_independent_experiments": 3,
+        "paired_experiment_bootstrap_95ci_pN": [
+          -2.2210884353741562,
+          2.0579365079364997
+        ],
+        "paired_experiment_effects_pN": [
+          0.9105442176870788,
+          2.0579365079364997,
+          -2.2210884353741562
+        ]
+      },
+      "steady_state_spread_4_to_5_hour": {
+        "Y27632_minus_control_mean_pN": -0.06732280848450618,
+        "apparent_membrane_tension_ratio_if_bending_rigidity_constant": 0.9935602047241401,
+        "cells_are_not_inference_units": true,
+        "force_to_tension_relation": "descriptive model-derived ratio only; tether force is proportional to the square root of apparent membrane tension when bending rigidity is constant",
+        "inference_unit": "matched_author_independent_experiment",
+        "matched_Y27632_mean_pN": 20.807330583049886,
+        "matched_control_mean_pN": 20.87465339153439,
+        "matched_experiment_ids": [
+          "author_experiment:201215",
+          "author_experiment:201216",
+          "author_experiment:201221"
+        ],
+        "matched_independent_experiments": 3,
+        "paired_experiment_bootstrap_95ci_pN": [
+          -0.624726333333335,
+          0.699978224206351
+        ],
+        "paired_experiment_effects_pN": [
+          -0.624726333333335,
+          -0.27722031632653454,
+          0.699978224206351
+        ]
+      }
+    },
+    "aleph_parameter_proposal_eligible": false,
+    "checks": {
+      "area_rate_increase_experiment_ci_excludes_zero": true,
+      "early_tether_force_increase_paired_experiment_ci_excludes_zero": true,
+      "force_unit_is_pN": true,
+      "spreading_units_have_author_source_locators": true,
+      "steady_tether_force_direction_is_reported_without_cell_pseudoreplication": true,
+      "volume_flux_decrease_experiment_ci_excludes_zero": true
+    },
+    "experiment_grouped_evidence_eligible": true,
+    "independent_lab_mechanism_holdout_passed": false,
+    "initial_spreading_area_rate": {
+      "Y27632_cells": 121,
+      "Y27632_experiment_means": {
+        "author_experiment_date:20180220": 27.30126719790691,
+        "author_experiment_date:20180308": 31.77113349355634,
+        "author_experiment_date:20180517": 44.71345232347993,
+        "author_experiment_date:20180605": 58.29274655406718
+      },
+      "Y27632_independent_experiments": 4,
+      "Y27632_minus_control_experiment_mean_difference": 25.360140641348032,
+      "cells_are_not_inference_units": true,
+      "control_cells": 194,
+      "control_experiment_means": {
+        "author_experiment_label:20180220 hela spreading 20xPA FN RICM 1": 12.743216629074205,
+        "author_experiment_label:20180220 hela spreading 20xPA FN RICM 2": 16.728670435233443,
+        "author_experiment_label:20180308 HeLa RICM 20xPA cntrl30minincub": 16.006640688406016
+      },
+      "control_independent_experiments": 3,
+      "direction": "increases",
+      "independent_experiment_bootstrap_95ci": [
+        14.165673066686349,
+        37.59064205781218
+      ],
+      "inference_unit": "author_independent_experiment"
+    },
+    "initial_volume_flux": {
+      "Y27632_cells": 121,
+      "Y27632_experiment_means": {
+        "author_experiment_date:20180220": -26.20233012387585,
+        "author_experiment_date:20180308": -14.46806739378782,
+        "author_experiment_date:20180517": -12.211249318286063,
+        "author_experiment_date:20180605": -17.577626891797227
+      },
+      "Y27632_independent_experiments": 4,
+      "Y27632_minus_control_experiment_mean_difference": -11.837259998581555,
+      "cells_are_not_inference_units": true,
+      "control_cells": 194,
+      "control_experiment_means": {
+        "author_experiment_label:20180220 hela spreading 20xPA FN RICM 1": -5.582182272903151,
+        "author_experiment_label:20180220 hela spreading 20xPA FN RICM 2": -5.167750134019922,
+        "author_experiment_label:20180308 HeLa RICM 20xPA cntrl30minincub": -6.582742893142485
+      },
+      "control_independent_experiments": 3,
+      "direction": "decreases",
+      "independent_experiment_bootstrap_95ci": [
+        -17.49120600799866,
+        -7.303621025267813
+      ],
+      "inference_unit": "author_independent_experiment"
+    },
+    "may_mutate_physics": false,
+    "observable_constraint_eligible": true,
+    "operator_assumptions": [
+      "constant membrane bending rigidity is required to interpret force squared as apparent membrane tension",
+      "the AFM tether-pull geometry must be represented by an Aleph measurement operator",
+      "Y-27632 also affects actomyosin, spreading, ion flux, and membrane reservoirs, so it does not identify one parameter"
+    ],
+    "source": {
+      "accession": "10.7554/eLife.72381",
+      "cell_type": "HeLa Kyoto",
+      "external_holdout_design": false,
+      "independent_lab_dataset_present": true,
+      "intervention": "Y27632_100_micromolar"
+    },
+    "source_reconciliation": {
+      "Y27632_area_rate_raw_table_minus_summary_mean": 0.6760719802659665,
+      "Y27632_volume_flux_reconciles": true,
+      "control_reconciles_after_one_explicit_author_summary_exclusion": true,
+      "policy": "preserve the per-cell raw dVdt_dAdt workbook; disclose rather than overwrite its Y-27632 area-rate mismatch with data_sum.xlsx",
+      "published_Figure2D_data_sum_means": {
+        "Y27632_100_micromolar:initial_spreading_area_rate": 34.17657354976074,
+        "Y27632_100_micromolar:initial_volume_flux": -16.23142630309834,
+        "vehicle_control:initial_spreading_area_rate": 15.429947335083202,
+        "vehicle_control:initial_volume_flux": -5.882967321817296
+      },
+      "raw_manifest_cell_means": {
+        "Y27632_100_micromolar:initial_spreading_area_rate": 34.852645530026706,
+        "Y27632_100_micromolar:initial_volume_flux": -16.231426303098345,
+        "vehicle_control:initial_spreading_area_rate": 15.4299473350832,
+        "vehicle_control:initial_volume_flux": -5.882967321817296
+      }
+    },
+    "task": "experiment_grouped_mechano_osmotic_and_membrane_tether_evidence",
+    "tether_force_is_apparent_membrane_tension_proxy": true,
+    "tether_force_is_direct_cortical_tension": false,
+    "unit_provenance": {
+      "initial_spreading_area_rate": {
+        "author_header": "dA/dt i (\u00b5m2/min)",
+        "source_locator": "zip:Figure2/Figure2D/data_sum.xlsx!Sheet1!B1",
+        "source_sha256": "e3d8035c3c008d7aed5bc88a817b9d94133e96aaf8ca7a0f9ecd574328011fc2",
+        "unit": "square_micrometre_per_minute"
+      },
+      "initial_volume_flux": {
+        "author_header": "dV/dt i (\u00b5m3/min)",
+        "source_locator": "zip:Figure2/Figure2D/data_sum.xlsx!Sheet1!E1",
+        "source_sha256": "e3d8035c3c008d7aed5bc88a817b9d94133e96aaf8ca7a0f9ecd574328011fc2",
+        "unit": "cubic_micrometre_per_minute"
+      }
+    }
+  },
+  "mtrack_emt_audit": {
+    "OOD_refusal_validated": false,
+    "aleph_authority": "none",
+    "cross_lab_vimentin_direction_context": {
+      "MTRACK_live_VIM_RFP_late_vs_early_direction": "decrease",
+      "directions_agree": false,
+      "fixed_IF_TGF_beta1_vs_control_vimentin_direction": "increase",
+      "inferential_cross_assay_equivalence_claimed": false,
+      "source": "figshare-26500210-exif-a549-emt-4plex"
+    },
+    "design_audit": {
+      "biological_replicates_released": false,
+      "frames_are_repeated_technical_measurements": true,
+      "frames_permitted_as_train_test_units": false,
+      "paper_reports_10_minute_TRITC_interval": true,
+      "timepoints": 10,
+      "trajectory_split_groups": 1,
+      "untreated_control_released": false
+    },
+    "independent_dataset_holdout": false,
+    "independent_lab_holdout": false,
+    "limitations": [
+      "the public GUI example contains one xy01 trajectory and no untreated control",
+      "ten timepoints are correlated technical measurements, not ten independent samples",
+      "late-versus-early changes cannot be attributed uniquely to EMT without a control trajectory",
+      "live endogenous VIM-RFP intensity is not assumed numerically equivalent to fixed-antibody IF",
+      "the released image-data license is not stated",
+      "no numeric Aleph parameter range is identified"
+    ],
+    "may_select_aleph_parameter": false,
+    "observable_evidence_eligible": false,
+    "pre_sweep_role": {
+      "candidate_mechanism_families": [
+        "intermediate_filament_remodelling",
+        "cell_shape_remodelling",
+        "cell_cell_adhesion",
+        "actomyosin_contractility"
+      ],
+      "may_emit_sweep_axis": false,
+      "numeric_range": null,
+      "required_before_promotion": [
+        "untreated and treated biological-replicate-complete trajectories",
+        "independent-lab common-task temporal validation",
+        "calibrated uncertainty and OOD refusal",
+        "Aleph live-image observation operator and forward sensitivity"
+      ],
+      "role": "future_temporal_state_conditioning_and_sweep_space_reduction"
+    },
+    "representation_training_eligible": true,
+    "schema": "aleph.outer_library.mtrack_emt_temporal_evaluation.v1",
+    "source": {
+      "dataset_id": "github-mtrack-a549-tgfb4ng-xy01",
+      "lab_group": "Xing_Lab_University_of_Pittsburgh_with_ATCC_Cell_Systems",
+      "paper_doi": "10.1126/sciadv.aba9319"
+    },
+    "state_axis": "EMT_epithelial_mesenchymal_state",
+    "task": "live_VIM_RFP_EMT_temporal_representation_diagnostic",
+    "temporal_descriptive_trends": [
+      {
+        "early_three_median": 34768.0,
+        "feature": "mask_area_pixels",
+        "late_minus_early": 28399.0,
+        "late_three_median": 63167.0,
+        "spearman_time_correlation": 0.9515151515151514
+      },
+      {
+        "early_three_median": 1900.0,
+        "feature": "mask_boundary_pixels",
+        "late_minus_early": 1861.0,
+        "late_three_median": 3761.0,
+        "spearman_time_correlation": 0.9272727272727272
+      },
+      {
+        "early_three_median": 1.0031397174254317,
+        "feature": "mask_bbox_aspect_ratio",
+        "late_minus_early": 0.10911099482528042,
+        "late_three_median": 1.1122507122507121,
+        "spearman_time_correlation": 0.5393939393939393
+      },
+      {
+        "early_three_median": 486.60035089737687,
+        "feature": "VIM_RFP_masked_mean",
+        "late_minus_early": -15.12301304691698,
+        "late_three_median": 471.4773378504599,
+        "spearman_time_correlation": -0.9151515151515152
+      },
+      {
+        "early_three_median": 81.14099365984153,
+        "feature": "VIM_RFP_masked_std",
+        "late_minus_early": -23.85179379194463,
+        "late_three_median": 57.2891998678969,
+        "spearman_time_correlation": -0.8060606060606059
+      },
+      {
+        "early_three_median": 69.05181659655176,
+        "feature": "VIM_RFP_foreground_background_difference",
+        "late_minus_early": -18.206115913347844,
+        "late_three_median": 50.845700683203916,
+        "spearman_time_correlation": -0.9151515151515152
+      },
+      {
+        "early_three_median": 9.434386253356934,
+        "feature": "VIM_RFP_foreground_horizontal_gradient",
+        "late_minus_early": -1.0592994689941406,
+        "late_three_median": 8.375086784362793,
+        "spearman_time_correlation": -0.9272727272727272
+      },
+      {
+        "early_three_median": 9.542623519897461,
+        "feature": "VIM_RFP_foreground_vertical_gradient",
+        "late_minus_early": -1.1742963790893555,
+        "late_three_median": 8.368327140808105,
+        "spearman_time_correlation": -0.9515151515151514
+      }
+    ],
+    "uncertainty_holdout_passed": false
+  },
+  "multitask_model_audit": {
+    "admitted_evidence_heads": [
+      "fibrotic_state_mechanism",
+      "paired_migration_state",
+      "piezo1_calcium_mechanism",
+      "senescence_transcriptomic_direction"
+    ],
+    "blocked_external_classifier_heads": [
+      "calcium_cell_state",
+      "PBMC_cell_type_IFN_pre_sweep_context"
+    ],
+    "general_cell_type_state_model_ready": false,
+    "may_select_aleph_parameter": false,
+    "model_family": "task_scoped_multimodal_multihead",
+    "production_eligible": false,
+    "task_scoped_evidence_runtime_ready": true
+  },
+  "nematic_tfm_audit": {
+    "aleph_authority": "none",
+    "aleph_parameter_proposal_eligible": false,
+    "dataset_id": "dataverse-data2772-nih3t3-cellular-nematics",
+    "design_audit": {
+      "fields_treated_as_biological_replicates": false,
+      "frames_treated_as_independent_samples": false,
+      "independent_lab_holdout_within_source": false,
+      "uncertainty_holdout_passed": false
+    },
+    "figure_S9_paired_technical_FOV_contrasts": {
+      "mean_maximum_principal_tension": {
+        "FOV_count": 12,
+        "FOVs_with_decrease": 12,
+        "after_FOV_mean": 5.1825546655008505,
+        "before_FOV_mean": 25.402471159298596,
+        "exact_technical_sign_probability_all_same_direction": 0.000244140625,
+        "inference_warning": "fields of view are nested technical replicates from one dated culture/batch; the bootstrap and sign probability are descriptive, not biological-replicate inference",
+        "mean_paired_change_after_minus_before": -20.219916493797747,
+        "pooled_after_to_before_ratio": 0.20401773642418927,
+        "technical_FOV_bootstrap_95ci": [
+          -22.212784825197488,
+          -18.418634883328338
+        ]
+      },
+      "mean_traction_magnitude": {
+        "FOV_count": 12,
+        "FOVs_with_decrease": 12,
+        "after_FOV_mean": 30.178018661492075,
+        "before_FOV_mean": 136.88581948980973,
+        "exact_technical_sign_probability_all_same_direction": 0.000244140625,
+        "inference_warning": "fields of view are nested technical replicates from one dated culture/batch; the bootstrap and sign probability are descriptive, not biological-replicate inference",
+        "mean_paired_change_after_minus_before": -106.70780082831766,
+        "pooled_after_to_before_ratio": 0.22046124846218007,
+        "technical_FOV_bootstrap_95ci": [
+          -117.08191129682685,
+          -97.18556279985312
+        ]
+      },
+      "median_maximum_principal_tension": {
+        "FOV_count": 12,
+        "FOVs_with_decrease": 12,
+        "after_FOV_mean": 4.453022987078386,
+        "before_FOV_mean": 21.395573114900838,
+        "exact_technical_sign_probability_all_same_direction": 0.000244140625,
+        "inference_warning": "fields of view are nested technical replicates from one dated culture/batch; the bootstrap and sign probability are descriptive, not biological-replicate inference",
+        "mean_paired_change_after_minus_before": -16.942550127822447,
+        "pooled_after_to_before_ratio": 0.20812824050864526,
+        "technical_FOV_bootstrap_95ci": [
+          -18.64072798189282,
+          -15.390585066379137
+        ]
+      },
+      "median_traction_magnitude": {
+        "FOV_count": 12,
+        "FOVs_with_decrease": 12,
+        "after_FOV_mean": 23.284277936549817,
+        "before_FOV_mean": 109.66853602352462,
+        "exact_technical_sign_probability_all_same_direction": 0.000244140625,
+        "inference_warning": "fields of view are nested technical replicates from one dated culture/batch; the bootstrap and sign probability are descriptive, not biological-replicate inference",
+        "mean_paired_change_after_minus_before": -86.38425808697484,
+        "pooled_after_to_before_ratio": 0.21231502471734634,
+        "technical_FOV_bootstrap_95ci": [
+          -95.67448355251568,
+          -78.00937853788986
+        ]
+      },
+      "rms_traction_magnitude": {
+        "FOV_count": 12,
+        "FOVs_with_decrease": 12,
+        "after_FOV_mean": 39.871172822159124,
+        "before_FOV_mean": 168.55047667809143,
+        "exact_technical_sign_probability_all_same_direction": 0.000244140625,
+        "inference_warning": "fields of view are nested technical replicates from one dated culture/batch; the bootstrap and sign probability are descriptive, not biological-replicate inference",
+        "mean_paired_change_after_minus_before": -128.67930385593232,
+        "pooled_after_to_before_ratio": 0.2365533079939469,
+        "technical_FOV_bootstrap_95ci": [
+          -143.38487077641372,
+          -115.02046722002822
+        ]
+      }
+    },
+    "independent_lab_holdout": false,
+    "lab_group": "ibec-trepat-guillamat-cellular-nematics",
+    "limitations": [
+      "one dated culture/batch with 12 technical fields of view",
+      "PIV contains one longitudinal sequence",
+      "no geometry-matched Aleph TFM/MSM observation operator has passed parity",
+      "the t2 table role is unresolved and therefore excluded"
+    ],
+    "manifest": {
+      "accession": "10.34810/DATA2772",
+      "aleph_authority": "none",
+      "biological_replicates_claimed": 0,
+      "dataset_id": "dataverse-data2772-nih3t3-cellular-nematics",
+      "modalities": [
+        "particle_image_velocimetry_derived",
+        "traction_force_and_monolayer_stress_microscopy_derived"
+      ],
+      "observations": 372,
+      "paper_doi": "10.1126/science.adz9174",
+      "piv": {
+        "frame_count": 63,
+        "sequence_count": 1,
+        "split_contract": "all 63 frames remain one sequence and one split group",
+        "vectors_admitted_flag_0": 191765,
+        "vectors_admitted_interpolated_flag_999": 47385,
+        "vectors_admitted_total": 239150,
+        "vectors_excluded_by_flag": {
+          "-22": 78,
+          "9999": 2944
+        },
+        "vectors_total": 242172
+      },
+      "samples": 2,
+      "schema": "aleph.outer_library.dataverse_data2772_manifest.v1",
+      "tfm_msm": {
+        "after_table_index": 1,
+        "before_table_index": 0,
+        "biological_culture_or_batch_count": 1,
+        "f13_to_f30_withheld_reason": "not members of the complete n=12 paired mask/stress set used in Figure S9",
+        "split_contract": "12 fields are technical replicates nested in one dated culture/batch and must never cross train/test splits",
+        "technical_fields_of_view": 12,
+        "withheld_reason": "t0 and t1 reproduce Figure S9 before/after distributions; t2 does not, and its role is not unambiguously documented",
+        "withheld_table_index": 2
+      }
+    },
+    "observable_evidence_eligible": false,
+    "piv_representation": {
+      "external_holdout_eligible": false,
+      "frames": 63,
+      "single_sequence": true,
+      "valid_and_documented_interpolated_vectors": 239150
+    },
+    "pre_sweep_constraint": {
+      "candidate_axes": [
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness",
+        "aleph.vertical.nmii.MotorKinetics.attachment_rate",
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um"
+      ],
+      "direction": "myosin_II_inhibition_reduces_traction_and_monolayer_tension",
+      "future_sweep_range_reduction_intended": true,
+      "identifiability": "TFM/MSM jointly constrain an effective contractility/load-transfer family; they do not separately identify motor, stress-fibre, cortex, or adhesion axes",
+      "may_emit_numeric_parameter_range": false,
+      "may_select_Aleph_parameter": false,
+      "mechanism_family": "actomyosin_contractility_and_load_transfer",
+      "purpose": "reduce and rank a future Aleph contractility sweep; this does not replace the required Aleph forward simulation",
+      "required_Aleph_operators": [
+        "geometry_matched_mean_traction_magnitude_Pa",
+        "geometry_matched_maximum_principal_monolayer_tension_mN_per_m"
+      ]
+    },
+    "published_direction_reproduced_from_source_tables": true,
+    "schema": "aleph.outer_library.dataverse_data2772_evidence.v1",
+    "source_role_discrepancy": {
+      "detected": true,
+      "resolution": "withhold t2 until authors or source metadata disambiguate its role",
+      "t0_t1_reproduce_published_before_after_histograms": true,
+      "t2_admitted": false
+    },
+    "task": "myosin_II_inhibition_force_and_tension_direction",
+    "uncertainty_holdout_passed": false
+  },
+  "next_action": "run unit-matched Aleph forward sensitivity calibration; separately improve the per-cell classifier",
+  "observable_evidence_channel": {
+    "constraints": [
+      {
+        "authority": "evidence_only",
+        "direction": "decreases_with_GsMTx4_under_active_PIEZO1_nanoswitch_stimulation",
+        "external_bootstrap_ci95": [
+          -0.26093470252119505,
+          -0.08741553011439492
+        ],
+        "external_equal_stratum_mean_difference": -0.1670409493898102,
+        "observable": "intracellular_calcium_response_AUC",
+        "scope": "HeLa discovery; EA.hy926 LooPINS/CaPINS confirmation"
+      },
+      {
+        "authority": "evidence_only",
+        "direction": "increases_with_TGF_beta_1_and_reverses_with_celastrol",
+        "external_TGF_beta_1_bootstrap_ci95": [
+          0.7698662429941832,
+          0.9740879865801384
+        ],
+        "external_celastrol_reversal_bootstrap_ci95": [
+          1.0074997913033594,
+          1.1183919625489214
+        ],
+        "observable": "TGF_beta_1_fibrotic_state_signature",
+        "scope": "rat tendon IF discovery; independent human dermal fibroblast bulk-RNA confirmation"
+      },
+      {
+        "authority": "evidence_only",
+        "confirmation_status": "retrospective_external_lab_evaluation_requires_new_lab",
+        "direction": "positive_projection_on_lab1_paired_perturbation_direction",
+        "external_lab3_conformal_uncertainty": {
+          "alpha": 0.1,
+          "calibration_count": 54,
+          "class_coverage": {
+            "0": 1.0,
+            "1": 1.0
+          },
+          "coverage": 1.0,
+          "empty_set_fraction": 0.0,
+          "mean_set_size": 1.3518518518518519,
+          "method": "class_conditional_Mondrian_split_conformal",
+          "singleton_accuracy": 1.0,
+          "singleton_fraction": 0.6481481481481481,
+          "test_count": 54,
+          "uncertainty_holdout_passed": true
+        },
+        "external_lab3_experiment_effect_bootstrap_ci95": [
+          1.7801097034618312,
+          2.5999908747127187
+        ],
+        "external_lab3_metrics": {
+          "auroc": 0.9849108367626886,
+          "balanced_accuracy": 0.7407407407407407,
+          "class_counts": {
+            "0": 27,
+            "1": 27
+          },
+          "macro_f1": 0.7220588235294118,
+          "sample_count": 54,
+          "threshold": 0.0
+        },
+        "identifiability": "pathway_perturbation_not_one_Aleph_parameter",
+        "observable": "multivariate_live_cell_ROCK_inhibition_signature",
+        "scope": "HT1080; three labs; matched-control assay only"
+      },
+      {
+        "area_rate_experiment_bootstrap_ci95": [
+          14.165673066686349,
+          37.59064205781218
+        ],
+        "authority": "evidence_only",
+        "direction": "Y27632_increases_initial_area_rate_decreases_volume_flux_and_transiently_increases_membrane_tether_force",
+        "early_tether_force_paired_experiment_bootstrap_ci95_pN": [
+          8.638099135802467,
+          9.604740800865798
+        ],
+        "identifiability": "multimechanism_drug_contrast_not_one_Aleph_parameter",
+        "observable": "HeLa_mechano_osmotic_spreading_and_AFM_tether_signature",
+        "scope": "HeLa Kyoto; fibronectin spreading; 100 micromolar Y-27632",
+        "steady_state_tether_force_experiment_ci_includes_zero": true,
+        "volume_flux_experiment_bootstrap_ci95": [
+          -17.49120600799866,
+          -7.303621025267813
+        ]
+      }
+    ],
+    "may_select_aleph_parameter": false,
+    "status": "evidence_constraint_eligible"
+  },
+  "observation_operator_audit": {
+    "aleph_source_files_mutated": false,
+    "candidate_native_external_observables": [
+      "tissue_traction_force_per_cell"
+    ],
+    "checks": {
+      "all_declared_source_evidence_resolves": true,
+      "all_shortcuts_explicitly_forbidden": true,
+      "all_statuses_allowed": true,
+      "authority_is_conservative_inventory": true,
+      "entries_present": true,
+      "external_observables_unique": true,
+      "no_unvalidated_entry_is_promotable": true,
+      "schema_supported": true,
+      "unavailable_entries_have_no_operator": true,
+      "validated_statuses_have_complete_validation": true
+    },
+    "duplicate_external_observables": [],
+    "entries": [
+      {
+        "external_observable": "CDH1_RNA_abundance",
+        "forbidden_shortcut_recorded": true,
+        "operator_id": null,
+        "promotable_to_numeric_sweep": false,
+        "required_validation_fields_present": false,
+        "source_exists": null,
+        "source_path": null,
+        "source_sha256": null,
+        "source_symbol_present": null,
+        "status": "unavailable",
+        "status_allowed": true
+      },
+      {
+        "external_observable": "VIM_RNA_abundance",
+        "forbidden_shortcut_recorded": true,
+        "operator_id": null,
+        "promotable_to_numeric_sweep": false,
+        "required_validation_fields_present": false,
+        "source_exists": null,
+        "source_path": null,
+        "source_sha256": null,
+        "source_symbol_present": null,
+        "status": "unavailable",
+        "status_allowed": true
+      },
+      {
+        "external_observable": "E_cadherin_protein_abundance",
+        "forbidden_shortcut_recorded": true,
+        "operator_id": null,
+        "promotable_to_numeric_sweep": false,
+        "required_validation_fields_present": false,
+        "source_exists": null,
+        "source_path": null,
+        "source_sha256": null,
+        "source_symbol_present": null,
+        "status": "unavailable",
+        "status_allowed": true
+      },
+      {
+        "external_observable": "Vimentin_protein_abundance",
+        "forbidden_shortcut_recorded": true,
+        "operator_id": null,
+        "promotable_to_numeric_sweep": false,
+        "required_validation_fields_present": false,
+        "source_exists": null,
+        "source_path": null,
+        "source_sha256": null,
+        "source_symbol_present": null,
+        "status": "unavailable",
+        "status_allowed": true
+      },
+      {
+        "external_observable": "tissue_traction_force_per_cell",
+        "forbidden_shortcut_recorded": true,
+        "operator_id": "aleph.vertical.connectors_transfer.ExteriorStokesTractionConnector.read_forces",
+        "promotable_to_numeric_sweep": false,
+        "required_validation_fields_present": false,
+        "source_exists": true,
+        "source_path": "aleph/vertical/connectors_transfer.py",
+        "source_sha256": "b986f95cbaadbfb39b6c7877fbd17a8c4bb43c9cc9fbc358ca9006a797d79646",
+        "source_symbol_present": true,
+        "status": "candidate_native",
+        "status_allowed": true
+      },
+      {
+        "external_observable": "membrane_tether_plateau_force",
+        "forbidden_shortcut_recorded": true,
+        "operator_id": null,
+        "promotable_to_numeric_sweep": false,
+        "required_validation_fields_present": false,
+        "source_exists": true,
+        "source_path": "aleph/vertical/cortex_filaments.py",
+        "source_sha256": "d52981b4dc3de65b882b84659049130ab7460d7af84982542eed80c5a8ab9d0f",
+        "source_symbol_present": true,
+        "status": "unavailable",
+        "status_allowed": true
+      }
+    ],
+    "failed_checks": [],
+    "may_emit_numeric_parameter_range": false,
+    "may_select_aleph_parameter": false,
+    "passed": true,
+    "promotable_external_observables": [],
+    "registry_schema": "aleph.outer_library.observation_operator_registry.v1",
+    "schema": "aleph.outer_library.observation_operator_audit.v1",
+    "unavailable_external_observables": [
+      "CDH1_RNA_abundance",
+      "E_cadherin_protein_abundance",
+      "VIM_RNA_abundance",
+      "Vimentin_protein_abundance",
+      "membrane_tether_plateau_force"
+    ]
+  },
+  "opto_force_audit": {
+    "aleph_authority": "none",
+    "aleph_parameter_proposal_eligible": false,
+    "dataset_id": "dryad-sj3tx9683-opto-mdck-force-propagation",
+    "design_audit": {
+      "dataset_lab_holdout_possible": false,
+      "objects_treated_as_biological_replicates": false,
+      "pickle_files_executed": false,
+      "stats_fullstim_admitted": false,
+      "stats_fullstim_mismatch_detected": true,
+      "uncertainty_holdout_passed": false
+    },
+    "independent_lab_holdout": false,
+    "lab_group": "crbm-balland-ruppel-force-propagation",
+    "limitations": [
+      "author sample/date identifiers are absent from the released aggregate table",
+      "raw TFM maps exist in a much larger archive but are not part of this selected acquisition",
+      "stats_fullstim.csv does not summarize the released fullstim_data.csv groups",
+      "no matched Aleph contour observation operator has passed forward sensitivity"
+    ],
+    "manifest": {
+      "accession": "10.5061/dryad.sj3tx9683",
+      "aleph_authority": "none",
+      "author_sample_identifiers_available": false,
+      "dataset_id": "dryad-sj3tx9683-opto-mdck-force-propagation",
+      "objects": 68,
+      "observations": 476,
+      "paper_doi": "10.7554/eLife.83588",
+      "samples": 1,
+      "schema": "aleph.outer_library.dryad_sj3tx9683_manifest.v1",
+      "split_contract": "all 68 objects remain one indivisible dataset/sample group",
+      "stats_fullstim_csv_admitted": false,
+      "untrusted_dat_pickles_executed": false
+    },
+    "observable_evidence_eligible": false,
+    "overall_direction": {
+      "usually_positive_in_both_axes": true,
+      "x_positive_objects": 47,
+      "x_total": 68,
+      "y_positive_objects": 46,
+      "y_total": 68
+    },
+    "pre_sweep_constraint": {
+      "direction": "RhoA_activation_usually_increases_cortical_surface_tension",
+      "future_sweep_range_reduction_intended": true,
+      "identifiability": "relative contour response does not identify motor kinetics, cortical material, stress-fibre line tension, and adhesion load transfer separately",
+      "may_emit_numeric_parameter_range": false,
+      "may_select_Aleph_parameter": false,
+      "purpose": "rank a future Aleph active-contractility sweep before forward simulation",
+      "required_Aleph_operators": [
+        "micropattern_contour_surface_tension_x_mN_per_m",
+        "micropattern_contour_surface_tension_y_mN_per_m"
+      ]
+    },
+    "relative_surface_tension_increase_by_geometry": {
+      "opto_MDCK_doublet_aspect_ratio_1_to_1": {
+        "relative_surface_tension_increase_x": {
+          "mean": 0.07416755873409567,
+          "median": 0.029270639561092993,
+          "object_count": 22,
+          "positive_objects": 16
+        },
+        "relative_surface_tension_increase_y": {
+          "mean": 0.08850470789426367,
+          "median": 0.06615938926129988,
+          "object_count": 22,
+          "positive_objects": 14
+        }
+      },
+      "opto_MDCK_doublet_aspect_ratio_1_to_2": {
+        "relative_surface_tension_increase_x": {
+          "mean": 0.024938983060307725,
+          "median": 0.028839693728654303,
+          "object_count": 30,
+          "positive_objects": 18
+        },
+        "relative_surface_tension_increase_y": {
+          "mean": 0.02097014904208843,
+          "median": 0.009248750470007644,
+          "object_count": 30,
+          "positive_objects": 17
+        }
+      },
+      "opto_MDCK_doublet_aspect_ratio_2_to_1": {
+        "relative_surface_tension_increase_x": {
+          "mean": 0.07297775546003687,
+          "median": 0.07473074626510329,
+          "object_count": 16,
+          "positive_objects": 13
+        },
+        "relative_surface_tension_increase_y": {
+          "mean": 0.6414823187482867,
+          "median": 0.17225256389976784,
+          "object_count": 16,
+          "positive_objects": 15
+        }
+      }
+    },
+    "schema": "aleph.outer_library.dryad_sj3tx9683_evidence.v1",
+    "task": "RhoA_activation_cortical_surface_tension_direction",
+    "uncertainty_holdout_passed": false
+  },
+  "parameter_axis_candidates": [
+    {
+      "calibration_contract": "aleph.outer_library.forward_sensitivity.v1",
+      "evidence_relation": "higher matrix tension co-occurs with higher traction, alpha-SMA, and Acta2",
+      "identifiability": "confounded_candidate_not_identified_by_observational_contrast",
+      "may_emit_sweep_axis": false,
+      "mechanistic_role": "effective stress-fibre/arc active tension",
+      "numeric_range": null,
+      "parameter": "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+      "parameter_unit": "pN",
+      "status": "blocked_pending_forward_sensitivity_calibration"
+    },
+    {
+      "calibration_contract": "aleph.outer_library.forward_sensitivity.v1",
+      "evidence_relation": "higher matrix tension co-occurs with higher traction, alpha-SMA, and Acta2",
+      "identifiability": "confounded_candidate_not_identified_by_observational_contrast",
+      "may_emit_sweep_axis": false,
+      "mechanistic_role": "single-head motor force scale",
+      "numeric_range": null,
+      "parameter": "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness",
+      "parameter_unit": "pN_per_um",
+      "status": "blocked_pending_forward_sensitivity_calibration"
+    },
+    {
+      "calibration_contract": "aleph.outer_library.forward_sensitivity.v1",
+      "evidence_relation": "higher matrix tension co-occurs with higher traction, alpha-SMA, and Acta2",
+      "identifiability": "confounded_candidate_not_identified_by_observational_contrast",
+      "may_emit_sweep_axis": false,
+      "mechanistic_role": "motor bound-fraction kinetics",
+      "numeric_range": null,
+      "parameter": "aleph.vertical.nmii.MotorKinetics.attachment_rate",
+      "parameter_unit": "per_s",
+      "status": "blocked_pending_forward_sensitivity_calibration"
+    },
+    {
+      "calibration_contract": "aleph.outer_library.forward_sensitivity.v1",
+      "evidence_relation": "higher matrix tension co-occurs with higher traction, alpha-SMA, and Acta2",
+      "identifiability": "confounded_candidate_not_identified_by_observational_contrast",
+      "may_emit_sweep_axis": false,
+      "mechanistic_role": "ligand-side load transmission",
+      "numeric_range": null,
+      "parameter": "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um",
+      "parameter_unit": "pN_per_um",
+      "status": "blocked_pending_forward_sensitivity_calibration"
+    },
+    {
+      "calibration_contract": "aleph.outer_library.forward_sensitivity.v1",
+      "evidence_relation": "higher matrix tension co-occurs with higher traction, alpha-SMA, and Acta2",
+      "identifiability": "confounded_candidate_not_identified_by_observational_contrast",
+      "may_emit_sweep_axis": false,
+      "mechanistic_role": "actin-side load transmission",
+      "numeric_range": null,
+      "parameter": "aleph.vertical.focal_adhesion.ClutchCard.anchor_stiffness_pn_per_um",
+      "parameter_unit": "pN_per_um",
+      "status": "blocked_pending_forward_sensitivity_calibration"
+    },
+    {
+      "calibration_contract": "aleph.outer_library.forward_sensitivity.v1",
+      "evidence_relation": "Y-27632 transiently increases AFM tether force during spreading, but has no experiment-level steady-state tether-force effect",
+      "identifiability": "one tether force identifies only sigma_bilayer + W; no current Aleph axis represents W and neither term is separately identified",
+      "may_emit_sweep_axis": false,
+      "mechanistic_role": "membrane-cortex attachment energy W in sigma_app = sigma_bilayer + W",
+      "numeric_range": null,
+      "parameter": "requested_nonexistent_axis:membrane_cortex_attachment_energy_pn_per_um",
+      "parameter_unit": "pN_per_um",
+      "status": "blocked_missing_physics_term_and_exact_nonidentifiability"
+    }
+  ],
+  "piv_contractility_audit": {
+    "OOD_refusal": {
+      "declared_domains": [
+        "2D_C2C12_cell_line",
+        "MPa_to_GPa_LCN_substrate",
+        "mLCN_1.0_stiffness_anisotropy",
+        "10_uM_blebbistatin"
+      ],
+      "refuse": [
+        "primary_or_iPSC_muscle_without_external_validation",
+        "physiologic_soft_or_3D_matrix_transfer",
+        "direct_force_or_traction_magnitude_inference",
+        "numeric_Aleph_active_tension_inference"
+      ]
+    },
+    "aleph_authority": "none",
+    "aleph_parameter_proposal_eligible": false,
+    "author_exclusion_audit": {
+      "green_maximum_density_cells": 9,
+      "maximum_density_time_after_confluence_h": 36,
+      "red_filled_cells_not_emitted": 112,
+      "style_annotations_verified_against_OOXML": true
+    },
+    "design_audit": {
+      "cross_split_biological_replicate_overlap_allowed": false,
+      "independent_dataset_holdout": false,
+      "independent_lab_holdout": false,
+      "observables_are_nested_technical_observations": true,
+      "reason": "this acquisition adds an independent provider and replicated perturbation, but no same-task model was trained on another aligned lab and sealed before this evaluation",
+      "split_unit": "author_independent_LCN_substrate",
+      "timepoints_are_nested_technical_observations": true
+    },
+    "fibronectin_orientation_nematic_order": {
+      "control_minus_blebbistatin": {
+        "all_group_A_replicates_above_all_group_B_replicates": true,
+        "biological_cluster_bootstrap_95ci": [
+          0.3863176618814721,
+          0.6768114140321015
+        ],
+        "bootstrap_is_exploratory_due_small_n": true,
+        "difference_definition": "vehicle_control_minus_blebbistatin",
+        "exact_randomization_two_sided_p": 0.3333333333333333,
+        "group_A_label": "vehicle_control",
+        "group_A_minus_group_B": 0.5315645379567868,
+        "group_A_replicate_means": [
+          0.8486674463829116,
+          0.595113750837645
+        ],
+        "group_B_label": "blebbistatin",
+        "group_B_replicate_means": [
+          0.20879608895617285,
+          0.17185603235081
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      },
+      "per_replicate": {
+        "author_independent_fig4_blebbistatin_10_micromolar_daily_mLCN_replicate_1": 0.20879608895617285,
+        "author_independent_fig4_blebbistatin_10_micromolar_daily_mLCN_replicate_2": 0.17185603235081,
+        "author_independent_fig4_vehicle_control_mLCN_replicate_1": 0.8486674463829116,
+        "author_independent_fig4_vehicle_control_mLCN_replicate_2": 0.595113750837645
+      }
+    },
+    "independent_dataset_holdout": false,
+    "independent_lab_holdout": false,
+    "late_post_blebbistatin_contrasts_t_ge_42h": {
+      "cell_speed": {
+        "biological_cluster_bootstrap_95ci": null,
+        "difference_definition": "vehicle_control_minus_blebbistatin",
+        "exact_randomization_two_sided_p": null,
+        "group_A_minus_group_B": -0.006905654670330108,
+        "reason": "fewer_than_two_biological_replicates_in_one_group"
+      },
+      "nematic_correlation_length": {
+        "all_group_A_replicates_above_all_group_B_replicates": true,
+        "biological_cluster_bootstrap_95ci": [
+          314.43205373333325,
+          471.95002060000024
+        ],
+        "bootstrap_is_exploratory_due_small_n": true,
+        "difference_definition": "vehicle_control_minus_blebbistatin",
+        "exact_randomization_two_sided_p": 0.3333333333333333,
+        "group_A_label": "vehicle_control",
+        "group_A_minus_group_B": 393.1910371666668,
+        "group_A_replicate_means": [
+          970.2809154666668,
+          815.8210647333333
+        ],
+        "group_B_label": "blebbistatin",
+        "group_B_replicate_means": [
+          498.33089486666654,
+          501.38901100000004
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      },
+      "orientation_order_parameter": {
+        "all_group_A_replicates_above_all_group_B_replicates": true,
+        "biological_cluster_bootstrap_95ci": [
+          0.24943333333333334,
+          0.3267066666666667
+        ],
+        "bootstrap_is_exploratory_due_small_n": true,
+        "difference_definition": "vehicle_control_minus_blebbistatin",
+        "exact_randomization_two_sided_p": 0.3333333333333333,
+        "group_A_label": "vehicle_control",
+        "group_A_minus_group_B": 0.28807000000000005,
+        "group_A_replicate_means": [
+          0.5636333333333334,
+          0.62134
+        ],
+        "group_B_label": "blebbistatin",
+        "group_B_replicate_means": [
+          0.2946333333333333,
+          0.3142000000000001
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      },
+      "velocity_correlation_length": {
+        "all_group_A_replicates_above_all_group_B_replicates": true,
+        "biological_cluster_bootstrap_95ci": [
+          32.1687800714285,
+          77.17115895604388
+        ],
+        "bootstrap_is_exploratory_due_small_n": true,
+        "difference_definition": "vehicle_control_minus_blebbistatin",
+        "exact_randomization_two_sided_p": 0.3333333333333333,
+        "group_A_label": "vehicle_control",
+        "group_A_minus_group_B": 54.66996951373619,
+        "group_A_replicate_means": [
+          356.838467,
+          400.6185303846153
+        ],
+        "group_B_label": "blebbistatin",
+        "group_B_replicate_means": [
+          323.44737142857144,
+          324.6696869285715
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      }
+    },
+    "limitations": [
+      "Fig. 4 has only two independent LCN substrates per condition",
+      "blebbistatin-treated speed is available for only one substrate and is descriptive only",
+      "the substrate is orders of magnitude stiffer than physiological muscle and is two-dimensional",
+      "PIV, order, and correlation lengths are observations rather than direct traction or tension measurements",
+      "another aligned lab and an Aleph observation operator are required before this head can constrain a numeric sweep"
+    ],
+    "manifest": {
+      "PIV_live_actin_observations": 1435,
+      "author_independent_LCN_substrates": 16,
+      "fibronectin_IF_orientation_observations": 720,
+      "observations": 2155,
+      "samples": 16
+    },
+    "maximum_density_anisotropy_contrasts": {
+      "orientation_order_parameter": {
+        "all_group_A_replicates_above_all_group_B_replicates": false,
+        "biological_cluster_bootstrap_95ci": [
+          0.009559803874999998,
+          0.48375612000000007
+        ],
+        "bootstrap_is_exploratory_due_small_n": false,
+        "difference_definition": "mLCN_anisotropic_minus_iLCN_isotropic",
+        "exact_randomization_two_sided_p": 0.07936507936507936,
+        "group_A_label": "mLCN_anisotropic",
+        "group_A_minus_group_B": 0.2672608999999999,
+        "group_A_replicate_means": [
+          0.8289303,
+          0.7387738,
+          0.4552751,
+          0.818214,
+          0.9161708
+        ],
+        "group_B_label": "iLCN_isotropic",
+        "group_B_replicate_means": [
+          0.4444002,
+          0.2929423,
+          0.3833801,
+          0.816125
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      },
+      "spatial_disorder_fraction": {
+        "all_group_A_replicates_above_all_group_B_replicates": false,
+        "biological_cluster_bootstrap_95ci": [
+          -0.23923608700000004,
+          -0.004435961000000044
+        ],
+        "bootstrap_is_exploratory_due_small_n": false,
+        "difference_definition": "mLCN_anisotropic_minus_iLCN_isotropic",
+        "exact_randomization_two_sided_p": 0.07936507936507936,
+        "group_A_label": "mLCN_anisotropic",
+        "group_A_minus_group_B": -0.13425534699999997,
+        "group_A_replicate_means": [
+          0.0,
+          0.05381944,
+          0.24305556,
+          0.01239669,
+          0.0
+        ],
+        "group_B_label": "iLCN_isotropic",
+        "group_B_replicate_means": [
+          0.2653061,
+          0.2678571,
+          0.1964286,
+          0.05484694
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      },
+      "velocity_correlation_length": {
+        "all_group_A_replicates_above_all_group_B_replicates": false,
+        "biological_cluster_bootstrap_95ci": [
+          0.43692452275001137,
+          76.31348343000002
+        ],
+        "bootstrap_is_exploratory_due_small_n": false,
+        "difference_definition": "mLCN_anisotropic_minus_iLCN_isotropic",
+        "exact_randomization_two_sided_p": 0.21428571428571427,
+        "group_A_label": "mLCN_anisotropic",
+        "group_A_minus_group_B": 34.846056869999984,
+        "group_A_replicate_means": [
+          148.245079,
+          242.1920472,
+          120.5292844,
+          134.78603,
+          181.385785
+        ],
+        "group_B_label": "iLCN_isotropic",
+        "group_B_replicate_means": [
+          131.154987,
+          127.908123,
+          143.292685,
+          119.970558
+        ],
+        "inference_unit": "author_independent_LCN_substrate"
+      }
+    },
+    "observable_evidence_eligible": false,
+    "pre_sweep_constraint": {
+      "directional_observation_constraint_eligible": true,
+      "expected_when_contractility_is_inhibited": {
+        "fibronectin_orientation_nematic_order": "decreases",
+        "late_nematic_correlation_length": "decreases",
+        "late_orientation_order_parameter": "decreases",
+        "late_velocity_correlation_length": "decreases"
+      },
+      "future_sweep_range_reduction_intended": true,
+      "identifiability": "blebbistatin is a multiscale nonmuscle-myosin-II perturbation and does not identify one Aleph parameter",
+      "latent": "supracellular_contractility_and_reciprocal_cell_ECM_alignment",
+      "may_emit_numeric_parameter_range": false,
+      "may_select_Aleph_parameter": false,
+      "required_Aleph_operators": [
+        "live_actin_orientation_order",
+        "nematic_correlation_length",
+        "velocity_correlation_length",
+        "fibronectin_orientation_distribution"
+      ]
+    },
+    "replicated_contractility_direction": true,
+    "representation_training_eligible": true,
+    "schema": "aleph.outer_library.dryad_08kprr59c_evidence.v1",
+    "source": {
+      "accession": "10.5061/dryad.08kprr59c",
+      "independent_provider_relative_to_existing_outer_library_PIV_sources": true,
+      "lab_group": "anseth-white-skillin-lab-cu-boulder",
+      "license": "cc0-1.0",
+      "paper_doi": "10.1126/sciadv.adn0235"
+    },
+    "task": "C2C12_supracellular_contractility_collective_flow_and_ECM_alignment_constraint",
+    "uncertainty": {
+      "cluster_bootstrap_unit": "LCN_substrate",
+      "formal_uncertainty_holdout_passed": false,
+      "n_per_Fig4_condition": 2,
+      "reason": "two substrates per treatment are insufficient for calibrated external uncertainty"
+    },
+    "uncertainty_holdout_passed": false
+  },
+  "representation_training_audits": [
+    {
+      "dataset": "dryad-d96w58-hdf-collective-velocity",
+      "mandatory_split_group": "valentine-lab-ucsb",
+      "may_count_as_external_holdout": false,
+      "may_select_aleph_parameter": false,
+      "reason": "spatial vectors and longitudinal points are useful for grouped representation learning but the source reports no independent culture identifiers",
+      "status": "admitted_training_only",
+      "technical_vector_count": 7645
+    },
+    {
+      "biological_substrates": 16,
+      "dataset": "dryad-08kprr59c-c2c12-supracontractility",
+      "may_count_as_external_holdout": false,
+      "may_select_aleph_parameter": false,
+      "reason": "exact-unit replicated PIV/IF direction is useful for pre-sweep ranking, but n=2 per intervention arm and no aligned external lab or Aleph observation operator prevent numeric calibration",
+      "replicated_contractility_direction": true,
+      "status": "admitted_training_direction_only"
+    },
+    {
+      "aligned_same_observable_holdout": false,
+      "cell_types": [
+        "C2C12_mouse_myoblast_myotube",
+        "NIH3T3_mouse_fibroblast",
+        "opto_MDCK_canine_epithelial"
+      ],
+      "dataset": "cross-cell-type-actomyosin-contractility",
+      "lab_groups": [
+        "anseth-white-skillin-lab-cu-boulder",
+        "crbm-balland-ruppel-force-propagation",
+        "ibec-trepat-guillamat-cellular-nematics"
+      ],
+      "may_count_as_external_holdout": false,
+      "may_select_aleph_parameter": false,
+      "reason": "three labs give directionally compatible intervention evidence, but different observables and unresolved biological hierarchies do not form a numeric cross-lab calibration",
+      "status": "admitted_directional_pre_sweep_ranking_only"
+    },
+    {
+      "dataset": "zenodo-14692589-tfm-fret",
+      "lab_group": "KU_Leuven_Aytekin_Ramon_Van_Oosterwyck",
+      "may_count_as_external_holdout": false,
+      "may_select_aleph_parameter": false,
+      "paired_TFM_FRET_categories_reproduced": true,
+      "reason": "mean traction in Pa reproduces the stiffness direction in an independent lab, while simultaneous FA traction/FRET exposes load-transfer nonidentifiability; released cells lack replicate mapping",
+      "same_observable_external_direction_reproduced": true,
+      "status": "admitted_cross_lab_direction_and_multiscale_identifiability_only"
+    },
+    {
+      "candidate_mechanism_families": [
+        "cell_cell_adhesion",
+        "intermediate_filament_remodelling",
+        "actomyosin_contractility",
+        "growth_factor_signalling_context"
+      ],
+      "common_task_with_HPA_localization_labels": false,
+      "condition_labels_are_per_cell_ground_truth": false,
+      "dataset": "figshare-26500210-exif-a549-emt-4plex",
+      "future_sweep_role": "condition the eventual Aleph sweep on EMT context and reject context-incompatible candidates; never replace the sweep",
+      "may_count_as_external_holdout": false,
+      "may_emit_numeric_parameter_range": false,
+      "may_select_aleph_parameter": false,
+      "reason": "raw multichannel IF adds independent-provider EMT treatment representation, but one plate date and treatment-level labels cannot identify a physical parameter or validate uncertainty",
+      "state_axis": "EMT_epithelial_mesenchymal_state",
+      "status": "admitted_training_only"
+    },
+    {
+      "candidate_mechanism_families": [
+        "intermediate_filament_remodelling",
+        "cell_shape_remodelling",
+        "cell_cell_adhesion",
+        "actomyosin_contractility"
+      ],
+      "dataset": "github-mtrack-a549-tgfb4ng-xy01",
+      "fixed_IF_vs_live_VIM_RFP_direction_agrees": false,
+      "future_sweep_role": "block intensity-only EMT sweep conditioning when live and fixed assays conflict; retain temporal morphology as training context",
+      "may_count_as_external_holdout": false,
+      "may_count_frames_as_independent_samples": false,
+      "may_emit_numeric_parameter_range": false,
+      "may_select_aleph_parameter": false,
+      "reason": "one TGF-beta-treated live trajectory has no control or biological replicates and its late VIM-RFP intensity direction conflicts with the fixed-IF treatment contrast",
+      "single_trajectory": true,
+      "state_axis": "EMT_epithelial_mesenchymal_state",
+      "status": "admitted_training_only"
+    },
+    {
+      "OOD_refusal_validated": false,
+      "candidate_mechanism_families": [
+        "cell_cell_adhesion",
+        "cell_spreading_and_dispersion",
+        "epithelial_cytoskeletal_state",
+        "collective_migration"
+      ],
+      "collection_holdout_passed": true,
+      "dataset": "lincs-mcf10a-ligand-if-phenotypes",
+      "may_count_as_independent_lab_holdout": false,
+      "may_emit_numeric_parameter_range": false,
+      "may_select_aleph_parameter": false,
+      "reason": "C1-to-C2 transfer and paired directions reproduce after biological-group aggregation, but both collections are OHSU and the TGFB+EGF dose conflict, semantic OOD, Aleph operators, and forward sensitivity remain unresolved",
+      "state_axis": "ligand_conditioned_MCF10A_EMT_related_phenotype",
+      "status": "admitted_collection_validated_training_only",
+      "technical_wells_count_as_independent_biology": false
+    },
+    {
+      "biological_replicate_groups": 1,
+      "dataset": "nature-2019-karacosta-hcc827-emt-cytof",
+      "future_sweep_role": "reject EMT-state candidates that require E-cadherin increase or Vimentin decrease during progressive TGF-beta EMT",
+      "independent_lab_common_marker_direction_reproduced": true,
+      "label_circular_classifier_forbidden": true,
+      "may_count_as_inferential_external_holdout": false,
+      "may_emit_numeric_parameter_range": false,
+      "may_select_aleph_parameter": false,
+      "raw_single_cells": 90066,
+      "reason": "Stanford HCC827 CyTOF reproduces the UNSW A549 IF E-cadherin-down/Vimentin-up direction across dataset, lab, cell type, and modality, but the released CyTOF source exposes one biological experiment",
+      "single_cells_count_as_independent_biology": false,
+      "state_axis": "EMT_epithelial_partial_mesenchymal_MET_state",
+      "status": "admitted_independent_lab_common_marker_direction_filter_only"
+    },
+    {
+      "RNA_protein_absolute_scale_transfer": false,
+      "biological_samples": 72,
+      "cross_platform_absolute_scale_transfer": false,
+      "dataset": "geo-emt-rna-five-study-panel",
+      "expression_features_count_as_independent_biology": false,
+      "future_sweep_role": "reject EMT candidates with CDH1-up or VIM-down endpoint response across compatible A549 TGFB contexts",
+      "independent_lab_groups": 5,
+      "may_count_as_confirmatory_direction_holdout": false,
+      "may_count_as_numeric_uncertainty_holdout": false,
+      "may_emit_numeric_parameter_range": false,
+      "may_select_aleph_parameter": false,
+      "reason": "five independent GEO laboratories retrospectively reproduce CDH1-down/VIM-up with nominal p=0.03125, but outcome-informed study selection blocks confirmatory authority in addition to numeric uncertainty, OOD, and operator validation",
+      "status": "admitted_retrospective_replicated_study_direction_constraint_only",
+      "studies": 5,
+      "study_level_sign_test_p": 0.03125,
+      "study_selection_was_outcome_blind": false
+    },
+    {
+      "biological_samples": 6,
+      "dataset": "geo-gse325309-preregistered-a549-tgfb1-rnaseq",
+      "exact_one_sided_p": 0.05,
+      "future_sweep_role": "confirm retrospective CDH1-down/VIM-up filter on an outcome-blind external lab",
+      "may_count_as_confirmatory_direction_holdout": true,
+      "may_count_as_numeric_uncertainty_holdout": false,
+      "may_emit_numeric_parameter_range": false,
+      "may_select_aleph_parameter": false,
+      "pristine_confirmation": true,
+      "sample_exclusions": 0,
+      "status": "admitted_pristine_external_direction_holdout_only"
+    }
+  ],
+  "status": "refused",
+  "tfm_fret_audit": {
+    "aleph_authority": "none",
+    "aleph_parameter_proposal_eligible": false,
+    "author_correlation_categories_reproduced": true,
+    "cell_level_FRET_by_sensor_and_condition": {
+      "force_insensitive_TSMod_control": {
+        "PAA_Young_modulus_13_kPa": {
+          "maximum": 22.7625,
+          "mean": 17.378005,
+          "measurement_count": 20,
+          "median": 17.24135,
+          "minimum": 12.6722,
+          "sample_standard_deviation": 2.5514274472135665,
+          "unit": "percent"
+        },
+        "PAA_Young_modulus_4.5_kPa": {
+          "maximum": 20.8664,
+          "mean": 16.182660000000002,
+          "measurement_count": 20,
+          "median": 16.05695,
+          "minimum": 12.8391,
+          "sample_standard_deviation": 2.3543784955739495,
+          "unit": "percent"
+        },
+        "glass_substrate": {
+          "maximum": 21.2719,
+          "mean": 16.588881818181818,
+          "measurement_count": 22,
+          "median": 16.9774,
+          "minimum": 11.54,
+          "sample_standard_deviation": 3.027679004127523,
+          "unit": "percent"
+        }
+      },
+      "vinculin_tension_sensor": {
+        "PAA_Young_modulus_13_kPa": {
+          "maximum": 16.7702,
+          "mean": 10.950965882352941,
+          "measurement_count": 85,
+          "median": 10.7436,
+          "minimum": 5.28,
+          "sample_standard_deviation": 2.560413556325885,
+          "unit": "percent"
+        },
+        "PAA_Young_modulus_4.5_kPa": {
+          "maximum": 18.1905,
+          "mean": 11.880572043010753,
+          "measurement_count": 93,
+          "median": 11.8803,
+          "minimum": 5.6713,
+          "sample_standard_deviation": 2.9228414649091934,
+          "unit": "percent"
+        },
+        "glass_substrate": {
+          "maximum": 14.4365,
+          "mean": 9.76298846153846,
+          "measurement_count": 26,
+          "median": 9.53545,
+          "minimum": 3.5186,
+          "sample_standard_deviation": 3.0098706950733845,
+          "unit": "percent"
+        }
+      }
+    },
+    "cell_level_mean_traction_by_condition": {
+      "PAA_Young_modulus_13_kPa": {
+        "maximum": 576.117378,
+        "mean": 248.90051499473682,
+        "measurement_count": 38,
+        "median": 220.22142050000002,
+        "minimum": 94.5449278,
+        "sample_standard_deviation": 120.44600016266095,
+        "unit": "Pa"
+      },
+      "PAA_Young_modulus_4.5_kPa": {
+        "maximum": 424.1085,
+        "mean": 172.11751137254902,
+        "measurement_count": 51,
+        "median": 163.1344,
+        "minimum": 29.99937,
+        "sample_standard_deviation": 86.30785139080676,
+        "unit": "Pa"
+      }
+    },
+    "cross_lab_same_observable_direction": {
+      "exact_common_unit": "Pa",
+      "external_MEF_4.5_to_13_kPa_direction_increases": true,
+      "external_direction_lab": "KU_Leuven_Aytekin_Ramon_Van_Oosterwyck",
+      "independent_lab_direction_reproduced": true,
+      "numeric_transfer_evaluated": false,
+      "reason_numeric_transfer_withheld": "cell type and stiffness ranges differ, and neither released table maps cells to enough biological replicate identifiers",
+      "same_observable": "cell_or_time_averaged_mean_traction_stress",
+      "training_NIH3T3_1_to_10_kPa_direction_increases": true,
+      "training_lab": "Cambridge_Franze_Keyser_collaboration"
+    },
+    "design_audit": {
+      "author_reports_at_least_three_replicates": true,
+      "calibrated_uncertainty_holdout": false,
+      "cell_to_replicate_mapping_released": false,
+      "cells_treated_as_biological_replicates": false,
+      "focal_adhesions_treated_as_biological_replicates": false,
+      "independent_dataset_direction_test": true,
+      "independent_lab_direction_test": true,
+      "independent_lab_inferential_holdout": false
+    },
+    "independent_lab_holdout": false,
+    "lab_group": "KU_Leuven_Aytekin_Ramon_Van_Oosterwyck",
+    "limitations": [
+      "the Figure 2b cell-area source column has 90 stiff-substrate values while the paper caption declares n=85; cell area is withheld",
+      "Figure 4 Prism columns are titled Tractions (Pa), but the paper and 0-to-1 values establish per-cell normalization; the manifest uses author_normalized_fraction",
+      "the paper reports at least three repeated experiments and biologically independent samples but does not map released cells to replicate IDs",
+      "independent-lab direction agreement is not a numeric transfer test",
+      "three representative paired cells cannot train a general DCC/ICC/UCC classifier",
+      "heterogeneous FA-level traction--FRET relations forbid a one-to-one load-transfer mapping",
+      "no calibrated uncertainty, OOD test, or Aleph forward sensitivity is available"
+    ],
+    "may_select_aleph_parameter": false,
+    "observable_evidence_eligible": false,
+    "observation_operator_audit": {
+      "cell_mask_mean_traction_stress": {
+        "author_equation_and_open_source_code_available": true,
+        "candidate_aleph_expression": "sum(cell-mask traction magnitude times pixel area) / cell-mask area",
+        "external_unit": "Pa",
+        "status": "external_operator_defined_Aleph_geometry_equivalence_missing"
+      },
+      "vinculin_FLIM_FRET": {
+        "external_unit": "relative_percent_or_per_cell_normalized_fraction",
+        "identifiability_value": "separates focal-adhesion load transmission from bulk traction but requires sensor calibration before absolute molecular force",
+        "status": "relative_molecular_tension_proxy_not_absolute_force"
+      }
+    },
+    "paired_FA_cell_correlations": {
+      "directly_correlated_cell": {
+        "FRET_on_traction_slope": -0.5277484319246792,
+        "intercept": 0.8025454661081078,
+        "paired_focal_adhesions": 46,
+        "pearson_correlation": -0.6651694093794879
+      },
+      "inversely_correlated_cell": {
+        "FRET_on_traction_slope": 0.16963990959677402,
+        "intercept": 0.5423896873136745,
+        "paired_focal_adhesions": 77,
+        "pearson_correlation": 0.28989885816397354
+      },
+      "uncorrelated_cell": {
+        "FRET_on_traction_slope": 0.04004569948599826,
+        "intercept": 0.7546578232014248,
+        "paired_focal_adhesions": 123,
+        "pearson_correlation": 0.07445356610465839
+      }
+    },
+    "pre_sweep_constraint": {
+      "candidate_parameters": [
+        "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um",
+        "aleph.vertical.focal_adhesion.ClutchCard.anchor_stiffness_pn_per_um",
+        "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+        "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness"
+      ],
+      "current_executable_Aleph_sweep_available": false,
+      "future_sweep_range_reduction_intended": true,
+      "latent": "focal_adhesion_load_transfer_under_substrate_stiffness",
+      "may_emit_numeric_parameter_range": false,
+      "may_select_Aleph_parameter": false,
+      "numeric_range": null,
+      "required_Aleph_operators": [
+        "cell_mask_mean_traction_stress_Pa",
+        "focal_adhesion_mean_traction_normalized_per_cell",
+        "vinculin_tension_sensor_relative_FRET",
+        "focal_adhesion_area_orientation_and_vinculin_density"
+      ]
+    },
+    "schema": "aleph.outer_library.zenodo_14692589_tfm_fret_evidence.v1",
+    "source": {
+      "article_doi": "10.1038/s42003-026-09514-0",
+      "dataset_doi": "10.5281/zenodo.14692589",
+      "dataset_id": "zenodo-14692589-tfm-fret",
+      "license_id": "cc-by-4.0"
+    },
+    "stiffness_directions": {
+      "TFM": {
+        "increases_with_stiffness": true,
+        "mean_13_minus_4.5_Pa": 76.7830036221878,
+        "median_13_minus_4.5_Pa": 57.08702050000002
+      },
+      "VinTS_FLIM_FRET": {
+        "FRET_decreases_and_vinculin_tension_increases": true,
+        "median_13_minus_4.5_percentage_points": -1.1366999999999994
+      }
+    },
+    "task": "cross_lab_stiffness_TFM_and_vinculin_load_transfer_pre_sweep_constraint",
+    "uncertainty_holdout_passed": false
+  },
+  "uncertainty_audit": {
+    "aleph_authority": "none",
+    "aleph_parameter_proposal_eligible": false,
+    "conformal": {
+      "alpha": 0.1,
+      "calibration_count": 30,
+      "class_conditional_external_coverage": {
+        "0": 0.9807692307692307,
+        "1": 0.9111969111969112
+      },
+      "class_thresholds": {
+        "0": 0.9073048161240074,
+        "1": 0.998711001738413
+      },
+      "empty_set_fraction": 0.0,
+      "external_count": 311,
+      "external_coverage": 0.9228295819935691,
+      "mean_prediction_set_size": 1.4855305466237942,
+      "method": "Mondrian_class_conditional_split_conformal_classification_set",
+      "nonconformity": "1_minus_probability_of_true_class",
+      "pooled_diagnostic": {
+        "external_coverage": 0.6655948553054662,
+        "mean_prediction_set_size": 1.0385852090032155,
+        "target_coverage_met": false,
+        "threshold": 0.5800454947259045
+      },
+      "singleton_accuracy": 0.85,
+      "singleton_fraction": 0.5144694533762058,
+      "target_coverage_met": true
+    },
+    "dataset_shift": {
+      "calibration_95pct_threshold": 1.2303316325587583,
+      "external_ood_rate": 0.37942122186495175,
+      "external_vs_calibration_auroc": 0.732368703108253,
+      "score": "nearest_training_class_centroid_standardized_distance",
+      "shift_detected": false
+    },
+    "external_conditions": [
+      "CaPINS (+GsMTx4)",
+      "CaPINS (+Mag)",
+      "LooPINS (+GsMTx4)",
+      "LooPINS (+Mag)"
+    ],
+    "external_dataset": "zenodo-19890985 EA.hy926",
+    "limitations": [
+      "split-conformal coverage is not guaranteed under the detected cross-lab shift",
+      "the result applies to batches containing both active nanoswitch treatment arms",
+      "biological replicate identities are unavailable for external cells"
+    ],
+    "sample_overlap_count": 0,
+    "selected_penalty": 10.0,
+    "selection_protocol": "penalty and temperature use HeLa train/validation only; the disjoint HeLa calibration split sets the conformal threshold; no EA.hy926 label tunes anything",
+    "split": {
+      "calibration": 30,
+      "train": 50,
+      "validation": 20
+    },
+    "task": "Piezo1_external_lab_training_only_uncertainty_audit",
+    "temperature": 0.10494555535009945,
+    "training_dataset": "zenodo-18495219 HeLa",
+    "uncertainty_holdout_passed": true,
+    "validation_metrics": {
+      "accuracy": 0.95,
+      "auroc": 0.98,
+      "balanced_accuracy": 0.95,
+      "class_counts": {
+        "0": 10,
+        "1": 10
+      },
+      "macro_f1": 0.949874686716792,
+      "sample_count": 20
+    }
+  }
+}

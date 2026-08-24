@@ -1,0 +1,194 @@
+{
+  "aleph_authority": "none",
+  "blockers": [
+    "between_seed_scatter_not_measured_with_three_distinct_seed_records",
+    "engine_record[0]:cell_cycle_state_matches",
+    "engine_record[0]:cell_line_matches",
+    "engine_record[0]:engine_operator_is_total_method_of_planes",
+    "engine_record[0]:full_native_compartments",
+    "engine_record[0]:physical_acceptance_gate_passed",
+    "engine_record[0]:quantitative_claim_not_blocked",
+    "engine_record[0]:surface_state_matches",
+    "engine_record[0]:target_reference_matches",
+    "engine_record[0]:temperature_matches",
+    "engine_record[0]:time_step_independence_passed",
+    "observation_operator_not_native_validated_and_geometry_matched"
+  ],
+  "catalog_audit": {
+    "aleph_authority": "none",
+    "checks": {
+      "catalog_schema_supported": true,
+      "coverage_gaps_are_explicit": true,
+      "draft_gate_not_promoted": true,
+      "forbidden_shortcuts_recorded": true,
+      "kb_join_unique": true,
+      "knowledge_claim_verified": true,
+      "numeric_summary_matches_claim": true,
+      "outer_has_no_aleph_authority": true,
+      "protocol_is_total_effective_laplace_tension": true,
+      "single_primary_reference": true,
+      "source_audit_ok": true,
+      "source_evidence_identity_matches": true
+    },
+    "failed_checks": [],
+    "kb_snapshot": {
+      "path": "aleph/outputs/tag_kb/kb.duckdb",
+      "sha256": "56838dc0283087cee7cd90c0b1a7a8d19cf4fb1c39e5a789b524f0df02e81d6a"
+    },
+    "may_score_validation_gate": false,
+    "passed": true,
+    "resolved_evidence": {
+      "citation_key": "Hosseini2020_AdvSci",
+      "doi": "https://doi.org/10.1002/advs.202001276",
+      "knowledge_claim_confidence": "High",
+      "knowledge_claim_id": "KB-6.1.7",
+      "knowledge_claim_status": "verified",
+      "source_audit_verdict": "OK",
+      "source_evidence_uid": "SE181",
+      "validation_gate_band": "0.18-0.40 mN/m (central 0.27); MCF-7 suspended/rounded interphase, 37 C, dynamic AFM parallel-plate confinement @1 Hz (Hosseini 2020, KB-6.1.7 / SE181).",
+      "validation_gate_status": "draft"
+    },
+    "schema": "aleph.outer_library.cortical_tension_catalog_audit.v1"
+  },
+  "comparison_kind": "descriptive_protocol_matched_observable_comparison",
+  "comparison_permitted": false,
+  "descriptive_position": null,
+  "engine_record_readiness": [
+    {
+      "checks": {
+        "cell_cycle_state_matches": false,
+        "cell_line_matches": false,
+        "cuda_runtime": true,
+        "engine_operator_is_total_method_of_planes": false,
+        "full_native_compartments": false,
+        "full_native_population": true,
+        "physical_acceptance_gate_passed": false,
+        "quantitative_claim_not_blocked": false,
+        "run_record_schema_supported": true,
+        "seed_present": true,
+        "self_stamped_build_present": true,
+        "stationary_total_tension_mean_present": true,
+        "surface_state_matches": false,
+        "target_reference_matches": false,
+        "temperature_matches": false,
+        "time_step_independence_passed": false
+      },
+      "failed_checks": [
+        "full_native_compartments",
+        "physical_acceptance_gate_passed",
+        "time_step_independence_passed",
+        "quantitative_claim_not_blocked",
+        "target_reference_matches",
+        "cell_line_matches",
+        "surface_state_matches",
+        "cell_cycle_state_matches",
+        "temperature_matches",
+        "engine_operator_is_total_method_of_planes"
+      ],
+      "ready_except_operator_and_seed_ensemble": false,
+      "record_id": "gate_b_cortex_motor \u2014 cortical tension trajectory from NMII binding events",
+      "seed": 0
+    }
+  ],
+  "engine_summary": null,
+  "external_reference": null,
+  "inputs": {
+    "catalog": {
+      "path": "aleph/outer/experiment_factory/outer_library/cortical_tension/reference_catalog.json",
+      "sha256": "cf7caed83360f3c82471dfa76c2f010ceaaa9a01b0eb2a9a5e43e978f5341e0b"
+    },
+    "engine_records": [
+      {
+        "path": "aleph/outputs/ac/engine_cortex_ab/settled_on/record.json",
+        "sha256": "66d00fbd81cf92f0baa741a8a7defd41bb15d1b1310ffc9749cca6c76df7ece7"
+      }
+    ],
+    "operator_registry": {
+      "path": "aleph/outer/experiment_factory/outer_library/observation_operator_registry.json",
+      "sha256": "832c4d99ab66a5ffaeb158db153050a2c1253dcfdabfc6d514f35a18365eeafe"
+    }
+  },
+  "may_emit_Aleph_parameter": false,
+  "may_mutate_physics": false,
+  "may_score_validation_gate": false,
+  "operator_readiness": {
+    "native_validated_and_geometry_matched": false,
+    "registry_entry": {
+      "external_observable": "effective_laplace_surface_tension",
+      "external_unit": "pN_per_micrometre",
+      "forbidden_shortcut": "Matching dimensions and a source-code claim of AFM/Laplace comparability do not establish a geometry-matched observation operator.",
+      "operator_id": "aleph.components.incumbent.cortical_tension.measure_cortical_stress:gamma_total_pn_per_um",
+      "reason": "Aleph exposes the total method-of-planes tension over all load-bearing elements, but equivalence to the dynamic AFM parallel-plate effective Laplace operator has not yet been validated at matched geometry and protocol.",
+      "source_path": "aleph/components/incumbent/cortical_tension.py",
+      "source_symbol": "def measure_cortical_stress",
+      "status": "candidate_native"
+    }
+  },
+  "redaction": {
+    "engine_magnitudes_and_ratios_redacted": true,
+    "reason": "At least one evidence, protocol, runtime, acceptance, convergence, operator, or seed-scatter precondition is unresolved."
+  },
+  "reference_head": {
+    "aleph_dependency": false,
+    "applicability": {
+      "context": {
+        "cell_cycle_state": "interphase",
+        "cell_line": "MCF-7",
+        "surface_state": "suspended_rounded",
+        "temperature_c": 37.0
+      },
+      "measurement_operator": {
+        "definition": "time-averaged total effective Laplace surface tension; membrane contribution already folded into gamma_eff",
+        "external_observable": "effective_laplace_surface_tension",
+        "frequency_hz": 1.0,
+        "method": "dynamic_AFM_parallel_plate_confinement",
+        "relation": "gamma_eff = F / (A_contact * (1/R1 + 1/R2))"
+      },
+      "status": "exact_context_only"
+    },
+    "head_id": "mcf7_suspended_interphase_effective_cortical_tension",
+    "kind": "protocol_conditioned_external_group_summary",
+    "limitations": [
+      "one study and one cell-state/protocol group cannot train a general cortical-tension predictor",
+      "the empirical IQR is not a calibrated predictive interval for a new laboratory",
+      "the draft validation gate is context only and is not scored here"
+    ],
+    "may_emit_Aleph_parameter": false,
+    "may_score_validation_gate": false,
+    "refused": false,
+    "schema": "aleph.outer_library.cortical_tension_reference_head.v1",
+    "state_posterior": [
+      {
+        "authority": "external_observation_summary",
+        "conditioning": {
+          "cell_cycle_state": "interphase",
+          "cell_line": "MCF-7",
+          "surface_state": "suspended_rounded",
+          "temperature_c": 37.0
+        },
+        "estimate": 270.0,
+        "interval": [
+          180.0,
+          400.0
+        ],
+        "interval_kind": "interquartile_range",
+        "latent_id": "effective_laplace_surface_tension",
+        "unit": "pN/micrometre"
+      }
+    ],
+    "uncertainty": {
+      "calibrated_predictive_distribution": false,
+      "digitization_precision_pn_per_um": 30.0,
+      "kind": "reported_empirical_IQR_plus_figure_digitization_precision",
+      "n_cells": 27
+    }
+  },
+  "reference_id": "hosseini2020_mcf7_suspended_interphase_afm",
+  "schema": "aleph.outer_library.cortical_tension_comparison.v1",
+  "seed_ensemble": {
+    "between_seed_scatter_measured": false,
+    "distinct_seed_count": 1,
+    "record_count": 1
+  },
+  "validation_gate_verdict": null
+}

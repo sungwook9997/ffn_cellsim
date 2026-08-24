@@ -1,0 +1,125 @@
+{
+  "aleph_parameter_proposal_eligible": false,
+  "conformal_uncertainty": {
+    "alpha": 0.1,
+    "calibration_cells": 30,
+    "class_coverage": {
+      "0": 0.9390243902439024,
+      "1": 1.0
+    },
+    "coverage": 0.9671052631578947,
+    "empty_set_fraction": 0.0,
+    "mean_set_size": 1.5460526315789473,
+    "method": "tracked_cell_level_class_conditional_Mondrian_split_conformal",
+    "same_lab_uncertainty_transfer_passed": true,
+    "singleton_accuracy": 0.927536231884058,
+    "singleton_fraction": 0.45394736842105265,
+    "test_cells": 152
+  },
+  "dataset_shift": {
+    "interpretation": "domain-shift diagnostic, not a motion-mode performance metric",
+    "talin_vs_fibronectin_calibration_distance_auroc": 0.6453029765547419
+  },
+  "eligible_as_independent_confirmation": false,
+  "eligible_as_same_lab_representation_training": true,
+  "independent_lab_holdout": false,
+  "may_mutate_physics": false,
+  "partition_observation_counts": {
+    "calibration": 1552,
+    "test": 9198,
+    "train": 3703,
+    "validation": 3754
+  },
+  "partition_tracked_cell_counts": {
+    "calibration": 30,
+    "test": 152,
+    "train": 65,
+    "validation": 57
+  },
+  "pristine_lab4_confirmation": false,
+  "protocol": {
+    "conformal_calibration_experimental_dates": [
+      "20110918",
+      "20120110",
+      "20120128",
+      "20120210"
+    ],
+    "fibronectin_date_partition_rule": "fixed_source_only_stratification_retaining_both_author_modes;talin_labels_not_used",
+    "label_defining_behavioral_features_excluded": [
+      "Cell Protrusion Area",
+      "Cell Retraction Area",
+      "Cell Speed",
+      "Short Lived Cell Area",
+      "Stable Cell Area"
+    ],
+    "retrospective_test_dataset": "talin",
+    "retrospective_test_experimental_dates": [
+      "20120704",
+      "20120707",
+      "20120710",
+      "20120712"
+    ],
+    "selected_organizational_feature_count": 55,
+    "split_group": "tracked_cell_nested_in_author_experimental_date",
+    "test_labels_used_for_numeric_fitting": false,
+    "train_experimental_dates": [
+      "20110727",
+      "20110801",
+      "20110807",
+      "20110815",
+      "20110818",
+      "20110824",
+      "20110827",
+      "20110830",
+      "20110902",
+      "20110906",
+      "20110914"
+    ],
+    "training_dataset": "fibronectin",
+    "validation_experimental_dates": [
+      "20110617",
+      "20110705",
+      "20110803",
+      "20110810"
+    ]
+  },
+  "retrospective_talin_date_cluster_balanced_accuracy_95ci": [
+    0.8541316526610643,
+    0.9474358974358974
+  ],
+  "retrospective_talin_observation_metrics": {
+    "auroc": 0.9674257299478608,
+    "balanced_accuracy": 0.8899572442801715,
+    "class_counts": {
+      "0": 4733,
+      "1": 4465
+    },
+    "count": 9198,
+    "macro_f1": 0.8879756853385221
+  },
+  "retrospective_talin_tracked_cell_metrics": {
+    "auroc": 0.980836236933798,
+    "balanced_accuracy": 0.9074912891986062,
+    "class_counts": {
+      "0": 82,
+      "1": 70
+    },
+    "count": 152,
+    "macro_f1": 0.9013115179846773
+  },
+  "same_lab_cross_perturbation_transfer_passed": true,
+  "source": "Dryad 10.5061/dryad.9jh6m / eLife 10.7554/eLife.11384",
+  "task": "organizational_features_predict_author_migration_mode_across_perturbations",
+  "validation_observation_metrics": {
+    "auroc": 0.9609786429046391,
+    "balanced_accuracy": 0.8843666085127186,
+    "class_counts": {
+      "0": 2142,
+      "1": 1612
+    },
+    "count": 3754,
+    "macro_f1": 0.8842485147482889,
+    "selected_ridge": 1.0,
+    "selection_rule": "maximum_validation_balanced_accuracy_then_macro_f1_then_smaller_ridge"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "cell_state": "adherent_interphase_unsynchronized",
+  "observable": "static_viscosity",
+  "probe_geometry": "internalized_wire",
+  "probe_size_um": 3.0,
+  "time_scale_s": null,
+  "unit": "Pa s"
+}

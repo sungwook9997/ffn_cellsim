@@ -1,0 +1,123 @@
+{
+  "catch_bond": {
+    "model": "catch_bond",
+    "n_cells": 200,
+    "n_core_mean": 200.0,
+    "settle_steps": 30000,
+    "n_snapshots": 12,
+    "snapshot_interval": 2000,
+    "seed": 42,
+    "r_cut_um": 19.5,
+    "R_edge_um": 54.47000835240824,
+    "nn_median_over_r0": 0.9978032787167411,
+    "sigma_emergent_mN_m": -0.000548202738835629,
+    "sigma_std_mN_m": 6.521960997963434e-06,
+    "sigma_ctrl_repulsive_mN_m": -0.00046447605050464893,
+    "gamma_cortical_mN_m": 0.57,
+    "sigma_over_gamma": -0.0009617591909397,
+    "strain_grid": [
+      0.0,
+      0.01,
+      0.02,
+      0.05,
+      0.1
+    ],
+    "sigma_strain_mN_m": [
+      -0.000548202738835629,
+      0.0010856190435188954,
+      0.0022025268360041047,
+      0.0041927728133302426,
+      0.016306609246156567
+    ],
+    "sigma_strain_std_mN_m": [
+      6.521960997963434e-06,
+      3.698181908987716e-06,
+      2.8769549020350225e-06,
+      1.5232920379009514e-06,
+      5.579372642985749e-06
+    ],
+    "n_cad_per_contact": 222.6027397260274,
+    "k_bond_N_per_m": 0.004333333333333333
+  },
+  "sign_convention_validated": true,
+  "ensemble": {
+    "runs": [
+      {
+        "seed": 42,
+        "n_cells": 150,
+        "sigma_emergent_mN_m": -0.0002356700398065382,
+        "sigma_std_mN_m": 6.910225924775646e-06,
+        "sigma_over_gamma": -0.0004134562101869091,
+        "R_edge_um": 49.421741244331066
+      },
+      {
+        "seed": 42,
+        "n_cells": 200,
+        "sigma_emergent_mN_m": -0.000548202738835629,
+        "sigma_std_mN_m": 6.521960997963434e-06,
+        "sigma_over_gamma": -0.0009617591909397,
+        "R_edge_um": 54.47000835240824
+      },
+      {
+        "seed": 42,
+        "n_cells": 300,
+        "sigma_emergent_mN_m": 0.024369853261774266,
+        "sigma_std_mN_m": 7.786851753667927e-06,
+        "sigma_over_gamma": 0.04275412852942854,
+        "R_edge_um": 56.76398267441414
+      },
+      {
+        "seed": 7,
+        "n_cells": 150,
+        "sigma_emergent_mN_m": -0.00023328688681281128,
+        "sigma_std_mN_m": 7.111886848480892e-06,
+        "sigma_over_gamma": -0.0004092752400224759,
+        "R_edge_um": 49.41558678537552
+      },
+      {
+        "seed": 7,
+        "n_cells": 200,
+        "sigma_emergent_mN_m": -0.0004429149913170731,
+        "sigma_std_mN_m": 4.950939515214198e-06,
+        "sigma_over_gamma": -0.0007770438444159178,
+        "R_edge_um": 54.483135353429965
+      },
+      {
+        "seed": 7,
+        "n_cells": 300,
+        "sigma_emergent_mN_m": -0.00037708607130476976,
+        "sigma_std_mN_m": 6.529747307369341e-06,
+        "sigma_over_gamma": -0.0006615545110609996,
+        "R_edge_um": 62.30397277750075
+      },
+      {
+        "seed": 101,
+        "n_cells": 150,
+        "sigma_emergent_mN_m": -0.00024104401542292264,
+        "sigma_std_mN_m": 1.014249553374169e-05,
+        "sigma_over_gamma": -0.00042288423758407486,
+        "R_edge_um": 49.407690528093724
+      },
+      {
+        "seed": 101,
+        "n_cells": 200,
+        "sigma_emergent_mN_m": -0.00044054410438851136,
+        "sigma_std_mN_m": 7.764346569059936e-06,
+        "sigma_over_gamma": -0.0007728843936640551,
+        "R_edge_um": 54.47796798437848
+      },
+      {
+        "seed": 101,
+        "n_cells": 300,
+        "sigma_emergent_mN_m": -0.0003811931061433022,
+        "sigma_std_mN_m": 5.477321101324234e-06,
+        "sigma_over_gamma": -0.0006687598353391266,
+        "R_edge_um": 62.301012029184776
+      }
+    ],
+    "sigma_mean_mN_m": 0.0023855457008603014,
+    "sigma_std_mN_m": 0.007773306459849342,
+    "sigma_over_gamma_mean": 0.004185167896246143
+  },
+  "method": "EMERGENT sigma under the L2.5 E-cadherin catch-bond cohesion (Rakshit-2012 sliding-rebinding, adiabatic effective force), time-averaged over snapshots: sigma = -(1/(16 pi R^2)) sum_pairs (r_ij.f_ij)[1-3(s.r_hat_c)^2/s^2], f_ij the tabulated catch force (WCA r<r0 minus catch cohesion r0..r_cut) the run integrates. Sign control: cohesion-zeroed (WCA-only) IK on the same frames."
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "Fields an Aleph run-record must carry before the Outer Library may expose a cortical-tension magnitude comparison.",
+  "properties": {
+    "build": {
+      "properties": {"commit": {"minLength": 7, "type": "string"}},
+      "required": ["commit"],
+      "type": "object"
+    },
+    "comparison_context": {
+      "additionalProperties": true,
+      "properties": {
+        "cell_cycle_state": {"const": "interphase"},
+        "cell_line": {"const": "MCF-7"},
+        "full_native_compartments": {"const": true},
+        "measurement_operator": {"const": "gamma_total_method_of_planes"},
+        "physical_acceptance_gate_passed": {"const": true},
+        "surface_state": {"const": "suspended_rounded"},
+        "target_reference_id": {"const": "hosseini2020_mcf7_suspended_interphase_afm"},
+        "temperature_c": {"const": 37.0},
+        "time_step_independence_passed": {"const": true}
+      },
+      "required": [
+        "target_reference_id",
+        "cell_line",
+        "surface_state",
+        "cell_cycle_state",
+        "temperature_c",
+        "measurement_operator",
+        "full_native_compartments",
+        "physical_acceptance_gate_passed",
+        "time_step_independence_passed"
+      ],
+      "type": "object"
+    },
+    "device": {"pattern": "^cuda(:[0-9]+)?$", "type": "string"},
+    "quantitative_claim_status": {"not": {"const": "BLOCKED"}, "type": "string"},
+    "schema": {"const": "ac.engine.observe/run-record@2"}
+  },
+  "required": ["schema", "build", "device", "quantitative_claim_status", "comparison_context"],
+  "title": "Outer cortical-tension engine comparison input",
+  "type": "object"
+}

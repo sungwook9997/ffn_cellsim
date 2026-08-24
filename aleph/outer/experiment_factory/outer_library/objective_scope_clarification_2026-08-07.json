@@ -1,0 +1,15 @@
+{
+  "schema": "aleph.outer_library.objective_scope_clarification.v1",
+  "date": "2026-08-07",
+  "authority": "principal_investigator_clarification",
+  "clarification": "The Outer Library objective was changed because Aleph parameter sweeps are not currently computationally executable at the required scale. This is not merely a reordering of an otherwise unchanged objective.",
+  "current_objective": "Build and externally validate an independently useful multimodal biophysical inference network from public experimental evidence, including calibrated uncertainty, ambiguity, intervention-direction evaluation, and out-of-domain refusal, without requiring an Aleph sweep.",
+  "future_Aleph_relationship": "Preserve a conditional adapter so that, if broad Aleph sweeps later become executable, independently validated posteriors and ambiguity sets can be tested as pre-sweep constraints.",
+  "not_currently_claimed": [
+    "demonstrated Aleph sweep compression",
+    "numeric Aleph parameter authority",
+    "permission to remove an Aleph sweep axis",
+    "permission to emit an Aleph parameter range"
+  ],
+  "audit_note": "Frozen preregistration artifacts are not rewritten after training. Any earlier field stating that only the execution order changed is superseded for project-scope interpretation by this clarification, while its frozen model endpoints and decision rules remain unchanged."
+}

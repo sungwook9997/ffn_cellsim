@@ -1,0 +1,106 @@
+{
+  "driver": "ac_fullcell_step_timing",
+  "device": "cuda:0",
+  "label": "ninner-5",
+  "evidence_class": "TIMING at a FORCE-ACCEPTED step",
+  "quantitative_claim_status": "SCOPED",
+  "evidence_basis": "wall-clock per accepted step of the composed native cell, device-synchronized, warm-up excluded. The steps are FORCE-ACCEPTED: this measures the cost of the step the runtime currently takes, NOT the cost of a converged step, and the two are not the same number.",
+  "timing": {
+    "n_timed_steps": 6,
+    "n_warmup_steps": 2,
+    "dt_phys_s": 0.01,
+    "wall_per_step_s": 0.0446367111580912,
+    "wall_per_step_stdev_s": 0.0001293565504023896,
+    "wall_per_step_min_s": 0.04445221598143689,
+    "wall_per_step_max_s": 0.04483967999112792,
+    "real_time_factor": 0.22403084233922824,
+    "wall_seconds_per_second_of_cell": 4.46367111580912,
+    "per_step_s": [
+      0.04483967999112792,
+      0.04467904899502173,
+      0.04467643197858706,
+      0.044588336982997134,
+      0.04445221598143689,
+      0.04458455301937647
+    ],
+    "build_seconds": 14.627896671008784,
+    "comparable": false,
+    "not_comparable_reason": "force-accepted steps; cost is only cost at a stated acceptance, and no acceptance predicate gated these"
+  },
+  "scope": {
+    "target_full_cell_components": [
+      "cortex",
+      "cytosol",
+      "filopodium",
+      "focal_adhesion",
+      "intermediate_filament",
+      "lamellipodium",
+      "membrane",
+      "microtubule",
+      "nmii",
+      "nucleus",
+      "sf_arc"
+    ],
+    "n_target_components": 11,
+    "n_target_in_cell_connectors": 31,
+    "excluded_by_goal": [
+      "ecm",
+      "extracellular_medium",
+      "world_boundary"
+    ],
+    "bound_components_in_scope": [
+      "cortex",
+      "cytosol",
+      "membrane",
+      "nmii",
+      "nucleus",
+      "sf_arc"
+    ],
+    "fraction_of_target_components": 0.5454545454545454,
+    "bound_connectors": [
+      "dorsal_arc_crosslink",
+      "membrane_cytosol_boundary",
+      "nmii_cortex_motor",
+      "nmii_cytosol_transfer",
+      "nucleus_cytosol_boundary",
+      "sf_cortex_transient",
+      "sf_cytosol_transfer",
+      "surface_porous_transfer"
+    ],
+    "n_bound_connectors": 8,
+    "bound_connectors_in_target": [
+      "dorsal_arc_crosslink",
+      "membrane_cytosol_boundary",
+      "nmii_cortex_motor",
+      "nmii_cytosol_transfer",
+      "nucleus_cytosol_boundary",
+      "sf_cortex_transient",
+      "sf_cytosol_transfer",
+      "surface_porous_transfer"
+    ]
+  },
+  "census": {
+    "cortex_filaments": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 551434,
+    "n_heads": 8840,
+    "fraction_of_native_cortex": 1.0
+  },
+  "sf_relax": {
+    "attached": false
+  },
+  "nmii_sf_motor": {
+    "bound": false
+  },
+  "kernel_profile": [],
+  "config": {
+    "k_axial_pn_per_um": 1000.0,
+    "k_xb_pn_per_um": 1000.0,
+    "n_fibers_ecm": 200,
+    "seed": 0
+  },
+  "parameter_provenance": {
+    "k_axial_pn_per_um": "PI_GAP",
+    "k_xb_pn_per_um": "PI_GAP"
+  }
+}

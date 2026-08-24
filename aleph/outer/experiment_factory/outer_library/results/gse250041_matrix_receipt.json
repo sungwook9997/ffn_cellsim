@@ -1,0 +1,36 @@
+{
+  "accession": "GSE250041",
+  "aleph_authority": "none",
+  "external_validation_eligible": false,
+  "feature_axis_includes": {
+    "antibody_capture": 8,
+    "gene_expression": 36601
+  },
+  "files": {
+    "GSE250041_Proliferating_matrix.mtx.gz": {
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Proliferating_matrix.mtx.gz",
+      "sha256": "bd57314c8d4be01d242c1d1b8a785d73cc5b93589dbcce2d677c6e0bac33027c",
+      "shape": {
+        "barcodes": 8664,
+        "features": 36609,
+        "nonzero": 40926426
+      },
+      "size_bytes": 152191341
+    },
+    "GSE250041_Senescent_matrix.mtx.gz": {
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Senescent_matrix.mtx.gz",
+      "sha256": "133e326e31d3a90e1b493e0d13320a690a951d5c51659a1f6952621a43765d40",
+      "shape": {
+        "barcodes": 4949,
+        "features": 36609,
+        "nonzero": 18104663
+      },
+      "size_bytes": 68344555
+    }
+  },
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.gse250041_matrix_receipt.v1",
+  "single_capture_per_condition": true
+}

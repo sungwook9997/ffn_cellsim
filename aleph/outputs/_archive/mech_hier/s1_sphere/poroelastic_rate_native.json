@@ -1,0 +1,24 @@
+{
+  "note": "poroelastic rate sweep, NF=70686, cuda:0, Lp=1e-07, K_drained=300.0, koff=0.066, f_excess=0.25",
+  "rows": [
+    {
+      "rate_um_s": 5.0,
+      "E_fit_Pa": 900066.3643665761,
+      "verdict": "TOO STIFF"
+    },
+    {
+      "rate_um_s": 0.05,
+      "E_fit_Pa": 898879.0289988971,
+      "verdict": "TOO STIFF"
+    },
+    {
+      "rate_um_s": 0.005,
+      "E_fit_Pa": 894111.6560613523,
+      "verdict": "TOO STIFF"
+    }
+  ],
+  "mcf7_band": [
+    224.0,
+    279.0
+  ]
+}

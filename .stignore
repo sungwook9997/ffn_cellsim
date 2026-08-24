@@ -1,0 +1,50 @@
+// Syncthing ignore patterns for ActiveCellSim
+// See https://docs.syncthing.net/users/ignoring.html
+
+// --- git internals (per-host, never sync) ---
+.git
+.gitignore.local
+
+// --- Claude Code per-host worktrees & session state ---
+.claude
+
+// --- Python build / cache (per-host, regeneratable) ---
+__pycache__
+*.py[cod]
+*.egg-info
+.eggs
+.pytest_cache
+.pytest_tmp
+.ruff_cache
+
+// --- venvs (per-host, never sync) ---
+.venv
+venv
+env
+
+// --- Taichi JIT cache (per-host, GPU-arch specific) ---
+.taichi
+
+// --- Editor / OS junk ---
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints
+
+// --- Build artifacts ---
+build
+dist
+
+// Note: data/experimental/ and data/literature/ ARE synced (small CSVs).
+// Note: results/ IS synced for now — toggle below if HDF5 frames balloon.
+// results
+// logs
+
+// Notion export token (per-host secret)
+.notion_token
+
+// --- Syncthing conflict copies (per-host, never propagate) ---
+// Two hosts editing the same output figure/json create *.sync-conflict-* copies;
+// keep each host's locally, do not sync them around (they bred git-status noise).
+*.sync-conflict-*

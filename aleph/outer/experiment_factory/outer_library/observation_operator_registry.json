@@ -1,0 +1,79 @@
+{
+  "schema": "aleph.outer_library.observation_operator_registry.v1",
+  "authority": "conservative_pre_sweep_inventory",
+  "entries": [
+    {
+      "external_observable": "CDH1_RNA_abundance",
+      "external_unit": "assay_relative_expression",
+      "status": "unavailable",
+      "operator_id": null,
+      "reason": "No Aleph state or observation callable represents CDH1 transcript abundance.",
+      "forbidden_shortcut": "Do not map CDH1 expression directly to an adhesion stiffness or bond count."
+    },
+    {
+      "external_observable": "VIM_RNA_abundance",
+      "external_unit": "assay_relative_expression",
+      "status": "unavailable",
+      "operator_id": null,
+      "reason": "Aleph has a vimentin-labelled mechanical population, but no callable maps that population to VIM transcript abundance.",
+      "forbidden_shortcut": "A shared biological name is not an observation operator or a calibrated constitutive bridge."
+    },
+    {
+      "external_observable": "E_cadherin_protein_abundance",
+      "external_unit": "assay_relative_fluorescence_or_intensity",
+      "status": "unavailable",
+      "operator_id": null,
+      "reason": "No Aleph state or observation callable represents E-cadherin protein abundance.",
+      "forbidden_shortcut": "Do not equate protein intensity with a focal-adhesion or cell-cell adhesion parameter."
+    },
+    {
+      "external_observable": "Vimentin_protein_abundance",
+      "external_unit": "assay_relative_fluorescence_or_intensity",
+      "status": "unavailable",
+      "operator_id": null,
+      "reason": "The vimentin mechanical population has no validated protein-intensity observation model.",
+      "forbidden_shortcut": "Do not infer filament number, topology, or stiffness from intensity without an independently validated bridge."
+    },
+    {
+      "external_observable": "tissue_traction_force_per_cell",
+      "external_unit": "nN_per_cell",
+      "status": "candidate_native",
+      "operator_id": "aleph.engine.ledger.AcceptedStepLedger.traction_resultant_d",
+      "source_path": "aleph/engine/ledger.py",
+      "source_symbol": "traction_resultant_d: wp.array",
+      "reason": "Aleph exposes the accepted-step cell-to-ECM traction resultant, but tissue-TFM geometry, per-cell/ROI aggregation, and nN-per-cell validation are not yet established.",
+      "forbidden_shortcut": "A force-bearing callable is not a unit- and geometry-matched TFM operator."
+    },
+    {
+      "external_observable": "membrane_tether_plateau_force",
+      "external_unit": "pN",
+      "status": "unavailable",
+      "operator_id": null,
+      "reason": "Aleph's ERM membrane-cortex spring is not an AFM membrane-tube plateau-force observation model, so no source callable is registered.",
+      "forbidden_shortcut": "Do not reuse an ERM tether force merely because both quantities contain the word tether."
+    },
+    {
+      "external_observable": "effective_laplace_surface_tension",
+      "external_unit": "pN_per_micrometre",
+      "status": "candidate_native",
+      "operator_id": "aleph.components.incumbent.cortical_tension.measure_cortical_stress:gamma_total_pn_per_um",
+      "source_path": "aleph/components/incumbent/cortical_tension.py",
+      "source_symbol": "def measure_cortical_stress",
+      "reason": "Aleph exposes the total method-of-planes tension over all load-bearing elements, but equivalence to the dynamic AFM parallel-plate effective Laplace operator has not yet been validated at matched geometry and protocol.",
+      "forbidden_shortcut": "Matching dimensions and a source-code claim of AFM/Laplace comparability do not establish a geometry-matched observation operator."
+    }
+  ],
+  "promotion_rule": {
+    "eligible_statuses": ["native_validated", "surrogate_validated"],
+    "required_fields": [
+      "operator_id",
+      "external_unit",
+      "aleph_unit",
+      "unit_conversion_verified",
+      "geometry_matched",
+      "validation_report_sha256"
+    ],
+    "candidate_native_is_promotable": false,
+    "unavailable_is_promotable": false
+  }
+}

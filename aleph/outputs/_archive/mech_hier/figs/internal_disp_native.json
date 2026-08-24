@@ -1,0 +1,63 @@
+{
+ "nf": 70686,
+ "strain": 0.1,
+ "R0_um": 7.499978516787127,
+ "R_eq_rest_um": 7.514431686322015,
+ "R_eq_load_um": 7.514437184276165,
+ "Nc": 494802,
+ "Ne": 495283,
+ "n_nuc": 3000,
+ "n_mt": 40,
+ "F_plate_pN": 9105.915574892444,
+ "com_drift_um": 0.0001494815832879407,
+ "per_compartment": [
+  {
+   "compartment": "cortex_shell",
+   "n": 494802,
+   "mean_um": 0.0399404605896439,
+   "p50_um": 0.00015077268991851828,
+   "max_um": 0.7514255338663988,
+   "raw_mean_um": 0.039828188743610604,
+   "raw_std_um": 0.13352511764902342
+  },
+  {
+   "compartment": "MT_aster+MTOC",
+   "n": 481,
+   "mean_um": 0.0001494815832879417,
+   "p50_um": 0.00014948158328794767,
+   "max_um": 0.00014948158328822523,
+   "raw_mean_um": 0.0,
+   "raw_std_um": 0.0
+  },
+  {
+   "compartment": "nucleus",
+   "n": 3000,
+   "mean_um": 0.00014917683077238664,
+   "p50_um": 0.000149253615598778,
+   "max_um": 0.00014948390444716734,
+   "raw_mean_um": 4.577002031784412e-07,
+   "raw_std_um": 2.6424693240868317e-07
+  }
+ ],
+ "mtoc_disp_um": 0.00014948158328794073,
+ "nucleus_centroid_shift_um": 0.0001491764560717792,
+ "interior_over_shell_mean_ratio": 0.0037349802323277783,
+ "axial_mean_um": 0.03854723737644482,
+ "radial_mean_um": 0.002987043602934868,
+ "nucleus_shape": {
+  "rest": {
+   "z_half_um": 5.105518327263573,
+   "xy_rad_um": 5.108939460934245
+  },
+  "load": {
+   "z_half_um": 5.105518936954682,
+   "xy_rad_um": 5.108939480535317
+  },
+  "z_flatten_frac": -1.1941806298077318e-07,
+  "xy_bulge_frac": 3.836622458846413e-09
+ },
+ "mt_tip_cortex_gap_um": 0.9002240110747979,
+ "interior_frozen": true,
+ "wall_s": 158.98205947875977,
+ "verdict": "INTERIOR DECOUPLED \u2014 MT+nucleus rigid (raw_std\u22480), not deforming under cortex load: no cytoplasm stress-transmission / no IF cage / MT tip-contact not engaged"
+}

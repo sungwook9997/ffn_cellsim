@@ -1,0 +1,11 @@
+# ffn_cellsim — development / test dependencies.
+#
+# Layered on top of `requirements.txt` and the Warp-CUDA conda environment.
+# Historical HOOMD tests/scripts are source-only and must not be executed.
+
+-r requirements.txt
+
+pytest>=8.0
+ruff>=0.5
+python-docx  # Layer-2 paper-ready report export (scripts/layer2_report_docx.py)
+polyscope>=2.6  # native debug viewer for ac state dumps (scripts/ac_polyscope_view.py); HTML viewer stays the share artifact

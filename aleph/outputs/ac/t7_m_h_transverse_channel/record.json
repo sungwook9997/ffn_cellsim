@@ -1,0 +1,247 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "t7_m_h_transverse_restoring_channel",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "evidence_basis": "one production-kernel launch per sweep point on a two-node segment and one bound head; no builder, no population, no gate declared, no rung asserted",
+ "stamp": {
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "python": "3.13.14",
+  "device": "cuda:0"
+ },
+ "parameter_provenance": {
+  "k_xb_pN_per_um": {
+   "value": 1000.0,
+   "status": "PI_GAP",
+   "note": "also sets lever-arm stiffness"
+  },
+  "capture_radius_um": {
+   "value": 0.21,
+   "status": "PI_GAP"
+  },
+  "head_offset_um": {
+   "value": 0.2,
+   "status": "ARCHIVED"
+  },
+  "r0_bind_um": {
+   "value": 0.0,
+   "status": "DERIVED",
+   "note": "attach-unstrained: <d,w> at bind"
+  }
+ },
+ "finding": {
+  "max_transverse_force_pN": 0.0,
+  "transverse_force_identically_zero": true,
+  "axial_force_unchanged_under_transverse_offset": true,
+  "axial_arm_responds_positive_control": true,
+  "max_newton3_residual_pN": 0.0,
+  "counterfactual_3d_spring_perp_at_max_offset_pN": 1000.0
+ },
+ "reading": "The crossbridge is not merely without a transverse RESTORING force \u2014 it is blind to transverse displacement entirely: the axial force does not change either, because only <d, walk_dir> enters. The BOND registers nothing at any offset out to 1 um. The counterfactual column is a scale for the missing channel, not a proposed model.",
+ "timing": {
+  "comparable": false,
+  "not_comparable_reason": "single-launch force probe; no solve, no accepted step"
+ },
+ "rows": [
+  {
+   "arm": "transverse",
+   "offset_um": 0.0,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.005,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 5.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.01,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 10.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.02,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 20.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.05,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 50.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.1,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 100.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.2,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 200.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.21,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 210.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.3,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 300.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": true
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 0.5,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 500.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": true
+  },
+  {
+   "arm": "transverse",
+   "offset_um": 1.0,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 1000.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": true
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.0,
+   "f_axial_pN": 0.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.005,
+   "f_axial_pN": -5.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.01,
+   "f_axial_pN": -10.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.02,
+   "f_axial_pN": -20.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.05,
+   "f_axial_pN": -50.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.1,
+   "f_axial_pN": -100.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.2,
+   "f_axial_pN": -200.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.21,
+   "f_axial_pN": -210.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": false
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.3,
+   "f_axial_pN": -300.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": true
+  },
+  {
+   "arm": "axial",
+   "offset_um": 0.5,
+   "f_axial_pN": -500.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": true
+  },
+  {
+   "arm": "axial",
+   "offset_um": 1.0,
+   "f_axial_pN": -1000.0,
+   "f_transverse_pN": 0.0,
+   "f_perp_if_3d_spring_pN": 0.0,
+   "newton3_residual_pN": 0.0,
+   "beyond_capture_radius": true
+  }
+ ],
+ "scope_correction_2026_08_15": "AMENDED the same day, after an independent slice measurement. The original reading said a bound head 'may sit arbitrarily far off its actin line'. That is TRUE of this probe and FALSE of the assembled model, and the difference is the point. This probe is a bare two-node segment with one head and nothing else, chosen so the reading could not be confounded \u2014 so it measures the BOND and could not have seen k_head_arm, which is not in it. In the assembled slice the head is held transversally by the head-arm spring: the predicted transverse directions there carry a Rayleigh quotient of 100.042 pN/um against k_head_arm = 100.0, an identification rather than a near-miss (peer measurement, codex/ff-ac-codex 2e4a6531). The measurement below is unchanged and stands; what was over-scoped was one sentence about the consequence. The bond is blind; the head is not free."
+}

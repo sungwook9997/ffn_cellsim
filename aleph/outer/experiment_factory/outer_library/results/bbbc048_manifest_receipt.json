@@ -1,0 +1,21 @@
+{
+  "aleph_authority": "none",
+  "archive_sha256": "1421caf43d3957859dd5402d051829994abe69aeb23482a679dc83b819f2f590",
+  "cell_count": 32266,
+  "channel_count": 3,
+  "ground_truth_sha256": "739dc26417ff94f9a511bafb7b2692d02b429120f08e96446d3afb12219f35c5",
+  "image_count": 96798,
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "manifest_sha256": "811b7533109684698a27cb2c93600d42dd1ed51b1a36d7783c7728a8af517bdc",
+  "phase_counts": {
+    "Anaphase": 15,
+    "G1": 14333,
+    "G2": 8601,
+    "Metaphase": 68,
+    "Prophase": 606,
+    "S": 8616,
+    "Telophase": 27
+  },
+  "schema": "aleph.outer_library.bbbc048_manifest_receipt.v1"
+}

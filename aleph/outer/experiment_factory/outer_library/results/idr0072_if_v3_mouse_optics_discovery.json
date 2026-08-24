@@ -1,0 +1,26 @@
+{
+  "aleph_parameter_authority": "none",
+  "external_labels_used_for_model_selection": false,
+  "flex_files_opened_for_metadata": 1,
+  "image_id": 12895811,
+  "model_predictions_made": 0,
+  "observed_acquisition_layout": {
+    "channels_per_sublayout": 2,
+    "pages": 20,
+    "selected_manifest_field": 1,
+    "selected_sublayout": 1,
+    "sublayouts": 10,
+    "z_planes_per_channel_and_sublayout": 1
+  },
+  "observed_filter_combination": {
+    "Camera1": "520/35",
+    "Camera2": "blocked",
+    "Camera3": "690/50"
+  },
+  "observed_light_sources_nm": [488, 635],
+  "pixel_arrays_loaded": 0,
+  "protocol_commit": "a27d0f1",
+  "reason": "The human metadata probe fixed 640 nm and 690/70 for DRAQ5, while the mouse plates use 635 nm and 690/50. Twenty pages are ten spatial sublayouts with two channels, not a z stack.",
+  "schema": "aleph.outer_library.idr0072_if_mouse_optics_discovery.v1",
+  "status": "v3_refused_before_model_prediction"
+}

@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "n_particles": 2916,
+    "n_ecm": 2754,
+    "nv": 162,
+    "contractility": 0.5,
+    "turgor_dP0": 25.0,
+    "k_fa": 0.001,
+    "fa_capture": 1e-06,
+    "dt": 5e-10,
+    "steps": 40000,
+    "no_cell_baseline": true,
+    "pre_equil_steps": 0,
+    "tension_decay_loglog_slope": -0.19341407652800502,
+    "subband_slopes_near_mid_far": {
+      "near": -0.633693206072187,
+      "mid": -1.2092567006053954,
+      "far": 3.279248551527979
+    },
+    "mem_mean_radius_nm_0": 7500.000000000001,
+    "mem_mean_radius_nm_final": 7346.280046315646,
+    "mem_radius_change_pct": -2.0495993824580654,
+    "n_fa_engaged_final": 40,
+    "final_mean_inward_nm": 3.4588509868190918,
+    "final_max_inward_nm": 101.98233099831567
+  },
+  "series": [
+    {
+      "step": 0,
+      "mean_inward_nm": 0.0,
+      "max_inward_nm": -0.0,
+      "mem_mean_radius_nm": 7500.000000000001,
+      "n_fa_engaged": 42
+    },
+    {
+      "step": 4000,
+      "mean_inward_nm": 0.4122886050037076,
+      "max_inward_nm": 49.25346649966492,
+      "mem_mean_radius_nm": 7346.7904462888255,
+      "n_fa_engaged": 41
+    },
+    {
+      "step": 8000,
+      "mean_inward_nm": 0.9057434807628957,
+      "max_inward_nm": 65.82896809127395,
+      "mem_mean_radius_nm": 7346.171815977088,
+      "n_fa_engaged": 41
+    },
+    {
+      "step": 12000,
+      "mean_inward_nm": 1.2927746378414822,
+      "max_inward_nm": 80.6522861991964,
+      "mem_mean_radius_nm": 7346.204462863743,
+      "n_fa_engaged": 41
+    },
+    {
+      "step": 16000,
+      "mean_inward_nm": 1.7173223678721565,
+      "max_inward_nm": 83.30483541397658,
+      "mem_mean_radius_nm": 7346.333093846061,
+      "n_fa_engaged": 41
+    },
+    {
+      "step": 20000,
+      "mean_inward_nm": 2.056549700608239,
+      "max_inward_nm": 93.45773119883476,
+      "mem_mean_radius_nm": 7346.309833918178,
+      "n_fa_engaged": 41
+    },
+    {
+      "step": 24000,
+      "mean_inward_nm": 2.3693221543997938,
+      "max_inward_nm": 91.28943478512437,
+      "mem_mean_radius_nm": 7346.423063861782,
+      "n_fa_engaged": 41
+    },
+    {
+      "step": 28000,
+      "mean_inward_nm": 2.5507175348213007,
+      "max_inward_nm": 95.82806704973304,
+      "mem_mean_radius_nm": 7346.305000975933,
+      "n_fa_engaged": 40
+    },
+    {
+      "step": 32000,
+      "mean_inward_nm": 2.8185942870025067,
+      "max_inward_nm": 106.6963296735649,
+      "mem_mean_radius_nm": 7346.286894356967,
+      "n_fa_engaged": 40
+    },
+    {
+      "step": 36000,
+      "mean_inward_nm": 3.127162898715859,
+      "max_inward_nm": 107.54427125240711,
+      "mem_mean_radius_nm": 7346.440444028401,
+      "n_fa_engaged": 40
+    },
+    {
+      "step": 40000,
+      "mean_inward_nm": 3.4588509868190918,
+      "max_inward_nm": 101.98233099831567,
+      "mem_mean_radius_nm": 7346.280046315646,
+      "n_fa_engaged": 40
+    }
+  ]
+}

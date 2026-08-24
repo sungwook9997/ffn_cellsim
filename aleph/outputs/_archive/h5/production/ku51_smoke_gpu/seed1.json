@@ -1,0 +1,79 @@
+{
+  "n_fil": 60,
+  "seed": 1,
+  "dt_s": 6.980731076014148e-07,
+  "dt_factor": 0.001,
+  "wave_area_m2": 9e-10,
+  "n_WAVE": 100,
+  "n_warmup": 5000,
+  "n_sample": 10,
+  "interval": 1000,
+  "plateau_density_per_um2": 0.10972222222222222,
+  "target_density_per_um2": 100.0,
+  "final_density_per_um2": 0.10888888888888888,
+  "n_barbed_ends_final": 98,
+  "n_capped_final": 2,
+  "note": "KU-5.1 dendritic density at WAVE plane. Driver scaffold (2026-05-29 autonomous /loop) \u2014 params + plateau band PI calibration pending.",
+  "diag": [
+    {
+      "step": 6000,
+      "n_barbed_ends": 100,
+      "n_capped": 0,
+      "density_per_um2": 0.1111111111111111
+    },
+    {
+      "step": 7000,
+      "n_barbed_ends": 100,
+      "n_capped": 0,
+      "density_per_um2": 0.1111111111111111
+    },
+    {
+      "step": 8000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 9000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 10000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 11000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 12000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 13000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 14000,
+      "n_barbed_ends": 99,
+      "n_capped": 1,
+      "density_per_um2": 0.11
+    },
+    {
+      "step": 15000,
+      "n_barbed_ends": 98,
+      "n_capped": 2,
+      "density_per_um2": 0.10888888888888888
+    }
+  ]
+}

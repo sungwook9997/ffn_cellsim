@@ -1,0 +1,102 @@
+{
+  "schema": "aleph.outer_library.pbmc_two_lab_recalibration_protocol.v1",
+  "frozen_before_calibration_or_confirmation_expression_and_cell_annotation_access": true,
+  "objective": "repair the failed cross-lab uncertainty transfer without tuning on the already-opened GSE132044 test labels: calibrate on one new laboratory and evaluate exactly once on a second untouched laboratory, while preserving the original GSE96583 classifier weights and fit-donor feature set",
+  "prior_result": {
+    "training_dataset": "GSE96583",
+    "opened_retrospective_external_dataset": "GSE132044",
+    "opened_external_labels_may_select_or_calibrate_anything": false,
+    "opened_external_macro_f1": 0.7197785840750212,
+    "opened_external_marginal_conformal_coverage": 0.5024695874874234,
+    "reason_new_labs_are_required": "the original Broad test labels have been inspected, so changing calibration and reusing Broad as a confirmatory test would be circular"
+  },
+  "sources": {
+    "calibration_lab": {
+      "accession": "GSE164378",
+      "lab_group": "NYGC_Satija_Hao_multimodal_PBMC",
+      "role": "calibration_only",
+      "official_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378",
+      "expected_expression_container": "GSE164378_RAW.tar",
+      "expected_author_metadata": "GSE164378_sc.meta.data_3P.csv.gz",
+      "declared_modality": "3-prime CITE-seq RNA counts with author cell annotations; ADT is retained as provenance but cannot enter this RNA classifier"
+    },
+    "untouched_confirmation_lab": {
+      "accession": "GSE222647",
+      "lab_group": "Washington_University_Lin_Ruzycki_Apte_AMD_PBMC",
+      "role": "single_use_confirmation",
+      "official_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE222647",
+      "expected_expression_file": "GSE222647_AMD_PBMC_countmatrix.csv.gz",
+      "expected_author_metadata": "GSE222647_AMD_PBMC_metadata.csv.gz",
+      "declared_design": "individual-donor PBMC samples from control and AMD participants"
+    }
+  },
+  "frozen_input_policy": {
+    "expression": "raw integer gene-by-cell counts only; refuse normalized or integrated expression as classifier input",
+    "gene_alignment": "exact case-sensitive HGNC symbol intersection with the 508 genes stored in pbmc_cross_lab_model.npz; no new feature selection",
+    "normalization": "per-cell library size to 10000 followed by log1p, identical to the original model",
+    "minimum_common_features": 450,
+    "duplicate_cell_identifier_policy": "refuse",
+    "duplicate_gene_symbol_policy": "use the first released row in source order and report all duplicates",
+    "minimum_library_size": 1,
+    "author_cell_annotation_column_precedence": ["celltype.l1", "celltype", "cell_type", "CellType", "major_cell_type"],
+    "author_donor_column_precedence": ["donor", "donor_id", "sample", "sample_id", "orig.ident"],
+    "author_condition_column_precedence": ["disease", "disease_status", "condition", "group", "Status"]
+  },
+  "coarse_cell_type_mapping_in_order": [
+    {"canonical": "B_cell", "case_insensitive_patterns": ["(^|[^a-z])b([^a-z]|$)", "b cell", "b-cell", "cd19", "cd20"]},
+    {"canonical": "CD4_T_cell", "case_insensitive_patterns": ["cd4", "helper t", "regulatory t", "treg"]},
+    {"canonical": "CD8_T_cell", "case_insensitive_patterns": ["cd8", "cytotoxic t"]},
+    {"canonical": "NK_cell", "case_insensitive_patterns": ["(^|[^a-z])nk([^a-z]|$)", "natural killer"]},
+    {"canonical": "monocyte", "case_insensitive_patterns": ["mono", "cd14", "cd16"]},
+    {"canonical": "dendritic_cell", "case_insensitive_patterns": ["dendritic", "(^|[^a-z])dc([^a-z]|$)", "pdc"]}
+  ],
+  "ambiguous_label_policy": {
+    "generic_T_without_CD4_or_CD8": "exclude",
+    "unassigned_or_unknown": "exclude",
+    "author_labels_outside_the_six_class_ontology": "exclude from classifier metrics and retain as semantic OOD only",
+    "manual_marker_based_relabeling_after_expression_access": "forbidden",
+    "model_predicted_labels_as_truth": "forbidden"
+  },
+  "calibration_contract": {
+    "classifier_weights_may_change": false,
+    "feature_symbols_or_order_may_change": false,
+    "allowed_fitted_quantities": [
+      "one positive scalar temperature minimizing calibration-label negative log likelihood",
+      "six class-conditional split-conformal nonconformity thresholds at alpha 0.1"
+    ],
+    "nonconformity_score": "one minus calibrated probability assigned to the true class",
+    "finite_sample_quantile": "ceil((n_class + 1) * 0.9)-th ordered score, capped at n_class",
+    "minimum_calibration_cells_per_class": 100,
+    "calibration_cell_rows_are_not_independent_biological_replicates": true,
+    "GSE132044_labels_used_for_fitting_selection_or_calibration": false
+  },
+  "confirmation_contract": {
+    "primary_population": "author-designated control participants only; if no control condition column/value exists, use all participants and report this fallback before evaluation",
+    "confirmation_labels_may_select_features_weights_temperature_thresholds_or_mapping": false,
+    "evaluation_is_single_use": true,
+    "metrics": ["six-class macro-F1", "15-bin ECE", "marginal conformal coverage", "class-conditional coverage", "mean prediction-set size", "semantic OOD AUROC"],
+    "frozen_endpoints": {
+      "macro_f1_minimum": 0.70,
+      "ece_maximum": 0.15,
+      "marginal_conformal_coverage_minimum": 0.90,
+      "class_conditional_coverage_minimum_for_classes_with_at_least_100_cells": 0.80,
+      "mean_prediction_set_size_maximum": 3.0,
+      "semantic_ood_auroc_minimum_if_at_least_100_positive_and_100_negative_cells": 0.70
+    },
+    "all_metrics_reported_by_donor": true,
+    "donors_are_the_inferential_and_split_unit_not_cells": true
+  },
+  "failure_policy": {
+    "if_any_primary_endpoint_fails": "retain PBMC head as blocked_external_uncertainty and do not reuse confirmation labels",
+    "if_required_columns_or_raw_counts_are_absent": "refuse source rather than infer labels or substitute integrated expression",
+    "if_confirmation_fails": "select a new protocol and a new untouched laboratory before another confirmatory claim"
+  },
+  "authority": {
+    "role": "pre_sweep_context_compression_only",
+    "aleph_parameter_authority": "none",
+    "may_delete_sweep_axis": false,
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false,
+    "required_after_pass": "validated Aleph observation operator plus identifiability and monotonic forward sensitivity before numeric promotion"
+  }
+}

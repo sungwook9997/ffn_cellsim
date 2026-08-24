@@ -1,0 +1,54 @@
+{
+  "schema": "aleph.outer.afm_c2_readiness_snapshot.v1",
+  "captured_at": "2026-08-10",
+  "source_branch": "codex/cortical-tension-afm",
+  "source_worktree_commit": "f7550895",
+  "source_artifacts": [
+    {
+      "path": "aleph/outputs/ac/afm_cortical_tension_readiness/readiness.json",
+      "sha256": "cf01ac4af4b08adf6c4fc6b45a7ccc00d49d90bf2d9a8c1a3b2654c4a209aa60"
+    },
+    {
+      "path": "aleph/outputs/ac/afm_cortical_tension_readiness/c2_accepted_ensemble.json",
+      "sha256": "4547e9c4dc00ec98eacc0ab59d4ba5b3a31bc701668fa7e6ed5a426b446a0268"
+    }
+  ],
+  "c2": {
+    "status": "ACCEPTED_3_SEEDS",
+    "scope": "numerical_and_accepted_step_transaction_readiness_only",
+    "device": "NVIDIA GeForce RTX 3090 via Slurm",
+    "full_native_population": true,
+    "all_compartments_present": true,
+    "membrane_subdivisions": 8,
+    "total_nodes": 1150806,
+    "accepted_seeds": [0, 1, 2],
+    "max_projected_force_pn": [
+      0.20926850127767316,
+      0.20555489284010847,
+      0.20865114826980793
+    ],
+    "accepted_physical_steps_per_seed": 1,
+    "committed_time_s_per_seed": 0.01
+  },
+  "indenter_cuda_gate": {
+    "verdict": "PASS",
+    "scope": "contact sign, reaction channel, adjoint balance, accepted/rejected apparatus transaction",
+    "calibrates_physical_parameters": false
+  },
+  "quantitative_sweep": {
+    "launched": false,
+    "verdict": "BLOCKED",
+    "remaining_gates": [
+      "source the spherical apparatus or implement the cited flat-cantilever geometry",
+      "supply target-cell-line Pi0 or keep the HeLa proxy mechanism-demo-only",
+      "source and approve contact rest distance and stiffness",
+      "source and approve exterior-medium viscosity",
+      "accept a post-induction, equilibrated, dt-converged active-cortex state handoff"
+    ]
+  },
+  "authority": {
+    "may_report_force_indentation_curve": false,
+    "may_report_cortical_tension_magnitude": false,
+    "may_select_aleph_parameter": false
+  }
+}

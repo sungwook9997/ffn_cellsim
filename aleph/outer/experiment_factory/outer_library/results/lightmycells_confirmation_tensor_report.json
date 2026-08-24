@@ -1,0 +1,62 @@
+{
+  "acquisition_receipt_sha256": "c1a45b59589f15688317be66553a7df4fefdaebfc489c37f09fbc16a19863b64",
+  "acquisition_report_sha256": "1dbb95dd132a2149589d0adf2f91b93d13f91cd2606d4781f6cad0576deb8a56",
+  "acquisition_set_count": 102,
+  "aleph_authority": "none",
+  "alignment_method_counts": {
+    "nearest_PositionZ": 140,
+    "singleton_input": 86
+  },
+  "checkpoint_sha256": "150c4a5884b4b4dabc1a412f0bc8b9bd43d3d339f9c4e46d12beb665a04ac383",
+  "confirmation_consumed": true,
+  "confirmation_pair_count": 226,
+  "confirmation_pixels_accessed": 226,
+  "dtype": "float16",
+  "experimenter_group_counts": {
+    "Centre de Biologie Int\u00e9grative (CBI), Toulouse": 32,
+    "Centre de Recherche Saint Antoine (CRSA) , Paris Centre ": 19,
+    "Institut Genetique et D\u00e9veloppement de Rennes (IGDR) , Bretagne-Loire": 86,
+    "Institut de Biologie du D\u00e9veloppement de Marseille (IBDM), Marseille": 20,
+    "Montpellier Ressources Imagerie (MRI), Montpellier": 69
+  },
+  "input_constant_image_count": 0,
+  "input_modality_counts": {
+    "BF": 102,
+    "DIC": 88,
+    "PC": 36
+  },
+  "input_normalized_mean": 0.4291301965713501,
+  "may_be_reused_as_pristine": false,
+  "may_emit_numeric_sweep_range": false,
+  "normalization": {
+    "absolute_intensity_prediction_permitted": false,
+    "clip_range": [
+      0.0,
+      1.0
+    ],
+    "per_image_percentiles": [
+      1.0,
+      99.5
+    ],
+    "resize": "Pillow_BOX",
+    "spatial_side_length": 64
+  },
+  "pair_count": 226,
+  "pair_manifest_sha256": "8440af2b0903deb7e6ffb389c1b38ad6e92fa396212446ea7583b71856c1eaa7",
+  "schema": "aleph.outer_library.lightmycells_confirmation_tensor.v1",
+  "shape": [
+    226,
+    64,
+    64
+  ],
+  "study_count": 6,
+  "target_channel_counts": {
+    "Actin": 10,
+    "Mitochondria": 91,
+    "Nucleus": 102,
+    "Tubulin": 23
+  },
+  "target_constant_image_count": 0,
+  "target_normalized_mean": 0.1765117198228836,
+  "tensor_sha256": "ddbc4e2626ea4422035666c8d2eee8f24bb5cbc37adeeb3e04352dab0564ef8c"
+}

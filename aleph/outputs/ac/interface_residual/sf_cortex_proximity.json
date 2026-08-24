@@ -1,0 +1,32 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "sf_cortex_proximity_probe",
+  "kind": "diagnostic",
+  "build": {
+    "commit": "fb7b87ae",
+    "source": "declared"
+  },
+  "device": "cuda:0",
+  "evidence": "NATIVE",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "build-time separation between the sf_arc population and the cortex actin nodes, compared against the SOURCED alpha-actinin capture radius. BLOCKED: a geometric readiness check for wiring, not a physics result \u2014 nothing was solved and no force was computed.",
+  "capture_radius_um": 0.06,
+  "capture_radius_provenance": "SOURCED \u2014 ALPHA_ACTININ.capture_radius_um (Ferrer 2008 line)",
+  "census": {
+    "cortex_filaments": 70686,
+    "n_cortex_actin_nodes": 494802,
+    "n_sf_nodes": 360
+  },
+  "separation_um": {
+    "min": 0.015829583283352856,
+    "median": 2.594656183715876,
+    "max": 6.7317684447154145,
+    "mean": 2.5732073049119797
+  },
+  "pairs_within_capture": {
+    "n_sf_nodes_with_a_partner": 4,
+    "n_sf_nodes": 360,
+    "n_candidate_pairs": 15
+  },
+  "wireable": true
+}

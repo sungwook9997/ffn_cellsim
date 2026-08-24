@@ -1,0 +1,487 @@
+# Phase 1 — Unit H.3 Cortex multi-filament network (HOOMD runtime) defaults.
+#
+# 1000 effective F-actin filaments arranged on a R = 10 μm spherical shell,
+# each filament representing ×40 native actin filaments bundled (the only
+# sanctioned coarse-graining per CLAUDE.md, ratified in Plan v2 §3 H.3
+# v3.1, 2026-05-19). Per-filament force constants (κ_B, μ, ℓ_0) are
+# identical to H.2's single-actin-bundle values — what is coarse-grained
+# is the *filament count* (1000 effective vs ~38,000 native), not
+# per-filament stiffness.
+#
+# Inherits BAOAB D3, LJ-WCA D7 from H.1; inherits filament_math L_p /
+# equipartition / 3D Boltzmann gates from H.2.
+#
+# H.3 brief: `aleph/docs/briefs/H3_cortex.md` §Cortex topology,
+# §Crosslinkers (D2), §Validation acceptance.
+#
+# σ_z vs L_z pre-flight (H.2 slab lesson, 2026-05-21):
+#   Per-filament free-3D thermal transverse extent for L = 3 μm at
+#   L_p = 17 μm: σ_perp = √(L³/(3 L_p)) ≈ 730 nm. Box is a 30 μm CUBE
+#   (L_box = 3·R_cell), NOT a slab. Half-box 15 μm vs cell-plus-margin
+#   R_cell + σ_perp_max + ℓ_0 ≈ 11.2 μm — well inside. L_box/σ_perp ≈
+#   41× — far above the H.2 strict-PASS safe ratio (≥10×). The 200 nm
+#   cortex thickness (KU-3.17) is a BIOLOGICAL constraint enforced by
+#   the ERM tether (later H.3 deliverable), NOT box geometry.
+#
+# Per CLAUDE.md hard rules:
+# - No magic numbers — every parameter is KU-anchored or derived.
+# - First-principles acceptance bands ONLY (H.2 Day 5 lesson:
+#   measurement-anchored tuning is forbidden).
+# - Sanity Gate §1–6 enforced before first execution
+#   (`aleph/cortex/cortex.py` module docstring §Sanity Gate;
+#   STATIC checks in `aleph/tests/test_cortex.py`).
+
+ecm: null         # H.3 has no ECM-specific block (placeholder for resolver compat)
+filament: null    # H.3 has no single-filament block (placeholder)
+
+cortex:
+
+  # ---- Primary biological scales (KU-3.x literature anchors) ----
+  R_cell: 10.0e-6              # m   cell radius, KU-3.17
+  cortex_thickness: 200.0e-9   # m   cortex shell thickness, KU-3.17
+  n_filaments: 1000            # ×40 mesoscopic count, Plan v2 §3 H.3 v3.1
+
+  # Per-filament discretization (matches H.2 exactly so the per-filament
+  # bond/angle measurement is directly comparable).
+  beads_per_filament: 7        # Plan v2 §3 H.3 v3.1 mean (= L / ℓ_0 + 1 = 6 + 1)
+  L_filament: 3.0e-6           # m   ×40 mesoscopic mean (uniform 1–5 μm
+                               #     distribution per brief approximated as
+                               #     fixed mean here; variable-length is a
+                               #     later refinement in cortex_network.py).
+  bead_radius: 30.0e-9         # m   ×40 actin bundle cross-section (brief).
+
+  persistence_length: 17.0e-6  # m   ℓ_p, KU-1.1 actin reference
+  bending_modulus: 7.0e-26     # N·m²  κ_B = ℓ_p k_B T at 310 K, KU-1.1
+  # AFINES μ_actin_bundle (Freedman 2017 Soft Matter); same value as
+  # H.2 — KU-1.2 collagen value (8.6e-9 N) is for collagen fibrils not
+  # actin bundles, so we use the AFINES literature value per CLAUDE.md
+  # `feedback_acs_no_abstractions` (mechanistic over abstracted).
+  stretching_modulus: 1.5e-9   # N    μ_actin_bundle (AFINES Freedman 2017)
+
+  temperature: 310.0           # K   37 °C
+  kT: 4.28e-21                 # J   k_B · T
+  water_viscosity: 6.913e-4    # Pa·s  η_water at 310 K (NIST), KU-1.26
+
+  seed: 42
+
+  # ---- Box geometry (cube; σ_z vs L_z pre-flight in header comment) ----
+  box:
+    # L_box = L_box_over_R_cell · R_cell.  Default 3.0 gives a 30 μm cube.
+    # Derivation: half-box must exceed R_cell + σ_perp_max + ℓ_0.  For
+    # the brief's max L_filament = 5 μm, σ_perp_max ≈ 1.56 μm; with
+    # ℓ_0 = 0.5 μm and R_cell = 10 μm, this needs half_box ≥ 12.1 μm,
+    # i.e. L_box ≥ 24.1 μm.  L_box_over_R_cell = 3.0 → L_box = 30 μm
+    # gives 2.9 μm radial cushion — comfortable, and the cube remains
+    # square-shaped (no slab artefact).
+    L_box_over_R_cell: 3.0
+
+  # ---- D7 LJ WCA (repulsive only, carried over from H.1) ----
+  excluded_volume:
+    enabled: true
+    epsilon_kT: 0.5            # ε = 0.5 · kT, D7 Phase 1 canonical
+    sigma_factor: 2.0          # σ = 2 · R_bead, D7 Phase 1 canonical
+                               # r_cut = 2^(1/6) · σ ≈ 1.122 · σ (LJ minimum)
+
+  # ---- D3 dynamics (BAOAB, frozen 2026-05-20 in `aleph/integrator/baoab.py`) ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab
+    cfl_safety_factor: 0.1     # dt = α · τ_min (same α as H.1 / H.2)
+    # τ_min derived at config-resolve time. With κ_B / ℓ_0 / μ identical to
+    # H.2, τ_stretch ≈ 130 ns dominates → dt_CFL ≈ 13 ns. Crosslinkers
+    # (k_xl = 1e-7 N/m, very soft per KU-3.19) give τ_xl ≈ 3.9 ms ≫
+    # τ_stretch, so they do NOT tighten CFL.
+
+  # ---- Dynamic crosslinkers (D2, KU-3.19) — α-actinin SLIP + filamin CATCH-SLIP ----
+  # Two-particle head pair per xlink + intra-xlink head-to-head bond +
+  # dynamic xlink_head ↔ actin_cortex bonds via force-dependent off-rate.
+  # Implemented in `aleph/cortex/crosslinkers.py` (D2 batched Updater
+  # mirroring H.4 `bridge/integrin_bonds.py` Pereverzev pattern).
+  #
+  # Off-rate model per species (mechanism audit 2026-05-30 §A1, PI-ratified):
+  # - α-actinin (30 %): pure Bell SLIP bond, k_off(F)=k_off0·exp(+F·x_β/kT)
+  #   — k_off monotonically rises with force (the fluid, force-released
+  #   crosslinker). Off-rate ANCHOR re-set to the single-molecule value
+  #   (see alpha_k_off0 Magic-Number Block below).
+  # - filamin (70 %): TWO-PATHWAY CATCH-SLIP off-rate (Pereverzev 2005
+  #   functional form), k_off(F)=k_catch0·exp(−F·x_catch/kT)
+  #   + k_slip0·exp(+F·x_slip/kT). Filamin is a DOCUMENTED catch bond
+  #   (Ehrlicher 2011 Nature 478:260; Rognoni 2012 PNAS 109:19679;
+  #   Gieseke/Rief 2013) — force STABILISES the filamin–actin bond up to a
+  #   peak F* (catch branch dominates), then destabilises it (slip branch).
+  #   Previously mis-modelled as a pure slip bond; corrected here. The
+  #   slip-sign Sanity-Gate test in test_crosslinkers.py becomes a CATCH
+  #   contract (off-rate falls then rises with F; peak at F*).
+  #
+  # k_on = 10 /s per head; gives equilibrium bind fraction
+  # k_on/(k_on + k_off⁰) at F=0 (≈ 0.99 for α-actinin at 0.066/s).
+  dynamic_crosslinkers:
+    n_xl: 1000                 # KU-3.19 target xl count per cortex
+    alpha_fraction: 0.30       # KU-3.19 (Stricker 2010)
+    alpha_length: 35.0e-9      # m   α-actinin extended length
+    filamin_length: 150.0e-9   # m   filamin extended length
+    k_intra: 1.0e-7            # N/m intra-xlink head-to-head (0.1 pN/μm, KU-3.19)
+    k_attach: 1.0e-7           # N/m dynamic head-to-actin attach bond
+    max_bind_dist: 60.0e-9     # m   acceptor search radius (brief §Crosslinkers)
+    # ---- α-actinin: Bell SLIP off-rate (k_off = k_off0·exp(+F·x_β/kT)) ----
+    # alpha_k_off0 Magic-Number Block (C4 correction, mechanism audit
+    # 2026-05-30 §C4, PI-ratified "전부 진행"): RE-ANCHORED 1.0 → 0.066 /s.
+    #   Value:   k_off0 = 0.066 1/s (α-actinin / F-actin unloaded off-rate).
+    #   Primary citation: Ferrer, Lee, Chen, Pelz, Nakamura, Kamm, Lang
+    #     2008 PNAS 105:9221 — single-molecule AFM force-clamp of the
+    #     α-actinin/F-actin bond gives an unloaded dissociation rate
+    #     k_off0 ≈ 0.066 1/s (lifetime ≈ 15 s at zero load).
+    #   Why re-anchor (not keep): the previous 1.0 /s cited Wachsstock 1994
+    #     (Biophys J 66:801), a BULK falling-ball viscometry rate, not a
+    #     single-molecule rate. CLAUDE.md prefers the single-molecule
+    #     literature value; the audit found no derivation justifying a
+    #     mesoscale-effective 1.0 /s, so per the "prefer literature unless
+    #     justified" judgment we re-anchor to Ferrer 2008.
+    #   Grid-invariance: intensive per-bond rate [1/s]; N-independent.
+    alpha_k_off0: 0.066        # 1/s α-actinin unloaded off-rate (Ferrer 2008 PNAS, single-molecule)
+    alpha_x_beta: 0.4e-9       # m   α-actinin Bell strength length (Ferrer 2008 ~0.4 nm)
+    # ---- filamin: Pereverzev two-pathway CATCH-SLIP off-rate ----
+    # k_off(F) = filamin_k_catch0·exp(−F·x_catch/kT)
+    #          + filamin_k_slip0 ·exp(+F·x_slip /kT)
+    # Magic-Number Block (A1 correction, mechanism audit 2026-05-30 §A1,
+    # PI-ratified): filamin is a CATCH bond, not a slip bond.
+    #   filamin_k_catch0 = 0.1 1/s — zero-force catch-pathway rate, anchored
+    #     to the filamin/F-actin unloaded off-rate (Furuike 2001 Nature
+    #     Cell Biol 3:744 single-molecule AFM; lifetime ≈ 10 s at zero load).
+    #   filamin_k_slip0  = 0.02 1/s — zero-force slip-pathway prefactor;
+    #     set so the catch branch dominates at low force (k_slip0 < k_catch0)
+    #     and the slip branch takes over above the catch peak (Pereverzev
+    #     2005 PNAS 102:11281 two-pathway structure; the FilGAP/filamin
+    #     force-stabilisation of Ehrlicher 2011 / the mechanical catch of
+    #     Rognoni 2012 PNAS 109:19679 establish that filamin–actin lifetime
+    #     INCREASES with load up to a peak then falls).
+    #   filamin_x_catch = 0.8 nm — catch-pathway distance; controls how fast
+    #     the catch branch (exp(−F·x/kT)) suppresses k_off with force. Larger
+    #     than the slip distance so the bond is force-stabilised at low F.
+    #   filamin_x_slip  = 0.3 nm — slip-pathway distance (the original Bell
+    #     strength length retained; Furuike 2001). Governs the rising slip
+    #     branch above the peak.
+    #   Catch peak F* (where d k_off/dF = 0):
+    #     F* = (kT/(x_catch+x_slip))·ln( (k_catch0·x_catch)/(k_slip0·x_slip) )
+    #        = (4.28e-21/1.1e-9)·ln( (0.1·0.8)/(0.02·0.3) )
+    #        ≈ 3.89e-12 · ln(13.33) ≈ 3.89e-12 · 2.59 ≈ 1.0e-11 N ≈ 10 pN
+    #     — a physiological cytoskeletal load (Ehrlicher 2011 / Rognoni 2012
+    #     report filamin catch behaviour in the pN range). The off-rate FALLS
+    #     for F<F* (catch) then RISES for F>F* (slip), the catch-slip
+    #     signature the revised Sanity-Gate test asserts.
+    #   Grid-invariance: all intensive per-bond rates [1/s] / lengths [m].
+    filamin_k_catch0: 0.1      # 1/s filamin catch-pathway zero-force rate (Furuike 2001)
+    filamin_x_catch: 0.8e-9    # m   filamin catch-pathway distance (Ehrlicher 2011 / Rognoni 2012 pN-scale catch)
+    filamin_k_slip0: 0.02      # 1/s filamin slip-pathway zero-force prefactor (Pereverzev 2005 form; < k_catch0)
+    filamin_x_slip: 0.3e-9     # m   filamin slip-pathway distance (Furuike 2001 Bell length)
+    # Single-head binding rate; gives bound fraction k_on/(k_on + k_off⁰) at
+    # F=0. With α-actinin at 0.066 /s this is ≈ 0.993; with filamin catch+slip
+    # (≈0.12 /s at F=0) ≈ 0.988 — both near-fully bound at zero load.
+    k_on: 10.0                 # 1/s per-head binding rate when acceptor present
+    batch_steps: 100           # BAOAB steps between Updater ticks (D2 batch)
+    n_bins: 10                 # per-r0 binning (mirrors H.1 cortex.py xl)
+    seed: 43                   # offset from cortex.seed for RNG isolation
+
+  # ---- Variable-length filament distribution (brief §Cortex topology) ----
+  # Per-brief: "uniform 1–5 μm (mean 3 μm) → average 7 beads per
+  # filament at ℓ₀=0.5 μm".  Additive opt-in via
+  # `generate_variable_length_cortex_layout` + sibling state/sim
+  # builders in cortex.py.  When enabled, replaces the fixed-N layout
+  # used by the default builders.  Default OFF — fixed L = L_filament
+  # = 3 μm (the brief MEAN) preserves the 단계 1-6 behavior + test
+  # baseline of 240 PASS.  Production sweep at variable-length is a
+  # follow-up via opt-in `H3_VARIABLE_LENGTH_PRODUCTION=1`.
+  variable_length:
+    enabled: false
+    L_min: 1.0e-6                # m   brief literal lower bound
+    L_max: 5.0e-6                # m   brief literal upper bound
+
+  # ---- ERM tether (KU-3.18) — radial harmonic per cortex bead ----
+  # `cortex/erm.py` implements as md.force.Custom subclass.
+  #
+  # PI ratification 2026-05-26: k_ERM = 1.0e-4 N/m (was: brief literal
+  # 0.1 N/m).  Brief literal 0.1 N/m + cortex dt_CFL=13 ns give a
+  # stiff-spring CFL violation (τ_ERM = γ_b/k_ERM = 3.91 ns < dt; H.3
+  # 단계 3 sanity finding documented in outputs/h3/REPORT.md §단계 3
+  # ERM CFL).  PI chose option (A) — soften k_ERM by 1000× rather than
+  # shrink dt 33× (which would push every cortex simulation from
+  # minutes to hours).  This is the KU-3.18 RE-RATIFIED value; the
+  # original 0.1 N/m is preserved in git history (단계 1 yaml) for
+  # archaeological reference.
+  #
+  # Physical implications of 1e-4 N/m:
+  #   σ_radial_thermal = √(kT/k_ERM) ≈ √(4.28e-21/1e-4) = 6.5 nm per bead
+  # ≈ 30× tighter than the KU-3.17 200 nm cortex thickness band.
+  # Still TIGHT pinning relative to the membrane band — the 200 nm
+  # cortex thickness remains a biological membrane depth (bundle + lipid
+  # bilayer), not single-bead thermal extent.  Rounding / tension /
+  # blebbistatin / nematic gates probe the EMERGENT large-scale
+  # curvature, not per-bead radial distribution — so the σ_radial
+  # change from 0.65 nm → 6.5 nm does NOT affect these gates'
+  # acceptance bands.
+  erm:
+    k_ERM: 1.0e-4              # N/m   per-bead radial spring (KU-3.18 RE-RATIFIED 2026-05-26)
+    # cell_center optional; defaults to box origin (0, 0, 0) — matches
+    # cortex.py topology generator which places the shell at the origin.
+
+  # ---- Enclosed-volume / intracellular pressure (KU-3.1) — ADDITIVE, OFF ----
+  # `cortex/enclosed_volume.py` implements an md.force.Custom that gives the
+  # closed cortex shell a resistance to volume change, supplying the missing
+  # intracellular-pressure term (mechanism audit 2026-05-30 §5 #2;
+  # docs/briefs/H4_FA_INTEGRATION_DESIGN.md §4). Without it the cortex is an
+  # OPEN shell that can be deflated to a point at no cost, so KU-3.1 mitotic
+  # rounding is non-mechanistic. The physical law is the Young-Laplace
+  # balance ΔP = 2γ/R; this term supplies ΔP so that balance can EMERGE.
+  #
+  # Runtime law:  ΔP = −K_vol·(V−V0)/V0   (linear osmotic/bulk response)
+  #               F_i = ΔP·(S/N)·n̂_i      (per-bead outward normal force)
+  # Volume estimator: sphere-equivalent V = 4/3 π R_mean³ from the mean bead
+  # radius about the shell centroid (defensible at this ×40 coarse scale;
+  # centroid-relative → no spurious COM drift). Young-Laplace ΔP=2γ/R is the
+  # ACCEPTANCE ORACLE in test_enclosed_volume.py, NOT a runtime input.
+  #
+  # K_vol Magic-Number Block (no magic number): K_vol = dP_ref/(3·strain_ref)
+  # — the osmotic modulus that makes ΔP at a `strain_ref` radius compression
+  # equal the KU-3.1 interphase anchor `dP_ref` ≈ 40 Pa (Stewart 2011). With
+  # dP_ref=40 Pa, strain_ref=0.01 → K_vol ≈ 1.333e3 Pa. K_vol is an intensive
+  # material modulus [Pa] (grid-invariant: the per-bead 1/N area share keeps
+  # the TOTAL pressure load ΔP·S N-independent). Cross-check: at R_cell=10 μm
+  # and KU-3.5 γ=1 mN/m (Salbreux 2012), ΔP=2γ/R=200 Pa — between the 40 Pa
+  # interphase and 400 Pa metaphase anchors (Stewart 2011; Fischer-Friedrich
+  # 2014). DEFAULT OFF: nothing references this block unless a caller resolves
+  # + attaches it (resolve_enclosed_volume + attach_enclosed_volume_to_simulation).
+  enclosed_volume:
+    enabled: false            # default OFF — additive module (CLAUDE.md pattern)
+    dP_ref: 40.0              # Pa   KU-3.1 interphase osmotic anchor (Stewart 2011)
+    strain_ref: 0.01          # —    1 % radius compression (linear reference point)
+    # K_vol omitted → derived as dP_ref/(3·strain_ref) ≈ 1.333e3 Pa.
+    # V0 omitted → defaults to the construction sphere 4/3 π R_cell³.
+
+  # ---- Actin turnover (cofilin severing + pointed-end re-annealing) — ADDITIVE, OFF ----
+  # `cortex/turnover.py` implements an ActinTurnoverUpdater (D2 batched
+  # hoomd.custom.Action) that mutates the cortex-bond + cortex-angle topology:
+  # cofilin SEVERS backbone bonds (first-order kinetics) and pointed-end
+  # re-annealing RESTORES them, giving a force-/age-aware filament-disassembly
+  # process with a bounded steady state (mechanism audit 2026-05-30 §5 #1).
+  # Without it the H.3 cortex is a FROZEN permanently-connected network — it can
+  # only stiffen, never relax — so KU-3.5 steady-state cortical tension (Chugh
+  # 2017; Saha 2016; Fritzsche 2013 identify turnover as its SINGLE DOMINANT
+  # determinant) is unreachable even after FA wiring. This term supplies the
+  # missing disassembly so a steady-state tension can EMERGE.
+  #
+  # Runtime mechanism (mutates bonds/angles only — particle count INVARIANT;
+  # the BAOAB Action stays the sole position integrator, no double-stepping):
+  #   sever:    p_sev    = 1 − exp(−k_sev   · Δt_batch)   per intact junction
+  #   anneal:   p_anneal = 1 − exp(−k_anneal · Δt_batch)  per severed junction
+  #                        WITHIN r0·(1 + reanneal_tol) (same-junction pointed-
+  #                        end re-addition; keeps particle count fixed).
+  # The first-order severing law 1−exp(−k_sev·Δt) is the ACCEPTANCE ORACLE in
+  # test_turnover.py — the runtime is the per-bond Bernoulli draw, NOT the
+  # closed form.
+  #
+  # k_sev Magic-Number Block (no magic number): k_sev = ln2/tau_half — the
+  # cofilin severing rate DERIVED from the filament half-life tau_half. tau_half
+  # is the KU-3.5 / Chugh-2017 / Fritzsche-2013 cortical-actin-turnover anchor
+  # (τ ≈ 5–30 s); 10 s is the mid-band default → k_sev ≈ 0.0693 1/s. k_sev is an
+  # intensive rate [1/s] (grid-invariant: each junction severs independently, so
+  # the per-junction probability is N-independent). Steady-state connected
+  # fraction f_ss = k_anneal/(k_sev + k_anneal); with k_anneal = 0.1 1/s and
+  # k_sev ≈ 0.069 1/s, f_ss ≈ 0.59 — a turned-over (not collapsed, not frozen)
+  # network. DEFAULT OFF: nothing references this block unless a caller resolves
+  # + attaches it (resolve_turnover + cell.build_cortex_full_simulation
+  # p_turnover=...).
+  turnover:
+    enabled: false            # default OFF — additive module (CLAUDE.md pattern)
+    tau_half: 10.0            # s    cortical actin filament half-life (Chugh 2017
+                              #      / Fritzsche 2013 mid-band of 5–30 s anchor).
+                              #      k_sev = ln2/tau_half ≈ 0.0693 1/s (DERIVED).
+    k_anneal: 0.1             # 1/s  pointed-end re-annealing rate (sets f_ss with
+                              #      k_sev; same per-junction first-order form).
+    reanneal_tol: 0.1         # —    re-anneal only if the two beads are within
+                              #      r0·(1+tol) — a severed junction that has
+                              #      drifted apart cannot re-close (mechanistic
+                              #      same-junction pointed-end re-addition).
+    # Force / age dependence HOOKS — Phase-1 default 0 (clean first-order sever):
+    k_sev_age_factor: 0.0     # —    cofilin age/ADP-actin preference (De La Cruz
+                              #      2009): k_sev·(1 + factor·age/tau_half). 0 = off.
+    k_sev_force_x_beta: 0.0   # m    Bell-Evans-style force-enhanced severing:
+                              #      k_sev·exp(F·x_β/kT). 0 = force-independent.
+    batch_steps: 100          # BAOAB steps between Updater ticks (D2 batch; shrunk
+                              #      by resolve_turnover if it would break the
+                              #      events_per_batch ≤ 1e-3 CFL ceiling).
+    seed: 47                  # offset from cortex.seed for RNG isolation
+                              #      (BAOAB 0 / integrin 1 / xlink 2 / myosin 44 / turnover 47).
+
+  # ---- Cortical myosin (D5 Stam-Hocky + D6 Hill, KU-3.5 / KU-3.18) ----
+  # Bipolar minifilament: 14-bead backbone (700 nm) + 10 cross-bridge heads
+  # per side (Stam-Hocky/AFINES COARSE model; structural Billington 2013 ≈ 29
+  # heads/side — see ff/gamma_floor.py, swept). Density: Nie 2015 ~0.625/µm²
+  # (HeLa) — ⚠️ NOT "Salbreux 2012 3/µm²" (that was a CONFIRMED misattribution,
+  # corrected 2026-06; no Salbreux paper states a per-µm² minifilament count).
+  # Implementation in `aleph/cortex/myosin.py`; runtime stepper
+  # MyosinStepUpdater handles D2 Bell-Evans slip head-to-actin bonds + D6
+  # Hill stepping kernel. Hill closed-form imported from H.4 motor.py
+  # (shared module per CLAUDE.md cross-module read).
+  #
+  # CFL: k_head_spring = 1 pN/μm = 1e-6 N/m gives τ_head ≈ 0.4 ms;
+  # k_backbone = 10× = 1e-5 N/m gives τ_backbone ≈ 39 μs. Both ≫ cortex
+  # dt_CFL = 13 ns → no CFL conflict (unlike ERM at k_ERM = 0.1 N/m).
+  myosin:
+    n_motors_per_cell: 100             # KU-3.x Salbreux 2012 density 3/μm²
+    n_backbone: 14                     # brief literal
+    n_heads_per_side: 10               # brief literal
+    backbone_length: 700.0e-9          # m   brief literal (700 nm rigid rod)
+    head_rest_length: 200.0e-9         # m   brief literal (perpendicular head offset)
+    k_head_spring: 1.0e-6              # N/m brief literal (0.1 pN/μm)
+    k_backbone_factor: 10.0            # k_backbone = factor · k_head_spring (H.4 motor.py)
+    k_head_actin: 1.0e-6               # N/m head-actin attach bond (= k_head_spring)
+    # D6 Hill (NMII per Kovács 2003)
+    # v0_per_head Magic-Number Block (C3 correction, mechanism audit
+    # 2026-05-30 §C3, PI-ratified "전부 진행"): RE-ANCHORED 1.0 → 0.2 µm/s.
+    #   Value:   v0 = 0.2 µm/s (NMIIA unloaded head sliding velocity).
+    #   Primary citation: Kovács, Wang, Ikebe, Sellers 2003 J Biol Chem
+    #     278:38132 — in-vitro motility of non-muscle myosin IIA on F-actin
+    #     gives an unloaded actin-sliding velocity ≈ 0.1–0.3 µm/s (NMIIA is
+    #     a slow, high-duty-ratio motor, unlike fast skeletal myosin II at
+    #     ~1–8 µm/s). 0.2 µm/s is the mid-band.
+    #   Why re-anchor (not keep): the previous 1.0 µm/s did NOT match the
+    #     Kovács 2003 NMIIA value it cited (that is the skeletal/fast-myosin
+    #     range). The audit found no derivation justifying a mesoscale-
+    #     effective 1.0 µm/s; per CLAUDE.md "prefer literature value unless
+    #     justified" we re-anchor to the NMIIA single-molecule value.
+    #   Grid-invariance: intensive per-head velocity [m/s]; N-independent.
+    #     The Hill stepping kernel uses v0 only to set the rest-length
+    #     advance per tick (v0·batch_dt), so this is a pure rate rescale.
+    v0_per_head: 0.2e-6                # m/s 0.2 µm/s NMIIA (Kovács 2003 JBC, single-molecule)
+    F_stall_per_head: 0.5e-12          # N   0.5 pN
+    a_over_F_stall: 0.5                # Kovács 2003
+    # D2 Bell-Evans head-actin off-rate. Magic-Number Block (2026-06-05 re-anchor,
+    # PI-authorized): RE-ANCHORED 10.0 → 0.35 /s.
+    #   Value: NMIIA actin-detachment reference off-rate k_off(0) = 0.35 s⁻¹.
+    #   Primary citation: Stam, Alberts, Gardel, Munro 2015 Biophys J 108:1997
+    #     (Stam-Hocky isoform model), citing Wang 2003 JBC 278:27439 + Kovács 2003
+    #     JBC 278:38132; reproduced verbatim in Tam 2021 bioRxiv 2021.02.23.432588
+    #     p37: "the reference off-rate k_off(0) for non-muscle myosin is 0.35 s⁻¹
+    #     (IIA) and 1.71 s⁻¹ (IIB) … we adopt the value for myosin-IIA".
+    #   Why re-anchor (not keep): the previous 10.0 was labelled "NMII duty cycle /
+    #     Veigel 2002" but 10/s is ~29× FASTER than the NMIIA strong-binding
+    #     detachment rate — the same class of mis-anchor the 2026-05-30 audit fixed
+    #     for v0_per_head (1.0→0.2, Kovács) and α-actinin k_off0 (0.4→0.066, Ferrer).
+    #   Grid-invariance: intensive per-bond rate [1/s], N-independent.
+    #   ⚠️ FIDELITY ONLY — NOT a KU-3.5 floor fix: g_soft stays far under band with
+    #     this change (the active floor is force-TRANSMISSION/lever, not binding
+    #     kinetics; binding-throughput workflow 2026-06-05, commit 68dc1f9). It also
+    #     relaxes the D2-batch CFL cap (batch_dt·k_off0 ≤ 1e-3) ~29×.
+    head_actin_k_off0: 0.35            # 1/s NMIIA reference off-rate (Stam-Hocky 2015 / Tam 2021)
+    head_actin_x_beta: 0.6e-9          # m   Bell strength length (Veigel 2002)
+    head_actin_k_on: 50.0              # 1/s per-head bind rate when acceptor present
+    # KU-3.5 fix 2026-05-29 (PI Option C, segment-projection binding):
+    # heads sit ~head_rest_length=200nm laterally from the actin segment
+    # they bind. Eligibility = perpendicular distance to segment LINE ≤
+    # head_actin_capture_perp (head's physical reach via its spring).
+    # Bond r0 binning ceiling = √((ℓ₀/2)² + capture_perp²) = √(250²+210²)
+    # ≈ 327nm (geometric, not magic). Legacy 50nm was for the wrong
+    # radial-offset placement that left heads ~824nm from any actin
+    # (docs/KU35_myosin_binding_diagnosis.md).
+    head_actin_max_bind_dist: 3.3e-7   # m   max head-bead bond r0 (bin ceiling, derived)
+    head_actin_capture_perp: 2.1e-7    # m   = head_rest_length + 10nm slack
+    batch_steps: 100                   # BAOAB steps between Updater ticks
+    n_bins: 10                         # per-r0 binning count
+    seed: 44                           # offset from cortex.seed for RNG isolation
+
+  # ---- Static crosslinkers (legacy 단계 1 mode, OPTIONAL; default OFF) ----
+  # KU-3.19 specifies 30 % α-actinin (35 nm length, k = 0.1 pN/μm) and
+  # 70 % filamin (150 nm length, k = 0.1 pN/μm). Brief §Crosslinkers
+  # gives `max_bind_dist = 60 nm` for the acceptor search radius.
+  #
+  # NOTE: this YAML block configures the STATIC initial-crosslinker
+  # bonds only — i.e. bonds present at construction time, no D2
+  # Bell-Evans slip kinetics. Dynamic xl kinetics is a later H.3
+  # deliverable (`crosslinkers.py` per brief Deliverables table).
+  crosslinkers:
+    enabled: false             # default OFF for boot-prompt topology-only scope
+    n_xl: 1000                 # KU-3.19 target xl count per cell
+    k_xl: 1.0e-7               # N/m   0.1 pN/μm, KU-3.19 (Furuike 2001)
+    alpha_fraction: 0.30       # KU-3.19 (Stricker 2010 α-actinin/filamin ratio)
+    alpha_length: 35.0e-9      # m     α-actinin extended length
+    filamin_length: 150.0e-9   # m     filamin extended length
+    max_bind_dist: 60.0e-9     # m     acceptor search radius (brief §Xlinkers)
+    # Per-r0 binning (matches H.1 cross_links pattern) keeps construction
+    # state approximately force-free for xl bonds; with k_xl = 1e-7 N/m,
+    # the maximum bin-center r0 error is bin_width/2 = 3 nm, giving xl
+    # construction energy ½·1e-7·(3e-9)² = 4.5e-25 J ≪ kT = 4.28e-21 J.
+    n_bins: 10                 # → bin_width = 6 nm across [0, max_bind_dist]
+
+  # ---- First-principles acceptance bands (NO measurement-anchored tuning,
+  #      H.2 Day 5 lesson) ----
+  acceptance:
+
+    # Per-filament L_p band: KU-1.1 actin literature reference 17 μm ± 10 %.
+    # This is FIRST-PRINCIPLES because the literature value defines the
+    # physical anchor that the simulation must recover — not a band
+    # widened post-hoc to make a run pass.
+    L_p_band_m: [15.3e-6, 18.7e-6]
+
+    # Per-bond equipartition (3D solid-angle Boltzmann).
+    # Analytical 3D-exact mean at α = κ_B/(2·ℓ_0·kT) = 16.4 is 0.9898 kT
+    # (numerical integral of ½ k_θ (θ-π)² weighted by sin θ · exp(-κ_B
+    # (π-θ)²/(2 ℓ_0 kT)) over θ ∈ [0, π], normalised). The H.2 ✅
+    # strict-PASS at the same per-filament parameters validates this
+    # target; H.3 inherits because κ_B, ℓ_0, kT are identical.
+    equipartition_target_3d_kT: 0.9898
+    equipartition_rel_tol: 0.05    # ±5 % first-principles statistical reach
+    # (Aggregate sample size F·(N-2)·n_snapshots = 1000·5·100 = 500 000
+    #  → 1/√500k ≈ 0.0014, so 5 % is 35σ — abundantly within reach.)
+
+    # 3D Boltzmann angle distribution gates (carried over from H.2 ✅
+    # strict-PASS). These are sample-size-dependent critical values;
+    # H.2 calibrated for n=17 100 angles (single-filament ensemble),
+    # H.3 production will have ~500 000 angles (1000 filaments × 5 bonds
+    # × 100 snapshots) so the thresholds become more conservative when
+    # H.3 production sweep recalibrates. Until then, inherit the H.2
+    # values — they remain valid as upper bounds for H.3 too.
+    angle_chi2_per_df_max: 1.354       # H.2 Pearson critical 95 %, df=49
+    angle_KL_nats_max: 1.94e-3         # H.2 KL threshold 95 %, n=17 100
+    angle_ks_stat_max: 0.10            # H.2 diagnostic
+
+    # Radial drift at construction (tangent-plane placement).
+    # Per-filament endpoint radial offset from R_cell = ℓ_end²/(2 R_cell)
+    # = ((N-1)·ℓ_0/2)² / (2·R_cell) = (1.5e-6)²/(2·1e-5) = 112.5 nm.
+    # KU-3.17 cortex thickness is 200 nm, so 0–200 nm is the
+    # first-principles band for radial position deviation at construction.
+    radial_drift_band_m: [0.0, 200.0e-9]
+
+    # Cost ceiling (Plan v2 §11 H.3 single-cell on M1 Max).
+    # Per brief: total beads (cortex + xl heads + myosin + ERM) ≤ 15 000
+    # per cell. Cortex-only contribution at n_filaments × beads_per_filament
+    # = 1000 × 7 = 7000 beads. Cap n_filaments at 2× nominal (= 2000)
+    # for cortex-only sweeps so xl/myosin/ERM still fit under 15k.
+    n_filaments_max: 2000
+
+  demo_mode: false
+
+  # ---- Derived parameters (filled by resolve_h3_derived(); DO NOT edit) ----
+  derived:
+    L_box: null                # = box_factor · R_cell
+    rest_length: null          # = L_filament / (beads_per_filament − 1) = ℓ_0
+    bond_k: null               # = μ / ℓ_0                            [N/m]
+    angle_k: null              # = κ_B / ℓ_0                          [N·m / rad²]
+    angle_t0: 3.141592653589793   # π — HOOMD straight-chain convention
+    lj_epsilon: null           # = epsilon_kT · kT                    [J]
+    lj_sigma: null             # = sigma_factor · bead_radius         [m]
+    lj_r_cut: null             # = 2^(1/6) · σ                        [m]
+    gamma_b: null              # = 6π η R_bead                        [N·s/m]
+    tau_xl: null               # = γ_b / k_xl                         [s] (∞ if xl off)
+    tau_stretch: null          # = γ_b · ℓ_0 / μ                      [s]
+    tau_bend: null             # = γ_b · ℓ_0³ / κ_B                   [s]
+    tau_min: null              # min of {tau_xl, tau_stretch, tau_bend}
+    dt_cfl: null               # = cfl_safety_factor · τ_min          [s]
+    sigma_perp_per_filament: null       # = √(L_filament³ / (3 L_p))  [m]
+    cortex_surface_area: null           # = 4π R_cell²                [m²]
+    filament_areal_density: null        # = n_filaments / area        [1/m²]
+    n_xl_alpha_target: null             # = round(n_xl · alpha_fraction)
+    n_xl_filamin_target: null           # = n_xl − n_xl_alpha_target
+
+# ---- H.3 demo profile (used for fast smoke runs) ----
+# Override with `cortex.demo_mode: true` + reduced n_filaments at use site.
+# The test harness applies these overrides programmatically for the demo
+# gate (no separate yaml file).

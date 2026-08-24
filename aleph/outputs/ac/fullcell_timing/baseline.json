@@ -1,0 +1,103 @@
+{
+  "driver": "ac_fullcell_step_timing",
+  "device": "cuda:0",
+  "label": "baseline-3of11",
+  "evidence_class": "TIMING at a FORCE-ACCEPTED step",
+  "quantitative_claim_status": "SCOPED",
+  "evidence_basis": "wall-clock per accepted step of the composed native cell, device-synchronized, warm-up excluded. The steps are FORCE-ACCEPTED: this measures the cost of the step the runtime currently takes, NOT the cost of a converged step, and the two are not the same number.",
+  "timing": {
+    "n_timed_steps": 20,
+    "n_warmup_steps": 3,
+    "dt_phys_s": 0.01,
+    "wall_per_step_s": 0.004868338501546532,
+    "wall_per_step_stdev_s": 0.00014723004468300698,
+    "wall_per_step_min_s": 0.004628075985237956,
+    "wall_per_step_max_s": 0.00508764002006501,
+    "real_time_factor": 2.054088884087104,
+    "wall_seconds_per_second_of_cell": 0.48683385015465314,
+    "per_step_s": [
+      0.00508764002006501,
+      0.0047897899930831045,
+      0.0049175080202985555,
+      0.004713139001978561,
+      0.004687869019107893,
+      0.004706226987764239,
+      0.004628075985237956,
+      0.004999376978958026,
+      0.005013746005715802,
+      0.004848361975746229,
+      0.004736992996186018,
+      0.004818230023374781,
+      0.004754784982651472,
+      0.005051596992416307,
+      0.004915037017781287,
+      0.004959759011399001,
+      0.005030663014622405,
+      0.005006902996683493,
+      0.005013073998270556,
+      0.00468799500958994
+    ],
+    "build_seconds": 16.039411720994394,
+    "comparable": false,
+    "not_comparable_reason": "force-accepted steps; cost is only cost at a stated acceptance, and no acceptance predicate gated these"
+  },
+  "scope": {
+    "target_full_cell_components": [
+      "cortex",
+      "cytosol",
+      "filopodium",
+      "focal_adhesion",
+      "intermediate_filament",
+      "lamellipodium",
+      "membrane",
+      "microtubule",
+      "nmii",
+      "nucleus",
+      "sf_arc"
+    ],
+    "n_target_components": 11,
+    "n_target_in_cell_connectors": 31,
+    "excluded_by_goal": [
+      "ecm",
+      "extracellular_medium",
+      "world_boundary"
+    ],
+    "bound_components_in_scope": [
+      "cortex",
+      "nmii",
+      "sf_arc"
+    ],
+    "fraction_of_target_components": 0.2727272727272727,
+    "bound_connectors": [
+      "dorsal_arc_crosslink",
+      "nmii_cortex_motor",
+      "sf_cortex_transient"
+    ],
+    "n_bound_connectors": 3,
+    "bound_connectors_in_target": [
+      "dorsal_arc_crosslink",
+      "nmii_cortex_motor",
+      "sf_cortex_transient"
+    ]
+  },
+  "census": {
+    "cortex_filaments": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 551434,
+    "n_heads": 8840,
+    "fraction_of_native_cortex": 1.0
+  },
+  "sf_relax": {
+    "attached": false
+  },
+  "config": {
+    "k_axial_pn_per_um": 1000.0,
+    "k_xb_pn_per_um": 1000.0,
+    "n_fibers_ecm": 200,
+    "seed": 0
+  },
+  "parameter_provenance": {
+    "k_axial_pn_per_um": "PI_GAP",
+    "k_xb_pn_per_um": "PI_GAP"
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "schema": "aleph.outer_library.idr0168_multiprovider_if_confirmation_protocol.v1",
+  "frozen_before_any_idr0168_pixel_access_or_model_prediction": true,
+  "candidate_metadata_inspected_before_freeze": true,
+  "candidate_metadata_inspection_scope": "official study, paper, annotation CSV, file-path TSV, archive names and HTTP content lengths only; no image archive body, pixel, tensor, model prediction, or endpoint value was opened",
+  "objective": "single-use independent-provider confirmation of the frozen HPA/OpenCell localization encoder and frozen imaging-contract OOD head on the nuclear-localization subset",
+  "scope_limit": "This protocol can validate only provider transfer of nuclear localization and imaging-contract refusal. It cannot validate all nine coarse classes, biological state inference, numeric uncertainty, production use, or any Aleph parameter.",
+  "official_source": {
+    "study_accession": "IDR0168 / S-BIAD1891",
+    "study_url": "https://idr.openmicroscopy.org/study/idr0168/",
+    "bioimage_archive_api_url": "https://www.ebi.ac.uk/biostudies/api/v1/studies/S-BIAD1891",
+    "publication_doi": "10.1038/s41592-025-02696-1",
+    "publication_year": 2025,
+    "publication_title": "Prediction of protein subcellular localization in single cells",
+    "license": "CC BY 4.0",
+    "repository": "https://github.com/IDR/idr0168-zhang-mllocalization",
+    "repository_commit": "59c0edaf52fe109c9daff95a1ceb28081f8f2077",
+    "annotation_csv_url": "https://raw.githubusercontent.com/IDR/idr0168-zhang-mllocalization/59c0edaf52fe109c9daff95a1ceb28081f8f2077/experimentA/idr0168-experimentA-annotation.csv",
+    "annotation_csv_size_bytes": 124742,
+    "annotation_csv_sha256": "6c3287a3e427dce3b704ca5e324d892016551bbde303c4406ca06ac242cab90d",
+    "file_paths_tsv_url": "https://raw.githubusercontent.com/IDR/idr0168-zhang-mllocalization/59c0edaf52fe109c9daff95a1ceb28081f8f2077/experimentA/idr0168-experimentA-filePaths.tsv",
+    "file_paths_tsv_size_bytes": 50886,
+    "file_paths_tsv_sha256": "726ff4dbc5bd15fa15fa30ff9d4d047dd594885de44b1d653b7b9cb9bae33ae0",
+    "study_metadata_url": "https://raw.githubusercontent.com/IDR/idr0168-zhang-mllocalization/59c0edaf52fe109c9daff95a1ceb28081f8f2077/idr0168-study.txt",
+    "study_metadata_size_bytes": 8901,
+    "study_metadata_sha256": "9bbe11a1d23935c66dd9c9b1a23380ab24bd0103a9cbc76bfbf463dd2ed6b980",
+    "archive_base_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/891/S-BIAD1891/Files/",
+    "reported_experiment_dimensions_XYZCT": [2048, 2048, 20, 4, 1],
+    "reported_pixel_size_micrometers": 0.1005,
+    "reported_z_step_micrometers": 0.2,
+    "reported_total_terabytes": 0.39
+  },
+  "frozen_model_contract": {
+    "checkpoint_sha256": "c63c124813f800742f5bc55672e449cab61be787ff168041b8361fd65bbc8e1c",
+    "model_report_sha256": "2367a63eb1f613597c76ab4c88b5c9bbf30667466217d0fa71bc9d0e1899808b",
+    "model_training_protocol_sha256": "066dc191616db426c70d4941b3f51ac7b3c0db0d9e63fda797f1be10235a609e",
+    "quality_head_sha256": "0450ac55185539179bd398e568cc98ac3f461ab62bb66e226367d1ad516c18ec",
+    "quality_report_sha256": "0167e438aacdfa76d20915065101898cee3ecbb5b597bb22a1fb4700c281ded4",
+    "quality_protocol_sha256": "f8fe78a4fa061ed1fc77d557104330ae382d3a63dc8e9a8b0cbdace9a227b9b5",
+    "weights_may_change": false,
+    "temperature_may_change": false,
+    "class_thresholds_may_change": false,
+    "quality_head_may_change": false,
+    "quality_refusal_threshold_may_change": false
+  },
+  "metadata_contract": {
+    "exact_row_count": 277,
+    "background_row_count": 2,
+    "nonbackground_row_count": 275,
+    "exact_cell_lines": ["A375", "GAMG", "HEK293", "HeLa", "MCF-7"],
+    "exact_gene_symbols": ["ATP13A5", "CHID1", "COPA", "DDIT3", "EIF4G1", "MESD", "N4BP2", "PSME3IP1", "RBM23"],
+    "required_columns": [
+      "Image Name",
+      "Characteristics [Cell Line]",
+      "Comment [Gene Symbol]",
+      "Comment [Gene Identifier]",
+      "Comment [UniProt ID]",
+      "Image File",
+      "Comment [Image File Type]",
+      "Channels"
+    ],
+    "required_image_file_type": "raw",
+    "required_channel_string_template": "Alexa555-a-Tubulin; Alexa647-Calreticulin; DAPI-Nucleus; Alexa488-{gene_symbol}",
+    "background_rows_are_excluded": true,
+    "schema_mismatch_action": "refuse before archive body or pixel access"
+  },
+  "single_use_selection": {
+    "inference_unit": "one field-level z-stack",
+    "grouping_unit": "gene_symbol x cell_line",
+    "selection_rule": "within every nonbackground gene_symbol x cell_line group, choose the row with lexicographically smallest Image Name",
+    "expected_selected_stack_count": 45,
+    "expected_group_count": 45,
+    "expected_selected_archive_total_bytes": 34187550441,
+    "archive_name_rule": "replace the terminal .zarr.zip in Image File with .zarr.tgz",
+    "selection_may_change_after_archive_body_or_pixel_access": false,
+    "replacement_on_download_or_decode_failure": false
+  },
+  "development_overlap_strata": {
+    "exact_gene_unseen_in_frozen_HPA_and_OpenCell_tensors": ["ATP13A5", "DDIT3", "EIF4G1", "N4BP2", "RBM23"],
+    "exact_gene_seen_in_frozen_HPA_or_OpenCell_tensor": ["CHID1", "COPA", "MESD", "PSME3IP1"],
+    "unseen_gene_stack_count": 25,
+    "seen_gene_stack_count": 20,
+    "A375_is_absent_from_the_HPA_source_according_to_the_author_publication": true,
+    "primary_results_must_report_all_45_and_the_25_unseen_gene_stacks_separately": true
+  },
+  "pixel_contract": {
+    "required_named_channels": ["DAPI-Nucleus", "Alexa488-{gene_symbol}"],
+    "forbidden_channel_index_fallback": true,
+    "z_projection": "maximum intensity independently for the named DAPI and Alexa488 target channels",
+    "model_input_channel_order": ["DAPI-Nucleus", "Alexa488-target"],
+    "model_preprocessing": "shared frozen p1-p99 per-channel normalization, centered square crop, BOX resize to 128x128, round to uint8",
+    "full_field_only": true,
+    "single_cell_segmentation_claim": false,
+    "finite_integer_source_pixels_required": true,
+    "decode_or_channel_mismatch_action": "refuse the entire provider without replacement"
+  },
+  "external_observation_contract": {
+    "name": "field_level_intranuclear_target_fraction",
+    "purpose": "independent continuous image-derived localization observation, not a single-cell label",
+    "DAPI_mask": "Otsu threshold on the finite nonnegative DAPI maximum projection; retain foreground connected components with at least 64 native-resolution pixels",
+    "target_signal": "clip(Alexa488 maximum projection minus its first percentile, 0, infinity)",
+    "fraction": "sum target_signal inside DAPI_mask divided by sum target_signal over the full field",
+    "denominator_zero_action": "refuse provider",
+    "author_thresholds_for_diagnostic_labels": {
+      "nuclear": "fraction greater than 2/3",
+      "intermediate": "fraction from 1/3 through 2/3 inclusive",
+      "non_nuclear": "fraction less than 1/3"
+    },
+    "important_difference_from_author_method": "The author method segments individual cells with StarDist; this frozen resource-limited confirmation uses a field-level aggregate and therefore does not claim the author's single-cell endpoint."
+  },
+  "localization_endpoints": {
+    "frozen_probability": "sigmoid(nuclear_interior logit divided by the frozen scalar temperature)",
+    "primary_all_45_spearman_minimum": 0.5,
+    "primary_unseen_gene_25_spearman_minimum": 0.4,
+    "minimum_supported_nuclear_diagnostic_fields": 5,
+    "minimum_supported_non_nuclear_diagnostic_fields": 5,
+    "diagnostic_high_vs_low_AUROC_minimum": 0.8,
+    "author_anchor_positive_gene": "PSME3IP1",
+    "author_anchor_negative_gene": "EIF4G1",
+    "author_anchor_model_score_paired_cell_line_wins_minimum": 4,
+    "author_anchor_observed_fraction_paired_cell_line_wins_minimum": 4,
+    "author_anchor_cell_line_pair_count": 5,
+    "intermediate_fields_are_excluded_only_from_high_vs_low_AUROC": true,
+    "no_field_may_be_excluded_from_spearman_or_OOD": true
+  },
+  "imaging_OOD_endpoints": {
+    "corruption_families": [
+      "zero_nucleus",
+      "zero_target",
+      "saturated_both",
+      "channel_swap",
+      "target_pixel_permutation",
+      "target_tile_permutation",
+      "cross_unit_target_mismatch"
+    ],
+    "external_minimum_family_AUROC": 0.75,
+    "external_macro_family_AUROC": 0.9,
+    "maximum_clean_false_refusal_rate": 0.1,
+    "mismatch_pairing": "deterministic frozen quality-protocol hash ordering within IDR0168",
+    "all_45_clean_fields_and_all_seven_corruptions_required": true
+  },
+  "decision_rule": {
+    "metadata_channel_decode_or_support_failure": "refuse before model evaluation where possible; otherwise freeze failure and consume provider",
+    "success": "all localization endpoints and all imaging OOD endpoints pass",
+    "failure": "any required endpoint fails",
+    "posthoc_endpoint_threshold_preprocessing_or_subset_change": "forbidden",
+    "provider_is_single_use": true
+  },
+  "authority_on_success": {
+    "independent_provider_nuclear_localization_transfer": true,
+    "external_imaging_contract_OOD_for_IDR0168_like_inputs": true,
+    "all_nine_class_external_validation": false,
+    "external_numeric_uncertainty_authority": false,
+    "general_cell_state_model_ready": false,
+    "production_eligible": false,
+    "Aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_remove_sweep_axis": false
+  }
+}

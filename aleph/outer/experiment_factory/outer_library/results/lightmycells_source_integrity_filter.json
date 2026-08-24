@@ -1,0 +1,36 @@
+{
+  "admitted_pair_count": 4374,
+  "admitted_payload_bytes": 12672726679,
+  "aleph_authority": "none",
+  "confirmation_header_requests": 0,
+  "confirmation_pixels_accessed": 0,
+  "input_manifest_sha256": "8de6967928d30c2cea68f92665256089540e97794eebfc16b3b998e640aa452a",
+  "input_pair_count": 4375,
+  "integrity_protocol_sha256": "d487070139dc96daf8f4b4b188692fc8ffc227cbd9a7af718564b379bf059193",
+  "may_emit_numeric_sweep_range": false,
+  "model_predictions_made": 0,
+  "output_manifest_sha256": "b9e6b35468b4d449fae55283c90dec9774adf83e32cca2eb81e620761302ebaf",
+  "refused_pair_count": 1,
+  "refused_pairs": [
+    {
+      "acquisition_set_id": 2492,
+      "path": "Images/Study_28/image_2492_Nucleus.ome.tiff",
+      "reason": "provider Content-Length differs from frozen FileList and contains metadata-only BigTIFF",
+      "study_id": "Study_28",
+      "target_channel": "Nucleus"
+    }
+  ],
+  "role_pair_counts": {
+    "calibration": 569,
+    "fit": 3744,
+    "selection": 61
+  },
+  "schema": "aleph.outer_library.lightmycells_source_integrity_filter.v1",
+  "target_pair_counts": {
+    "Actin": 17,
+    "Mitochondria": 1728,
+    "Nucleus": 2429,
+    "Tubulin": 200
+  },
+  "unique_admitted_payload_count": 7932
+}

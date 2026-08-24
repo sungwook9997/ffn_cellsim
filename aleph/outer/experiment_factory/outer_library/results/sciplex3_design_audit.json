@@ -1,0 +1,61 @@
+{
+  "accession": "GSM4150378",
+  "aleph_authority": "none",
+  "assigned_context_cell_count": 762795,
+  "cell_annotation_alignment_mismatches": 0,
+  "cell_count": 799317,
+  "cell_type_counts": {
+    "A549": 244281,
+    "K562": 173652,
+    "MCF7": 344862,
+    "NA": 36522
+  },
+  "dose_counts": {
+    "0": 17578,
+    "10": 202725,
+    "100": 192858,
+    "1000": 183356,
+    "10000": 166278,
+    "NA": 36522
+  },
+  "expression_matrix_acquired": true,
+  "license_status": "no_explicit_reuse_license_on_GEO_record",
+  "mandatory_context_group_count": 4896,
+  "mandatory_context_group_size": {
+    "maximum": 4448,
+    "median": 131,
+    "minimum": 2
+  },
+  "matrix_evidence": {
+    "decompressed_line_count": 1007419688,
+    "gzip_stream_verified": true,
+    "sha256": "7d632716aa6ed0fc1780996003d0abc440ff78340609bceaaa4c8ade9345d00a",
+    "size_bytes": 3096224606
+  },
+  "may_select_aleph_parameter": false,
+  "reason_not_training_ready": null,
+  "replicate_counts": {
+    "NA": 36522,
+    "rep1": 351085,
+    "rep2": 411710
+  },
+  "replicate_holdout_is_same_lab_not_external_lab": true,
+  "required_split_group": [
+    "provider_lab",
+    "cell_type",
+    "replicate",
+    "time_point_hours",
+    "treatment",
+    "dose"
+  ],
+  "schema": "aleph.outer_library.sciplex3_design_audit.v1",
+  "time_point_counts": {
+    "24": 680685,
+    "72": 82110,
+    "NA": 36522
+  },
+  "training_ready": true,
+  "treatment_count_including_vehicle": 189,
+  "unassigned_context_cell_count": 36522,
+  "unassigned_context_cells_may_enter_supervised_training": false
+}

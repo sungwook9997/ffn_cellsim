@@ -1,0 +1,40 @@
+{
+  "access_audit": {
+    "article_source_data_anonymous_download_succeeded": true,
+    "cytobank_experiment_requires_login_as_of_2026_08_06": true,
+    "cytobank_file_inventory_not_used_or_inferred": true
+  },
+  "design_contract": {
+    "author_state_subset_cells": 29066,
+    "raw_CyTOF_cells": 90066,
+    "released_source_contains_biological_replicate_identifier": false,
+    "single_cells_are_not_biological_replicates": true,
+    "timepoints": [
+      "0d",
+      "2d",
+      "6d",
+      "10d",
+      "2dW",
+      "6dW",
+      "10dW"
+    ]
+  },
+  "files": [
+    {
+      "local_name": "41467_2019_13441_MOESM4_ESM.xlsx",
+      "role": "author_Source_Data_raw_and_transformed_single_cell_CyTOF",
+      "sha256": "bd6e239008b40cb91b722f16a43c81f43f043adc34f6807a74d094746bfaadfa",
+      "size": 79066708,
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-019-13441-6/MediaObjects/41467_2019_13441_MOESM4_ESM.xlsx"
+    }
+  ],
+  "schema": "aleph.outer_library.karacosta_emt_cytof_acquisition.v1",
+  "source": {
+    "cytobank_experiment": "https://stanford.cytobank.org/cytobank/experiments/26555",
+    "license_id": "cc-by-4.0",
+    "paper_doi": "10.1038/s41467-019-13441-6",
+    "paper_url": "https://www.nature.com/articles/s41467-019-13441-6",
+    "pmcid": "PMC6898514",
+    "provider": "Springer Nature article Source Data"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "aleph.external_training.oa_second_pass_discovery_config.v1",
+  "snapshot_date": "2026-08-05",
+  "provider_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+  "global_cap": 3000,
+  "target_per_stratum": 100,
+  "max_pages_per_stratum": 3,
+  "page_size": 400,
+  "request_delay_seconds": 0.15,
+  "year_strata": [
+    {"name": "2010_2013", "minimum_date": "2010-01-01", "maximum_date": "2013-12-31"},
+    {"name": "2014_2017", "minimum_date": "2014-01-01", "maximum_date": "2017-12-31"},
+    {"name": "2018_2021", "minimum_date": "2018-01-01", "maximum_date": "2021-12-31"},
+    {"name": "2022_2026", "minimum_date": "2022-01-01", "maximum_date": "2026-08-05"}
+  ],
+  "domains": [
+    {"domain": "cortex_membrane_pressure", "query": "TITLE_ABS:(\"actin cortex\" OR \"cortical tension\" OR \"membrane tension\" OR \"cell surface tension\" OR \"bleb pressure\" OR \"cell cortex mechanics\")"},
+    {"domain": "adhesion_traction_ecm", "query": "TITLE_ABS:(\"focal adhesion\" OR \"traction force\" OR \"motor clutch\" OR \"matrix stiffness\" OR \"cell adhesion force\" OR \"extracellular matrix mechanics\")"},
+    {"domain": "nucleus_chromatin_mechanics", "query": "TITLE_ABS:(\"nuclear mechanics\" OR \"nuclear stiffness\" OR \"nuclear deformation\" OR \"chromatin mechanics\" OR \"lamin mechanics\" OR \"nuclear mechanotransduction\")"},
+    {"domain": "osmotic_volume_poroelasticity", "query": "TITLE_ABS:(\"cell volume regulation\" OR \"cellular pressure\" OR \"osmotic pressure\" OR \"mechano-osmotic\" OR poroelastic* OR \"cell hydraulic\")"},
+    {"domain": "migration_protrusion_invasion", "query": "TITLE_ABS:((\"cell migration\" OR lamellipodia OR filopodia OR \"cell protrusion\" OR invasion) AND (mechanics OR force OR traction OR cytoskeleton OR stiffness))"},
+    {"domain": "cytoskeleton_motor_rheology", "query": "TITLE_ABS:((actomyosin OR cytoskeleton OR microtubule OR \"intermediate filament\" OR myosin) AND (mechanics OR force OR tension OR contractility OR rheology))"},
+    {"domain": "mechanotransduction_signalling", "query": "TITLE_ABS:((mechanotransduction OR YAP OR TAZ OR PIEZO1 OR integrin) AND (force OR stiffness OR tension OR mechanics OR shear))"},
+    {"domain": "division_morphogenesis_tissue", "query": "TITLE_ABS:((mitosis OR cytokinesis OR morphogenesis OR gastrulation OR organoid OR spheroid) AND (mechanics OR force OR tension OR rheology OR mechanobiology))"},
+    {"domain": "mechanical_measurement", "query": "TITLE_ABS:((AFM OR \"atomic force microscopy\" OR \"traction force microscopy\" OR micropipette OR \"optical tweezers\" OR \"deformability cytometry\" OR \"Brillouin microscopy\") AND (cell OR tissue))"},
+    {"domain": "flow_shear_piv", "query": "TITLE_ABS:((\"fluid shear\" OR \"shear stress\" OR \"particle image velocimetry\" OR microfluidic*) AND (cell OR endothelial OR epithelium) AND (mechanics OR mechanotransduction OR migration OR cytoskeleton OR deformability))"},
+    {"domain": "cell_type_state_mechanics", "query": "TITLE_ABS:((epithelial OR fibroblast OR macrophage OR neutrophil OR lymphocyte OR \"stem cell\" OR iPSC OR cardiomyocyte OR neuron OR endothelial OR cancer) AND (mechanics OR migration OR contractility OR deformability OR stiffness) AND (state OR phenotype OR differentiation OR activation OR polarization OR plasticity))"},
+    {"domain": "multimodal_observation_inference", "query": "TITLE_ABS:((immunofluorescence OR \"western blot\" OR qPCR OR transcriptomics OR proteomics OR \"cell painting\" OR \"image-based profiling\" OR \"simulation-based inference\") AND (mechanobiology OR \"cell mechanics\" OR migration OR morphology OR traction OR cytoskeleton))"}
+  ]
+}

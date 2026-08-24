@@ -1,0 +1,47 @@
+{
+  "ambiguity_sets": [
+    {
+      "bounds_under_nonnegative_components": {
+        "attachment_energy_density_pn_per_um": [
+          0.0,
+          53.99564838895201
+        ],
+        "sigma_bilayer_pn_per_um": [
+          0.0,
+          53.99564838895201
+        ]
+      },
+      "constant_pn_per_um": 53.99564838895201,
+      "may_choose_one_point": false,
+      "relation": "sigma_app = sigma_bilayer + membrane_cortex_attachment_energy_density"
+    }
+  ],
+  "bounded_sweep_proposal_eligible": false,
+  "checks": {
+    "Aleph_forward_sensitivity_passed": false,
+    "Aleph_observation_operator_mapping_complete": false,
+    "external_dataset_holdout_passed": false,
+    "external_lab_holdout_passed": false,
+    "inference_has_no_Aleph_parameter_authority": true,
+    "inference_not_refused": true,
+    "latent_identifiability_resolved": false,
+    "uncertainty_calibrated": false
+  },
+  "external_evidence_ready": false,
+  "failed_checks": [
+    "external_dataset_holdout_passed",
+    "external_lab_holdout_passed",
+    "uncertainty_calibrated",
+    "latent_identifiability_resolved",
+    "Aleph_observation_operator_mapping_complete",
+    "Aleph_forward_sensitivity_passed"
+  ],
+  "may_mutate_physics": false,
+  "may_select_Aleph_parameter": false,
+  "next_stage": "acquire_independent_dataset_and_lab_validation_with_calibrated_uncertainty",
+  "numeric_parameter_range": null,
+  "operator_constraint_ready": false,
+  "operator_mapping": {},
+  "schema": "aleph.outer_library.latent_promotion.v1",
+  "stage": "external_training_or_validation_only"
+}

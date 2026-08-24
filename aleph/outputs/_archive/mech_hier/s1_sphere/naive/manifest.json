@@ -1,0 +1,32 @@
+{
+  "config": {
+    "n_filaments": 70686,
+    "n_steps": 4000,
+    "device": "cuda:0",
+    "pressure_setpoint": 40.0,
+    "K_drained_Pa": 300.0,
+    "rigid_plate": false,
+    "seed": 1
+  },
+  "R0_um": 7.499978516787127,
+  "gate": {
+    "E_star_Pa": 1184096.6366121052,
+    "E_fit_Pa": 888072.4774590789,
+    "r_squared": 0.9779699441489643,
+    "flatness": 0.2495169188567407,
+    "forward_max_resid_frac": 0.9327909844927847,
+    "k_shell_pN_per_um": 1838272.7326422362,
+    "shell_r_squared": 0.8695699806449011,
+    "shell_resid_frac": 3.2434973059595906,
+    "better_model": "hertz-solid",
+    "model_clean": false,
+    "verdict": "HERTZ-SOLID (needs rigor)",
+    "n_points_used": 4,
+    "all_small_strain_valid": true,
+    "E_fit_over_MCF7": 3566.556134373811,
+    "mcf7_band_Pa": [
+      224.0,
+      279.0
+    ]
+  }
+}

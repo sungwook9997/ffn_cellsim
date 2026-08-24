@@ -1,0 +1,68 @@
+{
+  "Allen_pixels_accessed": 0,
+  "OpenCell_is_pristine_confirmation": false,
+  "acquisition_receipt_sha256": "26a90ecd333ae541506a151b53e729ae656213bd2fccb6bb3acb483f9ace422d",
+  "aleph_authority": "none",
+  "channel_order": [
+    "nucleus_or_DNA",
+    "target_protein_or_tagged_structure"
+  ],
+  "class_names": [
+    "nuclear_interior",
+    "nuclear_envelope",
+    "cytosol",
+    "endoplasmic_reticulum",
+    "golgi",
+    "mitochondria",
+    "plasma_membrane_or_junction",
+    "cytoskeleton_or_adhesion",
+    "vesicular_organelle"
+  ],
+  "constant_channel_count": 0,
+  "dtype": "uint8",
+  "encoding": "round(normalized_float_0_1 * 255); model decodes by division by 255",
+  "exact_HPA_overlap_projection_count": 556,
+  "manifest_sha256": "689d2f6ad69462a7b47673b9c27cffba66f05f83216762e7e8799a1283342565",
+  "may_emit_numeric_sweep_range": false,
+  "model_predictions_made": 0,
+  "normalization": "per-channel finite p1-p99 clip and scale to [0,1]; constant channel becomes all zeros and is reported",
+  "positive_projection_counts": {
+    "cytoskeleton_or_adhesion": 210,
+    "cytosol": 1064,
+    "endoplasmic_reticulum": 232,
+    "golgi": 176,
+    "mitochondria": 24,
+    "nuclear_envelope": 42,
+    "nuclear_interior": 926,
+    "plasma_membrane_or_junction": 312,
+    "vesicular_organelle": 582
+  },
+  "projection_count": 2260,
+  "protocol_sha256": "41dc73848e0208dd1b4c7295e2740dd18accb07e26d0f9e2cc1155e59684f77a",
+  "resolution_report_sha256": "e4e2a1237f2c2a9515f3fa40f14a1a301b3a71f1127706ce68a90d2deb7bbdc0",
+  "role_projection_counts": {
+    "in_domain": 2234,
+    "semantic_OOD": 26
+  },
+  "schema": "aleph.outer_library.opencell_multiprovider_tensor.v1",
+  "shape": [
+    2260,
+    2,
+    128,
+    128
+  ],
+  "split_projection_counts": {
+    "calibration": 398,
+    "selection": 314,
+    "semantic_OOD": 26,
+    "train": 1522
+  },
+  "split_target_counts": {
+    "calibration": 199,
+    "selection": 157,
+    "semantic_OOD": 13,
+    "train": 761
+  },
+  "target_count": 1130,
+  "tensor_sha256": "c2b82622984bfcf3c84dd7eea28f867c07a00c7759d7a62114d3eb3b470ed22c"
+}

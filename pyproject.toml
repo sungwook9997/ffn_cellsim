@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ffn_cellsim"
+version = "0.0.1.dev0"
+description = "Full Fiber Network Cell Simulator — fine-grained mechanistic Warp-CUDA Active Cell engine"
+requires-python = ">=3.13"
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aleph*"]
+exclude = ["aleph.outputs*", "aleph.docs*", "aleph.archive*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["aleph/outputs", "aleph/docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",  # line length handled by formatter
+]
+
+[tool.pytest.ini_options]
+# One root, 2026-08-09. It used to be an explicit list of subdirectories, and the list had gone stale:
+# sixteen files sat directly under `aleph/tests/` and **none of them was collected** — 120 test
+# functions, 45 of them in `test_sanity_gate.py` alone. A test outside `testpaths` is not a test, and
+# an allowlist of directories silently stops being one every time a directory is added.
+#
+# Five files there were CLI gate scripts wearing a `test_` name, four with a module-level `sys.exit`
+# that would have aborted the whole pytest session on collection. They moved to `scripts/`.
+testpaths = ["aleph/tests"]
+addopts = "-ra -q"

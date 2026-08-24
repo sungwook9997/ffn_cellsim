@@ -1,0 +1,217 @@
+# I0-B1 parameter gate — I1a conservative fluid-first substrate (p/mass Biot)
+# ============================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §4 (I0-Bn) + §7 bootstrap step 3.
+# Format: claim ID · evidence status · owner · provisional policy · blocking increment.
+#
+# PI ratification 2026-07-16 (three closure decisions):
+#   Q1  Biot closure   -> c_v=D_p anchor + draft mobility; M/S DERIVED (not set independently)
+#   Q2  Biot alpha     -> HOLD NATIVE (no cytoplasm-specific evidence; sweep as oracle in analytic gates)
+#   Q3  resting turgor -> 40 Pa (Fischer-Friedrich HeLa proxy; already the FF baseline)
+#
+# HARD rules honoured: no empirical magic numbers (every value is sourced or derived-by-formula);
+# provisional values are explicitly labelled with owner + expiry-trigger and are NEVER adjusted to
+# make a gate pass; magnitude gates are INVALID until the blocking parameter closes.
+# ============================================================================
+
+meta:
+  increment: I1a
+  gate: I0-B1
+  decided_by: PI
+  decided_on: "2026-07-16"
+  native_run_blocked_on: []                  # alpha ratified 2026-07-16 -> I0-B1 fully closed for I1a
+  analytic_build_unblocked: true             # solver + Terzaghi/manufactured/mass gates need no physio magnitude
+  units_convention: "SI in this ledger; engine runtime is um-pN-s (convert at load)"
+
+parameters:
+
+  # ---- PRIMARY ANCHOR (verified) -----------------------------------------------------------------
+  c_v:
+    title: "consolidation coefficient = poroelastic diffusion D_p (= k*M/mu)"
+    symbol: "c_v = D_p"
+    value: 50.0
+    range: [40.0, 60.0]
+    unit: "um^2/s"                           # = 4-6e-11 m^2/s
+    role: "primary poroelastic relaxation anchor; tau_p = R^2/c_v ~= 1 s at R=7.5 um"
+    kb_claim: "KB-3.B3.2"
+    source: "Moeendarbary 2013 Nat Mater 12:253 (PMID23291707, PMC3925878); HeLa/HT1080/MDCK"
+    evidence_status: "verified/High"
+    provisional: true
+    reason_provisional: "cross-cell-type anchor; NOT MCF7-specific"
+    owner: PI
+    expiry_trigger: "MCF7-specific poroelastic D_p datum lands"
+    policy: >
+      USE as the primary relaxation anchor. k, mu, M must stay CONSISTENT with this c_v
+      (c_v = k*M/mu); they are never prescribed independently to hit a relaxation band (master §4B).
+
+  # ---- MOBILITY inputs (draft, provisional) ------------------------------------------------------
+  k_perm:
+    title: "intrinsic Darcy permeability of the cytoplasmic pore network"
+    symbol: "k"
+    value: 5.0e-18
+    range: [3.0e-18, 1.0e-17]
+    unit: "m^2"
+    kb_claim: "KB-DRAFT-3.B-18"
+    source: "Moeendarbary 2013 (xi~14 nm) + Happel-Brenner permeability closure (closure NOT in corpus)"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    expiry_trigger: "I1b native gate / MCF7 permeability datum"
+    policy: "provisional; feeds mobility k/mu; kept consistent with the c_v anchor."
+
+  mu_pore:
+    title: "pore-fluid (cytosol) viscosity for Darcy flow"
+    symbol: "mu_pore"
+    value: 1.0e-3
+    range: [1.0e-3, 5.0e-2]
+    unit: "Pa*s"
+    kb_claim: "KB-DRAFT-3.B-18"
+    source: "Moeendarbary-anchored cytosol viscosity band (~1-50x water)"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    policy: >
+      1x water (master 'pore viscosity ~1-2x water'). MUST stay separate from BOTH the RETIRED
+      65.9 Pa*s bulk drag AND the gamma_solid inner-solve mobility. Not a whole-cytoplasm rheology.
+
+  mobility:
+    title: "Darcy mobility (derived from k, mu_pore)"
+    symbol: "k/mu"
+    value: 5.0e-15                            # 5e-18 / 1e-3
+    unit: "m^2/(Pa*s)"                        # = 5.0e-3 um^2/(Pa*s)
+    evidence_status: "derived"
+    cross_check: "KB-DRAFT-3.B-27 band 1e-3..1e-2 um^2/(Pa*s) -> 5.0e-3 is IN band"
+
+  # ---- DERIVED storage (NOT independently set -> avoids M=K_drained double-count) -----------------
+  M_biot:
+    title: "Biot modulus (fluid storage); S = 1/M"
+    symbol: "M, S=1/M"
+    value: 1.0e+4                             # M = c_v*mu/k = 5e-11 * 1e-3 / 5e-18 = 1e4 Pa (signed exp: PyYAML float)
+    unit: "Pa"
+    derived_as: "M = c_v * mu_pore / k_perm  (consistency with the c_v anchor + mobility)"
+    storativity_S: 1.0e-4                     # S = 1/M, unit 1/Pa
+    evidence_status: "derived (no independent source)"
+    provisional: true
+    reason_provisional: "inherits provisionality of c_v (cross-cell) and k,mu (draft)"
+    owner: PI
+    policy: >
+      REPLACES the unratified code value M=1 kPa. Explicitly NOT M=K_drained (master §4B): the drained
+      modulus (KB-3.B3.2 E~0.4-0.9 kPa) is a DIFFERENT modulus. FINDING: the code M=1 kPa is inconsistent
+      with the Moeendarbary c_v (would imply c_v~5 um^2/s, ~10x too slow); the c_v-anchored closure gives
+      M~10 kPa. If K_u=K_d+alpha^2*M is later formed, alpha must close first (Q2, held).
+
+  # ---- RATIFIED (Q2 revisited): alpha = 1.0, derived-by-limit (PI 2026-07-16) --------------------
+  alpha_biot:
+    title: "Biot-Willis coupling coefficient (cytoplasm)"
+    symbol: "alpha"
+    value: 1.0
+    unit: "dimensionless"
+    evidence_status: "PI-ratified (derived-by-limit / incompressible-constituent limit)"
+    decision: "RATIFIED alpha=1.0 (PI 2026-07-16)"
+    owner: PI
+    source: >
+      Penta 2025 ZAMP (10.1007/s00033-025-02651-2, alpha=1 homogenization proof);
+      Thekkethil 2024 BMMB (10.1007/s10237-024-01854-2, cytoplasm poroviscoelastic, alpha=1 implicit);
+      Moeendarbary 2013 Nat Mater (alpha=1 limit, unprinted); Charras 2009 JCS (10.1242/jcs.049262).
+    evidence_note: >
+      NO direct cytoplasm Biot-Willis alpha measurement exists anywhere; alpha=1 is the universal
+      modeling assumption pinned by the incompressible-constituent limit: soft skeleton K_d~kPa <<
+      protein-constituent K_s~GPa -> alpha = 1 - K_d/K_s ~= 1. Same status as field-standard biphasic
+      theory. ECM alpha~1 (KB-DRAFT-1-03) was NOT transferable; this is the cytoplasm-specific ratification.
+    policy: >
+      Governs the alpha*div(v_s) solid->fluid source term and Skempton undrained stiffening
+      B=alpha*M/K_u. Keep finite compressibility in M/storage (water 2.2 GPa) and osmosis in the
+      separate Pi_0 turgor term -- do NOT de-rate alpha to absorb osmosis (lumped-proxy violation).
+      Penta/Thekkethil are candidate SourceEvidence (not yet in KB).
+
+  # ---- DEFERRED to I1b ---------------------------------------------------------------------------
+  phi_porosity:
+    title: "cytoplasm porosity (fluid volume fraction)"
+    symbol: "phi"
+    value: null
+    unit: "dimensionless"
+    evidence_status: "GAP (~0.7 water-fraction order, unsourced)"
+    decision: "DEFER to I1b"
+    reason: "enters v_f = v_s + q/phi (I1b) and d(phi c)/dt (I1c); NOT needed for the I1a p/mass minimal under the c_v-anchored closure (phi is absorbed into the storage S)."
+    owner: PI
+
+  # ---- membrane hydraulic BC (draft, MCF7-specific) ----------------------------------------------
+  L_p:
+    title: "membrane hydraulic conductivity (water-flux BC)"
+    symbol: "L_p"
+    value: 1.0e-12
+    unit: "m/(s*Pa)"
+    kb_claim: "KB-DRAFT-3.B-26 (+ aquaporin KB-DRAFT-3.B-29)"
+    source: "Jung 2011 MCF7/AQP5 (project-cited); Kedem-Katchalsky 1958 BBA 27:229 form"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    reason_provisional: "best-anchored draft (MCF7-specific), but draft status; unit reconciliation open"
+    note: "Reconcile against code value 1.6e-8 (gamma_floor); reflection coeff sigma=1.0 assumed."
+    role: "outer membrane water-flux BC: s_water = L_p * (dPi_osm - dP)"
+
+  # ---- resting pre-stress (Q3): 40 Pa HeLa proxy -------------------------------------------------
+  delta_p_hydrostatic_rest:
+    title: "resting NET hydrostatic pressure difference dP_hyd the cortex bears (t0 pre-stress seed)"
+    symbol: "dP_hyd (was 'Pi_0' — renamed: this is NOT osmotic pressure)"
+    value: 40.0
+    range: [10.0, 70.0]
+    unit: "Pa"
+    kb_claim: "KB-6.1.6 (PI-ratified as proxy) / KB-DRAFT-3.B-30"
+    source: "Fischer-Friedrich 2014 Sci Rep 4:6213 (PMC4148660): rounded interphase HeLa AFM confinement,
+      dP = 40 +/- 30 Pa, surface tension 0.17 +/- 0.13 mN/m. Direct source is HeLa, NOT MCF7."
+    evidence_status: "PI-ratified-as-proxy (HeLa; low-pressure diagnostic baseline)"
+    provisional: true
+    reason_provisional: "HeLa proxy; NO MCF7 datum. MCF7 production value HELD (PI 2026-07-22)."
+    decision: "USE 40 Pa as the HeLa/low-pressure diagnostic baseline (PI 2026-07-16, re-affirmed 2026-07-22)"
+    owner: PI
+    expiry_trigger: "MCF7 dP set by the pressure-consistency gate (below) keyed on KB-6.1.7 / VG-gamma-MCF7-suspended, NOT a hand-swapped value"
+    physics_note: >
+      dP_hyd is the NET hydrostatic pressure difference (cell interior minus exterior), NOT an absolute
+      osmotic pressure. Absolute osmolarity across the membrane is ~hundreds of kPa on each side; they very
+      nearly cancel and the cortex bears only this ~10-100 Pa residual dP_hyd. Keep THREE distinct states:
+      dP_hyd (this; drives the membrane pressure traction, balanced by cortical+membrane tension via
+      Young-Laplace dP = 2*gamma/R), dPi_osm (the osmotic difference; drives water flux), and p_excess
+      (the deviatoric Biot pore-pressure field). Water flux is s_water = L_p*(dPi_osm - dP_hyd); at rest the
+      two are EQUAL (zero net flux) but they are physically separate and diverge under perturbation (bleb,
+      spreading). Do NOT reuse one scalar for both (the current driver osmotic_difference=PI_0_PA conflates
+      them — flagged for separation).
+    mcf7_consistency_gate: >
+      MCF7 production dP_hyd must satisfy dP = 2*(gamma_cortex + gamma_membrane)/R with MCF7-sourced radius
+      and tensions, NOT a hand-picked number. MCF7 suspended-interphase active cortical tension median
+      ~0.41 mN/m (PMC8391033) -> dP ~ 2*0.41e-3/7.5e-6 ~ 109 Pa (back-computed from tension, not a direct
+      MCF7 pressure measurement; assuming ALL active tension bears static pressure is itself uncertain).
+      So 40 Pa is likely LOW for MCF7, but do NOT swap to ~100 Pa directly — a PI-authored pressure-
+      consistency gate over {R, gamma_cortex, gamma_membrane, dP_hyd} decides the MCF7 baseline.
+    hosseini2020_gamma_link: >
+      2026-07-23 (P2 Card 3, PI-ratified AC_DECISION_CARDS 2026-07-22): the PRIMARY Slice-1
+      (suspended/rounded-interphase) MCF7 cortical-tension anchor is now KB-6.1.7 / gate
+      VG-gamma-MCF7-suspended = Hosseini 2020 (Adv Sci 7:2001276) gamma_eff = 0.27 mN/m
+      (median; IQR 0.18-0.40; n=27), an EFFECTIVE/total Laplace tension (gamma_mem already folded
+      in -> use dP = 2*gamma_eff/R; do NOT re-add gamma_mem). Maps to dP = 48-107 Pa (central ~72)
+      at R=7.5 um. Hosseini 2021 (~0.41 mN/m, PMC8391033) is an UPPER cross-check pending protocol
+      reconciliation, not the primary. This is DOCUMENTATION ONLY: the running value below stays
+      40 Pa (HeLa diagnostic proxy). The MCF7 dP (48-107 Pa) is landed ONLY by the PI-authored
+      pressure-consistency gate over {R, gamma_cortex, gamma_membrane, dP_hyd}, NEVER a hand-swap.
+    realization_gap: >
+      DIAGNOSTIC FINDING 2026-07-22: the policy below ("pre-tensions the shell") is NOT yet realized. At the
+      current build the cortex is force-free (~0.03 pN/node) and the membrane carries the full dP_hyd
+      (~40 pN/node) unbalanced, because the membrane<->cortex ERM linkage does not transmit force (off-radial
+      pairing, one tether/node). The Young-Laplace consistency (gamma=dP*R/2) holds on paper but the discrete
+      build does not achieve it until the ERM coupling is rebuilt. This is the open resting-baseline blocker.
+    policy: >
+      Seed as the t0 mean pressure p_bar. INTENDED to pre-tension the shell so gamma = dP*R/2 (the FF
+      baseline consistency); see realization_gap — not yet achieved in the build. Physiological-baseline HARD
+      rule: NEVER start at zero dP_hyd.
+
+  # ---- numerical sizing (not a literature value) -------------------------------------------------
+  dx_grid:
+    title: "conservative field-grid resolution"
+    symbol: "dx"
+    value: null
+    unit: "um"
+    evidence_status: "numerical sizing decision (NOT a literature constant)"
+    owner: Lead
+    policy: >
+      Chosen by resolution-convergence study, asserted grid-invariant per the Magic-Number Block;
+      reported at the native gate against the 16 GB budget. Physical mesh xi~14-40 nm is a lower
+      reference only — the homogenized field grid may be coarser than the cytoskeletal mesh.

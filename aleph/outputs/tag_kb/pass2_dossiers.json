@@ -1,0 +1,1407 @@
+[
+ {
+  "citation_key": "AllenTildesley",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Allen & Tildesley, Computer Simulation of Liquids (textbook)",
+  "notes": "Used by KB-1.26/1.29.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1093/oso/9780198803195.001.0001",
+    "title": "Computer Simulation of Liquids",
+    "authors": [
+     "allen",
+     "tildesley"
+    ],
+    "year": "2017"
+   },
+   {
+    "doi": "10.1093/oso/9780198803195.003.0007",
+    "title": "Parallel simulation",
+    "authors": [
+     "allen",
+     "tildesley"
+    ],
+    "year": "2017"
+   },
+   {
+    "doi": "10.1093/oso/9780198803195.005.0001",
+    "title": "Computers and computer simulation",
+    "authors": [
+     "allen",
+     "tildesley"
+    ],
+    "year": "2017"
+   },
+   {
+    "doi": "10.5604/01.3001.0014.2813",
+    "title": "Contemporary Methodology Used in the Ethics of Security",
+    "authors": [
+     "ochmann"
+    ],
+    "year": "2020"
+   }
+  ]
+ },
+ {
+  "citation_key": "CalzadoMartin2016_ACSNano",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1021/acsnano.5b07162",
+  "short_source": "Calzado-Martin A, et al. Effect of actin organization on AFM measurement of breast cell mechanics. ACS Nano. 2016;10(3):3365-3374.",
+  "notes": "Used by KB-6.1.1",
+  "stored_doi_resolves_to": {
+   "title": "Effect of Actin Organization on the Stiffness of Living Breast Cancer Cells Revealed by Pe",
+   "authors": [
+    "calzado-martín",
+    "encinar",
+    "tamayo"
+   ],
+   "year": "2016"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1021/acsnano.5b07162",
+    "title": "Effect of Actin Organization on the Stiffness of Living Breast Cancer Cells Revealed by Pe",
+    "authors": [
+     "calzado-martín",
+     "encinar",
+     "tamayo"
+    ],
+    "year": "2016"
+   },
+   {
+    "doi": "10.1021/acsnano.6b01294",
+    "title": "Engineering Circular Gliding of Actin Filaments Along Myosin-Patterned DNA Nanotube Rings ",
+    "authors": [
+     "hariadi",
+     "appukutty",
+     "sivaramakrishnan"
+    ],
+    "year": "2016"
+   },
+   {
+    "doi": "10.1021/acsnano.5c20682",
+    "title": "Active Mechanics Governs Three-Dimensional Cell-in-Cell Formation",
+    "authors": [
+     "li",
+     "li"
+    ],
+    "year": "2026"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Cox_NatCommun",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Cox et al, Nat Commun (Piezo1 mechanosensitivity)",
+  "notes": "Used by KB-3.10.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1016/j.bpj.2014.11.3079",
+    "title": "Probing the Mechanosensitivity of Piezo1 Channels",
+    "authors": [
+     "cox",
+     "martinac"
+    ],
+    "year": "2015"
+   },
+   {
+    "doi": "10.1038/s41467-023-39688-8",
+    "title": "A mechanical-coupling mechanism in OSCA/TMEM63 channel mechanosensitivity",
+    "authors": [
+     "zhang",
+     "shan",
+     "cox"
+    ],
+    "year": "2023"
+   },
+   {
+    "doi": "10.1080/19336950.2021.1923199",
+    "title": "The anchor domain is critical for Piezo1 channel mechanosensitivity",
+    "authors": [
+     "vero li",
+     "d cox",
+     "martinac"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.7554/elife.35468.022",
+    "title": "Figure 5. Identification of introgessed regions by Gmin.",
+    "authors": [],
+    "year": ""
+   }
+  ]
+ },
+ {
+  "citation_key": "Friedl2011_Cell",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1083/jcb.200909003",
+  "short_source": "Friedl & Wolf 2011, Cell / J Cell Biol",
+  "notes": "Used by KB-3.11. DOI resolved via PubMed (PMID 19951899): Friedl & Wolf, 'Plasticity of cell migration: a multiscale tuning model', J Cell Biol 2010;188(1):11-1",
+  "stored_doi_resolves_to": {
+   "title": "Plasticity of cell migration: a multiscale tuning model",
+   "authors": [
+    "friedl",
+    "wolf"
+   ],
+   "year": "2009"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1016/j.ceb.2011.03.001",
+    "title": "Corrigendum to “Nuclear mechanics during cell migration” [Curr. Opin. Cell Biol. 23 (2011)",
+    "authors": [
+     "friedl",
+     "wolf",
+     "lammerding"
+    ],
+    "year": "2011"
+   },
+   {
+    "doi": "10.1016/j.ceb.2010.10.015",
+    "title": "Nuclear mechanics during cell migration",
+    "authors": [
+     "friedl",
+     "wolf",
+     "lammerding"
+    ],
+    "year": "2011"
+   },
+   {
+    "doi": "10.1016/j.tcb.2011.09.006",
+    "title": "Extracellular matrix determinants of proteolytic and non-proteolytic cell migration",
+    "authors": [
+     "wolf",
+     "friedl"
+    ],
+    "year": "2011"
+   },
+   {
+    "doi": "10.4016/46733.01",
+    "title": "Auto-hemotherapy in the treatment of chronic herpetic stomatitis. PMID 7482606 [PubMed - M",
+    "authors": [],
+    "year": "2012"
+   }
+  ]
+ },
+ {
+  "citation_key": "Geiger_NRMCB",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Geiger et al, focal adhesion review (Nat Rev Mol Cell Biol)",
+  "notes": "Used by KB-2.2.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1038/nrm2593",
+    "title": "Environmental sensing through focal adhesions",
+    "authors": [
+     "geiger",
+     "spatz",
+     "bershadsky"
+    ],
+    "year": "2009"
+   },
+   {
+    "doi": "10.1038/nrm2568",
+    "title": "First (focal) contact",
+    "authors": [
+     "chenette"
+    ],
+    "year": "2008"
+   },
+   {
+    "doi": "10.1038/nrm1549",
+    "title": "Focal adhesion kinase: in command and control of cell motility",
+    "authors": [
+     "mitra",
+     "hanson",
+     "schlaepfer"
+    ],
+    "year": "2005"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Hosseini2021_BiophysJ",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1016/j.bpj.2021.05.003",
+  "short_source": "Hosseini K, et al. Binning and cortical-tension surrogates in breast cancer cell mechanics. Biophys J. 2021;120(16):3516-3528.",
+  "notes": "Used by KB-6.1.3 (PMID34022239)",
+  "stored_doi_resolves_to": {
+   "title": "Facile tethering of stable and unstable proteins for optical tweezers experiments",
+   "authors": [
+    "maciuba",
+    "zhang",
+    "kaiser"
+   ],
+   "year": "2021"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1016/j.bpj.2021.05.006",
+    "title": "EMT changes actin cortex rheology in a cell-cycle-dependent manner",
+    "authors": [
+     "hosseini",
+     "frenzel",
+     "fischer-friedrich"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.1016/j.ijnonlinmec.2022.103907",
+    "title": "How surrogates for cortical forces determine cell shape",
+    "authors": [
+     "stotsky",
+     "othmer"
+    ],
+    "year": "2022"
+   },
+   {
+    "doi": "10.1007/s12013-012-9356-z",
+    "title": "Intracellular Mechanics and Activity of Breast Cancer Cells Correlate with Metastatic Pote",
+    "authors": [
+     "gal",
+     "weihs"
+    ],
+    "year": "2012"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "HuertaLopez2024_SciAdv",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Huerta-Lopez et al 2024, Science Advances",
+  "notes": "Used by KB-1.19.",
+  "crossref_candidates": [
+   {
+    "doi": "10.7287/peerj.preprints.710/supp-1",
+    "title": "",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.7287/peerj.preprints.710v1/supp-1",
+    "title": "",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.1017/s0967199426100380.sm001",
+    "title": "Lopez et al. supplementary material",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "KhalilFriedl_TCB",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Khalil & Friedl, collective migration review (Integr Biol/TCB)",
+  "notes": "Used by KB-4.7.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1039/c0ib00052c",
+    "title": "Determinants of leader cells in collective cell migration",
+    "authors": [
+     "khalil",
+     "friedl"
+    ],
+    "year": "2010"
+   },
+   {
+    "doi": "10.1038/ncb2923",
+    "title": "Rho-directed forces in collective migration",
+    "authors": [
+     "friedl",
+     "wolf",
+     "zegers"
+    ],
+    "year": "2014"
+   },
+   {
+    "doi": "10.1039/c3ib40095f",
+    "title": "Single cell gene expression analysis in injury-induced collective cell migration",
+    "authors": [
+     "riahi",
+     "long",
+     "yang"
+    ],
+    "year": "2014"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Liew2024_CMBE",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1007/s12195-024-00802-5",
+  "short_source": "Liew J, et al. Traction force microscopy of breast cancer cell lines. Cell Mol Bioeng. 2024;17:203.",
+  "notes": "Used by KB-6.1.3",
+  "stored_doi_resolves_to": {
+   "title": "Perspectives on Incorporating a Large Language Model into a Cellular and Molecular Bioengi",
+   "authors": [
+    "rubenstein",
+    "kim"
+   ],
+   "year": "2024"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1007/s12195-024-00811-4",
+    "title": "Cellular Traction Force Holds the Potential as a Drug Testing Readout for In Vitro Cancer ",
+    "authors": [
+     "liew",
+     "liew",
+     "lin"
+    ],
+    "year": "2024"
+   },
+   {
+    "doi": "10.1007/s12195-024-00801-6",
+    "title": "Field Guide to Traction Force Microscopy",
+    "authors": [
+     "denisin",
+     "kim",
+     "riedel-kruse"
+    ],
+    "year": "2024"
+   },
+   {
+    "doi": "10.1021/acsami.4c09615.s001",
+    "title": "Exploration of Curvature and Stiffness Dual-Regulated Breast Cancer Cell Motility by a Mot",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Lindstrom2010_Biomaterials",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1103/PhysRevE.82.051905",
+  "short_source": "Lindstrom et al 2010, Biomaterials",
+  "notes": "Used by KB-1.1. DOI resolved via PubMed (PMID 21230498): Lindström, Vader, Kulachenko, Weitz, 'Biopolymer network geometries: characterization, regeneration, an",
+  "stored_doi_resolves_to": {
+   "title": "Biopolymer network geometries: Characterization, regeneration, and elastic properties",
+   "authors": [
+    "lindström",
+    "vader",
+    "kulachenko"
+   ],
+   "year": "2010"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1109/mpul.2010.939614",
+    "title": "A Nano Approach [review of \"Biomaterials: A Nano Approach\" (Ramakrishna, S., et al; 2010)]",
+    "authors": [
+     "deutsch"
+    ],
+    "year": "2011"
+   },
+   {
+    "doi": "10.7717/peerj.20146/fig-9",
+    "title": "Figure 9: Forest plot of the effect of multi-component exercise on physical fitness in pat",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.7717/peerjcs.88/fig-1",
+    "title": "Figure 1: Systems design schematics from: (A) Son et al. (2010); (B) Lau et al. (2010); (C",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.4016/46733.01",
+    "title": "Auto-hemotherapy in the treatment of chronic herpetic stomatitis. PMID 7482606 [PubMed - M",
+    "authors": [],
+    "year": "2012"
+   }
+  ]
+ },
+ {
+  "citation_key": "MegeIshiyama_JBCReview",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Mege & Ishiyama, cadherin mechanobiology review (JBC/CSH)",
+  "notes": "Used by KB-4.16.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1016/j.mbm.2024.100099",
+    "title": "Mechanotransductive N-cadherin binding induces differentiation in human neural stem cells",
+    "authors": [
+     "cavanaugh",
+     "willits"
+    ],
+    "year": "2025"
+   },
+   {
+    "doi": "10.1101/2022.12.08.519566",
+    "title": "Modulation of the E-cadherin in human cells infected\n                  <i>in vitro</i>\n   ",
+    "authors": [
+     "osman",
+     "mezouar",
+     "belhaouari-brahim"
+    ],
+    "year": "2022"
+   },
+   {
+    "doi": "10.1016/0928-4257(94)90055-8",
+    "title": "M-cadherin expression in adult mouse peripheral nervous system",
+    "authors": [
+     "cifuentes-diaz",
+     "nicolet",
+     "goudou"
+    ],
+    "year": "1994"
+   },
+   {
+    "doi": "10.31219/osf.io/7w6da",
+    "title": "16 KB basog mp2.docx",
+    "authors": [
+     "sarce"
+    ],
+    "year": "2020"
+   }
+  ]
+ },
+ {
+  "citation_key": "NanoConvergence2021_Glioma",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Glioma cell mechanics. Nano Convergence. 2021;8:20.",
+  "notes": "Used by KB-6.2.3 (PMC8253861)",
+  "crossref_candidates": [
+   {
+    "doi": "10.1186/s40580-021-00291-6",
+    "title": "Nano-sized graphene oxide coated nanopillars on microgroove polymer arrays that enhance sk",
+    "authors": [
+     "choi",
+     "kim",
+     "lee"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.1021/acsnano.5c20682",
+    "title": "Active Mechanics Governs Three-Dimensional Cell-in-Cell Formation",
+    "authors": [
+     "li",
+     "li"
+    ],
+    "year": "2026"
+   },
+   {
+    "doi": "10.1186/s40580-021-00263-w",
+    "title": "Nanotechnology in emerging liquid biopsy applications",
+    "authors": [
+     "kalogianni"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Panzetta2019_PNAS",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Panzetta et al 2019, PNAS",
+  "notes": "Used by KB-1.19.",
+  "crossref_candidates": [
+   {
+    "doi": "10.17504/protocols.io.3pngmme",
+    "title": "TSS Transformation (Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "dd dienst"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.1515/astro-2019-0010",
+    "title": "Comparison of research methods and interpretation of ALH-84001 (McKay et al. 1996, Science",
+    "authors": [
+     "gyollai",
+     "bérczi",
+     "polgári"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.17504/protocols.io.jn5cmg6",
+    "title": "TSS Transformation (Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "dd dienst"
+    ],
+    "year": "2017"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Parsons_FAReview",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Parsons et al, focal adhesion review",
+  "notes": "Used by KB-2.2.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1038/sj.onc.1203877",
+    "title": "Focal Adhesion Kinase: a regulator of focal adhesion dynamics and cell movement",
+    "authors": [
+     "parsons",
+     "martin",
+     "slack"
+    ],
+    "year": "2000"
+   },
+   {
+    "doi": "10.1128/mcb.19.9.6120",
+    "title": "Regulated Expression of Focal Adhesion Kinase-Related Nonkinase, the Autonomously Expresse",
+    "authors": [
+     "nolan",
+     "lacoste",
+     "parsons"
+    ],
+    "year": "1999"
+   },
+   {
+    "doi": "10.5256/f1000research.1236.r814",
+    "title": "Peer Review Report For: The Focal Adhesion Analysis Server: a web tool for analyzing focal",
+    "authors": [],
+    "year": "2013"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "PolacheckChen_ARBE",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Polacheck & Chen, Annual Rev Biomed Eng",
+  "notes": "Used by KB-2.12.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1146/bioeng.685",
+    "title": "Annual Review of Biomedical Engineering",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.1146/annurev-bioeng-110220-031722",
+    "title": "Current Developments and Challenges of mRNA Vaccines",
+    "authors": [
+     "chen",
+     "chen",
+     "xu"
+    ],
+    "year": "2022"
+   },
+   {
+    "doi": "10.1146/bioeng.2001.3.issue-1",
+    "title": "",
+    "authors": [],
+    "year": "2001"
+   },
+   {
+    "doi": "10.7717/peerj-cs.3715/table-12",
+    "title": "Table 12: Detailed energy breakdown for 1 kB block.",
+    "authors": [],
+    "year": ""
+   }
+  ]
+ },
+ {
+  "citation_key": "RocaCusachs_IntegrinReviews",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Roca-Cusachs et al, integrin/mechanosensing reviews",
+  "notes": "Used by KB-2.1.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1016/j.isci.2020.100907",
+    "title": "Integrin Binding Dynamics Modulate Ligand-Specific Mechanosensing in Mammary Gland Fibrobl",
+    "authors": [
+     "lerche",
+     "elosegui-artola",
+     "kechagia"
+    ],
+    "year": "2020"
+   },
+   {
+    "doi": "10.1101/570721",
+    "title": "Integrin binding dynamics modulate ligand-specific mechanosensing in mammary gland fibrobl",
+    "authors": [
+     "lerche",
+     "elosegui-artola",
+     "kechagia"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.1016/j.ceb.2017.12.014",
+    "title": "Mechanosensing at integrin-mediated cell–matrix adhesions: from molecular to integrated me",
+    "authors": [
+     "gauthier",
+     "roca-cusachs"
+    ],
+    "year": "2018"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "SciRep2025_GliomaAFM",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1038/s41598-025-04841-4",
+  "short_source": "Glioma/GBM whole-cell AFM (T98G vs U87 MG). Sci Rep. 2025;15:s41598-025-04841-4.",
+  "notes": "Used by KB-6.2.3 (PMID40456830 PMC12130209)",
+  "stored_doi_resolves_to": {
+   "title": "Exploring the heterogeneity in glioblastoma cellular mechanics using in-vitro assays and a",
+   "authors": [
+    "masud",
+    "hasib",
+    "ibironke"
+   ],
+   "year": "2025"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1021/acs.molpharmaceut.8b01210.s001",
+    "title": "Targeting CAIX with [64Cu]XYIMSR-06 Small Molecular Radiotracer Enables Noninvasive PET Im",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.1371/journal.pone.0076918",
+    "title": "Cannabidiol, a Non-Psychoactive Cannabinoid Compound, Inhibits Proliferation and Invasion ",
+    "authors": [
+     "solinas",
+     "massi",
+     "cinquina"
+    ],
+    "year": "2013"
+   },
+   {
+    "doi": "10.1038/s41598-020-67753-5",
+    "title": "Quiescent stem cell marker genes in glioma gene networks are sufficient to distinguish bet",
+    "authors": [
+     "mukherjee"
+    ],
+    "year": "2020"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "SensPlastino_NRMCB",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Sens & Plastino, membrane mechanics review",
+  "notes": "Used by KB-3.2.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1088/0953-8984/27/27/273103",
+    "title": "Membrane tension and cytoskeleton organization in cell motility",
+    "authors": [
+     "sens",
+     "plastino"
+    ],
+    "year": "2015"
+   },
+   {
+    "doi": "10.1016/0378-4371(95)00211-1",
+    "title": "Non-extensive statistical mechanics and generalized Fokker-Planck equation",
+    "authors": [
+     "plastino",
+     "plastino"
+    ],
+    "year": "1995"
+   },
+   {
+    "doi": "10.1016/j.physa.2011.06.050",
+    "title": "Inferring an optimal Fisher measure",
+    "authors": [
+     "flego",
+     "plastino",
+     "plastino"
+    ],
+    "year": "2011"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Smelser2015_BMMB",
+  "pass1": "CHECK",
+  "stored_doi": "https://doi.org/10.1007/s10237-015-0680-2",
+  "short_source": "Smelser AM, et al. Mechanical properties of normal vs cancer breast cells via particle tracking microrheology. Biomech Model Mechanobiol. 2015;14:1335.",
+  "notes": "Used by KB-3.B3.1",
+  "stored_doi_resolves_to": {
+   "title": "Finite element implementation of a multiscale model of the human lens capsule",
+   "authors": [
+    "burd",
+    "regueiro"
+   ],
+   "year": "2015"
+  },
+  "crossref_candidates": [
+   {
+    "doi": "10.1007/s10237-015-0677-x",
+    "title": "Mechanical properties of normal versus cancerous breast cells",
+    "authors": [
+     "smelser",
+     "macosko",
+     "o’dell"
+    ],
+    "year": "2015"
+   },
+   {
+    "doi": "10.32920/ryerson.14655153",
+    "title": "Measuring the mechanical properties of apoptotic cells using particle tracking microrheolo",
+    "authors": [
+     "el kaffas"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.32920/ryerson.14655153.v1",
+    "title": "Measuring the mechanical properties of apoptotic cells using particle tracking microrheolo",
+    "authors": [
+     "el kaffas"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.2208/jscejoe.76.2_i_384",
+    "title": "STATISTICAL ANALYSIS OF SHIP DIMENSIONS USED FOR DESIGN OF FENDERS AND MOORING POSTS",
+    "authors": [
+     "yoneyama",
+     "kashima",
+     "hara"
+    ],
+    "year": "2020"
+   }
+  ]
+ },
+ {
+  "citation_key": "TrepatSahai_NRC",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Trepat & Sahai, collective invasion review (Nat Rev Cancer)",
+  "notes": "Used by KB-5.4.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1038/ncb2548",
+    "title": "Classifying collective cancer cell invasion",
+    "authors": [
+     "friedl",
+     "locker",
+     "sahai"
+    ],
+    "year": "2012"
+   },
+   {
+    "doi": "10.1016/s0959-8049(16)61358-8",
+    "title": "Extracellular matrix anisotropy in breast cancer invasion and metastasis",
+    "authors": [
+     "park",
+     "jenkins",
+     "labernadie"
+    ],
+    "year": "2016"
+   },
+   {
+    "doi": "10.1038/s41567-018-0194-9",
+    "title": "Mesoscale physical principles of collective cell organization",
+    "authors": [
+     "trepat",
+     "sahai"
+    ],
+    "year": "2018"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Vallotton2003_BiophysJ",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Vallotton et al 2003, Biophys J",
+  "notes": "Used by KB-3.12.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1093/gao/9781884446054.article.t087707",
+    "title": "Vallotton, Félix(-Emile-Jean)",
+    "authors": [
+     "thomson"
+    ],
+    "year": "2003"
+   },
+   {
+    "doi": "10.70675/f72da841zbffcz4d68z9607zd6e9ada27f8d",
+    "title": "La décision publique et la crise",
+    "authors": [
+     "vallotton"
+    ],
+    "year": ""
+   },
+   {
+    "doi": "10.4324/9781351199117-110",
+    "title": "MMLXXVII. — Félix Vallotton.",
+    "authors": [],
+    "year": "2017"
+   },
+   {
+    "doi": "10.7717/peerj-cs.3715/table-12",
+    "title": "Table 12: Detailed energy breakdown for 1 kB block.",
+    "authors": [],
+    "year": ""
+   }
+  ]
+ },
+ {
+  "citation_key": "YapKovacs_JCS",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "Yap & Kovacs, adherens junction review (JCS)",
+  "notes": "Used by KB-4.1.",
+  "crossref_candidates": [
+   {
+    "doi": "10.7554/elife.31037.042",
+    "title": "Decision letter: YAP and TAZ regulate adherens junction dynamics and endothelial cell dist",
+    "authors": [],
+    "year": "2017"
+   },
+   {
+    "doi": "10.3410/f.738614181.793585959",
+    "title": "Faculty Opinions recommendation of Adherens junction regulates cryptic lamellipodia format",
+    "authors": [
+     "yap"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.3410/f.3295956.793481730",
+    "title": "Faculty Opinions recommendation of alpha-Catenin as a tension transducer that induces adhe",
+    "authors": [
+     "yap"
+    ],
+    "year": "2013"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "deGennes_LiquidCrystals",
+  "pass1": "CHECK",
+  "stored_doi": "",
+  "short_source": "de Gennes & Prost, The Physics of Liquid Crystals (textbook)",
+  "notes": "Used by KB-3.20.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1093/oso/9780198520245.001.0001",
+    "title": "The Physics of Liquid Crystals",
+    "authors": [
+     "gennes",
+     "prost"
+    ],
+    "year": "1993"
+   },
+   {
+    "doi": "10.1093/oso/9780198520245.003.0001",
+    "title": "Liquid crystals: Main types and properties",
+    "authors": [
+     "gennes",
+     "prost"
+    ],
+    "year": "1993"
+   },
+   {
+    "doi": "10.1093/oso/9780198520245.003.0006",
+    "title": "Cholesterics",
+    "authors": [
+     "gennes",
+     "prost"
+    ],
+    "year": "1993"
+   },
+   {
+    "doi": "10.1093/ww/9780199540884.013.u207364",
+    "title": "Champion de Crespigny, Sir Claude, (20 April 1847–26 June 1935), KB; JP, DL",
+    "authors": [],
+    "year": "2007"
+   }
+  ]
+ },
+ {
+  "citation_key": "Funk2021_eLife",
+  "pass1": "DOI_DEAD",
+  "stored_doi": "https://doi.org/10.7554/eLife.72860",
+  "short_source": "Funk et al 2021, eLife 10:e72860 (profilin/Arp2/3 abortive branching)",
+  "notes": "Cited by H5-LP-3 (lamellipodium gamma branching, code KU-5.3).",
+  "stored_doi_resolves_to": null,
+  "crossref_candidates": [
+   {
+    "doi": "10.7554/elife.50963",
+    "title": "Profilin and formin constitute a pacemaker system for robust actin filament growth",
+    "authors": [
+     "funk",
+     "merino",
+     "venkova"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.1083/jcb.202106176",
+    "title": "MICAL2 fine-tunes Arp2/3 for actin branching",
+    "authors": [
+     "olson",
+     "machesky"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.32920/21985082.v1",
+    "title": "MICAL2 ﬁne-tunes Arp2/3 for actin branching",
+    "authors": [
+     "olson",
+     "machesky"
+    ],
+    "year": "2023"
+   },
+   {
+    "doi": "10.1016/j.tcb.2010.08.006",
+    "title": "Dicing with dogma: de-branching the lamellipodium",
+    "authors": [
+     "small"
+    ],
+    "year": "2010"
+   }
+  ]
+ },
+ {
+  "citation_key": "Andreu2021_NatCommun",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Andreu et al 2021, Nat Commun",
+  "notes": "Used by KB-2.10/2.16.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1038/s41467-021-24024-9",
+    "title": "On “Coherent control in the extreme ultraviolet and attosecond regime by synchrotron radia",
+    "authors": [
+     "prince",
+     "diviacco"
+    ],
+    "year": "2021"
+   },
+   {
+    "doi": "10.1038/s41467-024-46379-5",
+    "title": "Microtubule damage shapes the acetylation gradient",
+    "authors": [
+     "andreu-carbó",
+     "egoldt",
+     "velluz"
+    ],
+    "year": "2024"
+   },
+   {
+    "doi": "10.7717/peerj.20049/fig-7",
+    "title": "Figure 7: Sensitivity analysis of (A) cirrhosis on 28-day mortality of ACLF patients (Liu ",
+    "authors": [],
+    "year": ""
+   },
+   {
+    "doi": "10.7554/elife.35468.022",
+    "title": "Figure 5. Identification of introgessed regions by Gmin.",
+    "authors": [],
+    "year": ""
+   }
+  ]
+ },
+ {
+  "citation_key": "Bi2015_PRX",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Bi et al 2015, Phys Rev X 6:021011",
+  "notes": "Used by KB-5.2.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1103/physrevb.77.125426",
+    "title": "Characteristics of liquid-liquid immiscibility in Al-Bi-Cu, Al-Bi-Si, and Al-Bi-Sn monotec",
+    "authors": [
+     "kaban",
+     "hoyer"
+    ],
+    "year": "2008"
+   },
+   {
+    "doi": "10.5194/amt-2020-264-rc2",
+    "title": "Review of Bi et al.",
+    "authors": [],
+    "year": "2020"
+   },
+   {
+    "doi": "10.5194/bg-2020-183-rc2",
+    "title": "Review of Bi et al.",
+    "authors": [],
+    "year": "2020"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "K562_BBRC2019",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "K562 leukemia cell mechanics. Biochem Biophys Res Commun. 2019.",
+  "notes": "Used by KB-6.2.4",
+  "crossref_candidates": [
+   {
+    "doi": "10.1007/s12013-024-01543-y",
+    "title": "Study of TRAIL and SAHA Co-Treatment on Leukemia K562 Cell Line",
+    "authors": [
+     "alaei",
+     "solali",
+     "mirzapour"
+    ],
+    "year": "2024"
+   },
+   {
+    "doi": "10.1007/s12013-015-0668-7",
+    "title": "Overexpression of Hiwi Inhibits the Cell Growth of Chronic Myeloid Leukemia K562 Cells and",
+    "authors": [
+     "wang",
+     "jiang",
+     "bian"
+    ],
+    "year": "2015"
+   },
+   {
+    "doi": "10.1007/s12013-019-00868-3",
+    "title": "The Effects of Iodinated Radiographic Contrast Media on Multidrug-resistant K562/Dox Cells",
+    "authors": [
+     "supawat",
+     "udomtanakunchai",
+     "kothan"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.5604/01.3001.0015.8485",
+    "title": "Hypothetic Robot Design used by Security Forces",
+    "authors": [
+     "havaj"
+    ],
+    "year": "2022"
+   }
+  ]
+ },
+ {
+  "citation_key": "Mui2016_PNAS",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Mui et al 2016, PNAS / J Cell Sci",
+  "notes": "Used by KB-4.16.",
+  "crossref_candidates": [
+   {
+    "doi": "10.17504/protocols.io.3pngmme",
+    "title": "TSS Transformation (Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "dd dienst"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.17504/protocols.io.jn5cmg6",
+    "title": "TSS Transformation (Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "dd dienst"
+    ],
+    "year": "2017"
+   },
+   {
+    "doi": "10.17504/protocols.io.qtndwme",
+    "title": "TSS Transformation (after Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "lcb berwanger"
+    ],
+    "year": "2018"
+   },
+   {
+    "doi": "10.31219/osf.io/7w6da",
+    "title": "16 KB basog mp2.docx",
+    "authors": [
+     "sarce"
+    ],
+    "year": "2020"
+   }
+  ]
+ },
+ {
+  "citation_key": "Nam2016_PNAS",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Nam et al 2016, PNAS",
+  "notes": "Used by KB-1.15/1.28.",
+  "crossref_candidates": [
+   {
+    "doi": "10.17504/protocols.io.3pngmme",
+    "title": "TSS Transformation (Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "dd dienst"
+    ],
+    "year": "2019"
+   },
+   {
+    "doi": "10.17504/protocols.io.jn5cmg6",
+    "title": "TSS Transformation (Chung et al., 1989, PNAS 86:2172-2175) v1",
+    "authors": [
+     "dd dienst"
+    ],
+    "year": "2017"
+   },
+   {
+    "doi": "10.1601/nm.8896",
+    "title": "Nomenclature Abstract for Tsukamurella pseudospumae Nam et al. 2004 emend. Teng et al. 201",
+    "authors": [
+     "parker",
+     "garrity"
+    ],
+    "year": "2016"
+   },
+   {
+    "doi": "10.1093/oxfordjournals.aje.a120261",
+    "title": "2060 VIRUS (ECHO 28) IN KB CELL CULTURES",
+    "authors": [
+     "mogabgab"
+    ],
+    "year": "1962"
+   }
+  ]
+ },
+ {
+  "citation_key": "Ray2017_NatCommun",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Ray et al 2017, Nature Communications",
+  "notes": "Used by KB-1.9, KB-2.14.",
+  "crossref_candidates": [
+   {
+    "doi": "10.5194/acp-2017-955-rc2",
+    "title": "Review of Krause et al.",
+    "authors": [],
+    "year": "2017"
+   },
+   {
+    "doi": "10.5194/acp-2017-104-rc2",
+    "title": "Review of Engel et al",
+    "authors": [],
+    "year": "2017"
+   },
+   {
+    "doi": "10.5194/acp-2016-1144-rc2",
+    "title": "Review of Dietmuller et al",
+    "authors": [],
+    "year": "2017"
+   },
+   {
+    "doi": "10.7717/peerj-cs.641/fig-14",
+    "title": "Figure 14: Execution time – Web-KB.",
+    "authors": [],
+    "year": ""
+   }
+  ]
+ },
+ {
+  "citation_key": "Yang_NRMCB",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Yang et al, EMT review (Nat Rev Mol Cell Biol)",
+  "notes": "Used by KB-4.12.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1038/nrm.2016.26",
+    "title": "TGFβ and EMT as double agents",
+    "authors": [
+     "strzyz"
+    ],
+    "year": "2016"
+   },
+   {
+    "doi": "10.1038/nrm4045",
+    "title": "EMT promotes contact inhibition of locomotion",
+    "authors": [
+     "wrighton"
+    ],
+    "year": "2015"
+   },
+   {
+    "doi": "10.1038/s41580-020-00287-w",
+    "title": "50+ shades of EMT in 20 years of embryo−cancer bonding",
+    "authors": [
+     "nieto"
+    ],
+    "year": "2020"
+   },
+   {
+    "doi": "10.7717/peerj-cs.3715/table-12",
+    "title": "Table 12: Detailed energy breakdown for 1 kB block.",
+    "authors": [],
+    "year": ""
+   }
+  ]
+ },
+ {
+  "citation_key": "Yao2011_NatCommun",
+  "pass1": "NO_DOI_NOMATCH",
+  "stored_doi": "",
+  "short_source": "Yao et al 2011, Nat Commun (alpha-actinin)",
+  "notes": "Used by KB-3.18/3.19.",
+  "crossref_candidates": [
+   {
+    "doi": "10.1007/978-3-642-16483-5_203",
+    "title": "Alpha-Actinin",
+    "authors": [],
+    "year": "2011"
+   },
+   {
+    "doi": "10.55776/i525",
+    "title": "",
+    "authors": [],
+    "year": "2011"
+   },
+   {
+    "doi": "10.31274/rtd-180815-1939",
+    "title": "N- and C-terminal amino acids of [alpha]-actinin and studies on the effects of [alpha]-act",
+    "authors": [
+     "singh"
+    ],
+    "year": ""
+   },
+   {
+    "doi": "10.31101/jkk.2303",
+    "title": "Model pendidikan kesehatan KB pria untuk meningkatkan pengetahuan, sikap dan partisipasi p",
+    "authors": [
+     "nurrasyidah",
+     "dewi"
+    ],
+    "year": "2022"
+   }
+  ]
+ }
+]

@@ -1,0 +1,538 @@
+{
+  "schema": "aleph-c2-force-audit@1",
+  "kind": "diagnostic",
+  "quantitative_claim": "BLOCKED",
+  "declared_commit": "4f38d4d3",
+  "device": "cuda:0",
+  "configuration": {
+    "filaments": 70686,
+    "membrane_subdiv": 6,
+    "nucleus_subdiv": 3,
+    "seed": 0,
+    "cortex_prestrain": 0.0,
+    "with_myosin": false,
+    "erm_radial_pairing": true
+  },
+  "census": {
+    "actin_filaments": 70686,
+    "actin_nodes": 494802,
+    "total_nodes": 536406,
+    "crosslinks": 1413720,
+    "blocks": {
+      "cortex": {
+        "offset": 0,
+        "count": 494802
+      },
+      "nucleus": {
+        "offset": 494802,
+        "count": 642
+      },
+      "membrane": {
+        "offset": 495444,
+        "count": 40962
+      }
+    }
+  },
+  "preload": {
+    "cortex": {
+      "n_xl": 1413720,
+      "prestrain": 0.0
+    },
+    "erm": {
+      "n_erm": 40962,
+      "res_before": 0.776558506775506,
+      "res_after": 0.8001627251245638
+    }
+  },
+  "assembly_relative_error": 2.0535270726317576e-14,
+  "raw_total": {
+    "cortex": {
+      "node_count": 494802,
+      "max_norm_pn": 0.8001627251245638,
+      "max_global_node": 434091,
+      "resultant_pn": [
+        -1.2795567756763322,
+        -24.78881244145607,
+        6.325222325398707
+      ],
+      "sum_norm_pn": 32457.03949785658
+    },
+    "nucleus": {
+      "node_count": 642,
+      "max_norm_pn": 0.1605796776518945,
+      "max_global_node": 494804,
+      "resultant_pn": [
+        1.2240555791187546e-13,
+        -1.764127038894614e-13,
+        5.4343682331925436e-14
+      ],
+      "sum_norm_pn": 6.928706209096809
+    },
+    "membrane": {
+      "node_count": 40962,
+      "max_norm_pn": 0.37761404417256683,
+      "max_global_node": 531704,
+      "resultant_pn": [
+        1.279556775676396,
+        24.788812441455192,
+        -6.325222325397806
+      ],
+      "sum_norm_pn": 2643.315014191521
+    }
+  },
+  "projected_total": {
+    "cortex": {
+      "node_count": 494802,
+      "max_norm_pn": 0.8000254546480318,
+      "max_global_node": 469721,
+      "resultant_pn": [
+        -1.2795567756764465,
+        -24.788812441455327,
+        6.325222325396771
+      ],
+      "sum_norm_pn": 34169.52921175353
+    },
+    "nucleus": {
+      "node_count": 642,
+      "max_norm_pn": 0.1605796776518945,
+      "max_global_node": 494804,
+      "resultant_pn": [
+        1.2240555791187546e-13,
+        -1.764127038894614e-13,
+        5.4343682331925436e-14
+      ],
+      "sum_norm_pn": 6.928706209096809
+    },
+    "membrane": {
+      "node_count": 40962,
+      "max_norm_pn": 0.37761404417256683,
+      "max_global_node": 531704,
+      "resultant_pn": [
+        1.279556775676396,
+        24.788812441455192,
+        -6.325222325397806
+      ],
+      "sum_norm_pn": 2643.315014191521
+    }
+  },
+  "projected_max": {
+    "global_node": 469721,
+    "owner": "cortex",
+    "norm_pn": 0.8000254546480318,
+    "raw_total_vector_pn": [
+      0.7535477577658937,
+      -0.26797207567176223,
+      0.02056250289496495
+    ],
+    "projected_total_vector_pn": [
+      0.7530337499931288,
+      -0.2697474250032176,
+      0.014738594241290174
+    ],
+    "channel_contributions": {
+      "actin_bending_cytosim": {
+        "vector_pn": [
+          0.022685182132473298,
+          -0.007990423532050026,
+          0.0013047021087455877
+        ],
+        "norm_pn": 0.02408664784061057
+      },
+      "actin_crosslink_link_spring": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "arp23_branch_angle": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "biot_pressure_coupling": {
+        "vector_pn": [
+          -9.188862433273057e-18,
+          3.671898864396343e-18,
+          1.3594313678301014e-18
+        ],
+        "norm_pn": 9.988297539211196e-18
+      },
+      "membrane_compartment_force": {
+        "vector_pn": [
+          0.7308625756334204,
+          -0.2599816521397122,
+          0.019257800786219362
+        ],
+        "norm_pn": 0.7759648360602002
+      },
+      "membrane_pressure_traction": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "nmii_minifilament_force": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "nucleus_compartment_force": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "steric_wca": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      }
+    }
+  },
+  "laplace_virial_prestrain_derivation": {
+    "identity": "sum(k*l^2)*epsilon = mean_radius*sum(F_cortex dot radial_unit)",
+    "outward_radial_load_pn": 25968.818816651758,
+    "mean_radius_um": 7.299813096203852,
+    "crosslink_virial_denominator_pn_um": 5733177041.383772,
+    "derived_dimensionless_prestrain": 3.3065004328731685e-05,
+    "status": "DIAGNOSTIC_DERIVATION_NOT_APPLIED"
+  },
+  "channels": {
+    "actin_bending_cytosim": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 0.03563540033213392,
+        "max_global_node": 396432,
+        "resultant_pn": [
+          2.393918396847994e-16,
+          7.398595625041082e-16,
+          3.8163916471489756e-17
+        ],
+        "sum_norm_pn": 6822.241484303446
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    },
+    "actin_crosslink_link_spring": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 4.343554789822003e-11,
+        "max_global_node": 454529,
+        "resultant_pn": [
+          4.0183690987744494e-23,
+          -3.69424193003724e-24,
+          3.756204745331816e-23
+        ],
+        "sum_norm_pn": 2.032728724241368e-06
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    },
+    "arp23_branch_angle": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 0.0,
+        "max_global_node": 0,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    },
+    "biot_pressure_coupling": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 2.0309245550940736e-16,
+        "max_global_node": 86041,
+        "resultant_pn": [
+          3.5460426069550354e-13,
+          2.0372388309920937e-13,
+          1.6883830870798642e-13
+        ],
+        "sum_norm_pn": 5.673746705152593e-12
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    },
+    "membrane_compartment_force": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 0.7764000972772411,
+        "max_global_node": 157564,
+        "resultant_pn": [
+          -1.2795567756765107,
+          -24.78881244145522,
+          6.325222325397836
+        ],
+        "sum_norm_pn": 26199.46555432344
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.8320618823443885,
+        "max_global_node": 519653,
+        "resultant_pn": [
+          1.279556775667734,
+          24.788812441441838,
+          -6.325222325400886
+        ],
+        "sum_norm_pn": 28071.87862837149
+      }
+    },
+    "membrane_pressure_traction": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 0.0,
+        "max_global_node": 0,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.8322308586796947,
+        "max_global_node": 514997,
+        "resultant_pn": [
+          -2.417632760653987e-11,
+          -2.9754421149164045e-11,
+          2.0466735944912884e-12
+        ],
+        "sum_norm_pn": 28270.512268309092
+      }
+    },
+    "nmii_minifilament_force": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 0.0,
+        "max_global_node": 0,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    },
+    "nucleus_compartment_force": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 4.440892098500626e-14,
+        "max_global_node": 40800,
+        "resultant_pn": [
+          -1.2221386440020055e-13,
+          1.7658979748281994e-13,
+          -5.423577991219624e-14
+        ],
+        "sum_norm_pn": 1.0658141036401503e-12
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.16057967765181183,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          1.2211412436791136e-13,
+          -1.764265816772692e-13,
+          5.417281206954172e-14
+        ],
+        "sum_norm_pn": 6.928706209107327
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    },
+    "steric_wca": {
+      "cortex": {
+        "node_count": 494802,
+        "max_norm_pn": 0.0,
+        "max_global_node": 0,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "nucleus": {
+        "node_count": 642,
+        "max_norm_pn": 0.0,
+        "max_global_node": 494802,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      },
+      "membrane": {
+        "node_count": 40962,
+        "max_norm_pn": 0.0,
+        "max_global_node": 495444,
+        "resultant_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sum_norm_pn": 0.0
+      }
+    }
+  },
+  "may_not_be_quoted_for": [
+    "a force magnitude",
+    "a convergence rate",
+    "an operator property",
+    "cortical tension"
+  ]
+}

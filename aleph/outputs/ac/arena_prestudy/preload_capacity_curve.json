@@ -1,0 +1,16 @@
+{
+  "reproduced_ratio": 0.32754740038977115,
+  "recorded_ratio": 0.32754740038977115,
+  "required_tether_count": 2297,
+  "required_density_per_um2": 3.2651484652158875,
+  "as_run_tether_count": 642,
+  "as_run_density_per_um2": 0.9125926489632563,
+  "shortfall_factor": 3.5778816199376946,
+  "mesh_reference_densities_per_um2": {
+    "subdiv 3 (as run)": 0.9125926489632563,
+    "subdiv 6": 58.0,
+    "subdiv 7 (the comment)": 235.0
+  },
+  "gamma_only_crossing_pn_per_um": 150.0,
+  "note": "Host-side arithmetic on a committed record. NOT a native measurement and NOT a density decision: the mesh densities are icosphere vertex counts, which is the confusion this exposes, not evidence about ERM."
+}

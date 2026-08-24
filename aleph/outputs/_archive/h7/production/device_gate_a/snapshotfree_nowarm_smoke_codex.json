@@ -1,0 +1,71 @@
+{
+ "rows": [
+  {
+   "tick": 0,
+   "phys_t_s": 0.0,
+   "bound_frac": 0.0,
+   "F_over_stall": NaN,
+   "n_bound": 0,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 1,
+   "phys_t_s": 0.00026061396017119487,
+   "bound_frac": 0.0,
+   "F_over_stall": NaN,
+   "n_bound": 0,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 2,
+   "phys_t_s": 0.0005212279203423897,
+   "bound_frac": 0.0,
+   "F_over_stall": NaN,
+   "n_bound": 0,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 3,
+   "phys_t_s": 0.0007818418805135846,
+   "bound_frac": 0.0,
+   "F_over_stall": 0.0,
+   "n_bound": 0,
+   "gamma_soft": 0.00011096076832612804,
+   "gamma_soft_ik": 3.485908171530969e-05,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.0000635397688484
+  }
+ ],
+ "wall_s": 28.26661491394043,
+ "verdict": "DIAGNOSTIC ONLY: snapshot-free myosin fast path completed after warm-bind; long-run GPU speed is meaningful, but Gate-A physics correctness is not because dynamic bind/unbind/walk topology is frozen.",
+ "n_fil": 150,
+ "batch_dt": 0.00026061396017119487,
+ "ell0": 5e-07,
+ "R_cell": 1e-05,
+ "F_stall_per_head": 1.8849555921538762e-11,
+ "connected_mesh": true,
+ "measure_mode": "final",
+ "freeze_xlinks": true,
+ "snapshot_free_myosin": true,
+ "snapshot_free_grip_clock": true,
+ "myosin_warm_bind_ticks": 0,
+ "warm_bind_wall_s": 0.0,
+ "grip_clock_steps_run": 3,
+ "simulated_ticks": 3,
+ "simulated_baoab_steps": 60000,
+ "steps_per_s": 2122.645395731818,
+ "physics_mode": "snapshot_free_grip_clock_static_topology"
+}

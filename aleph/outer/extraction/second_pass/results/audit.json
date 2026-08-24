@@ -1,0 +1,14 @@
+{
+  "article_chunk_files": 2974,
+  "article_manifest_set_sha256": "9627db89509f0a2f363ec93e65a2da4b68d3ab1b0415195788145b54a30bcf0f",
+  "article_manifests": 2974,
+  "audit_errors": 0,
+  "authority_status": "proposed",
+  "chunk_records": 145047,
+  "error_counts": {
+    "orphan_chunk_files": 0
+  },
+  "manifest_set_hash_equal": true,
+  "schema": "aleph.external_training.second_pass_extraction_audit.v1",
+  "summaries_equal_excluding_resume_count": true
+}

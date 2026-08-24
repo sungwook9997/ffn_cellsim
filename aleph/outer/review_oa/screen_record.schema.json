@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/oa-recoverability-screen-v1.json",
+  "title": "Proposed OA article recoverability screen",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority_status", "source_family_id", "pmcid", "payload_sha256",
+    "input_chunks_sha256", "article_type", "signals", "tags", "observation_locators",
+    "correction_retraction", "leakage", "missing_review_fields", "decision",
+    "decision_basis", "priority_score"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.external_training.oa_recoverability_screen.v1"},
+    "authority_status": {"const": "proposed"},
+    "source_family_id": {"type": "string", "minLength": 1},
+    "pmcid": {"type": "string", "pattern": "^PMC[0-9]+$"},
+    "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input_chunks_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "article_type": {"type": "object"},
+    "signals": {"type": "object"},
+    "tags": {"type": "object"},
+    "observation_locators": {"type": "array", "items": {"type": "object"}},
+    "correction_retraction": {"type": "object"},
+    "leakage": {"type": "object"},
+    "missing_review_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "decision": {"enum": ["hold", "manual_priority", "exception_candidate"]},
+    "exception_reason": {"enum": ["validated_method", "rare_modality", "NONE"]},
+    "decision_basis": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "priority_score": {"type": "integer"}
+  }
+}

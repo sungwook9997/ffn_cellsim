@@ -1,0 +1,412 @@
+{
+  "acquisition_receipt_sha256": "5313d180f6278a14a86783c904d337acab3736e900e2b988a151c3685901519f",
+  "authority": {
+    "aleph_parameter_authority": "none",
+    "may_delete_sweep_axis": false,
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false,
+    "role": "pre_sweep_context_calibration_only"
+  },
+  "calibration": {
+    "author_label_counts": {
+      "B": 13800,
+      "CD4 T": 41001,
+      "CD8 T": 25469,
+      "DC": 3589,
+      "Mono": 49010,
+      "NK": 18664
+    },
+    "class_conditional_thresholds": {
+      "B_cell": 0.20248152186284196,
+      "CD4_T_cell": 0.34424655545960114,
+      "CD8_T_cell": 0.9685964950469691,
+      "NK_cell": 0.37389230698501197,
+      "dendritic_cell": 0.7058574258525088,
+      "monocyte": 0.18415334786497695
+    },
+    "class_counts": {
+      "B_cell": 13800,
+      "CD4_T_cell": 41001,
+      "CD8_T_cell": 25469,
+      "NK_cell": 18664,
+      "dendritic_cell": 3589,
+      "monocyte": 49010
+    },
+    "common_model_features": 490,
+    "distinct_donors": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6",
+      "P7",
+      "P8"
+    ],
+    "duplicate_source_symbols_using_first_row": 0,
+    "excluded_author_labels": {
+      "other": 3442,
+      "other T": 6789
+    },
+    "fit": {
+      "negative_log_likelihood": 0.45565450074610353,
+      "success": true
+    },
+    "lab_group": "NYGC_Satija_Hao_multimodal_PBMC",
+    "retained_six_class_cells": 151533,
+    "same_calibration_lab_diagnostics": {
+      "accuracy": 0.8701338982267889,
+      "cells": 151533,
+      "conformal": {
+        "empty_set_fraction": 0.03207222189226109,
+        "marginal_coverage": 0.900041575102453,
+        "mean_set_size": 1.3503395300033656
+      },
+      "ece_15_bin": 0.046695195452467565,
+      "macro_f1": 0.8336908927222014,
+      "per_class": {
+        "B_cell": {
+          "f1": 0.9592529711375212,
+          "support": 13800
+        },
+        "CD4_T_cell": {
+          "f1": 0.8210503728340754,
+          "support": 41001
+        },
+        "CD8_T_cell": {
+          "f1": 0.5563038993960783,
+          "support": 25469
+        },
+        "NK_cell": {
+          "f1": 0.9657534246575342,
+          "support": 18664
+        },
+        "dendritic_cell": {
+          "f1": 0.7075876879026486,
+          "support": 3589
+        },
+        "monocyte": {
+          "f1": 0.9921970004053506,
+          "support": 49010
+        }
+      }
+    },
+    "same_calibration_lab_diagnostics_by_donor": {
+      "P1": {
+        "accuracy": 0.8474839154411765,
+        "cells": 17408,
+        "conformal": {
+          "empty_set_fraction": 0.02458639705882353,
+          "marginal_coverage": 0.8845932904411765,
+          "mean_set_size": 1.3423713235294117
+        },
+        "ece_15_bin": 0.05755515151369965,
+        "macro_f1": 0.8332201029616355,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9280774550484094,
+            "support": 715
+          },
+          "CD4_T_cell": {
+            "f1": 0.8374279000213629,
+            "support": 6500
+          },
+          "CD8_T_cell": {
+            "f1": 0.546875,
+            "support": 3233
+          },
+          "NK_cell": {
+            "f1": 0.9278219395866455,
+            "support": 1590
+          },
+          "dendritic_cell": {
+            "f1": 0.7664233576642335,
+            "support": 334
+          },
+          "monocyte": {
+            "f1": 0.9926949654491609,
+            "support": 5036
+          }
+        }
+      },
+      "P2": {
+        "accuracy": 0.8072795732663948,
+        "cells": 15935,
+        "conformal": {
+          "empty_set_fraction": 0.02397238782554126,
+          "marginal_coverage": 0.893944148101663,
+          "mean_set_size": 1.4122372136805774
+        },
+        "ece_15_bin": 0.09295848350654196,
+        "macro_f1": 0.7950050694322605,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.946824224519941,
+            "support": 1335
+          },
+          "CD4_T_cell": {
+            "f1": 0.7918558664127728,
+            "support": 5717
+          },
+          "CD8_T_cell": {
+            "f1": 0.4084478162805003,
+            "support": 3497
+          },
+          "NK_cell": {
+            "f1": 0.9769497947584465,
+            "support": 1610
+          },
+          "dendritic_cell": {
+            "f1": 0.6537530266343826,
+            "support": 276
+          },
+          "monocyte": {
+            "f1": 0.9921996879875195,
+            "support": 3500
+          }
+        }
+      },
+      "P3": {
+        "accuracy": 0.9128296507483963,
+        "cells": 14030,
+        "conformal": {
+          "empty_set_fraction": 0.03014967925873129,
+          "marginal_coverage": 0.9277975766215253,
+          "mean_set_size": 1.4063435495367071
+        },
+        "ece_15_bin": 0.036167572906875195,
+        "macro_f1": 0.8522939213230737,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9501312335958005,
+            "support": 925
+          },
+          "CD4_T_cell": {
+            "f1": 0.8942045896538312,
+            "support": 4721
+          },
+          "CD8_T_cell": {
+            "f1": 0.5491163173037402,
+            "support": 1623
+          },
+          "NK_cell": {
+            "f1": 0.9960719454207153,
+            "support": 2423
+          },
+          "dendritic_cell": {
+            "f1": 0.7291139240506329,
+            "support": 250
+          },
+          "monocyte": {
+            "f1": 0.9951255179137216,
+            "support": 4088
+          }
+        }
+      },
+      "P4": {
+        "accuracy": 0.8159928466500607,
+        "cells": 15657,
+        "conformal": {
+          "empty_set_fraction": 0.03257328990228013,
+          "marginal_coverage": 0.9124353324391646,
+          "mean_set_size": 1.3942006770134765
+        },
+        "ece_15_bin": 0.07446743651648463,
+        "macro_f1": 0.7888406766672956,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9689629068887207,
+            "support": 1296
+          },
+          "CD4_T_cell": {
+            "f1": 0.7854161745019292,
+            "support": 5103
+          },
+          "CD8_T_cell": {
+            "f1": 0.24489795918367346,
+            "support": 3049
+          },
+          "NK_cell": {
+            "f1": 0.9868421052631579,
+            "support": 688
+          },
+          "dendritic_cell": {
+            "f1": 0.7532467532467533,
+            "support": 333
+          },
+          "monocyte": {
+            "f1": 0.9936781609195402,
+            "support": 5188
+          }
+        }
+      },
+      "P5": {
+        "accuracy": 0.8786530488421478,
+        "cells": 19778,
+        "conformal": {
+          "empty_set_fraction": 0.06825766002629184,
+          "marginal_coverage": 0.8713216705430276,
+          "mean_set_size": 1.2709070684599049
+        },
+        "ece_15_bin": 0.06226017293016495,
+        "macro_f1": 0.8269494885592544,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9468932554434413,
+            "support": 1798
+          },
+          "CD4_T_cell": {
+            "f1": 0.7638794161778748,
+            "support": 2925
+          },
+          "CD8_T_cell": {
+            "f1": 0.6393156424581006,
+            "support": 3605
+          },
+          "NK_cell": {
+            "f1": 0.9393282773564464,
+            "support": 2760
+          },
+          "dendritic_cell": {
+            "f1": 0.6810598626104023,
+            "support": 668
+          },
+          "monocyte": {
+            "f1": 0.9912204773092618,
+            "support": 8022
+          }
+        }
+      },
+      "P6": {
+        "accuracy": 0.9316182487725041,
+        "cells": 19552,
+        "conformal": {
+          "empty_set_fraction": 0.024856792144026186,
+          "marginal_coverage": 0.9288052373158756,
+          "mean_set_size": 1.3897810965630115
+        },
+        "ece_15_bin": 0.05890919517281078,
+        "macro_f1": 0.8455084576380827,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9831184775936157,
+            "support": 3229
+          },
+          "CD4_T_cell": {
+            "f1": 0.8878619839802834,
+            "support": 4457
+          },
+          "CD8_T_cell": {
+            "f1": 0.4891832229580574,
+            "support": 1503
+          },
+          "NK_cell": {
+            "f1": 0.9905447996398019,
+            "support": 3357
+          },
+          "dendritic_cell": {
+            "f1": 0.7290969899665551,
+            "support": 379
+          },
+          "monocyte": {
+            "f1": 0.9932452716901832,
+            "support": 6627
+          }
+        }
+      },
+      "P7": {
+        "accuracy": 0.8857189435930877,
+        "cells": 24536,
+        "conformal": {
+          "empty_set_fraction": 0.021560156504727746,
+          "marginal_coverage": 0.9114362569285948,
+          "mean_set_size": 1.32063090968373
+        },
+        "ece_15_bin": 0.023944082183746912,
+        "macro_f1": 0.8307891368127128,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9576164498531263,
+            "support": 3472
+          },
+          "CD4_T_cell": {
+            "f1": 0.8143062971438257,
+            "support": 5429
+          },
+          "CD8_T_cell": {
+            "f1": 0.583363341735686,
+            "support": 3232
+          },
+          "NK_cell": {
+            "f1": 0.9660393683755137,
+            "support": 2303
+          },
+          "dendritic_cell": {
+            "f1": 0.6739606126914661,
+            "support": 904
+          },
+          "monocyte": {
+            "f1": 0.9894487510766581,
+            "support": 9196
+          }
+        }
+      },
+      "P8": {
+        "accuracy": 0.8657304054876811,
+        "cells": 24637,
+        "conformal": {
+          "empty_set_fraction": 0.030523196817794373,
+          "marginal_coverage": 0.880099038032228,
+          "mean_set_size": 1.3182205625684946
+        },
+        "ece_15_bin": 0.061093967936701174,
+        "macro_f1": 0.853400459509524,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9467289719626168,
+            "support": 1030
+          },
+          "CD4_T_cell": {
+            "f1": 0.8003221791022919,
+            "support": 6149
+          },
+          "CD8_T_cell": {
+            "f1": 0.6973658536585365,
+            "support": 5727
+          },
+          "NK_cell": {
+            "f1": 0.951310861423221,
+            "support": 3933
+          },
+          "dendritic_cell": {
+            "f1": 0.7319148936170212,
+            "support": 445
+          },
+          "monocyte": {
+            "f1": 0.992759997293457,
+            "support": 7353
+          }
+        }
+      }
+    },
+    "source": "GSE164378",
+    "temperature": 1.3479114978694977,
+    "total_cells": 161764
+  },
+  "classifier_weights_bit_identical": true,
+  "next_confirmation_source": "GSE158055",
+  "output_model_sha256": "9bb6a58f22e57893493717c639d2c92026e5ac66e07ffcbd5d712f8d73551a8b",
+  "output_parameter_sha256": "51241d63c0da8b2ccc08084476c4ea04356ff78243b33c7ce9aad8a888790edd",
+  "protocol_sha256": "1c72e990fe17b24813a552bfb5117ccd6f9d5e14c6c5f78cc699f5f48e45d3b6",
+  "retired_confirmation_source": {
+    "accession": "GSE222647",
+    "expression_used_for_prediction": false,
+    "labels_used_for_metrics_or_calibration": false,
+    "may_be_reused_as_pristine": false,
+    "reason": "frozen exact donor/condition column contract did not admit Sample.Name or Study.Classification",
+    "status": "retired_before_model_execution"
+  },
+  "schema": "aleph.outer_library.pbmc_gse164378_calibration.v1",
+  "source_model_sha256": "d2776f69f0306139fafd21813135c054364645de9acc2406630e50b143bc6e09",
+  "source_parameter_sha256": "51241d63c0da8b2ccc08084476c4ea04356ff78243b33c7ce9aad8a888790edd"
+}

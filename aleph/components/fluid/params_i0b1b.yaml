@@ -1,0 +1,80 @@
+# I0-B1b parameter gate — I1b mixed q-p / pore-fluid-velocity form (the fluid FLOWS)
+# ============================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §4 (I0-Bn) + §4C (permeability/porosity gaps).
+# Format: claim ID · evidence status · owner · provisional policy · blocking increment.
+#
+# I1b reconstructs q = -(k/mu)(grad p - rho_f b) and v_f = v_s + q/phi. The mobility k/mu is already
+# provisional in params_i0b1.yaml (k_perm, mu_pore). The NEW parameter I1b introduces is the POROSITY
+# phi, which appears ONLY in the velocity reconstruction v_f = v_s + q/phi.
+#
+# HARD rules honoured: no empirical magic numbers; phi is UNSOURCED -> value: null + GAP (never chosen to
+# hit a flow band). The analytic kinematic gates (darcy_analytic) are phi-AGNOSTIC and pass without it;
+# the NATIVE --from-resting run is BLOCKED on a sourced phi.
+# ============================================================================
+
+meta:
+  increment: I1b
+  gate: I0-B1b
+  decided_by: PI
+  decided_on: null                            # OPEN — awaiting PI on phi
+  native_run_blocked_on: ["phi_porosity"]     # v_f reconstruction needs a sourced porosity
+  analytic_build_unblocked: true              # darcy_analytic gates are phi-agnostic (phi swept as oracle)
+  units_convention: "SI in this ledger; engine runtime is um-pN-s (convert at load)"
+
+parameters:
+
+  # ---- THE I1b GAP: porosity (fluid volume fraction) --------------------------------------------
+  phi_porosity:
+    title: "cytoplasm porosity (fluid volume fraction) — enters v_f = v_s + q/phi"
+    symbol: "phi"
+    value: null
+    unit: "dimensionless"
+    order_of_magnitude: "~0.5-0.8 (water-mass fraction of cytoplasm ~0.7 is an UPPER proxy, NOT the pore
+      volume fraction available to Darcy flow; the mechanically-relevant phi excludes bound water + the
+      macromolecular-crowded excluded volume, so it is plausibly lower and MUST be sourced, not guessed)."
+    evidence_status: "GAP — PI"
+    decision: "DO NOT CHOOSE (analytic gate is phi-agnostic; native run blocked)"
+    owner: PI
+    blocking_increment: I1b
+    expiry_trigger: "MCF7 (or cross-cell) cytoplasm pore-volume-fraction datum lands + KB SourceEvidence"
+    policy: >
+      phi rescales the absolute pore-fluid velocity (v_f - v_s = q/phi) and enters the I1c conservative
+      transport d(phi c)/dt + div(phi c v_f - phi D_c grad c) = R. In I1a phi is ABSORBED into the storage
+      S (the p/mass form does not need it explicitly). Surface to PI: this is a genuine gap, not a value to
+      infer from the water fraction. A provisional PI value (if authored) must carry owner + expiry-trigger
+      and NEVER be tuned to a streaming-speed band.
+
+  # ---- MOBILITY (already provisional in params_i0b1.yaml — referenced, not re-decided) ----------
+  mobility_ref:
+    title: "Darcy mobility k/mu (see params_i0b1.yaml: k_perm, mu_pore)"
+    symbol: "k/mu"
+    value: 5.0e-15                             # m^2/(Pa*s) = 5.0e-3 um^2/(Pa*s)
+    unit: "m^2/(Pa*s)"
+    evidence_status: "draft/Medium (inherits params_i0b1.yaml k_perm, mu_pore)"
+    provisional: true
+    owner: PI
+    policy: "Do NOT re-decide here; kept CONSISTENT with the c_v anchor (c_v = k*M/mu). I1b native gate
+      may tighten k against an MCF7 permeability datum (expiry_trigger in params_i0b1.yaml)."
+
+  # ---- fluid body force (physical constants, not a GAP) -----------------------------------------
+  rho_f:
+    title: "pore-fluid mass density (cytosol ~ water)"
+    symbol: "rho_f"
+    value: 1.0e+3
+    unit: "kg/m^3"
+    evidence_status: "physical constant (water); ~1.0-1.05e3 for cytosol"
+    owner: Lead
+    policy: "Feeds the gravity body force rho_f*b. At cell scale the hydrostatic gradient rho_f*g*R ~ 7e-2
+      Pa over R=7.5 um is negligible vs Pi_0=40 Pa; kept for completeness + the hydrostatic zero-discharge
+      gate. NOT the 65.9 Pa*s bulk drag and NOT the storage."
+
+  gravity:
+    title: "gravitational acceleration"
+    symbol: "g"
+    value: 9.81
+    unit: "m/s^2"
+    evidence_status: "physical constant"
+    owner: Lead
+    policy: "Body force b = g (downward). Off by default in oracle gates; ON at physiological value in
+      production per the physiological-baseline HARD rule (its effect is negligible but must not be a
+      convenient zero without note)."

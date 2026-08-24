@@ -1,0 +1,25 @@
+{
+  "aleph_authority": "none",
+  "feature_index": {
+    "content_type": "application/zip",
+    "etag": "d65ed18d4ab01862d49f301aade8467f",
+    "last_modified": "Tue, 09 Apr 2024 05:32:46 GMT",
+    "local_name": "aics_cfe_cell-features_v1.8.csv.zip",
+    "sha256": "5712631530cd3c016371b313b982667fdedbe757c4d24fb27aa8df5354c2c880",
+    "size_bytes": 1580806,
+    "url": "https://www.allencell.org/uploads/8/1/9/9/81996008/aics_cfe_cell-features_v1.8.csv.zip"
+  },
+  "feature_or_image_content_used_during_acquisition": false,
+  "frozen_model_commit": "e755bd9",
+  "protocol_commit": "a5d52dc",
+  "protocol_sha256": "d781b40c44b5f83d5ef82576af5eb12225911de08b80c36d8e12b66dc81818fa",
+  "quilt_pointer": {
+    "content_type": "binary/octet-stream",
+    "etag": "2e057f9b7f0445722ac0e389481be179",
+    "last_modified": "Thu, 14 Jul 2022 11:00:07 GMT",
+    "manifest_hash": "c791759a51d817abaa3218e92109770dfdd8d3425dffef786a3f4485af376921",
+    "size_bytes": 64,
+    "url": "https://allencell.s3.amazonaws.com/.quilt/named_packages/aics/hipsc_single_cell_image_dataset/1657796402"
+  },
+  "schema": "aleph.outer_library.allencell_if_index_acquisition.v1"
+}

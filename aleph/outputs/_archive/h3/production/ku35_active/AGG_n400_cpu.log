@@ -1,0 +1,32 @@
+=== MCF7 FULL-CELL STAGE-1 (R_cell=7.5µm, all compartments ON, n_fil=400, arm=grip_walk, smoke=False) ===
+HOOMD 7.0.1
+
+--- arm: grip_walk ---
+  [compartments ON] nucleus k_chrom=3.69e-05 E_nuc=4700.0Pa | enclosed dP_ref=40Pa | membrane gamma_mem=0.10mN/m | cytoplasm eta=65.9Pa·s (MCF7)
+  [grip_walk] s=1/4 r/r0=1.00000 g_soft=2.320e-04 g_rigid=5.693e-02 g_tot=5.716e-02 mN/m
+    [AGG] n_engaged=586 Σ|F_head|=1.39e+03pN (mean 2.37pN, max 3.36pN); Σ|F|/band=0.0842×
+          Hill[series] F/F_stall mean=0.00112 max=0.00209 valid(≤1)=100% super-stall=0%
+          g_soft: gate=2.320e-04 mop_total=2.124e-04 mop_attach=2.061e-04 ik_attach=2.157e-04 ceiling=2.368e-04 mN/m
+          η_agg=0.911 (tangential frac 0.867) η_medium=1.02 η_total=0.929 ceiling/band=0.000677×
+          → GENERATION-LIMITED: coherent ceiling 0.00068× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=2/4 r/r0=1.00000 g_soft=3.223e-04 g_rigid=4.821e-02 g_tot=4.854e-02 mN/m
+    [AGG] n_engaged=832 Σ|F_head|=1.97e+03pN (mean 2.37pN, max 3.39pN); Σ|F|/band=0.119×
+          Hill[series] F/F_stall mean=0.00244 max=0.00418 valid(≤1)=100% super-stall=0%
+          g_soft: gate=3.223e-04 mop_total=3.319e-04 mop_attach=3.241e-04 ik_attach=3.060e-04 ceiling=3.345e-04 mN/m
+          η_agg=0.915 (tangential frac 0.873) η_medium=1.02 η_total=0.933 ceiling/band=0.000956×
+          → GENERATION-LIMITED: coherent ceiling 0.00096× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=3/4 r/r0=1.00000 g_soft=3.907e-04 g_rigid=5.113e-02 g_tot=5.152e-02 mN/m
+    [AGG] n_engaged=988 Σ|F_head|=2.34e+03pN (mean 2.36pN, max 3.34pN); Σ|F|/band=0.142×
+          Hill[series] F/F_stall mean=0.00372 max=0.0063 valid(≤1)=100% super-stall=0%
+          g_soft: gate=3.907e-04 mop_total=3.969e-04 mop_attach=3.902e-04 ik_attach=3.618e-04 ceiling=3.953e-04 mN/m
+          η_agg=0.915 (tangential frac 0.875) η_medium=1.02 η_total=0.934 ceiling/band=0.00113×
+          → GENERATION-LIMITED: coherent ceiling 0.0011× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=4/4 r/r0=1.00001 g_soft=3.991e-04 g_rigid=8.863e-02 g_tot=8.903e-02 mN/m
+    [AGG] n_engaged=1038 Σ|F_head|=2.46e+03pN (mean 2.37pN, max 3.36pN); Σ|F|/band=0.149×
+          Hill[series] F/F_stall mean=0.00505 max=0.00843 valid(≤1)=100% super-stall=0%
+          g_soft: gate=3.991e-04 mop_total=3.916e-04 mop_attach=3.862e-04 ik_attach=3.811e-04 ceiling=4.164e-04 mN/m
+          η_agg=0.915 (tangential frac 0.876) η_medium=1.02 η_total=0.936 ceiling/band=0.00119×
+          → GENERATION-LIMITED: coherent ceiling 0.0012× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+
+=== DONE in 671s. Full cell (cortex+membrane+nucleus+cytoplasm+enclosed-vol) ran stably with STAGE-1 grip_walk. ===
+  grip_walk: <r/r0>=1.00000 <g_soft>=3.360e-04 <g_rigid>=6.123e-02 <g_tot>=6.156e-02 mN/m  (band [0.35,0.65])

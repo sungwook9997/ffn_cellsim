@@ -1,0 +1,38 @@
+{
+  "aleph_parameter_authority": "none",
+  "files_scanned": 2594,
+  "metadata_parse_failures": 0,
+  "metadata_signature_count": 58,
+  "model_predictions_made": 0,
+  "optical_v5_first_failure": {
+    "file": "013018000.flex",
+    "image_id": 12816149,
+    "reason": "FLEX XML retained Channel1 and Channel2 but marked filter and light-source references unknown"
+  },
+  "pixel_arrays_loaded": 0,
+  "schema": "aleph.outer_library.idr0072_if_full_xml_audit.v1",
+  "screen_counts": {
+    "2952": 505,
+    "2953": 2089
+  },
+  "screen_render_sources": {
+    "2952": {
+      "channel_1": "DRAQ5",
+      "channel_2": "EGFP",
+      "path": "screenA/idr0072-screenA-render.yml",
+      "sha256": "d8a9ca2c7a3e9222d84265a5ef3bc235a77f00dee32b0d41cdf030545463d4b9"
+    },
+    "2953": {
+      "channel_1": "EGFP",
+      "channel_2": "DRAQ5",
+      "path": "screenB/idr0072-screenB-render.yml",
+      "sha256": "4fa2e60c3a109dce569a4386fe40e48984b31148f8cd60862579dbd29be2716b"
+    },
+    "repository_commit": "85d154650a26f011b57f13f91e4be11d1f9dde12"
+  },
+  "selected_sublayout_image_counts": {
+    "2": 2593,
+    "3": 1
+  },
+  "status": "v5_optical_name_resolution_retired_before_prediction"
+}

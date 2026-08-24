@@ -1,0 +1,30 @@
+{
+  "adversarial_source_findings": [
+    "the Figure 2b cell-area source column has 90 stiff-substrate values while the paper caption declares n=85; cell area is withheld",
+    "Figure 4 Prism columns are titled Tractions (Pa), but the paper and 0-to-1 values establish per-cell normalization; the manifest uses author_normalized_fraction",
+    "the paper reports at least three repeated experiments and biologically independent samples but does not map released cells to replicate IDs"
+  ],
+  "aleph_authority": "none",
+  "article_doi": "10.1038/s42003-026-09514-0",
+  "author_reports_at_least_three_replicates": true,
+  "cell_level_FLIM_FRET_cells": 266,
+  "cell_level_TFM_cells": 89,
+  "cell_to_replicate_mapping_released": false,
+  "cells_or_focal_adhesions_called_biological_replicates": false,
+  "dataset_doi": "10.5281/zenodo.14692589",
+  "dataset_id": "zenodo-14692589-tfm-fret",
+  "lab_group": "KU_Leuven_Aytekin_Ramon_Van_Oosterwyck",
+  "license_id": "cc-by-4.0",
+  "may_select_aleph_parameter": false,
+  "modalities": {
+    "FLIM_FRET_vinculin_tension_sensor_derived": 266,
+    "paired_FA_TFM_FLIM_FRET_derived": 492,
+    "traction_force_microscopy_derived": 89
+  },
+  "observation_count": 847,
+  "paired_focal_adhesions": 246,
+  "representative_paired_cells": 3,
+  "sample_count": 358,
+  "schema": "aleph.outer_library.zenodo_14692589_manifest.v1",
+  "source_sha256": "ecd063c5175356b7c7fb231d94921a139d1725c83ab23af5bcb57e0a99c353d8"
+}

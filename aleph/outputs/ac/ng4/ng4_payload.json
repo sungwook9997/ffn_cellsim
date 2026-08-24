@@ -1,0 +1,33 @@
+{
+  "R2_over_cv_s": 1.125,
+  "phi_provisional_GAP": 0.5,
+  "eps_total_target": 0.01,
+  "skempton": {
+    "fast_t_ramp_s": 0.02,
+    "slow_t_ramp_s": 12.000000000000426,
+    "fast_peak_p_top_Pa": 97.99708100011212,
+    "slow_peak_p_top_Pa": 48.51104986838743,
+    "fast_peak_dp_Pa": 97.16095029985127,
+    "slow_peak_dp_Pa": 2.0685283245562047,
+    "undrained_over_drained_p_top": 2.0200981274571963,
+    "undrained_over_drained_dp": 46.97105142164142,
+    "eps_total_fast": 0.01,
+    "eps_total_slow": 0.010000000000000356
+  },
+  "tau_p": {
+    "tau_cv50_s": 0.2637397080275495,
+    "tau_cv25_s": 0.5270605254225194,
+    "ratio_tau25_over_tau50": 1.998411727093685,
+    "expected_ratio": 2.0,
+    "R2_over_cv50_s": 1.125,
+    "note": "fundamental Neumann l=1 mode has prefactor 1/(kR)^2~0.23, so tau ~ 0.23*R^2/c_v"
+  },
+  "flow_at_fast_undrained_state": {
+    "max_q_um_s": 0.2370864295195938,
+    "p95_q_um_s": 0.22528320993048173,
+    "max_vf_minus_vs_um_s": 0.4741728590391876,
+    "max_gradp_Pa_um": 47.41728590391876,
+    "phi_provisional_GAP": 0.5
+  },
+  "wall_s": 2.9440526962280273
+}

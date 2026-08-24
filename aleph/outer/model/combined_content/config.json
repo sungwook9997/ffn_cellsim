@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "authority": "external_non_authoritative_combined_oa_router",
+  "seed": 2026080503,
+  "derived_roots": {
+    "first": "data/external_training/derived/articles",
+    "second": "data/external_training/derived_second_pass/articles"
+  },
+  "quality_indices": {
+    "first": "corpus/external_training/review_oa/results/article_screen_index.jsonl",
+    "second": "corpus/external_training/review_oa/second_pass/results/article_screen_index.jsonl"
+  },
+  "combined_leakage_groups": "corpus/external_training/review_oa/second_pass/results/combined_dataset_leakage_groups.json",
+  "second_candidates": "corpus/external_training/acquisition/second_pass/candidates_2026-08-05.jsonl",
+  "taxonomy": "corpus/external_training/model/combined_content/taxonomy.json",
+  "split": {"train": 0.7, "validation": 0.15, "test": 0.15, "group_key": "dataset_accession_component_else_source_family", "hash": "sha256"},
+  "features": {
+    "hash_buckets": 8192,
+    "minimum_token_length": 2,
+    "year_bucket_width": 5,
+    "section_token_limits": {"abstract": 180, "methods": 220, "results": 220, "conclusion": 120}
+  },
+  "model": {"hidden_width": 64, "epochs": 35, "batch_size": 128, "learning_rate": 0.01, "l2": 0.0001, "patience": 7},
+  "retrieval": {"top_k": 5}
+}

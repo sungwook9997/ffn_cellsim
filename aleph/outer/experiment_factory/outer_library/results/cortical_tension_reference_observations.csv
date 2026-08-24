@@ -1,0 +1,2 @@
+reference_id,cell_line,surface_state,cell_cycle_state,temperature_c,measurement_operator,unit,median,q1,q3,interval_kind,n_cells,citation_key,doi,knowledge_claim_id,source_audit_required_verdict
+hosseini2020_mcf7_suspended_interphase_afm,MCF-7,suspended_rounded,interphase,37.0,dynamic_AFM_parallel_plate_confinement,pN/micrometre,270.0,180.0,400.0,interquartile_range,27,Hosseini2020_AdvSci,10.1002/advs.202001276,KB-6.1.7,OK

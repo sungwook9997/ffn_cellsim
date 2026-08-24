@@ -1,0 +1,198 @@
+{
+  "Aleph_parameter_authority": "none",
+  "analysis_role": "post-freeze_failure_diagnosis_only",
+  "checkpoint_sha256": "c63c124813f800742f5bc55672e449cab61be787ff168041b8361fd65bbc8e1c",
+  "diagnosis": "the frozen semantic-OOD role encoded unmapped high-grade annotation strings, not necessarily visually out-of-distribution images; nuclear_punctae targets were closest to nuclear_interior and big_aggregates targets were closest to vesicular_organelle, so the image-distance score correctly treated them as coarse-ontology-like rather than rejecting them",
+  "external_provider_validation_complete": false,
+  "frozen_development_gate_remains_failed": true,
+  "in_domain_score_summary": {
+    "maximum": 1.1835811942954446,
+    "mean": 0.5615715958924291,
+    "median": 0.5267971704209897,
+    "minimum": 0.26621906716546306,
+    "q25": 0.42375331588999493,
+    "q75": 0.6580111214132747
+  },
+  "in_domain_selection_target_count": 157,
+  "manifest_sha256": "689d2f6ad69462a7b47673b9c27cffba66f05f83216762e7e8799a1283342565",
+  "may_change_frozen_gate_or_checkpoint": false,
+  "may_emit_numeric_sweep_range": false,
+  "model_report_sha256": "2367a63eb1f613597c76ab4c88b5c9bbf30667466217d0fa71bc9d0e1899808b",
+  "next_external_confirmation_pixels_may_be_opened": false,
+  "observable_evidence_eligible": false,
+  "production_eligible": false,
+  "protocol_sha256": "066dc191616db426c70d4941b3f51ac7b3c0db0d9e63fda797f1be10235a609e",
+  "reproduced_development_OOD_AUROC": 0.3370896619304263,
+  "schema": "aleph.outer_library.multiprovider_if_ood_failure_diagnostic.v1",
+  "semantic_OOD_high_grade_author_annotation_counts": {
+    "big_aggregates": 3,
+    "nuclear_punctae": 10
+  },
+  "semantic_OOD_nearest_frozen_coarse_class_counts": {
+    "nuclear_interior": 10,
+    "vesicular_organelle": 3
+  },
+  "semantic_OOD_score_summary": {
+    "maximum": 0.6801831988645639,
+    "mean": 0.4645678244213469,
+    "median": 0.44748746749664214,
+    "minimum": 0.37315026578534505,
+    "q25": 0.38846583315303906,
+    "q75": 0.49376550083081705
+  },
+  "semantic_OOD_target_count": 13,
+  "semantic_OOD_targets": [
+    {
+      "OOD_score": 0.40143211347602314,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "nucleoplasm",
+        "nucleolus_gc"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "BLM"
+    },
+    {
+      "OOD_score": 0.4681086627532753,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "nucleoplasm",
+        "chromatin"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "CBX1"
+    },
+    {
+      "OOD_score": 0.6801831988645639,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "nucleolus_gc"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "CENPA"
+    },
+    {
+      "OOD_score": 0.37315026578534505,
+      "grade_1_annotations_not_used_for_role_assignment": [],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "CENPM"
+    },
+    {
+      "OOD_score": 0.44748746749664214,
+      "grade_1_annotations_not_used_for_role_assignment": [],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "CENPW"
+    },
+    {
+      "OOD_score": 0.49376550083081705,
+      "grade_1_annotations_not_used_for_role_assignment": [],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "big_aggregates"
+      ],
+      "nearest_frozen_coarse_class": "vesicular_organelle",
+      "target_name": "DDX6"
+    },
+    {
+      "OOD_score": 0.5953886346502479,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "cytoplasmic"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "big_aggregates"
+      ],
+      "nearest_frozen_coarse_class": "vesicular_organelle",
+      "target_name": "LSM14B"
+    },
+    {
+      "OOD_score": 0.4323806827978991,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "nucleoplasm"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "MIS12"
+    },
+    {
+      "OOD_score": 0.3784284015637278,
+      "grade_1_annotations_not_used_for_role_assignment": [],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "POT1"
+    },
+    {
+      "OOD_score": 0.48424480752100085,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "nucleoplasm"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "PSPC1"
+    },
+    {
+      "OOD_score": 0.5086736754128596,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "cytoplasmic"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "big_aggregates"
+      ],
+      "nearest_frozen_coarse_class": "vesicular_organelle",
+      "target_name": "RBSN"
+    },
+    {
+      "OOD_score": 0.3876724731720693,
+      "grade_1_annotations_not_used_for_role_assignment": [],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "TERF1"
+    },
+    {
+      "OOD_score": 0.38846583315303906,
+      "grade_1_annotations_not_used_for_role_assignment": [
+        "nucleoplasm"
+      ],
+      "grade_2_annotations": [],
+      "grade_3_annotations": [
+        "nuclear_punctae"
+      ],
+      "nearest_frozen_coarse_class": "nuclear_interior",
+      "target_name": "USP7"
+    }
+  ],
+  "semantic_OOD_targets_with_nonempty_grade1_annotation_count": 8,
+  "tensor_report_sha256": "27f86a8d3d115c096ffd1cf3be10ae1d5a9ec0c30d4f52ef1f02562008dff3c6",
+  "tensor_sha256": "c2b82622984bfcf3c84dd7eea28f867c07a00c7759d7a62114d3eb3b470ed22c",
+  "uncertainty_authority": false
+}

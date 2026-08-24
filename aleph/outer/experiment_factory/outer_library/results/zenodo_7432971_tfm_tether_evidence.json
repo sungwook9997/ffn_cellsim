@@ -1,0 +1,438 @@
+{
+  "aleph_authority": "none",
+  "descriptive_results": {
+    "fibroblast_mean_traction_by_author_file_batch": {
+      "PAA_shear_modulus_10_kPa|author_file_batch_1_status_unresolved": {
+        "cell_measurement_count": 15,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 250.63957539462322,
+        "mean": 126.40744842496905,
+        "median": 127.7766969462976,
+        "minimum": 35.1777138695427,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_10_kPa|author_file_batch_2_status_unresolved": {
+        "cell_measurement_count": 15,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 29.993107781974903,
+        "mean": 20.082503957523862,
+        "median": 23.703471557917698,
+        "minimum": 2.9905695051246903,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_1_kPa|author_file_batch_1_status_unresolved": {
+        "cell_measurement_count": 15,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 13.098921491307001,
+        "mean": 9.443059031152414,
+        "median": 10.09001420741717,
+        "minimum": 1.3654960590718639,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_1_kPa|author_file_batch_2_status_unresolved": {
+        "cell_measurement_count": 15,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 20.847781662109742,
+        "mean": 10.248107524670148,
+        "median": 9.241523209013646,
+        "minimum": 5.982775774240127,
+        "unit": "Pa"
+      }
+    },
+    "fibroblast_mean_traction_by_stiffness": {
+      "PAA_shear_modulus_10_kPa": {
+        "cell_measurement_count": 30,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 250.63957539462322,
+        "mean": 73.24497619124645,
+        "median": 32.5854108257588,
+        "minimum": 2.9905695051246903,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_1_kPa": {
+        "cell_measurement_count": 30,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 20.847781662109742,
+        "mean": 9.845583277911281,
+        "median": 9.812044976674205,
+        "minimum": 1.3654960590718639,
+        "unit": "Pa"
+      }
+    },
+    "fibroblast_stiffness_direction_by_batch": {
+      "author_file_batch_1_status_unresolved": {
+        "direction": "increases",
+        "median_10kPa_minus_1kPa_Pa": 117.68668273888044
+      },
+      "author_file_batch_2_status_unresolved": {
+        "direction": "increases",
+        "median_10kPa_minus_1kPa_Pa": 14.461948348904052
+      }
+    },
+    "neuron_mean_traction_by_date": {
+      "PAA_shear_modulus_100_Pa|author_acquisition_date_20210305_donor_status_unresolved": {
+        "cell_measurement_count": 13,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 1.997543948449057,
+        "mean": 1.2543867553516086,
+        "median": 1.2334529590998924,
+        "minimum": 0.7465616348707874,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_100_Pa|author_acquisition_date_20210312_donor_status_unresolved": {
+        "cell_measurement_count": 4,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 1.5546910902838298,
+        "mean": 1.1255670287098223,
+        "median": 1.0806608751693612,
+        "minimum": 0.7862552742167376,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_100_Pa|author_acquisition_date_20210603_donor_status_unresolved": {
+        "cell_measurement_count": 16,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 7.280534971094397,
+        "mean": 1.7411179290247452,
+        "median": 1.4070234010758988,
+        "minimum": 0.518641137568923,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_300_Pa|author_acquisition_date_20210319_donor_status_unresolved": {
+        "cell_measurement_count": 50,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 17.921681482778062,
+        "mean": 4.973673118887877,
+        "median": 3.509510131102532,
+        "minimum": 1.0938413638528042,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_300_Pa|author_acquisition_date_20210415_donor_status_unresolved": {
+        "cell_measurement_count": 30,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 18.001702871920152,
+        "mean": 3.561759130851182,
+        "median": 2.914818695524951,
+        "minimum": 1.6356175079209054,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_300_Pa|author_acquisition_date_20210603_donor_status_unresolved": {
+        "cell_measurement_count": 19,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 72.55489505130784,
+        "mean": 13.698196452647823,
+        "median": 2.2822632425302913,
+        "minimum": 1.0577351842402423,
+        "unit": "Pa"
+      }
+    },
+    "neuron_mean_traction_by_stiffness": {
+      "PAA_shear_modulus_100_Pa": {
+        "cell_measurement_count": 33,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 7.280534971094397,
+        "mean": 1.4747631151153373,
+        "median": 1.2736504744731985,
+        "minimum": 0.518641137568923,
+        "unit": "Pa"
+      },
+      "PAA_shear_modulus_300_Pa": {
+        "cell_measurement_count": 99,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 72.55489505130784,
+        "mean": 6.220223863335738,
+        "median": 2.92734167868937,
+        "minimum": 1.0577351842402423,
+        "unit": "Pa"
+      }
+    },
+    "neuron_pull_force_by_stiffness": {
+      "PAA_shear_modulus_100_Pa": {
+        "cell_measurement_count": 33,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 188.2969378195485,
+        "mean": 33.358716378405646,
+        "median": 29.08681247803409,
+        "minimum": 0.0,
+        "unit": "pN"
+      },
+      "PAA_shear_modulus_300_Pa": {
+        "cell_measurement_count": 99,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 294.6406954713665,
+        "mean": 77.37991998883298,
+        "median": 74.09960363301238,
+        "minimum": 0.0,
+        "unit": "pN"
+      }
+    },
+    "neuron_shared_acquisition_date_descriptive_comparison": {
+      "time_averaged_growth_cone_pull_force": {
+        "PAA_shear_modulus_100_Pa": {
+          "cell_measurement_count": 16,
+          "cells_are_not_independent_biological_replicates": true,
+          "maximum": 188.2969378195485,
+          "mean": 39.080678300490035,
+          "median": 27.318194799923237,
+          "minimum": 0.0,
+          "unit": "pN"
+        },
+        "PAA_shear_modulus_300_Pa": {
+          "cell_measurement_count": 19,
+          "cells_are_not_independent_biological_replicates": true,
+          "maximum": 199.596467449118,
+          "mean": 55.46301006392332,
+          "median": 52.040886693672135,
+          "minimum": 0.0,
+          "unit": "pN"
+        }
+      },
+      "time_averaged_mean_traction_stress": {
+        "PAA_shear_modulus_100_Pa": {
+          "cell_measurement_count": 16,
+          "cells_are_not_independent_biological_replicates": true,
+          "maximum": 7.280534971094397,
+          "mean": 1.7411179290247452,
+          "median": 1.4070234010758988,
+          "minimum": 0.518641137568923,
+          "unit": "Pa"
+        },
+        "PAA_shear_modulus_300_Pa": {
+          "cell_measurement_count": 19,
+          "cells_are_not_independent_biological_replicates": true,
+          "maximum": 72.55489505130784,
+          "mean": 13.698196452647823,
+          "median": 2.2822632425302913,
+          "minimum": 1.0577351842402423,
+          "unit": "Pa"
+        }
+      }
+    },
+    "tether_force_by_cell_state_substrate_observable": {
+      "NIH_3T3_fibroblast|blebbistatin_20_uM|substrate_10_kPa|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 13,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 69.0,
+        "mean": 40.30769230769231,
+        "median": 38.0,
+        "minimum": 22.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|blebbistatin_20_uM|substrate_10_kPa|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 13,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 30.0,
+        "mean": 19.153846153846153,
+        "median": 19.0,
+        "minimum": 12.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|blebbistatin_20_uM|substrate_Glass|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 9,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 64.0,
+        "mean": 32.22222222222222,
+        "median": 30.0,
+        "minimum": 7.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|blebbistatin_20_uM|substrate_Glass|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 9,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 40.0,
+        "mean": 19.0,
+        "median": 19.0,
+        "minimum": 5.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_100_Pa|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 16,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 95.0,
+        "mean": 50.4375,
+        "median": 46.5,
+        "minimum": 11.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_100_Pa|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 16,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 42.0,
+        "mean": 18.5625,
+        "median": 16.0,
+        "minimum": 6.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_10_kPa|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 19,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 80.0,
+        "mean": 47.21052631578947,
+        "median": 49.0,
+        "minimum": 18.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_10_kPa|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 19,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 44.0,
+        "mean": 21.42105263157895,
+        "median": 18.0,
+        "minimum": 7.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_1_kPa|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 24,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 103.0,
+        "mean": 44.208333333333336,
+        "median": 40.5,
+        "minimum": 14.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_1_kPa|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 24,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 52.0,
+        "mean": 21.791666666666668,
+        "median": 20.5,
+        "minimum": 8.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_Glass|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 46,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 59.0,
+        "mean": 25.282608695652176,
+        "median": 22.5,
+        "minimum": 6.0,
+        "unit": "pN"
+      },
+      "NIH_3T3_fibroblast|untreated_adherent|substrate_Glass|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 46,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 30.0,
+        "mean": 9.26086956521739,
+        "median": 6.0,
+        "minimum": 2.0,
+        "unit": "pN"
+      },
+      "Xenopus_laevis_retinal_ganglion_axon|untreated_adherent|substrate_100_Pa|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 22,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 56.2788,
+        "mean": 26.51063227272728,
+        "median": 23.657725,
+        "minimum": 9.38051,
+        "unit": "pN"
+      },
+      "Xenopus_laevis_retinal_ganglion_axon|untreated_adherent|substrate_100_Pa|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 22,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 25.6536030564958,
+        "mean": 13.048832236704994,
+        "median": 13.16778283947045,
+        "minimum": 3.96362689426902,
+        "unit": "pN"
+      },
+      "Xenopus_laevis_retinal_ganglion_axon|untreated_adherent|substrate_1_kPa|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 22,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 75.30037,
+        "mean": 32.533057727272734,
+        "median": 27.99001,
+        "minimum": 8.12926,
+        "unit": "pN"
+      },
+      "Xenopus_laevis_retinal_ganglion_axon|untreated_adherent|substrate_1_kPa|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 22,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 28.04188,
+        "mean": 15.046559545454546,
+        "median": 15.966895000000001,
+        "minimum": 2.67002,
+        "unit": "pN"
+      },
+      "Xenopus_laevis_retinal_ganglion_axon|untreated_adherent|substrate_Glass|membrane_tether_peak_detachment_force": {
+        "cell_measurement_count": 17,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 46.059,
+        "mean": 21.576235294117648,
+        "median": 18.045,
+        "minimum": 8.082,
+        "unit": "pN"
+      },
+      "Xenopus_laevis_retinal_ganglion_axon|untreated_adherent|substrate_Glass|membrane_tether_steady_state_force": {
+        "cell_measurement_count": 17,
+        "cells_are_not_independent_biological_replicates": true,
+        "maximum": 13.398,
+        "mean": 7.329058823529412,
+        "median": 6.616,
+        "minimum": 2.357,
+        "unit": "pN"
+      }
+    }
+  },
+  "design_audit": {
+    "TFM_frames_collapsed_before_analysis": true,
+    "cells_treated_as_biological_replicates": false,
+    "fibroblast_author_file_batches_per_stiffness": 2,
+    "fibroblast_batch_effect_present": true,
+    "independent_lab_inferential_holdout_established": false,
+    "neuron_only_shared_acquisition_date": "20210603",
+    "neuron_stiffness_partly_confound_with_acquisition_date": true,
+    "optical_tweezer_biological_replicate_ids_available": false
+  },
+  "limitations": [
+    "cell-level rows are not independent biological replicates",
+    "fibroblast stiffness groups contain only two unresolved author file batches",
+    "neuron stiffness and acquisition date are partly confounded",
+    "optical-tweezer biological replicate identifiers are unavailable",
+    "exact units alone do not establish an equivalent Aleph observation operator"
+  ],
+  "may_select_aleph_parameter": false,
+  "observation_operator_audit": {
+    "membrane_tether_peak_detachment_force": {
+      "candidate_aleph_observable": null,
+      "external_unit": "pN",
+      "status": "detachment_peak_operator_missing"
+    },
+    "membrane_tether_steady_state_force": {
+      "blocker": "steady tether force constrains apparent tension jointly with bending rigidity and membrane-cortex adhesion; one Aleph parameter is not identified",
+      "candidate_aleph_observable": "membrane_tether_plateau_force",
+      "external_unit": "pN",
+      "status": "unit_exact_identifiability_blocked",
+      "unit_identity": "pN == pN"
+    },
+    "time_averaged_growth_cone_pull_force": {
+      "candidate_aleph_observable": null,
+      "external_unit": "pN",
+      "status": "geometry_and_cell_type_operator_missing"
+    },
+    "time_averaged_mean_traction_stress": {
+      "blocker": "the author TFM ROI/mask averaging operator is not encoded in the figure table and has not been shown equivalent to the Aleph contact-area operator",
+      "candidate_aleph_expression": "clutch_traction_constituent_pn / contact_area_um2",
+      "external_unit": "Pa",
+      "status": "unit_exact_ROI_semantics_blocked",
+      "unit_identity": "1 pN/um2 == 1 Pa"
+    }
+  },
+  "promotion": {
+    "aleph_parameter_proposal_eligible": false,
+    "current_executable_Aleph_sweep_available": false,
+    "future_sweep_range_reduction_intended": true,
+    "may_emit_numeric_parameter_range": false,
+    "numeric_parameter_likelihood_eligible": false,
+    "numeric_range": null,
+    "observable_evidence_eligible": false,
+    "stage": "external_training_or_descriptive_constraint_only"
+  },
+  "purpose": "accumulate externally grounded observables that can reduce a future Aleph parameter sweep after exact operators and engine-scale sweeps become available",
+  "schema": "aleph.outer_library.zenodo_7432971_tfm_tether_evidence.v1",
+  "source": {
+    "article_doi": "10.1093/pnasnexus/pgac299",
+    "dataset_doi": "10.5281/zenodo.7432971",
+    "dataset_id": "zenodo-7432971-tfm-tether",
+    "license_id": "cc-by-4.0"
+  },
+  "task": "TFM_and_membrane_tether_pre_sweep_observation_constraints"
+}

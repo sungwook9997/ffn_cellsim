@@ -1,0 +1,32 @@
+{
+  "verification": "batch_dt rate-throttle / run-to-binding-equilibrium hypothesis",
+  "result": "REFUTED",
+  "config": {
+    "batch_steps": 7600,
+    "batch_dt_s": 9.903330486505404e-05,
+    "cfl_product": 0.0009903330486505406,
+    "cfl_ok": true,
+    "n_fil": 60,
+    "n_motors": 20,
+    "reached_tau": 2.9709991459516214
+  },
+  "evidence": {
+    "bound_frac_range": [
+      0.02,
+      0.165
+    ],
+    "bound_frac_increase_x": 8.25,
+    "g_soft_mean_mN_per_m": 7.261806749695223e-05,
+    "g_soft_std_mN_per_m": 1.8166336087328166e-05,
+    "corr_boundfrac_gsoft": -0.09950399801817819,
+    "g_soft_first_half": 7.683941594011652e-05,
+    "g_soft_second_half": 6.872143816480057e-05,
+    "baseline_g_soft_mN_per_m": 2.3813677335263267e-08,
+    "binding_lift_over_baseline_x": 3049.426868206511,
+    "x_under_band_floor": 4819.737181999361,
+    "mean_F_over_stall": 0.20902180774651882,
+    "bound_frac_plateau": 0.161,
+    "naive_eq_overall": 0.3787878787878788
+  },
+  "conclusion": "g_soft is DECOUPLED from bound fraction (corr -0.10): it saturates at the onset of binding (bf=0.02, g_soft~5e-5 mN/m, +3000x over the pre-binding baseline) and stays flat as bound fraction rises 8.2x. Heads ARE bound and loaded (F/F_stall~0.21 steady) but their per-head force does NOT aggregate into network tension. Binding fraction/rate/measurement-timescale is NOT the lever. The wall is FORCE AGGREGATION (sustained network stress) -- the second floor STAGE-2's head-tension note suspected. Separately, binding itself plateaus at bf~0.16 (< naive 0.38). The proposed batch_steps fix is therefore NOT adopted."
+}

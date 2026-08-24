@@ -1,0 +1,10 @@
+{
+  "adjudication_forms.jsonl": "fcff5035e1927c574da3f1553d9fc2e75255b2760f3ef251b5a5e9b6da561a0a",
+  "assignments_100.csv": "915f215d7d668155585c54f19c7c308c735ed7456624cd4bf04e63ff351cd99c",
+  "benchmark_readiness.json": "88ac4f5f98806b3da7c6f58b935bcbd61b976cfef4f8aaecde175aee8cb9aad4",
+  "candidates_50.jsonl": "e3e0cb661d40ee6d2dda3a96e40ea97023bb7be116a8daa3d3b8e94a4850f133",
+  "forms_A.jsonl": "c7dc217bd579fbb7f14b4b8d2de1f2dc939f4d447c218ae9cdca6ba9fa0784fe",
+  "forms_B.jsonl": "da34ed87097d8f8a12e78552f4d3791ee18a3ca9fbabf9196d4fde5a501cac47",
+  "machine_preannotations.jsonl.gz": "b3beef1ce2b7d017241cb10d7d55485f07bda9a1c40625691563bd814818e723",
+  "summary.json": "1301e925824c547ee00abff17afd5b31e120759573b46b30680f4afe0aa41449"
+}

@@ -1,0 +1,39 @@
+{
+  "gamma_on": {
+    "gamma_soft": 3.243524653075112e-07,
+    "gamma_rigid": 0.03809509411725472,
+    "gamma_structural": 0.038095418469720026,
+    "gamma_passive": 0.4987500000000001,
+    "n_part": 5248
+  },
+  "gamma_off": {
+    "gamma_soft": 3.2376888461894134e-07,
+    "gamma_rigid": 0.03404560880798799,
+    "gamma_structural": 0.03404593257687261,
+    "gamma_passive": 0.4987500000000001,
+    "n_part": 2248
+  },
+  "d_gamma_struct_frac": 0.10629850138189527,
+  "d_turgor_frac": 0.0,
+  "removal_safe": false,
+  "dt0": 6.980731076014148e-07,
+  "dt_sweep": [
+    [
+      1,
+      "OK"
+    ],
+    [
+      2,
+      "OK"
+    ],
+    [
+      5,
+      "OK"
+    ],
+    [
+      10,
+      "CFL_FAIL: Membrane-surface CFL violated: dt = 6.981e-06 s > 0.10 \u00b7 \u03c4_mem = 4.064e-06 s (\u03c4_mem = \u03b3_b / k_eff = 4.064e-05 s, k_eff ="
+    ]
+  ],
+  "max_stable_mult": 5
+}

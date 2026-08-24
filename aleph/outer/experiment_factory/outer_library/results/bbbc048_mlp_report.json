@@ -1,0 +1,115 @@
+{
+  "aleph_authority": "none",
+  "best_selection_epoch": 14,
+  "best_selection_macro_f1": 0.6946928989062132,
+  "conformal_90": {
+    "calibration_cell_count": 3223,
+    "rare_class_conditional_coverage_authority": false,
+    "test_marginal_coverage": 0.8948670377241806,
+    "test_mean_set_size_of_7": 1.2832405689548547
+  },
+  "epochs_requested": 35,
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "may_select_aleph_parameter": false,
+  "model_family": "three_channel_8x8_raw_image_MLP_192_32_7",
+  "notes": [
+    "test is a held-out cell split from the same provider and acquisition lineage",
+    "anaphase, telophase, and metaphase test counts are too small for conditional claims"
+  ],
+  "optimizer": "Adam_class_weighted_cross_entropy",
+  "production_eligible": false,
+  "schema": "aleph.outer_library.bbbc048_mlp.v1",
+  "split_sample_id_overlap": 0,
+  "status": "same_provider_training_only",
+  "temperature": 0.8500000000000001,
+  "test": {
+    "accuracy": 0.7932385075242218,
+    "balanced_accuracy": 0.6513526544893864,
+    "confusion_matrix_true_by_predicted": [
+      [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        6,
+        3,
+        0,
+        0,
+        2,
+        1
+      ],
+      [
+        0,
+        4,
+        44,
+        0,
+        0,
+        42,
+        3
+      ],
+      [
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1933,
+        4,
+        214
+      ],
+      [
+        0,
+        15,
+        55,
+        1,
+        6,
+        1025,
+        189
+      ],
+      [
+        0,
+        2,
+        1,
+        1,
+        286,
+        171,
+        833
+      ]
+    ],
+    "ece_10_bin": 0.019809767066314276,
+    "macro_f1": 0.6137561117677112,
+    "per_class_f1": [
+      0.4,
+      0.3,
+      0.4467005076142132,
+      0.8,
+      0.8834552102376599,
+      0.8086785009861933,
+      0.6574585635359116
+    ],
+    "per_class_recall": [
+      0.25,
+      0.5,
+      0.4731182795698925,
+      1.0,
+      0.898651789865179,
+      0.7939581719597212,
+      0.6437403400309119
+    ]
+  }
+}

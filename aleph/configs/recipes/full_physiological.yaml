@@ -1,0 +1,63 @@
+# ============================================================================
+# RECIPE: full_physiological  (H.7 compartment platform — 2026-06-08)
+# ============================================================================
+# The COMPLETE compartment declaration — the one place every mechanobiology
+# compartment ffn_cellsim knows is listed for a single cell. It is NOT a run
+# target: it ENABLES only the validated physiological baseline (cortex actomyosin
+# + cytoplasm + turgor + nucleus + membrane shell) and DECLARES every other
+# compartment as pending its pairwise / recipe-level gate.
+#
+# HARD: do NOT enable full_physiological globally. Compartments graduate from
+# `declare_pending` to `enable` ONE pairwise gate at a time, PI-signed-off. Do not
+# claim biological closure until pairwise and recipe-level gates pass.
+# ============================================================================
+
+name: full_physiological
+description: Full single-cell compartment declaration — enables only the validated baseline.
+scope: declaration_only
+
+observables: [cortical_tension]
+
+# Validated physiological baseline (the only compartments turned ON):
+enable:
+  - cortex
+  - crosslinkers
+  - myosin
+  - cytoplasm
+  - enclosed_volume
+  - nucleus
+  - membrane_surface
+
+# Every other compartment — declared, NOT enabled (gate pending). Listed so this
+# recipe is the complete map of the cell. Activation order is tracked in
+# docs/v2_audit/_historical/FULL_COMPARTMENT_PLATFORM_PROGRESS_2026-06-08.md.
+declare_pending:
+  # Adhesion / spreading (LIVE modules, PI-gated activation):
+  - fa
+  - rigid_ligand_coating
+  - substrate
+  - lamellipodium
+  - membrane_load
+  - erm
+  - turnover
+  # Geometry (broad-phase only, force-free):
+  - surface_manifold
+  # Internal mechanics (experimental):
+  - ventral_stress_fibers
+  - linc
+  - intermediate_filaments
+  - microtubules
+  # Volume / membrane remodelling (experimental):
+  - osmotic_regulation
+  - membrane_reservoir
+  # Multicell (experimental):
+  - cadherin_junction
+  - junctional_actin
+
+notes: >
+  This recipe exists to make the compartment set auditable in one place and to
+  drive the registry's completeness test. Running it composes to the validated
+  baseline only; `deferred` returns the full declare_pending list. Each pending
+  compartment must clear OFF-identity + dimensional + sign-sense + (where
+  relevant) no-gamma-contamination + its pairwise physiological gate before it is
+  promoted to `enable` in a purpose-built recipe.

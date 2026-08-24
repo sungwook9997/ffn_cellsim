@@ -1,0 +1,21 @@
+{
+  "config": {
+    "n_fil": 300,
+    "n_xl": 450,
+    "motors": [
+      400
+    ],
+    "n_sample": 4,
+    "interval": 6000
+  },
+  "conditions": [
+    {
+      "n_motors": 400,
+      "signed_gamma_mN_m": 0.00019970039540229416,
+      "bound_frac": 0.11890624999999999,
+      "mean_F_over_stall": 0.4266402179943348,
+      "n_bound": 951.25
+    }
+  ],
+  "verdict": "inconclusive"
+}

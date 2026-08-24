@@ -1,0 +1,192 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "author_correlation_categories_reproduced": true,
+  "cell_level_FRET_by_sensor_and_condition": {
+    "force_insensitive_TSMod_control": {
+      "PAA_Young_modulus_13_kPa": {
+        "maximum": 22.7625,
+        "mean": 17.378005,
+        "measurement_count": 20,
+        "median": 17.24135,
+        "minimum": 12.6722,
+        "sample_standard_deviation": 2.5514274472135665,
+        "unit": "percent"
+      },
+      "PAA_Young_modulus_4.5_kPa": {
+        "maximum": 20.8664,
+        "mean": 16.182660000000002,
+        "measurement_count": 20,
+        "median": 16.05695,
+        "minimum": 12.8391,
+        "sample_standard_deviation": 2.3543784955739495,
+        "unit": "percent"
+      },
+      "glass_substrate": {
+        "maximum": 21.2719,
+        "mean": 16.588881818181818,
+        "measurement_count": 22,
+        "median": 16.9774,
+        "minimum": 11.54,
+        "sample_standard_deviation": 3.027679004127523,
+        "unit": "percent"
+      }
+    },
+    "vinculin_tension_sensor": {
+      "PAA_Young_modulus_13_kPa": {
+        "maximum": 16.7702,
+        "mean": 10.950965882352941,
+        "measurement_count": 85,
+        "median": 10.7436,
+        "minimum": 5.28,
+        "sample_standard_deviation": 2.560413556325885,
+        "unit": "percent"
+      },
+      "PAA_Young_modulus_4.5_kPa": {
+        "maximum": 18.1905,
+        "mean": 11.880572043010753,
+        "measurement_count": 93,
+        "median": 11.8803,
+        "minimum": 5.6713,
+        "sample_standard_deviation": 2.9228414649091934,
+        "unit": "percent"
+      },
+      "glass_substrate": {
+        "maximum": 14.4365,
+        "mean": 9.76298846153846,
+        "measurement_count": 26,
+        "median": 9.53545,
+        "minimum": 3.5186,
+        "sample_standard_deviation": 3.0098706950733845,
+        "unit": "percent"
+      }
+    }
+  },
+  "cell_level_mean_traction_by_condition": {
+    "PAA_Young_modulus_13_kPa": {
+      "maximum": 576.117378,
+      "mean": 248.90051499473682,
+      "measurement_count": 38,
+      "median": 220.22142050000002,
+      "minimum": 94.5449278,
+      "sample_standard_deviation": 120.44600016266095,
+      "unit": "Pa"
+    },
+    "PAA_Young_modulus_4.5_kPa": {
+      "maximum": 424.1085,
+      "mean": 172.11751137254902,
+      "measurement_count": 51,
+      "median": 163.1344,
+      "minimum": 29.99937,
+      "sample_standard_deviation": 86.30785139080676,
+      "unit": "Pa"
+    }
+  },
+  "cross_lab_same_observable_direction": {
+    "exact_common_unit": "Pa",
+    "external_MEF_4.5_to_13_kPa_direction_increases": true,
+    "external_direction_lab": "KU_Leuven_Aytekin_Ramon_Van_Oosterwyck",
+    "independent_lab_direction_reproduced": true,
+    "numeric_transfer_evaluated": false,
+    "reason_numeric_transfer_withheld": "cell type and stiffness ranges differ, and neither released table maps cells to enough biological replicate identifiers",
+    "same_observable": "cell_or_time_averaged_mean_traction_stress",
+    "training_NIH3T3_1_to_10_kPa_direction_increases": true,
+    "training_lab": "Cambridge_Franze_Keyser_collaboration"
+  },
+  "design_audit": {
+    "author_reports_at_least_three_replicates": true,
+    "calibrated_uncertainty_holdout": false,
+    "cell_to_replicate_mapping_released": false,
+    "cells_treated_as_biological_replicates": false,
+    "focal_adhesions_treated_as_biological_replicates": false,
+    "independent_dataset_direction_test": true,
+    "independent_lab_direction_test": true,
+    "independent_lab_inferential_holdout": false
+  },
+  "independent_lab_holdout": false,
+  "lab_group": "KU_Leuven_Aytekin_Ramon_Van_Oosterwyck",
+  "limitations": [
+    "the Figure 2b cell-area source column has 90 stiff-substrate values while the paper caption declares n=85; cell area is withheld",
+    "Figure 4 Prism columns are titled Tractions (Pa), but the paper and 0-to-1 values establish per-cell normalization; the manifest uses author_normalized_fraction",
+    "the paper reports at least three repeated experiments and biologically independent samples but does not map released cells to replicate IDs",
+    "independent-lab direction agreement is not a numeric transfer test",
+    "three representative paired cells cannot train a general DCC/ICC/UCC classifier",
+    "heterogeneous FA-level traction--FRET relations forbid a one-to-one load-transfer mapping",
+    "no calibrated uncertainty, OOD test, or Aleph forward sensitivity is available"
+  ],
+  "may_select_aleph_parameter": false,
+  "observable_evidence_eligible": false,
+  "observation_operator_audit": {
+    "cell_mask_mean_traction_stress": {
+      "author_equation_and_open_source_code_available": true,
+      "candidate_aleph_expression": "sum(cell-mask traction magnitude times pixel area) / cell-mask area",
+      "external_unit": "Pa",
+      "status": "external_operator_defined_Aleph_geometry_equivalence_missing"
+    },
+    "vinculin_FLIM_FRET": {
+      "external_unit": "relative_percent_or_per_cell_normalized_fraction",
+      "identifiability_value": "separates focal-adhesion load transmission from bulk traction but requires sensor calibration before absolute molecular force",
+      "status": "relative_molecular_tension_proxy_not_absolute_force"
+    }
+  },
+  "paired_FA_cell_correlations": {
+    "directly_correlated_cell": {
+      "FRET_on_traction_slope": -0.5277484319246792,
+      "intercept": 0.8025454661081078,
+      "paired_focal_adhesions": 46,
+      "pearson_correlation": -0.6651694093794879
+    },
+    "inversely_correlated_cell": {
+      "FRET_on_traction_slope": 0.16963990959677402,
+      "intercept": 0.5423896873136745,
+      "paired_focal_adhesions": 77,
+      "pearson_correlation": 0.28989885816397354
+    },
+    "uncorrelated_cell": {
+      "FRET_on_traction_slope": 0.04004569948599826,
+      "intercept": 0.7546578232014248,
+      "paired_focal_adhesions": 123,
+      "pearson_correlation": 0.07445356610465839
+    }
+  },
+  "pre_sweep_constraint": {
+    "candidate_parameters": [
+      "aleph.vertical.focal_adhesion.ClutchCard.bond_stiffness_pn_per_um",
+      "aleph.vertical.focal_adhesion.ClutchCard.anchor_stiffness_pn_per_um",
+      "aleph.vertical.sf_arc.MaterialCard.active_tension_pn",
+      "aleph.vertical.nmii.MotorKinetics.crossbridge_stiffness"
+    ],
+    "current_executable_Aleph_sweep_available": false,
+    "future_sweep_range_reduction_intended": true,
+    "latent": "focal_adhesion_load_transfer_under_substrate_stiffness",
+    "may_emit_numeric_parameter_range": false,
+    "may_select_Aleph_parameter": false,
+    "numeric_range": null,
+    "required_Aleph_operators": [
+      "cell_mask_mean_traction_stress_Pa",
+      "focal_adhesion_mean_traction_normalized_per_cell",
+      "vinculin_tension_sensor_relative_FRET",
+      "focal_adhesion_area_orientation_and_vinculin_density"
+    ]
+  },
+  "schema": "aleph.outer_library.zenodo_14692589_tfm_fret_evidence.v1",
+  "source": {
+    "article_doi": "10.1038/s42003-026-09514-0",
+    "dataset_doi": "10.5281/zenodo.14692589",
+    "dataset_id": "zenodo-14692589-tfm-fret",
+    "license_id": "cc-by-4.0"
+  },
+  "stiffness_directions": {
+    "TFM": {
+      "increases_with_stiffness": true,
+      "mean_13_minus_4.5_Pa": 76.7830036221878,
+      "median_13_minus_4.5_Pa": 57.08702050000002
+    },
+    "VinTS_FLIM_FRET": {
+      "FRET_decreases_and_vinculin_tension_increases": true,
+      "median_13_minus_4.5_percentage_points": -1.1366999999999994
+    }
+  },
+  "task": "cross_lab_stiffness_TFM_and_vinculin_load_transfer_pre_sweep_constraint",
+  "uncertainty_holdout_passed": false
+}

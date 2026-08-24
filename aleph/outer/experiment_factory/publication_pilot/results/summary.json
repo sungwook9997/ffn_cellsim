@@ -1,0 +1,90 @@
+{
+  "acquisition_pass_counts": {
+    "first": 27,
+    "second": 23
+  },
+  "adjudications_completed": 0,
+  "assignments": 100,
+  "authority_status": "proposed",
+  "cell_state_counts": {
+    "apoptotic": 17,
+    "cancer_tumor": 14,
+    "differentiating": 25,
+    "epithelial": 24,
+    "fibroblast": 10,
+    "immune": 13,
+    "migrating": 26,
+    "mitotic": 16,
+    "muscle": 12,
+    "neural": 7,
+    "stem_progenitor": 17
+  },
+  "domain_counts": {
+    "adhesion_ecm_mechanics": 4,
+    "cell_state_mechanics": 4,
+    "cortical_membrane_pressure": 5,
+    "cytoskeleton_motor_rheology": 4,
+    "division_morphogenesis_tissue": 4,
+    "flow_shear": 4,
+    "measurement_inference": 5,
+    "mechanotransduction": 4,
+    "migration_invasion": 4,
+    "nuclear_mechanics": 4,
+    "organelle_general_mechanics": 4,
+    "osmotic_volume_poroelasticity": 4
+  },
+  "forms_contain_machine_predictions": false,
+  "human_annotations_completed": 0,
+  "input_candidates": 300,
+  "machine_preannotation_is_ground_truth": false,
+  "machine_preannotation_records": 996,
+  "modality_counts": {
+    "afm": 16,
+    "flow_cytometry": 20,
+    "immunofluorescence": 31,
+    "live_cell_imaging": 14,
+    "magnetic_tweezers": 1,
+    "micropipette_aspiration": 5,
+    "optical_tweezers": 3,
+    "pcr": 20,
+    "piv": 6,
+    "single_cell_sequencing": 5,
+    "traction_force_microscopy": 8,
+    "western_blot": 31
+  },
+  "modality_coverage": {
+    "covered": [
+      "afm",
+      "flow_cytometry",
+      "immunofluorescence",
+      "live_cell_imaging",
+      "magnetic_tweezers",
+      "micropipette_aspiration",
+      "optical_tweezers",
+      "pcr",
+      "piv",
+      "single_cell_sequencing",
+      "traction_force_microscopy",
+      "western_blot"
+    ],
+    "missing": []
+  },
+  "schema": "aleph.external_training.publication_pilot.v1",
+  "selected_sources": 50,
+  "selection_audit": {
+    "oversized_components_deferred": [
+      "lc:e01da38a4b37756a"
+    ],
+    "selected_multi_source_components": [
+      "lc:cdfa6f690dc9521a"
+    ],
+    "split_components": []
+  },
+  "source_candidate_sha256": "f4be334ea3fce6659a7395e77a2107a3b6a3dfdb5547f8b163e535946ff83226",
+  "year_stratum_counts": {
+    "2010_2013": 7,
+    "2014_2017": 11,
+    "2018_2021": 12,
+    "2022_2026": 20
+  }
+}

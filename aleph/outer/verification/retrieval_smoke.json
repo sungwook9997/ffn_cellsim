@@ -1,0 +1,17 @@
+{
+  "schema": "aleph.external_training.retrieval_boundary_smoke.v1",
+  "authority_status": "proposed",
+  "retrieval_index_scope": "first_pass_only",
+  "allowed_cases": 5,
+  "allowed_passed": 5,
+  "refused_cases": 7,
+  "refused_passed": 7,
+  "observed_refusal_codes": {
+    "authority_claim_refused": 1,
+    "physical_parameter_estimation_refused": 4,
+    "training_refused": 1,
+    "unknown_query": 1
+  },
+  "all_allowed_results_proposed": true,
+  "all_passed": true
+}

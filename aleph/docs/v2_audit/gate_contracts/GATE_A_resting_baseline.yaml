@@ -1,0 +1,214 @@
+# GATE-A — converged static resting baseline (max|PF| < 0.21 pN)
+#
+# TRANSCRIBED, NOT DERIVED (2026-07-25). Sources, verbatim:
+#   aleph/docs/v2_audit/cell_engine/ROLLING_ROADMAP.md:7
+#     "GATE A (converged static resting baseline, `max|PF| < 0.21` on the full
+#      70,686-filament population) is CLOSED on the clean turgor baseline"
+#   aleph/docs/v2_audit/GATE_A_RESTING_CONVERGENCE_2026-07-23.md §9 (observable change)
+#     and §10 (configuration change + the closure numbers)
+#   aleph/docs/v2_audit/AUDIT_AC_ENGINE_2026-07-25.md findings 6 and 9 (no artifact;
+#     threshold has no derivation and no definition site, ~12 hand-copied literals)
+#
+# THIS CONTRACT IS THE M2 EXHIBIT. GATE A is instance 4 of the recurrence: it closed
+# after BOTH halves moved — the OBSERVABLE (raw max|F| -> projected max|PF|) and the
+# CONFIGURATION (the discrete resting-myosin seed was removed from the static baseline).
+# Both moves are recorded below in `superseded_contract`, and both are logged in
+# contract_changes.yaml under historical_unsigned_changes (which authorises nothing).
+
+contract_version: 1
+gate_id: GATE-A.resting_baseline
+title: "GATE-A: converged static resting baseline on the full native population"
+status: CLAIMED_CLOSED_PI_RATIFICATION_ABSENT
+authored: 2026-07-25
+authored_by: "audit remediation (M2) — transcription pass, no PI ratification claimed"
+enforcement: REPORT_ONLY
+enforcement_reason: >-
+  There is NO machine artifact for this gate anywhere on disk (AUDIT_AC_ENGINE_2026-07-25
+  finding 6: one PNG; the three ensemble numbers 0.1398 / 0.1416 / 0.1586 exist only in
+  prose). A contract cannot be enforced against prose. This stays REPORT_ONLY, and the
+  verifier prints NO_ARTIFACT every run, until a stamped run record is committed — at
+  which point flip to BLOCKING. REPORT_ONLY is a statement about the missing evidence,
+  not a relaxation of the gate.
+contract_hash_declared: "gcv1:aa15a34ae1742239"
+
+provenance:
+  sources:
+    - aleph/docs/v2_audit/cell_engine/ROLLING_ROADMAP.md
+    - aleph/docs/v2_audit/GATE_A_RESTING_CONVERGENCE_2026-07-23.md
+    - aleph/docs/v2_audit/AUDIT_AC_ENGINE_2026-07-25.md
+  harness_on_record: aleph/scripts/ac_gate_a_pf_descent.py
+  closure_declared: 2026-07-24
+  pi_ratification: >-
+    ABSENT. GATE_A_RESTING_CONVERGENCE §10 says the decision is "SURFACED to PI for
+    ratification"; no ratification exists on disk. The roadmap headline nonetheless reads
+    "GATE A CLOSED".
+
+# ----------------------------------------------------------------------------------
+# CONFIGURATION — hashed. This is the half that moved at closure (the myosin seed was
+# dropped), so it is pinned field by field.
+# ----------------------------------------------------------------------------------
+configuration_fixed:
+  runtime: warp_cuda_gpu
+  population:
+    scope: FULL_NATIVE
+    cortical_f_actin_filaments: 70686
+    actin_nodes: 494802
+    cortex_segment_discretization_um: 0.5
+    cortex_filament_length_um: 3.0
+    crosslink_density_per_filament: 20
+    cortex_mesh_note: >-
+      "coarse-grained cortex (mesh ~500 nm, KB-3.18)" per ROLLING_ROADMAP. The fine
+      ~75 nm rung measures 0.28 and does NOT pass this gate (roadmap 2026-07-25).
+  membrane:
+    subdivisions: 8
+    n_membrane_nodes: 655362
+    subdivision_provenance: "grid convergence 6->8 dropped the membrane residual 0.7766 -> 0.0768 (§4.4)"
+  nucleus:
+    mesh_vertices: 642
+    refined: false
+    refinement_note: >-
+      AUDIT_AC_ENGINE finding 6: the closure number 0.1398 is dominated by this
+      UN-refined nucleus block (clean actin max is 0.0356). The membrane was grid-refined
+      for exactly this reason; the nucleus never was.
+  osmotic_turgor:
+    Pi_0_Pa: 40.0
+    provenance: "HeLa proxy (Fischer-Friedrich 2014 HeLa-interphase); MCF7 != HeLa — PI card T1"
+  resting_myosin:
+    state: "OFF — no discrete bound-head seed"
+    changed_at_closure: true
+    change_note: >-
+      THIS IS THE CONFIGURATION CHANGE. Before 2026-07-24 the static baseline carried
+      4,420 discrete resting-bound heads at f_head = 1.5 pN (fraction 0.5). §10 removed
+      them and re-declared the static baseline as the clean turgor-pressurised
+      cortex+membrane+nucleus, deferring resting-myosin tension to GATE B. The reframe is
+      argued from CLAUDE.md's own physiological-baseline rule ("add myosin as a
+      modulator") — defensible on the merits, and still a configuration change between a
+      FAIL and a PASS.
+  ensemble:
+    kind: cortex_construction_seeds
+    n_seeds: 3
+    all_seeds_must_pass: true
+
+configuration_recorded:
+  - field: outer_steps
+    artifact_path: solver.outer_steps
+    note: "30 on record (§10: 0.1606 -> 0.1398 over 30 steps)"
+  - field: harness
+    artifact_path: solver.harness
+    note: >-
+      AUDIT_AC_ENGINE finding 6: produced by a bespoke fixed-iteration descent harness
+      with geometric backtracking and no convergence test — NOT the driver's accepted-step
+      path. Which harness produced a number is contract-relevant and must be recorded.
+  - field: device
+    artifact_path: device
+
+# ----------------------------------------------------------------------------------
+# CLAIMS
+# ----------------------------------------------------------------------------------
+claims:
+  - claim_id: static.max_projected_force_under_gate
+    claim_set: static_convergence
+    verdict_path: verdict.max_abs_PF_under_gate
+    observable:
+      id: max_abs_PF
+      definition: >-
+        max over all mechanical nodes of |PF|, where PF = F - J^T lambda is the
+        CONSTRAINED (projected) net nodal force: an inextensible NF2007 backbone carries a
+        Lagrange-multiplier tension J^T lambda, so constrained equilibrium is PF = 0, not
+        F = 0. Scope: all mechanical nodes (actin cortex + membrane + nucleus blocks).
+      symbol: "max|PF|"
+      units: pN
+      reduction: max_over_all_mechanical_nodes
+      definition_source: "GATE_A_RESTING_CONVERGENCE_2026-07-23.md §9"
+      changed_at_closure: true
+      substitution_watch: >-
+        THIS IS THE OBSERVABLE CHANGE (M2 instance 4, first half). §§2-8 of the source doc
+        measured raw max|F| and reported 7.85 / 5.79 as the blocker; §9 reclassified the
+        metric to max|PF| and ~70-80% of the "blocker" became legitimate backbone Lagrange
+        tension (raw 5.7892 = |J^T lambda| 4.4820 + max|PF| 1.7399). The reclassification
+        is technically correct AND it is a metric change between a FAIL and a PASS. Any
+        further edit to this definition changes the contract hash and needs a PI-signed
+        row. In particular a switch from `max` to a mean/percentile reduction — explicitly
+        floated in §4.4 of the source doc — would be a gate substitution.
+    threshold:
+      comparator: "<"
+      value: 0.21
+      units: pN
+      derivation: NONE_ON_DISK
+      derivation_note: >-
+        AUDIT_AC_ENGINE finding 9, verbatim: "The 0.21 pN gate has no derivation and no
+        definition site — ~12 hand-copied literals." First appearance is
+        RESTING_BASELINE_DIAGNOSIS_2026-07-22c.md:79 as a bare "gate ~= 0.21"; thereafter
+        only as a literal. It appears in no runtime code (the executing convergence
+        criterion is a sqrt(eps)*l triple test), so it is an undeclared REPORTING contract.
+        TRANSCRIBED AS-IS. Not re-derived here — that is a PI decision, not this pass's.
+        UPDATE (same audit-remediation wave, 2026-07-25): a concurrent pass authored
+        GATE_A_THRESHOLD_DERIVATION_2026-07-25.md, which derives 0.21 as the force
+        equivalent of the runtime's own float64 round-off displacement tolerance
+        (10*sqrt(eps64)*ell*kmax = 0.2107 pN at the baseline mesh, 0.34% off the literal)
+        and is explicitly marked "DERIVATION + RECOMMENDATION, nothing changed ...
+        requires PI ratification". So `derivation:` stays NONE_ON_DISK here: it records
+        what the gate is RATIFIED against, and moving it to a real derivation reference is
+        itself a contract change needing a signed row in contract_changes.yaml. Note also
+        that the proposed derivation is MESH-DEPENDENT (ell, kmax), which if ratified makes
+        0.21 a per-configuration quantity rather than one constant — a PI question, not
+        this pass's to settle.
+    measure:
+      kind: scalar
+      path: final.max_abs_PF_pN
+      note: >-
+        No artifact exists to evaluate this against (see enforcement_reason). The measure
+        path is declared now so the first committed run record is checkable on arrival.
+    values_on_record:
+      note: "prose-only, no committed artifact — recorded here for the supersession check"
+      seed_0: 0.1398
+      seed_1: 0.1416
+      seed_2: 0.1586
+      ensemble_max: 0.1586
+
+  - claim_id: static.ensemble_all_seeds_under_gate
+    claim_set: static_convergence
+    verdict_path: verdict.all_seeds_under_gate
+    observable:
+      id: ensemble_max_abs_PF
+      definition: "max of max|PF| across all cortex-construction seeds in the ensemble"
+      units: pN
+      reduction: max_over_seeds
+    threshold: {comparator: "<", value: 0.21, units: pN, derivation: NONE_ON_DISK}
+    measure: {kind: series_max, series: "ensemble[].max_abs_PF_pN"}
+
+# ----------------------------------------------------------------------------------
+# The gate as it stood BEFORE closure. Recorded so the change is machine-visible.
+# ----------------------------------------------------------------------------------
+superseded_contract:
+  observable:
+    id: max_abs_F
+    definition: "max over nodes of the raw (unprojected) net nodal force |F|"
+    units: pN
+    measured_values: {seeded_actin_max: 5.7892, earlier_seeded_max: 7.851}
+  configuration:
+    resting_myosin:
+      state: "SEEDED — 4,420 discrete resting-bound heads"
+      f_head_pN: 1.5
+      bound_fraction: 0.5
+      seed_tension_pN: 6630
+  verdict_then: FAIL
+  verdict_now: PASS
+  both_halves_moved: true
+  ledger_rows: [GC-H0004, GC-H0005]
+
+evidence:
+  artifacts: []
+  artifacts_status: >-
+    ABSENT ON DISK. Only aleph/outputs/ac/gate_a/figs/gate_a_closeout.png exists, and it
+    predates the §10 closure numbers. No npz/json run record carries 0.1398 / 0.1416 /
+    0.1586.
+  figures:
+    - aleph/outputs/ac/gate_a/figs/gate_a_closeout.png
+
+open_to_pi:
+  - "0.21 pN has no derivation and no definition site (~12 hand-copied literals)."
+  - "No committed artifact for the closure; the numbers are prose-only."
+  - "PI ratification of the closure is absent while the roadmap headlines it as CLOSED."
+  - "The closure number is the un-refined 642-vertex nucleus block; the membrane was refined, the nucleus was not."
+  - "The fine ~75 nm discretization rung measures 0.28 and does not pass."

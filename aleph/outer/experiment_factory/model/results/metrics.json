@@ -1,0 +1,3440 @@
+{
+  "authority_status": "proposed",
+  "corpus_only_split_counts": {
+    "test": 787,
+    "train": 3785,
+    "validation": 797
+  },
+  "schema": "aleph.external_training.weak_route_baseline.v1",
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "target": "weak_12_class_discovery_route_only",
+  "unmapped_weak_route_excluded_counts": {
+    "test": 0,
+    "train": 5,
+    "validation": 1
+  },
+  "views": {
+    "metadata": {
+      "active_feature_groups": [
+        "metadata"
+      ],
+      "feature_count_including_intercept": 27,
+      "per_seed": [
+        {
+          "seed": 11,
+          "test": {
+            "balanced_accuracy": 0.3308212359066367,
+            "confusion_matrix": [
+              [
+                10,
+                8,
+                5,
+                5,
+                6,
+                3,
+                3,
+                2,
+                12,
+                6,
+                11,
+                8
+              ],
+              [
+                8,
+                102,
+                2,
+                5,
+                2,
+                17,
+                1,
+                11,
+                12,
+                3,
+                29,
+                2
+              ],
+              [
+                0,
+                1,
+                12,
+                6,
+                0,
+                1,
+                1,
+                1,
+                3,
+                2,
+                8,
+                9
+              ],
+              [
+                1,
+                5,
+                6,
+                15,
+                3,
+                2,
+                4,
+                0,
+                4,
+                5,
+                7,
+                8
+              ],
+              [
+                2,
+                1,
+                8,
+                3,
+                8,
+                1,
+                3,
+                3,
+                5,
+                0,
+                8,
+                8
+              ],
+              [
+                1,
+                6,
+                3,
+                4,
+                1,
+                26,
+                1,
+                1,
+                4,
+                1,
+                3,
+                2
+              ],
+              [
+                0,
+                3,
+                7,
+                4,
+                7,
+                4,
+                24,
+                7,
+                11,
+                4,
+                14,
+                5
+              ],
+              [
+                1,
+                2,
+                0,
+                7,
+                3,
+                9,
+                4,
+                8,
+                4,
+                1,
+                9,
+                6
+              ],
+              [
+                4,
+                6,
+                6,
+                4,
+                1,
+                4,
+                7,
+                3,
+                13,
+                5,
+                4,
+                4
+              ],
+              [
+                2,
+                4,
+                4,
+                3,
+                1,
+                2,
+                0,
+                2,
+                1,
+                4,
+                6,
+                1
+              ],
+              [
+                0,
+                4,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                1,
+                0,
+                2,
+                0,
+                0,
+                4,
+                2,
+                2,
+                2,
+                0,
+                3,
+                30
+              ]
+            ],
+            "ece_10_bin": 0.0406960742320325,
+            "macro_f1": 0.28811308017569687,
+            "micro_f1": 0.3443456162642948,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.18348623853211007,
+                "precision": 0.3333333333333333,
+                "recall": 0.12658227848101267,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6071428571428571,
+                "precision": 0.7183098591549296,
+                "recall": 0.5257731958762887,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.24242424242424243,
+                "precision": 0.21818181818181817,
+                "recall": 0.2727272727272727,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.25862068965517243,
+                "precision": 0.26785714285714285,
+                "recall": 0.25,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.19512195121951217,
+                "precision": 0.25,
+                "recall": 0.16,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.4126984126984127,
+                "precision": 0.3561643835616438,
+                "recall": 0.49056603773584906,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.3380281690140845,
+                "precision": 0.46153846153846156,
+                "recall": 0.26666666666666666,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.1702127659574468,
+                "precision": 0.2,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.196969696969697,
+                "precision": 0.18309859154929578,
+                "recall": 0.21311475409836064,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.12903225806451615,
+                "precision": 0.125,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2585034013605442,
+                "precision": 0.15702479338842976,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.4651162790697674,
+                "precision": 0.3614457831325301,
+                "recall": 0.6521739130434783,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 33,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 68,
+            "validation_macro_f1": 0.2836707009337673
+          }
+        },
+        {
+          "seed": 29,
+          "test": {
+            "balanced_accuracy": 0.32052222397902,
+            "confusion_matrix": [
+              [
+                9,
+                11,
+                6,
+                7,
+                6,
+                3,
+                3,
+                5,
+                9,
+                6,
+                8,
+                6
+              ],
+              [
+                13,
+                106,
+                2,
+                6,
+                4,
+                15,
+                3,
+                10,
+                6,
+                1,
+                27,
+                1
+              ],
+              [
+                0,
+                1,
+                11,
+                5,
+                0,
+                2,
+                2,
+                4,
+                2,
+                0,
+                8,
+                9
+              ],
+              [
+                1,
+                5,
+                7,
+                15,
+                5,
+                2,
+                1,
+                1,
+                4,
+                5,
+                9,
+                5
+              ],
+              [
+                3,
+                1,
+                8,
+                3,
+                7,
+                2,
+                4,
+                3,
+                4,
+                0,
+                8,
+                7
+              ],
+              [
+                1,
+                7,
+                4,
+                4,
+                1,
+                25,
+                1,
+                2,
+                4,
+                0,
+                3,
+                1
+              ],
+              [
+                0,
+                5,
+                6,
+                1,
+                8,
+                4,
+                26,
+                10,
+                9,
+                4,
+                15,
+                2
+              ],
+              [
+                0,
+                3,
+                1,
+                6,
+                3,
+                9,
+                4,
+                11,
+                3,
+                1,
+                9,
+                4
+              ],
+              [
+                5,
+                7,
+                7,
+                4,
+                0,
+                5,
+                7,
+                3,
+                10,
+                5,
+                4,
+                4
+              ],
+              [
+                2,
+                5,
+                4,
+                4,
+                0,
+                1,
+                0,
+                4,
+                0,
+                3,
+                6,
+                1
+              ],
+              [
+                1,
+                3,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                2,
+                19,
+                0
+              ],
+              [
+                1,
+                0,
+                2,
+                1,
+                1,
+                6,
+                2,
+                4,
+                0,
+                0,
+                2,
+                27
+              ]
+            ],
+            "ece_10_bin": 0.053197539650870124,
+            "macro_f1": 0.2819449721839859,
+            "micro_f1": 0.3418043202033037,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.15652173913043477,
+                "precision": 0.25,
+                "recall": 0.11392405063291139,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6091954022988505,
+                "precision": 0.6883116883116883,
+                "recall": 0.5463917525773195,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.2156862745098039,
+                "precision": 0.1896551724137931,
+                "recall": 0.25,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.25862068965517243,
+                "precision": 0.26785714285714285,
+                "recall": 0.25,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.1647058823529412,
+                "precision": 0.2,
+                "recall": 0.14,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.3937007874015748,
+                "precision": 0.33783783783783783,
+                "recall": 0.4716981132075472,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.36111111111111105,
+                "precision": 0.48148148148148145,
+                "recall": 0.28888888888888886,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.1981981981981982,
+                "precision": 0.19298245614035087,
+                "recall": 0.2037037037037037,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.17857142857142855,
+                "precision": 0.19607843137254902,
+                "recall": 0.16393442622950818,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.10526315789473685,
+                "precision": 0.1111111111111111,
+                "recall": 0.1,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.26388888888888884,
+                "precision": 0.16101694915254236,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.47787610619469034,
+                "precision": 0.40298507462686567,
+                "recall": 0.5869565217391305,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 13,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 48,
+            "validation_macro_f1": 0.28531452034361887
+          }
+        },
+        {
+          "seed": 47,
+          "test": {
+            "balanced_accuracy": 0.3180916004811442,
+            "confusion_matrix": [
+              [
+                12,
+                11,
+                3,
+                5,
+                6,
+                2,
+                4,
+                6,
+                9,
+                6,
+                9,
+                6
+              ],
+              [
+                20,
+                105,
+                1,
+                3,
+                3,
+                15,
+                3,
+                10,
+                5,
+                0,
+                28,
+                1
+              ],
+              [
+                0,
+                1,
+                9,
+                5,
+                0,
+                2,
+                2,
+                4,
+                4,
+                0,
+                8,
+                9
+              ],
+              [
+                3,
+                5,
+                5,
+                14,
+                5,
+                2,
+                4,
+                0,
+                5,
+                3,
+                9,
+                5
+              ],
+              [
+                4,
+                1,
+                7,
+                3,
+                7,
+                2,
+                3,
+                3,
+                6,
+                0,
+                8,
+                6
+              ],
+              [
+                1,
+                7,
+                3,
+                4,
+                1,
+                24,
+                1,
+                4,
+                3,
+                0,
+                3,
+                2
+              ],
+              [
+                0,
+                4,
+                1,
+                2,
+                8,
+                4,
+                28,
+                13,
+                10,
+                3,
+                16,
+                1
+              ],
+              [
+                1,
+                4,
+                0,
+                6,
+                3,
+                8,
+                4,
+                12,
+                3,
+                1,
+                9,
+                3
+              ],
+              [
+                8,
+                5,
+                4,
+                5,
+                0,
+                4,
+                9,
+                4,
+                10,
+                4,
+                4,
+                4
+              ],
+              [
+                2,
+                5,
+                5,
+                3,
+                0,
+                1,
+                0,
+                4,
+                0,
+                3,
+                6,
+                1
+              ],
+              [
+                2,
+                3,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                1,
+                1,
+                2,
+                0,
+                1,
+                7,
+                2,
+                4,
+                0,
+                0,
+                2,
+                26
+              ]
+            ],
+            "ece_10_bin": 0.037316265680681526,
+            "macro_f1": 0.2837937031142909,
+            "micro_f1": 0.3418043202033037,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.18045112781954883,
+                "precision": 0.2222222222222222,
+                "recall": 0.1518987341772152,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6069364161849711,
+                "precision": 0.6907894736842105,
+                "recall": 0.5412371134020618,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.2142857142857143,
+                "precision": 0.225,
+                "recall": 0.20454545454545456,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2545454545454545,
+                "precision": 0.28,
+                "recall": 0.23333333333333334,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.16666666666666666,
+                "precision": 0.20588235294117646,
+                "recall": 0.14,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.3870967741935484,
+                "precision": 0.3380281690140845,
+                "recall": 0.4528301886792453,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.3708609271523179,
+                "precision": 0.45901639344262296,
+                "recall": 0.3111111111111111,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.20338983050847456,
+                "precision": 0.1875,
+                "recall": 0.2222222222222222,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.17241379310344826,
+                "precision": 0.18181818181818182,
+                "recall": 0.16393442622950818,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.11764705882352941,
+                "precision": 0.14285714285714285,
+                "recall": 0.1,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2585034013605442,
+                "precision": 0.15702479338842976,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.4727272727272727,
+                "precision": 0.40625,
+                "recall": 0.5652173913043478,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 10,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 45,
+            "validation_macro_f1": 0.28466842289061944
+          }
+        }
+      ],
+      "test_aggregate": {
+        "balanced_accuracy": {
+          "max": 0.3308212359066367,
+          "mean": 0.323145020122267,
+          "min": 0.3180916004811442,
+          "std": 0.0055178618578371865
+        },
+        "ece_10_bin": {
+          "max": 0.053197539650870124,
+          "mean": 0.04373662652119472,
+          "min": 0.037316265680681526,
+          "std": 0.006830687344447588
+        },
+        "macro_f1": {
+          "max": 0.28811308017569687,
+          "mean": 0.2846172518246579,
+          "min": 0.2819449721839859,
+          "std": 0.0025845777744295116
+        },
+        "micro_f1": {
+          "max": 0.3443456162642948,
+          "mean": 0.3426514188903007,
+          "min": 0.3418043202033037,
+          "std": 0.0011979784518196326
+        }
+      }
+    },
+    "metadata_numeric": {
+      "active_feature_groups": [
+        "metadata",
+        "numeric"
+      ],
+      "feature_count_including_intercept": 45,
+      "per_seed": [
+        {
+          "seed": 11,
+          "test": {
+            "balanced_accuracy": 0.34853766933037106,
+            "confusion_matrix": [
+              [
+                14,
+                7,
+                2,
+                6,
+                5,
+                3,
+                3,
+                5,
+                11,
+                4,
+                10,
+                9
+              ],
+              [
+                3,
+                108,
+                3,
+                0,
+                5,
+                13,
+                5,
+                5,
+                9,
+                6,
+                34,
+                3
+              ],
+              [
+                0,
+                0,
+                14,
+                6,
+                0,
+                0,
+                1,
+                3,
+                2,
+                3,
+                8,
+                7
+              ],
+              [
+                1,
+                3,
+                14,
+                11,
+                5,
+                3,
+                2,
+                2,
+                5,
+                4,
+                6,
+                4
+              ],
+              [
+                0,
+                1,
+                2,
+                6,
+                13,
+                3,
+                2,
+                2,
+                6,
+                0,
+                8,
+                7
+              ],
+              [
+                1,
+                5,
+                3,
+                2,
+                3,
+                24,
+                1,
+                2,
+                4,
+                1,
+                5,
+                2
+              ],
+              [
+                0,
+                3,
+                5,
+                5,
+                9,
+                5,
+                27,
+                6,
+                9,
+                3,
+                14,
+                4
+              ],
+              [
+                5,
+                0,
+                3,
+                3,
+                4,
+                6,
+                2,
+                9,
+                4,
+                4,
+                9,
+                5
+              ],
+              [
+                5,
+                5,
+                4,
+                7,
+                1,
+                5,
+                4,
+                4,
+                14,
+                4,
+                5,
+                3
+              ],
+              [
+                1,
+                3,
+                4,
+                3,
+                2,
+                1,
+                0,
+                2,
+                1,
+                4,
+                8,
+                1
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0,
+                1,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                2,
+                1,
+                3,
+                1,
+                0,
+                2,
+                2,
+                3,
+                31
+              ]
+            ],
+            "ece_10_bin": 0.03480935510657755,
+            "macro_f1": 0.31045329184061293,
+            "micro_f1": 0.36594663278271916,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.25688073394495414,
+                "precision": 0.4666666666666667,
+                "recall": 0.17721518987341772,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6525679758308157,
+                "precision": 0.7883211678832117,
+                "recall": 0.5567010309278351,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.2828282828282828,
+                "precision": 0.2545454545454545,
+                "recall": 0.3181818181818182,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.19819819819819817,
+                "precision": 0.21568627450980393,
+                "recall": 0.18333333333333332,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.26,
+                "precision": 0.26,
+                "recall": 0.26,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.40336134453781514,
+                "precision": 0.36363636363636365,
+                "recall": 0.4528301886792453,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.3884892086330935,
+                "precision": 0.5510204081632653,
+                "recall": 0.3,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.19148936170212766,
+                "precision": 0.225,
+                "recall": 0.16666666666666666,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.2170542635658915,
+                "precision": 0.20588235294117646,
+                "recall": 0.22950819672131148,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.1212121212121212,
+                "precision": 0.1111111111111111,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.24516129032258066,
+                "precision": 0.14728682170542637,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5081967213114754,
+                "precision": 0.40789473684210525,
+                "recall": 0.6739130434782609,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 20,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 55,
+            "validation_macro_f1": 0.2990697924957477
+          }
+        },
+        {
+          "seed": 29,
+          "test": {
+            "balanced_accuracy": 0.34856911584441014,
+            "confusion_matrix": [
+              [
+                14,
+                6,
+                2,
+                7,
+                5,
+                3,
+                3,
+                5,
+                11,
+                4,
+                10,
+                9
+              ],
+              [
+                3,
+                109,
+                3,
+                0,
+                6,
+                12,
+                6,
+                4,
+                8,
+                6,
+                34,
+                3
+              ],
+              [
+                0,
+                0,
+                15,
+                5,
+                0,
+                0,
+                1,
+                3,
+                2,
+                3,
+                8,
+                7
+              ],
+              [
+                1,
+                3,
+                14,
+                11,
+                6,
+                3,
+                3,
+                0,
+                4,
+                5,
+                6,
+                4
+              ],
+              [
+                1,
+                1,
+                3,
+                5,
+                13,
+                3,
+                1,
+                2,
+                5,
+                0,
+                8,
+                8
+              ],
+              [
+                1,
+                5,
+                3,
+                2,
+                3,
+                24,
+                1,
+                2,
+                4,
+                1,
+                5,
+                2
+              ],
+              [
+                0,
+                3,
+                4,
+                5,
+                8,
+                5,
+                26,
+                5,
+                11,
+                4,
+                14,
+                5
+              ],
+              [
+                5,
+                0,
+                3,
+                3,
+                4,
+                5,
+                2,
+                9,
+                4,
+                5,
+                9,
+                5
+              ],
+              [
+                5,
+                5,
+                4,
+                7,
+                1,
+                5,
+                4,
+                4,
+                13,
+                5,
+                5,
+                3
+              ],
+              [
+                1,
+                3,
+                3,
+                3,
+                3,
+                1,
+                0,
+                2,
+                1,
+                4,
+                8,
+                1
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0,
+                1,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                2,
+                1,
+                3,
+                1,
+                0,
+                2,
+                2,
+                3,
+                31
+              ]
+            ],
+            "ece_10_bin": 0.028353838723359795,
+            "macro_f1": 0.3099680445001149,
+            "micro_f1": 0.36594663278271916,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.2545454545454546,
+                "precision": 0.45161290322580644,
+                "recall": 0.17721518987341772,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6586102719033232,
+                "precision": 0.7956204379562044,
+                "recall": 0.5618556701030928,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.30303030303030304,
+                "precision": 0.2727272727272727,
+                "recall": 0.3409090909090909,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2,
+                "precision": 0.22,
+                "recall": 0.18333333333333332,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.2549019607843137,
+                "precision": 0.25,
+                "recall": 0.26,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.4102564102564103,
+                "precision": 0.375,
+                "recall": 0.4528301886792453,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.3741007194244604,
+                "precision": 0.5306122448979592,
+                "recall": 0.28888888888888886,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.2,
+                "precision": 0.25,
+                "recall": 0.16666666666666666,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.20472440944881892,
+                "precision": 0.19696969696969696,
+                "recall": 0.21311475409836064,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.1142857142857143,
+                "precision": 0.1,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.24516129032258066,
+                "precision": 0.14728682170542637,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5,
+                "precision": 0.3974358974358974,
+                "recall": 0.6739130434782609,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 20,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 55,
+            "validation_macro_f1": 0.29985135018260556
+          }
+        },
+        {
+          "seed": 47,
+          "test": {
+            "balanced_accuracy": 0.3445734869145735,
+            "confusion_matrix": [
+              [
+                13,
+                8,
+                2,
+                5,
+                4,
+                3,
+                3,
+                4,
+                14,
+                3,
+                11,
+                9
+              ],
+              [
+                4,
+                108,
+                4,
+                1,
+                4,
+                12,
+                6,
+                4,
+                8,
+                6,
+                34,
+                3
+              ],
+              [
+                0,
+                0,
+                14,
+                6,
+                0,
+                0,
+                1,
+                3,
+                2,
+                3,
+                8,
+                7
+              ],
+              [
+                1,
+                3,
+                15,
+                11,
+                5,
+                3,
+                3,
+                1,
+                4,
+                4,
+                6,
+                4
+              ],
+              [
+                0,
+                1,
+                2,
+                5,
+                13,
+                3,
+                2,
+                2,
+                6,
+                0,
+                8,
+                8
+              ],
+              [
+                1,
+                5,
+                2,
+                2,
+                3,
+                24,
+                1,
+                2,
+                4,
+                1,
+                5,
+                3
+              ],
+              [
+                0,
+                3,
+                5,
+                5,
+                7,
+                5,
+                27,
+                6,
+                10,
+                2,
+                14,
+                6
+              ],
+              [
+                5,
+                0,
+                4,
+                3,
+                3,
+                5,
+                3,
+                8,
+                4,
+                5,
+                9,
+                5
+              ],
+              [
+                5,
+                5,
+                4,
+                7,
+                1,
+                5,
+                4,
+                4,
+                13,
+                5,
+                5,
+                3
+              ],
+              [
+                1,
+                3,
+                4,
+                3,
+                2,
+                1,
+                0,
+                2,
+                1,
+                4,
+                8,
+                1
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0,
+                1,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                2,
+                1,
+                3,
+                1,
+                0,
+                2,
+                2,
+                3,
+                31
+              ]
+            ],
+            "ece_10_bin": 0.029393712432215897,
+            "macro_f1": 0.30543564067244006,
+            "micro_f1": 0.36213468869123255,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.23853211009174313,
+                "precision": 0.43333333333333335,
+                "recall": 0.16455696202531644,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6506024096385542,
+                "precision": 0.782608695652174,
+                "recall": 0.5567010309278351,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.2772277227722772,
+                "precision": 0.24561403508771928,
+                "recall": 0.3181818181818182,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2,
+                "precision": 0.22,
+                "recall": 0.18333333333333332,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.27368421052631575,
+                "precision": 0.28888888888888886,
+                "recall": 0.26,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.4102564102564103,
+                "precision": 0.375,
+                "recall": 0.4528301886792453,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.38028169014084506,
+                "precision": 0.5192307692307693,
+                "recall": 0.3,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.17777777777777776,
+                "precision": 0.2222222222222222,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.2,
+                "precision": 0.18840579710144928,
+                "recall": 0.21311475409836064,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.1212121212121212,
+                "precision": 0.1111111111111111,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.24358974358974358,
+                "precision": 0.14615384615384616,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.4920634920634921,
+                "precision": 0.3875,
+                "recall": 0.6739130434782609,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 21,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 56,
+            "validation_macro_f1": 0.30017766686886554
+          }
+        }
+      ],
+      "test_aggregate": {
+        "balanced_accuracy": {
+          "max": 0.34856911584441014,
+          "mean": 0.34722675736311825,
+          "min": 0.3445734869145735,
+          "std": 0.001876189449505183
+        },
+        "ece_10_bin": {
+          "max": 0.03480935510657755,
+          "mean": 0.030852302087384414,
+          "min": 0.028353838723359795,
+          "std": 0.002830080773891054
+        },
+        "macro_f1": {
+          "max": 0.31045329184061293,
+          "mean": 0.30861899233772266,
+          "min": 0.30543564067244006,
+          "std": 0.002259669904212869
+        },
+        "micro_f1": {
+          "max": 0.36594663278271916,
+          "mean": 0.3646759847522236,
+          "min": 0.36213468869123255,
+          "std": 0.001796967677729449
+        }
+      }
+    },
+    "metadata_numeric_visual": {
+      "active_feature_groups": [
+        "metadata",
+        "numeric",
+        "visual"
+      ],
+      "feature_count_including_intercept": 60,
+      "per_seed": [
+        {
+          "seed": 11,
+          "test": {
+            "balanced_accuracy": 0.3537121478684612,
+            "confusion_matrix": [
+              [
+                16,
+                6,
+                2,
+                9,
+                3,
+                4,
+                5,
+                4,
+                8,
+                4,
+                11,
+                7
+              ],
+              [
+                11,
+                108,
+                0,
+                1,
+                3,
+                17,
+                8,
+                5,
+                6,
+                4,
+                29,
+                2
+              ],
+              [
+                1,
+                0,
+                16,
+                5,
+                3,
+                0,
+                0,
+                2,
+                4,
+                2,
+                6,
+                5
+              ],
+              [
+                2,
+                1,
+                10,
+                10,
+                6,
+                3,
+                4,
+                2,
+                6,
+                3,
+                8,
+                5
+              ],
+              [
+                1,
+                1,
+                7,
+                3,
+                12,
+                3,
+                2,
+                2,
+                5,
+                0,
+                8,
+                6
+              ],
+              [
+                1,
+                7,
+                3,
+                1,
+                4,
+                22,
+                2,
+                3,
+                2,
+                2,
+                5,
+                1
+              ],
+              [
+                3,
+                5,
+                4,
+                1,
+                7,
+                3,
+                32,
+                6,
+                8,
+                7,
+                9,
+                5
+              ],
+              [
+                4,
+                2,
+                3,
+                3,
+                4,
+                6,
+                1,
+                11,
+                4,
+                2,
+                9,
+                5
+              ],
+              [
+                7,
+                3,
+                5,
+                8,
+                2,
+                5,
+                4,
+                3,
+                14,
+                5,
+                3,
+                2
+              ],
+              [
+                2,
+                2,
+                3,
+                2,
+                2,
+                2,
+                1,
+                2,
+                2,
+                5,
+                6,
+                1
+              ],
+              [
+                0,
+                3,
+                0,
+                0,
+                2,
+                0,
+                2,
+                0,
+                0,
+                1,
+                18,
+                0
+              ],
+              [
+                0,
+                0,
+                2,
+                2,
+                2,
+                4,
+                1,
+                1,
+                1,
+                1,
+                2,
+                30
+              ]
+            ],
+            "ece_10_bin": 0.02687784980443435,
+            "macro_f1": 0.3192807368089033,
+            "micro_f1": 0.3735705209656925,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.25196850393700787,
+                "precision": 0.3333333333333333,
+                "recall": 0.20253164556962025,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6506024096385542,
+                "precision": 0.782608695652174,
+                "recall": 0.5567010309278351,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.3232323232323232,
+                "precision": 0.2909090909090909,
+                "recall": 0.36363636363636365,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.1904761904761905,
+                "precision": 0.2222222222222222,
+                "recall": 0.16666666666666666,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.24,
+                "precision": 0.24,
+                "recall": 0.24,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.36065573770491804,
+                "precision": 0.3188405797101449,
+                "recall": 0.41509433962264153,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.42105263157894735,
+                "precision": 0.5161290322580645,
+                "recall": 0.35555555555555557,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.23157894736842105,
+                "precision": 0.2682926829268293,
+                "recall": 0.2037037037037037,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.23140495867768598,
+                "precision": 0.23333333333333334,
+                "recall": 0.22950819672131148,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.1515151515151515,
+                "precision": 0.1388888888888889,
+                "recall": 0.16666666666666666,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2571428571428571,
+                "precision": 0.15789473684210525,
+                "recall": 0.6923076923076923,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5217391304347826,
+                "precision": 0.43478260869565216,
+                "recall": 0.6521739130434783,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 18,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 53,
+            "validation_macro_f1": 0.3174529778305956
+          }
+        },
+        {
+          "seed": 29,
+          "test": {
+            "balanced_accuracy": 0.34807686963395607,
+            "confusion_matrix": [
+              [
+                21,
+                6,
+                2,
+                4,
+                3,
+                4,
+                5,
+                3,
+                8,
+                4,
+                12,
+                7
+              ],
+              [
+                5,
+                108,
+                0,
+                1,
+                5,
+                16,
+                9,
+                4,
+                7,
+                4,
+                32,
+                3
+              ],
+              [
+                0,
+                0,
+                14,
+                9,
+                2,
+                0,
+                0,
+                2,
+                4,
+                1,
+                5,
+                7
+              ],
+              [
+                2,
+                2,
+                8,
+                11,
+                9,
+                3,
+                3,
+                0,
+                3,
+                4,
+                6,
+                9
+              ],
+              [
+                2,
+                1,
+                5,
+                5,
+                10,
+                3,
+                1,
+                4,
+                3,
+                0,
+                7,
+                9
+              ],
+              [
+                1,
+                9,
+                3,
+                1,
+                5,
+                17,
+                4,
+                4,
+                1,
+                2,
+                4,
+                2
+              ],
+              [
+                3,
+                3,
+                4,
+                2,
+                7,
+                6,
+                34,
+                7,
+                7,
+                4,
+                8,
+                5
+              ],
+              [
+                6,
+                2,
+                2,
+                3,
+                3,
+                8,
+                3,
+                8,
+                3,
+                2,
+                10,
+                4
+              ],
+              [
+                7,
+                4,
+                4,
+                7,
+                3,
+                6,
+                6,
+                2,
+                13,
+                5,
+                2,
+                2
+              ],
+              [
+                1,
+                2,
+                3,
+                1,
+                4,
+                3,
+                1,
+                1,
+                2,
+                5,
+                6,
+                1
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0,
+                2,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                2,
+                1,
+                4,
+                1,
+                1,
+                1,
+                1,
+                2,
+                32
+              ]
+            ],
+            "ece_10_bin": 0.04226843630303463,
+            "macro_f1": 0.3115278115349819,
+            "micro_f1": 0.3710292249047014,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.3307086614173228,
+                "precision": 0.4375,
+                "recall": 0.26582278481012656,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6486486486486487,
+                "precision": 0.7769784172661871,
+                "recall": 0.5567010309278351,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.31111111111111117,
+                "precision": 0.30434782608695654,
+                "recall": 0.3181818181818182,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.20754716981132076,
+                "precision": 0.2391304347826087,
+                "recall": 0.18333333333333332,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.1923076923076923,
+                "precision": 0.18518518518518517,
+                "recall": 0.2,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.2764227642276423,
+                "precision": 0.24285714285714285,
+                "recall": 0.32075471698113206,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.4276729559748428,
+                "precision": 0.4927536231884058,
+                "recall": 0.37777777777777777,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.17777777777777776,
+                "precision": 0.2222222222222222,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.2300884955752212,
+                "precision": 0.25,
+                "recall": 0.21311475409836064,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.15873015873015872,
+                "precision": 0.15151515151515152,
+                "recall": 0.16666666666666666,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2733812949640288,
+                "precision": 0.168141592920354,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5039370078740157,
+                "precision": 0.3950617283950617,
+                "recall": 0.6956521739130435,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 26,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 61,
+            "validation_macro_f1": 0.318053796470993
+          }
+        },
+        {
+          "seed": 47,
+          "test": {
+            "balanced_accuracy": 0.3558011991068987,
+            "confusion_matrix": [
+              [
+                17,
+                7,
+                2,
+                6,
+                3,
+                4,
+                5,
+                3,
+                9,
+                4,
+                12,
+                7
+              ],
+              [
+                6,
+                112,
+                0,
+                1,
+                3,
+                18,
+                10,
+                4,
+                5,
+                4,
+                28,
+                3
+              ],
+              [
+                0,
+                0,
+                15,
+                9,
+                2,
+                0,
+                0,
+                2,
+                3,
+                1,
+                6,
+                6
+              ],
+              [
+                2,
+                2,
+                9,
+                12,
+                8,
+                3,
+                3,
+                0,
+                3,
+                4,
+                6,
+                8
+              ],
+              [
+                2,
+                1,
+                3,
+                5,
+                11,
+                3,
+                2,
+                3,
+                3,
+                0,
+                8,
+                9
+              ],
+              [
+                1,
+                9,
+                3,
+                1,
+                5,
+                18,
+                4,
+                4,
+                0,
+                2,
+                4,
+                2
+              ],
+              [
+                3,
+                3,
+                4,
+                2,
+                4,
+                6,
+                35,
+                7,
+                7,
+                4,
+                11,
+                4
+              ],
+              [
+                6,
+                2,
+                2,
+                3,
+                3,
+                8,
+                3,
+                8,
+                3,
+                2,
+                10,
+                4
+              ],
+              [
+                6,
+                5,
+                4,
+                7,
+                3,
+                6,
+                7,
+                2,
+                13,
+                4,
+                2,
+                2
+              ],
+              [
+                1,
+                2,
+                2,
+                2,
+                2,
+                3,
+                1,
+                1,
+                3,
+                6,
+                6,
+                1
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0,
+                2,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                2,
+                1,
+                4,
+                1,
+                1,
+                1,
+                1,
+                2,
+                32
+              ]
+            ],
+            "ece_10_bin": 0.047295533073471584,
+            "macro_f1": 0.3188716472690892,
+            "micro_f1": 0.3786531130876747,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.2764227642276422,
+                "precision": 0.38636363636363635,
+                "recall": 0.21518987341772153,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6607669616519174,
+                "precision": 0.7724137931034483,
+                "recall": 0.5773195876288659,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.33707865168539325,
+                "precision": 0.3333333333333333,
+                "recall": 0.3409090909090909,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2181818181818182,
+                "precision": 0.24,
+                "recall": 0.2,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.2268041237113402,
+                "precision": 0.23404255319148937,
+                "recall": 0.22,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.2857142857142857,
+                "precision": 0.2465753424657534,
+                "recall": 0.33962264150943394,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.42944785276073616,
+                "precision": 0.4794520547945205,
+                "recall": 0.3888888888888889,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.1797752808988764,
+                "precision": 0.22857142857142856,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.2342342342342342,
+                "precision": 0.26,
+                "recall": 0.21311475409836064,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.1904761904761905,
+                "precision": 0.18181818181818182,
+                "recall": 0.2,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2714285714285714,
+                "precision": 0.16666666666666666,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5161290322580646,
+                "precision": 0.41025641025641024,
+                "recall": 0.6956521739130435,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 27,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 62,
+            "validation_macro_f1": 0.31906464362375303
+          }
+        }
+      ],
+      "test_aggregate": {
+        "balanced_accuracy": {
+          "max": 0.3558011991068987,
+          "mean": 0.35253007220310534,
+          "min": 0.34807686963395607,
+          "std": 0.003262340020150421
+        },
+        "ece_10_bin": {
+          "max": 0.047295533073471584,
+          "mean": 0.03881393972698019,
+          "min": 0.02687784980443435,
+          "std": 0.008686027379807934
+        },
+        "macro_f1": {
+          "max": 0.3192807368089033,
+          "mean": 0.3165600652043248,
+          "min": 0.3115278115349819,
+          "std": 0.0035622578333932777
+        },
+        "micro_f1": {
+          "max": 0.3786531130876747,
+          "mean": 0.37441761965268955,
+          "min": 0.3710292249047014,
+          "std": 0.0031695530595289463
+        }
+      }
+    },
+    "metadata_numeric_visual_dataset": {
+      "active_feature_groups": [
+        "metadata",
+        "numeric",
+        "visual",
+        "dataset"
+      ],
+      "feature_count_including_intercept": 81,
+      "per_seed": [
+        {
+          "seed": 11,
+          "test": {
+            "balanced_accuracy": 0.3537994931322899,
+            "confusion_matrix": [
+              [
+                18,
+                6,
+                2,
+                4,
+                3,
+                5,
+                4,
+                3,
+                7,
+                5,
+                14,
+                8
+              ],
+              [
+                4,
+                108,
+                0,
+                3,
+                3,
+                16,
+                11,
+                5,
+                6,
+                6,
+                29,
+                3
+              ],
+              [
+                0,
+                0,
+                14,
+                7,
+                2,
+                0,
+                2,
+                2,
+                2,
+                3,
+                6,
+                6
+              ],
+              [
+                3,
+                3,
+                12,
+                11,
+                6,
+                2,
+                3,
+                0,
+                3,
+                4,
+                6,
+                7
+              ],
+              [
+                2,
+                1,
+                6,
+                3,
+                11,
+                3,
+                2,
+                2,
+                4,
+                2,
+                7,
+                7
+              ],
+              [
+                1,
+                6,
+                3,
+                1,
+                4,
+                21,
+                4,
+                5,
+                0,
+                1,
+                5,
+                2
+              ],
+              [
+                3,
+                5,
+                4,
+                1,
+                5,
+                4,
+                39,
+                7,
+                5,
+                3,
+                10,
+                4
+              ],
+              [
+                6,
+                2,
+                2,
+                3,
+                3,
+                7,
+                2,
+                8,
+                2,
+                5,
+                10,
+                4
+              ],
+              [
+                8,
+                5,
+                4,
+                6,
+                3,
+                5,
+                8,
+                2,
+                11,
+                3,
+                3,
+                3
+              ],
+              [
+                1,
+                4,
+                2,
+                2,
+                0,
+                5,
+                0,
+                1,
+                3,
+                4,
+                8,
+                0
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                3,
+                0,
+                1,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                2,
+                1,
+                3,
+                1,
+                1,
+                1,
+                0,
+                3,
+                33
+              ]
+            ],
+            "ece_10_bin": 0.045591348670568924,
+            "macro_f1": 0.31547531049994276,
+            "micro_f1": 0.37738246505717915,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.288,
+                "precision": 0.391304347826087,
+                "recall": 0.22784810126582278,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6428571428571428,
+                "precision": 0.7605633802816901,
+                "recall": 0.5567010309278351,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.29787234042553196,
+                "precision": 0.28,
+                "recall": 0.3181818181818182,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2135922330097087,
+                "precision": 0.2558139534883721,
+                "recall": 0.18333333333333332,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.23404255319148937,
+                "precision": 0.25,
+                "recall": 0.22,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.33870967741935487,
+                "precision": 0.29577464788732394,
+                "recall": 0.39622641509433965,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.46706586826347307,
+                "precision": 0.5064935064935064,
+                "recall": 0.43333333333333335,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.17777777777777776,
+                "precision": 0.2222222222222222,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.20952380952380953,
+                "precision": 0.25,
+                "recall": 0.18032786885245902,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.11940298507462686,
+                "precision": 0.10810810810810811,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2602739726027397,
+                "precision": 0.15833333333333333,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5365853658536586,
+                "precision": 0.42857142857142855,
+                "recall": 0.717391304347826,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 34,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 69,
+            "validation_macro_f1": 0.3110531446498473
+          }
+        },
+        {
+          "seed": 29,
+          "test": {
+            "balanced_accuracy": 0.35303515601242075,
+            "confusion_matrix": [
+              [
+                17,
+                5,
+                2,
+                5,
+                3,
+                4,
+                4,
+                3,
+                9,
+                5,
+                14,
+                8
+              ],
+              [
+                4,
+                106,
+                1,
+                3,
+                3,
+                18,
+                10,
+                6,
+                6,
+                6,
+                29,
+                2
+              ],
+              [
+                0,
+                0,
+                14,
+                8,
+                2,
+                0,
+                2,
+                2,
+                2,
+                2,
+                6,
+                6
+              ],
+              [
+                3,
+                2,
+                11,
+                12,
+                7,
+                2,
+                3,
+                0,
+                3,
+                4,
+                7,
+                6
+              ],
+              [
+                2,
+                1,
+                5,
+                5,
+                11,
+                3,
+                2,
+                2,
+                4,
+                1,
+                7,
+                7
+              ],
+              [
+                2,
+                4,
+                3,
+                1,
+                4,
+                22,
+                4,
+                5,
+                0,
+                1,
+                5,
+                2
+              ],
+              [
+                3,
+                4,
+                5,
+                1,
+                4,
+                4,
+                39,
+                7,
+                6,
+                3,
+                10,
+                4
+              ],
+              [
+                5,
+                2,
+                4,
+                3,
+                2,
+                8,
+                2,
+                8,
+                2,
+                4,
+                10,
+                4
+              ],
+              [
+                7,
+                4,
+                4,
+                8,
+                3,
+                4,
+                8,
+                2,
+                11,
+                4,
+                3,
+                3
+              ],
+              [
+                1,
+                4,
+                2,
+                1,
+                1,
+                5,
+                0,
+                1,
+                3,
+                4,
+                8,
+                0
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                3,
+                0,
+                1,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                3,
+                1,
+                4,
+                1,
+                1,
+                1,
+                0,
+                3,
+                32
+              ]
+            ],
+            "ece_10_bin": 0.05323548089687966,
+            "macro_f1": 0.3150419324504335,
+            "micro_f1": 0.3748411689961881,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.2764227642276422,
+                "precision": 0.38636363636363635,
+                "recall": 0.21518987341772153,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.646341463414634,
+                "precision": 0.7910447761194029,
+                "recall": 0.5463917525773195,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.2947368421052632,
+                "precision": 0.27450980392156865,
+                "recall": 0.3181818181818182,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2181818181818182,
+                "precision": 0.24,
+                "recall": 0.2,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.23404255319148937,
+                "precision": 0.25,
+                "recall": 0.22,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.3464566929133859,
+                "precision": 0.2972972972972973,
+                "recall": 0.41509433962264153,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.46987951807228917,
+                "precision": 0.5131578947368421,
+                "recall": 0.43333333333333335,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.1758241758241758,
+                "precision": 0.21621621621621623,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.20370370370370372,
+                "precision": 0.23404255319148937,
+                "recall": 0.18032786885245902,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.12307692307692307,
+                "precision": 0.11428571428571428,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.2585034013605442,
+                "precision": 0.15702479338842976,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5333333333333333,
+                "precision": 0.43243243243243246,
+                "recall": 0.6956521739130435,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 32,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 67,
+            "validation_macro_f1": 0.31278847040204455
+          }
+        },
+        {
+          "seed": 47,
+          "test": {
+            "balanced_accuracy": 0.352155595135933,
+            "confusion_matrix": [
+              [
+                18,
+                6,
+                2,
+                4,
+                3,
+                5,
+                4,
+                4,
+                7,
+                5,
+                13,
+                8
+              ],
+              [
+                4,
+                108,
+                1,
+                2,
+                3,
+                16,
+                11,
+                5,
+                6,
+                6,
+                29,
+                3
+              ],
+              [
+                0,
+                0,
+                14,
+                7,
+                2,
+                0,
+                2,
+                2,
+                2,
+                3,
+                6,
+                6
+              ],
+              [
+                3,
+                3,
+                11,
+                12,
+                6,
+                2,
+                3,
+                0,
+                4,
+                4,
+                6,
+                6
+              ],
+              [
+                2,
+                1,
+                7,
+                4,
+                10,
+                3,
+                2,
+                2,
+                4,
+                1,
+                7,
+                7
+              ],
+              [
+                1,
+                6,
+                3,
+                1,
+                4,
+                21,
+                4,
+                5,
+                0,
+                1,
+                5,
+                2
+              ],
+              [
+                3,
+                4,
+                5,
+                1,
+                4,
+                4,
+                39,
+                7,
+                6,
+                3,
+                10,
+                4
+              ],
+              [
+                5,
+                2,
+                2,
+                3,
+                3,
+                8,
+                2,
+                8,
+                3,
+                4,
+                10,
+                4
+              ],
+              [
+                7,
+                5,
+                5,
+                7,
+                3,
+                4,
+                8,
+                2,
+                10,
+                4,
+                3,
+                3
+              ],
+              [
+                1,
+                4,
+                2,
+                1,
+                1,
+                5,
+                0,
+                1,
+                3,
+                4,
+                8,
+                0
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                3,
+                0,
+                1,
+                0,
+                0,
+                1,
+                19,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                3,
+                1,
+                3,
+                1,
+                1,
+                1,
+                0,
+                3,
+                33
+              ]
+            ],
+            "ece_10_bin": 0.04878371749235574,
+            "macro_f1": 0.31379426729628496,
+            "micro_f1": 0.3761118170266836,
+            "per_class": {
+              "adhesion_ecm_mechanics": {
+                "f1": 0.29268292682926833,
+                "precision": 0.4090909090909091,
+                "recall": 0.22784810126582278,
+                "support": 79
+              },
+              "cell_state_mechanics": {
+                "f1": 0.6447761194029851,
+                "precision": 0.7659574468085106,
+                "recall": 0.5567010309278351,
+                "support": 194
+              },
+              "cortical_membrane_pressure": {
+                "f1": 0.2916666666666667,
+                "precision": 0.2692307692307692,
+                "recall": 0.3181818181818182,
+                "support": 44
+              },
+              "cytoskeleton_motor_rheology": {
+                "f1": 0.2285714285714286,
+                "precision": 0.26666666666666666,
+                "recall": 0.2,
+                "support": 60
+              },
+              "division_morphogenesis_tissue": {
+                "f1": 0.2150537634408602,
+                "precision": 0.23255813953488372,
+                "recall": 0.2,
+                "support": 50
+              },
+              "flow_shear": {
+                "f1": 0.33870967741935487,
+                "precision": 0.29577464788732394,
+                "recall": 0.39622641509433965,
+                "support": 53
+              },
+              "measurement_inference": {
+                "f1": 0.46706586826347307,
+                "precision": 0.5064935064935064,
+                "recall": 0.43333333333333335,
+                "support": 90
+              },
+              "mechanotransduction": {
+                "f1": 0.1758241758241758,
+                "precision": 0.21621621621621623,
+                "recall": 0.14814814814814814,
+                "support": 54
+              },
+              "migration_invasion": {
+                "f1": 0.18691588785046728,
+                "precision": 0.21739130434782608,
+                "recall": 0.16393442622950818,
+                "support": 61
+              },
+              "nuclear_mechanics": {
+                "f1": 0.1212121212121212,
+                "precision": 0.1111111111111111,
+                "recall": 0.13333333333333333,
+                "support": 30
+              },
+              "organelle_general_mechanics": {
+                "f1": 0.26206896551724135,
+                "precision": 0.15966386554621848,
+                "recall": 0.7307692307692307,
+                "support": 26
+              },
+              "osmotic_volume_poroelasticity": {
+                "f1": 0.5409836065573771,
+                "precision": 0.4342105263157895,
+                "recall": 0.717391304347826,
+                "support": 46
+              }
+            },
+            "support": 787
+          },
+          "training": {
+            "best_epoch": 34,
+            "class_weights": {
+              "adhesion_ecm_mechanics": 0.7807343234323433,
+              "cell_state_mechanics": 0.35519894894894893,
+              "cortical_membrane_pressure": 1.5614686468646866,
+              "cytoskeleton_motor_rheology": 1.3197350069735008,
+              "division_morphogenesis_tissue": 0.9950052576235542,
+              "flow_shear": 1.5461601307189543,
+              "measurement_inference": 0.5973800505050505,
+              "mechanotransduction": 1.2178249678249677,
+              "migration_invasion": 1.2769905533063428,
+              "nuclear_mechanics": 1.844541910331384,
+              "organelle_general_mechanics": 2.3715538847117794,
+              "osmotic_volume_poroelasticity": 1.6342832469775475
+            },
+            "epochs_run": 69,
+            "validation_macro_f1": 0.31275034155180576
+          }
+        }
+      ],
+      "test_aggregate": {
+        "balanced_accuracy": {
+          "max": 0.3537994931322899,
+          "mean": 0.35299674809354786,
+          "min": 0.352155595135933,
+          "std": 0.0006716678404195059
+        },
+        "ece_10_bin": {
+          "max": 0.05323548089687966,
+          "mean": 0.049203515686601446,
+          "min": 0.045591348670568924,
+          "std": 0.0031347899734272
+        },
+        "macro_f1": {
+          "max": 0.31547531049994276,
+          "mean": 0.31477050341555374,
+          "min": 0.31379426729628496,
+          "std": 0.000712615770184205
+        },
+        "micro_f1": {
+          "max": 0.37738246505717915,
+          "mean": 0.37611181702668367,
+          "min": 0.3748411689961881,
+          "std": 0.001037479772462154
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "afm-indenter-cuda-gate@1",
+  "kind": "gate",
+  "device": "cuda:0",
+  "verdict": "PASS",
+  "checks": {
+    "separated_and_touching_force_free_overlap_repulsive": true,
+    "reaction_channel_and_contact_count": true,
+    "adjoint_force_balance": true,
+    "global_candidate_membrane_block_only": true,
+    "rejected_candidate_restores_centre": true,
+    "accepted_candidate_keeps_centre": true
+  },
+  "measured": {
+    "membrane_force_pN": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0000000000000009
+      ]
+    ],
+    "centre_force_pN": [
+      0.0,
+      0.0,
+      1.0000000000000009
+    ],
+    "reaction_force_pN_and_contact_count": [
+      1.0000000000000009,
+      1.0
+    ],
+    "adjoint_balance_pN": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "global_nonmembrane_force_pN": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  "may_not_be_quoted_for": [
+    "contact stiffness calibration",
+    "indenter radius",
+    "cortical tension",
+    "full-native response"
+  ]
+}

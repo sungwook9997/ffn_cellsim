@@ -1,0 +1,138 @@
+{
+  "aleph_authority": "none",
+  "files": [
+    {
+      "container_members": [
+        {
+          "name": "GSM5008737_RNA_3P-barcodes.tsv.gz",
+          "size_bytes": 683095
+        },
+        {
+          "name": "GSM5008737_RNA_3P-features.tsv.gz",
+          "size_bytes": 233354
+        },
+        {
+          "name": "GSM5008737_RNA_3P-matrix.mtx.gz",
+          "size_bytes": 1125353463
+        },
+        {
+          "name": "GSM5008738_ADT_3P-barcodes.tsv.gz",
+          "size_bytes": 683095
+        },
+        {
+          "name": "GSM5008738_ADT_3P-features.tsv.gz",
+          "size_bytes": 1373
+        },
+        {
+          "name": "GSM5008738_ADT_3P-matrix.mtx.gz",
+          "size_bytes": 104745344
+        },
+        {
+          "name": "GSM5008739_HTO_3P-barcodes.tsv.gz",
+          "size_bytes": 683095
+        },
+        {
+          "name": "GSM5008739_HTO_3P-features.tsv.gz",
+          "size_bytes": 173
+        },
+        {
+          "name": "GSM5008739_HTO_3P-matrix.mtx.gz",
+          "size_bytes": 5840046
+        },
+        {
+          "name": "GSM5008740_RNA_5P-barcodes.tsv.gz",
+          "size_bytes": 241462
+        },
+        {
+          "name": "GSM5008740_RNA_5P-features.tsv.gz",
+          "size_bytes": 233354
+        },
+        {
+          "name": "GSM5008740_RNA_5P-matrix.mtx.gz",
+          "size_bytes": 217895902
+        },
+        {
+          "name": "GSM5008741_ADT_5P-barcodes.tsv.gz",
+          "size_bytes": 241462
+        },
+        {
+          "name": "GSM5008741_ADT_5P-features.tsv.gz",
+          "size_bytes": 457
+        },
+        {
+          "name": "GSM5008741_ADT_5P-matrix.mtx.gz",
+          "size_bytes": 7434471
+        },
+        {
+          "name": "GSM5008742_HTO_5P-barcodes.tsv.gz",
+          "size_bytes": 241462
+        },
+        {
+          "name": "GSM5008742_HTO_5P-features.tsv.gz",
+          "size_bytes": 178
+        },
+        {
+          "name": "GSM5008742_HTO_5P-matrix.mtx.gz",
+          "size_bytes": 1571026
+        },
+        {
+          "name": "GSM5008743_TCRab_batch1_annotations.csv.gz",
+          "size_bytes": 771536
+        },
+        {
+          "name": "GSM5008743_TCRab_batch2_annotations.csv.gz",
+          "size_bytes": 605816
+        },
+        {
+          "name": "GSM5008744_TCRgd_batch1_annotations.csv.gz",
+          "size_bytes": 51549
+        },
+        {
+          "name": "GSM5008744_TCRgd_batch2_annotations.csv.gz",
+          "size_bytes": 35255
+        },
+        {
+          "name": "GSM5008745_BCR_batch1_annotations.csv.gz",
+          "size_bytes": 144349
+        },
+        {
+          "name": "GSM5008745_BCR_batch2_annotations.csv.gz",
+          "size_bytes": 129185
+        }
+      ],
+      "name": "GSE164378_RAW.tar",
+      "sha256": "1a02b28c3aa3cc2e8d986d54dc35f953b807461752d91791d5d053af3b2d34a8",
+      "size_bytes": 1467842560,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE164nnn/GSE164378/suppl/GSE164378_RAW.tar"
+    },
+    {
+      "container_members": null,
+      "name": "GSE164378_sc.meta.data_3P.csv.gz",
+      "sha256": "eaf9acf53cf24c86ebf6228ebef4f0bf682c5ea8c7018a3aa42a386a28f232ab",
+      "size_bytes": 3119866,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE164nnn/GSE164378/suppl/GSE164378_sc.meta.data_3P.csv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE222647_AMD_PBMC_countmatrix.csv.gz",
+      "sha256": "4000d861eba01aa7248144209ae642e4032360d91646561b9de98a5c5b0a574e",
+      "size_bytes": 287643711,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE222nnn/GSE222647/suppl/GSE222647_AMD_PBMC_countmatrix.csv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE222647_AMD_PBMC_metadata.csv.gz",
+      "sha256": "6392f4894c0b2f41656bee2ff36eedb7046b7b66e675ed8de0c32c0fce342043",
+      "size_bytes": 3666715,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE222nnn/GSE222647/suppl/GSE222647_AMD_PBMC_metadata.csv.gz"
+    }
+  ],
+  "protocol_frozen_commit": "994b3eb",
+  "protocol_sha256": "1c72e990fe17b24813a552bfb5117ccd6f9d5e14c6c5f78cc699f5f48e45d3b6",
+  "schema": "aleph.outer_library.pbmc_two_lab_acquisition.v1",
+  "source_roles": {
+    "GSE132044": "opened_retrospective_diagnostic_only",
+    "GSE164378": "calibration_only",
+    "GSE222647": "single_use_confirmation"
+  }
+}

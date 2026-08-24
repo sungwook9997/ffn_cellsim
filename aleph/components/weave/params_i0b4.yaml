@@ -1,0 +1,182 @@
+# I0-B4 parameter gate — I4 unified weave (dendritic Arp2/3 lamellipodium + regions + crosslink KMC)
+# ============================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §3(I4) + §3A.b/d + §4C (I0-Bn genuinely-unknown register)
+# + AC_PARALLEL_SESSIONS_2026-07-16.md §4 Session F.
+# Format mirrors ac/fluid/params_i0b1.yaml + ac/motor/params_i0b3.yaml:
+#   claim ID · evidence status · owner · provisional policy · blocking gate.
+#
+# GOVERNING RULE (§1.6 + §4C, HARD): any value whose literature grounding is NOT closed is
+#   value: null  +  evidence_status: "GAP — PI"  and is surfaced to PI. Provisional PI-authored
+# values carry owner + expiry_trigger and are NEVER tuned to pass a gate or to hit a
+# protrusion / bundle / traction band (§6.2 report-not-tune).
+#
+# ANALYTIC-BUILD UNBLOCKED: every I4 analytic gate is MAGNITUDE-INDEPENDENT and sweeps these as
+# oracle variables — Gate-1 cortex parity is bit-identical regardless; the branch-angle gate uses
+# the equipartition relation sigma_theta=sqrt(kT/k_theta) (only the SD, sourced 9 deg, is needed);
+# the crosslink-KMC gate checks the k_on/k_off bound fraction shape; the flux-limit gate checks
+# monotonicity. The NATIVE protrusion/retrograde-flow + bundle-condensation magnitude gates (lead,
+# gbook) are INVALID until the GAP rows close.
+# ============================================================================
+
+meta:
+  increment: I4
+  gate: I0-B4
+  track: unified-weave
+  owner_session: "Session F (unified-weave)"
+  decided_by: PI                                 # every GAP below awaits PI source-audit
+  drafted_on: "2026-07-16"
+  native_run_blocked_on: [k_arp0, k_m, k_cap, npf_areal_density,
+                          fascin_bundle_stiffness, fascin_spacing_um, fascin_bundling_angle_deg,
+                          filaments_per_bundle, tip_nucleator_density]
+  analytic_build_unblocked: true                 # parity + shape/invariant gates need no physiological magnitude
+  units_convention: "SI in note text; engine runtime is um-pN-s (convert at load)"
+  primitive: >
+    ONE unified actomyosin network (weave_cell/WovenCell): cortex delegates to ff.weave (isotropic seed,
+    demoted from authoritative-bundle); ventral/dorsal SF + transverse arc + perinuclear cap + filopodium are
+    isotropic-conditional seeds on their manifolds (bundles CONDENSE at I5, not scripted here); lamellipodium
+    is a REBUILT dendritic Arp2/3 net (mother/daughter tree, angle-harmonic 3-body branch, N-fixed dormant-
+    daughter activation, flux-limited by the I1c monomer field). ONE crosslinker-relaxation channel
+    (topology-reforming KMC) — the ff xl_turnover r0-creep channel is DISABLED (double-count guard).
+
+# ============================================================================
+# GROUNDED — the branch-angle knobs (Faessler 2020). theta0 + sigma_theta are sourced; k_theta is
+# DERIVED from sigma_theta by equipartition (NOT tuned): k_theta = kT / sigma_theta^2.
+# ============================================================================
+parameters:
+
+  theta0_branch:
+    title: "Arp2/3 rest branch angle"
+    symbol: "theta0"
+    value: 1.2217304764                          # 70.0 deg
+    unit: "rad"
+    evidence_status: "verified/High"
+    source: "Faessler 2020 EMBO J 39:e104254 (in-cell cryo-ET branch junction 68 +- 9 deg); Mueller 2017"
+    kb_note: "mirrors ff.architecture_spec.ARP23_BRANCH_ANGLE_RAD; the angle FLUCTUATES (not a rigid 72 deg)"
+    policy: "rest angle of the 3-body angle-harmonic branch bond; NOT a rigid constraint."
+
+  sigma_theta_branch:
+    title: "Arp2/3 branch-angle thermal spread (SD)"
+    symbol: "sigma_theta"
+    value: 9.0
+    unit: "deg"
+    evidence_status: "verified/High (PI-gated SD)"
+    source: "Faessler 2020 (68 +- 9 deg in-cell)"
+    policy: "SETS k_theta by equipartition k_theta = kT/sigma_theta^2 (=0.173 pN*um/rad^2 at 310 K). Do NOT clamp."
+
+  k_theta_branch:
+    title: "Arp2/3 branch angle-harmonic stiffness (DERIVED)"
+    symbol: "k_theta"
+    value: 0.173
+    unit: "pN*um/rad^2"
+    evidence_status: "derived (equipartition from sigma_theta)"
+    derivation: "k_theta = kT/sigma_theta^2 = (4.28e-3 pN*um)/(9 deg in rad)^2 = 0.173; mirrors ARP23_BRANCH_K"
+    policy: "DERIVED, never independently tuned. Thermal sigma is an OUTPUT (sqrt(kT/k_theta)), not clamped."
+
+# ============================================================================
+# GAP — do NOT choose (§4C). value: null until PI source-audits. Native protrusion/bundle gate INVALID.
+# ============================================================================
+
+  k_arp0:
+    title: "max Arp2/3 autocatalytic branch-nucleation rate (saturating monomer + full NPF)"
+    symbol: "k_arp0"
+    value: null
+    unit: "1/s"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits Arp2/3 branch nucleation kinetics (isoform/assay)"
+    policy: "enters k_branch = k_arp0*npf*c/(c+K_m); flux-limited by the I1c monomer field. NEVER tuned to a protrusion band."
+
+  k_m:
+    title: "Michaelis monomer half-saturation for Arp2/3 nucleation"
+    symbol: "K_m"
+    value: null
+    unit: "uM"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits Arp2/3 monomer dependence"
+    policy: "sets the monomer flux-limit knee; consumes the I1c c field read-only."
+
+  k_cap:
+    title: "capping-protein termination rate (barbed-end growth)"
+    symbol: "k_cap"
+    value: null
+    unit: "1/s"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits capping kinetics"
+    policy: "sets the dendritic mesh size via steady length ~ v_grow/k_cap; via hand_kmc detach semantics. Do NOT tune to a mesh size."
+
+  npf_areal_density:
+    title: "NPF (WASP/WAVE) areal density at the leading-edge membrane"
+    symbol: "rho_NPF"
+    value: null
+    unit: "1/um^2"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits NPF density (MCF7 leading edge)"
+    policy: "gates nucleation (npf activity in [0,1]); a DECLARED membrane field (SEEDED, ablatable), not a per-branch bias."
+
+  fascin_bundle_stiffness:
+    title: "filopodium fascin crosslink stiffness"
+    symbol: "k_fascin"
+    value: null
+    unit: "pN/um"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits fascin single-crosslink mechanics"
+    policy: "the filopodium bundle crosslinker; ff uses anchored FILAMIN as a stand-in (flagged). Do NOT tune."
+
+  fascin_spacing_um:
+    title: "filopodium inter-filament spacing (fascin packing)"
+    symbol: "d_fascin"
+    value: null
+    unit: "um"
+    evidence_status: "GAP — PI"
+    claim_ref: "~7-8 nm fascin spacing (geometric, architecture_spec notes) — NOT yet an audited SE row"
+    owner: PI
+    expiry_trigger: "PI source-audits fascin packing"
+    policy: "sets the tight-bundle reach; the low-angle bundle must CONDENSE from an isotropic seed (not scripted)."
+
+  fascin_bundling_angle_deg:
+    title: "filopodium fascin bundling angle (low-angle tight bundle)"
+    symbol: "phi_fascin"
+    value: null
+    unit: "deg"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits fascin bundle geometry"
+    policy: "the emergent low bundling angle; a gate target for condensation, not a seed script."
+
+  filaments_per_bundle:
+    title: "filaments per filopodial fascin bundle"
+    symbol: "N_fil_bundle"
+    value: null
+    unit: "count"
+    evidence_status: "GAP — PI"
+    claim_ref: "order candidate 10-30 (architecture_spec); number of bundles open at I0-B4/I0-B6"
+    owner: PI
+    expiry_trigger: "PI binds per-bundle count + bundle number"
+    policy: "population-ledger input; enters the whole-cell unique-ID budget (never memory-down-counted)."
+
+  tip_nucleator_density:
+    title: "filopodial/leading-edge tip-nucleator (formin/Arp2/3) density"
+    symbol: "rho_tip"
+    value: null
+    unit: "1/um^2"
+    evidence_status: "GAP — PI"
+    owner: PI
+    expiry_trigger: "PI source-audits tip-nucleator density"
+    policy: "seeds the tip nucleation loci (SEEDED); tip/shaft/basal adhesion CLASS is emergent (I6), not hard-set."
+
+# ============================================================================
+# CONSUMED READ-ONLY from upstream increments (not chosen here; listed for the native gate)
+# ============================================================================
+consumed:
+  monomer_field_c:      "I1c ac.fluid.transport.MonomerField (D_c ~2-6 um^2/s draft, c0 MCF7 GAP) — flux limit"
+  hand_api:             "I3 ac.motor.hand.NMIIHandParams + attach/step/detach @wp.func (k_xb/f_stall/v0/kappa GAP at I0-B3)"
+  nucleus_envelope:     "I2 ac.nucleus geometry — cap LINC-tether nucleus-side endpoints (wired at I7, read-only)"
+
+double_count_guard:
+  channel_selected: "kmc_reattach"               # topology-reforming crosslink KMC (this track)
+  channel_disabled: "r0_creep (ff.motility_warp.xl_turnover_kernel)"
+  rule: "build-plan §6 I2-crosslinker-relaxation — EXACTLY ONE channel; assert_single_channel enforces it."

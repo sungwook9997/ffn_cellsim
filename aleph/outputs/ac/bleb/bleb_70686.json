@@ -1,0 +1,28 @@
+{
+  "n_filaments": 70686,
+  "n_erm_total": 642,
+  "n_erm_bound_pre": 642,
+  "patch_half_angle_deg": 25.0,
+  "patch_axis": [
+    0.0,
+    0.0,
+    1.0
+  ],
+  "n_tethers_deadhered": 33,
+  "n_tethers_predicted": 33,
+  "deadhered_matches_prediction": true,
+  "frac_membrane_deadhered": 0.0514018691588785,
+  "R_cell_um": 7.500006439309329,
+  "gamma_mem_pN_um": 10.0,
+  "f_rupt_pN": 11.43470677829702,
+  "k_erm_pN_um": 4600.0,
+  "adhesion_force_removed_pN": 377.34532368380167,
+  "dP_local_mean_Pa": 40.0,
+  "dP_local_median_Pa": 40.0,
+  "n_fluid_cells_in_cap": 459,
+  "a_patch_um": 3.1696396844249612,
+  "a_crit_um": 0.5,
+  "dP_laplace_Pa": 6.309865470916583,
+  "nucleates": true,
+  "wall_s": 7.380358695983887
+}

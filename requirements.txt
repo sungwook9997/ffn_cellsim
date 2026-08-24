@@ -1,0 +1,14 @@
+# ffn_cellsim — Warp-CUDA runtime support dependencies.
+#
+# NVIDIA Warp/CUDA is the only simulation runtime (PI 2026-07-16). The conda
+# environment supplies the GPU stack; HOOMD must not be installed or executed
+# for the new engine. This file pins the supporting Python/scientific packages.
+
+# Core scientific stack
+numpy>=2.0
+scipy>=1.13
+h5py>=3.10
+pyyaml>=6.0
+
+# Visualisation / analysis
+matplotlib>=3.8

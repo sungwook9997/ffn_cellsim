@@ -1,0 +1,122 @@
+# I0-B2b parameter gate — I2b filament-filament excluded volume (WCA steric)
+# ============================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §4C (excluded-volume k_EV) + §3 I2b + AC_PARALLEL_SESSIONS §3
+# (Session C). Format: symbol · evidence status · owner · provisional policy · blocking gate.
+#
+# k_EV is EXPLICITLY a numerical repulsion scale (the Session-C brief: "your call via the Magic-Number
+# Block, grid-invariance gate — NOT a lit value"), so it carries a Magic-Number Block, not a citation.
+# sigma_EV is a physical steric diameter but is coarse-graining-entangled at the current node spacing —
+# surfaced to PI as a GAP, NOT chosen here.
+#
+# HARD rules honoured: no empirical magic numbers (k_EV is derived-by-criterion + grid-invariant + NOT
+# tuned to a crowding outcome); physiological baseline (EV is ON from Phase 1 per the CLAUDE.md worked
+# example); analytic gates are magnitude-independent (they hold for any sigma_EV, k_EV > 0), so the native
+# magnitude gate is the one blocked on these values.
+# ============================================================================
+
+meta:
+  increment: I2b
+  gate: I0-B2b
+  owner: Lead   # k_EV is a Lead/numerical call; sigma_EV production value is PI-gated (discretization)
+  decided_on: "2026-07-16"
+  analytic_build_unblocked: true    # FD-grad/zero-force/compressed-pair/grid-invariance need no magnitude
+  native_run_blocked_on: [sigma_EV_production, k_EV_operating_load]
+  units_convention: "engine runtime um-pN-s (sigma [um], epsilon [pN.um], k_EV [pN/um], F [pN])"
+
+parameters:
+
+  # ---- STERIC DIAMETER (physical, but coarse-graining-entangled -> GAP to PI) ---------------------
+  sigma_EV:
+    title: "steric diameter = filament excluded-volume shell (WCA sigma; cutoff r_c = 2^(1/6) sigma)"
+    symbol: "sigma_EV"
+    value: null
+    candidate_values:
+      actin_filament: 0.007          # um (~7 nm F-actin diameter) — the physically faithful value
+      microtubule:    0.025          # um (~25 nm MT diameter) — steric diameter is filament-type specific
+      cortical_mesh:  0.05           # um (~50 nm cortical mesh scale) — coarse-grained space-filling shell
+    unit: "um"
+    evidence_status: "GAP — PI (physical value known; coarse-graining decision open)"
+    owner: PI
+    reason_gap: >
+      The steric diameter is physically well-known (F-actin ~7 nm, MT ~25 nm), BUT at the current 0.5 um
+      actin node spacing a node-node WCA at sigma=7 nm essentially never triggers (nodes too sparse to
+      resolve a 7 nm tube) AND drives a punishing CFL (see k_EV block). Two faithful resolutions, a PI
+      call: (a) per-filament-type physical sigma (7/25 nm) WITH segment-segment (edge-edge) EV so the thin
+      tube is captured between sparse nodes — the resolution-faithful path (see INTEGRATION.md); or
+      (b) node-node EV with a coarse-grained sigma ~ node spacing (a fatter effective tube), a numerical
+      simplification that must be declared. Do NOT silently pick one; surface to PI.
+    expiry_trigger: "PI ratifies the EV discretization (node-node coarse vs segment-segment physical)"
+    note: >
+      The analytic gates (FD-grad sign, zero-overlap==zero-force, compressed-pair, grid-invariance) pass
+      for ANY sigma_EV > 0, so the module is authored-green independent of this choice; only the native
+      no-interpenetration MAGNITUDE gate needs the ratified value.
+
+  # ---- REPULSION STIFFNESS (numerical — Magic-Number Block, my call) ------------------------------
+  k_EV:
+    title: "WCA effective contact stiffness = U''(r_min) (the numerical repulsion scale)"
+    symbol: "k_EV"
+    value: null                      # DERIVED at the native gate from the operating load (formula below)
+    unit: "pN/um"
+    evidence_status: "numerical (Magic-Number Block) — NOT a literature value"
+    owner: Lead
+    provisional: true
+    reason_provisional: "magnitude derives from the passive-cell operating per-node load, measured natively"
+    magic_number_block:
+      derivable: >
+        k_EV is a penalty/repulsion stiffness, not a measured constant. Near contact the WCA linearizes to
+        F ~ k_EV * delta (delta = r_c - r = overlap), so a max operating per-node load F_op produces an
+        overlap delta ~ F_op / k_EV. Impose a PENETRATION TOLERANCE tol (a numerical accuracy target, e.g.
+        delta/r_c <= 0.05) => k_EV >= F_op / (tol * r_c). This is a derived inequality, NOT a value tuned
+        to reproduce a crowding density/collapse. F_op is the max per-node force from the (passive, pre-I3)
+        mechanical solve, read off the native gate; tol is chosen for accuracy, not outcome.
+      grid_invariant: >
+        (1) The WCA force LAW references no grid — only (r, sigma, epsilon). (2) The device wp.HashGrid is
+        a pure accelerator: any neighbour cell size >= r_c reproduces the brute-force O(N^2) sum bit-for-bit
+        (test_steric_reference.test_celllist_matches_bruteforce; native Warp-vs-brute parity in the
+        native-gate spec). (3) The CFL stiffness folded into kmax is U''(r_eq(f_cap)) — a function of
+        (sigma, epsilon, f_cap) only, independent of dx and cell size. So k_EV passes grid-invariance.
+      not_tuned_to_outcome: >
+        Above the derived threshold the no-interpenetration verdict SATURATES (r_eq/r_c -> 1); it does not
+        swing with k_EV (test_steric_reference.test_no_interpenetration_insensitive_to_k_ev_above_threshold).
+        A value picked to hit a crowding target would instead be on a sensitive slope. k_EV is set by the
+        tolerance inequality, then any value above it is admissible — the hallmark of a numerical, not
+        fitted, constant.
+      cfl_cost_caveat: >
+        Stiffer k_EV -> smaller dt_mu = 0.1/kmax. With the PHYSICAL sigma=7 nm, r_c~7.9 nm is tiny, so even
+        a modest F_op forces k_EV ~ 1e5 pN/um and a punishing dt. This is a concrete argument (logged, not
+        hidden) FOR either coarse-graining sigma_EV up or moving to segment-segment EV at production
+        resolution — a sigma_EV decision for PI, not a reason to soften k_EV below the tolerance threshold.
+    policy: >
+      Author the module + all analytic gates magnitude-free. At the native passive-cell gate: measure F_op,
+      set k_EV = F_op / (tol * r_c) with tol<=0.05, confirm no interpenetration + acceptable dt, and REPORT
+      the value (never lower a biological density or loosen tol to buy dt). Load-bearing (contractile) EV
+      verdict DEFERS to the post-I3 / I9 re-run (Session-C brief; the pre-I3 gate certifies a PASSIVE cell).
+
+  # ---- NEAR-CORE FORCE CAP (numerical CFL guard) -------------------------------------------------
+  force_cap_EV:
+    title: "max WCA repulsive pair force (bounds near-core stiffness so the CFL dt stays finite)"
+    symbol: "f_cap"
+    value: null                      # optional; set with k_EV at the native gate (disabled if <= 0)
+    unit: "pN"
+    evidence_status: "numerical (optional CFL regularization)"
+    owner: Lead
+    provisional: true
+    policy: >
+      Optional soft-core cap: the WCA core stiffness diverges as r->0, so a rare deep transient overlap
+      could spike kmax. Capping the pair force at f_cap bounds the max stiffness to U''(r_eq(f_cap)) (the
+      CFL kmax term, ac.solid.steric_reference.cfl_stiffness_term). f_cap must be >> the operating load
+      F_op (so it never bites normal contacts, only pathological overlaps) — a numerical guard, not a
+      physical force. Leave disabled (<=0) if the native dt is acceptable without it.
+
+# ---- DISCRETIZATION / MEASUREMENT NOTES --------------------------------------------------------
+notes:
+  exclusion: >
+    Same-filament node pairs are excluded from EV (a filament's own segment spacing is held by the Cytosim
+    bending + inextensibility laws). Crosslink-adjacent cross-filament nodes are NOT excluded in this
+    increment; if a crosslink pins two filaments within r_c, the EV and the crosslink both act (single
+    node pair, two force families — not a double-count, but flag if the crosslink rest length < r_c forces
+    a standing repulsion; reconcile at I4).
+  native_gate_scope: >
+    The pre-I3 native crowding gate certifies a PASSIVE (no active myosin) cell — structural/regression
+    only. The load-bearing "no interpenetration under contractile load" verdict DEFERS to a re-run after
+    I3 / at I9 (Session-C verify finding).

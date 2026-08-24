@@ -1,0 +1,215 @@
+# Gate-contract change ledger — the ONLY channel that can authorise a contract hash
+# moving between a FAIL and its superseding PASS.
+#
+# TWO SECTIONS, AND THE DIFFERENCE IS THE WHOLE POINT:
+#
+#   changes:                      can authorise a transition.
+#   historical_unsigned_changes:  authorises NOTHING. It is the record of manoeuvres that
+#                                 already happened before this ledger existed. Writing a
+#                                 manoeuvre down is not the same as approving it, and the
+#                                 verifier will not read this section as approval.
+#
+# AUTHORISATION RULES (enforced in gate_contract.authorising_row / disclosing_row):
+#   kind: THRESHOLD | OBSERVABLE | CONFIGURATION_FIXED
+#       -> requires a real `pi_signature` (PENDING / TODO / TBD / empty do NOT count)
+#          plus from_hash + to_hash matching the actual transition.
+#   kind: CONFIGURATION_RECORDED
+#       -> a per-run knob moved (relax iterations, step count, device). Requires
+#          disclosure (`fields_moved` + `rationale` + `disclosed_by`) but NOT a PI
+#          signature: "we ran the solver 20x longer" is a disclosure, not a contract
+#          change. It still may not happen silently at the moment a FAIL becomes a PASS.
+#
+# A row is written BEFORE the superseding run, not after it. A row added after a PASS to
+# retro-authorise it is the exact manoeuvre this file exists to stop; the review signal is
+# the commit order.
+
+ledger_version: 1
+last_reviewed: 2026-07-25
+
+# ----------------------------------------------------------------------------------
+# AUTHORISING ROWS
+# ----------------------------------------------------------------------------------
+changes:
+  # The FIRST PI-signed row under this mechanism. It also exposes a hole the mechanism
+  # has: the `observe` gate is declared IN ITS DRIVER and has no GATE_*.yaml, so there
+  # is no contract hash for this transition to be pinned to. The hashes below are
+  # therefore honest placeholders that match no real query — `authorising_row` compares
+  # them literally, so this row authorises NOTHING operationally. It is a truthful
+  # record of a signed decision plus a standing defect: give `observe` a contract file,
+  # after which a scope change like this one becomes machine-checkable instead of
+  # depending on someone reading a REPORT. Tracked as the follow-up below.
+  - change_id: GC-0001
+    gate_id: ac.engine.observe.passive_field_admits_an_energy
+    kind: OBSERVABLE
+    from_hash: UNCOMPUTABLE_NO_CONTRACT_FILE
+    to_hash: UNCOMPUTABLE_NO_CONTRACT_FILE
+    fields_moved:
+      - "predicate scope: the BOUND nmii_sf_motor configuration -> the PASSIVE (t0) configuration only"
+    rationale: >-
+      The predicate as first declared demanded that the BOUND field be conservative. That is
+      a mis-specification independent of any result: a myosin crossbridge is an active
+      element and its force is not a gradient, so requiring a vanishing circulation of it
+      asks the physics to be something it is not. The argument does not appeal to the run —
+      it is a statement about what the force law is, and it would hold if the run had
+      measured no circulation at all. The t0 configuration contains no active element, so a
+      circulation THERE remains an unambiguous defect and the gate keeps its teeth.
+      The original verdict was not deleted: it is preserved in every artifact under
+      `gate_as_first_declared`, and the narrowing was NOT applied retroactively.
+    evidence: aleph/outputs/ac/observe/REPORT.md
+    disclosed_by: "Lead session 2026-07-28b (declared pending), re-surfaced 2026-07-28c"
+    pi_signature: "Sungwook Yoon"
+    date: 2026-07-28
+    follow_up: >-
+      `observe` has no versioned contract file. Author GATE_observe.yaml so this gate's
+      predicate, observable and void ceiling are hash-stamped like GATE-A / GATE-B, and a
+      future scope change cannot rest on prose.
+
+  # PROPOSED, NOT SIGNED. `pi_signature: PENDING` does not count under this file's own rules, so
+  # this row authorises NOTHING and the T10 gate stays FAIL until PI signs. It is written BEFORE any
+  # superseding run, which is the ordering this ledger exists to check — no re-run to a PASS has been
+  # attempted, and none will be until this is signed.
+  - change_id: GC-0002
+    gate_id: ac.engine.medium_exterior.t10_exterior_stokes
+    kind: THRESHOLD
+    from_hash: UNCOMPUTABLE_NO_CONTRACT_FILE
+    to_hash: UNCOMPUTABLE_NO_CONTRACT_FILE
+    fields_moved:
+      - "mechanism[isotropy_at_round_off].floor: 64*eps64 (direct-solve) -> cg_relative_tolerance * cond(M)"
+      - "mechanism[decoupling_at_round_off].floor: 64*eps64 (direct-solve) -> cg_relative_tolerance * cond(M)"
+      - "mechanism[time_reversible].floor: 64*eps64 (direct-solve) -> cg_relative_tolerance * cond(M)"
+      - "mechanism[linear_in_viscosity].floor: 1e-12 literal -> cg_relative_tolerance * cond(M)"
+    rationale: >-
+      The four predicates assert properties that are EXACT for the operator — isotropy of the
+      translation resistance block under icosahedral symmetry, its decoupling from rotation,
+      time-reversal antisymmetry of Stokes flow, and linearity in the viscosity. Each was given the
+      floor 64*eps64, which is the right floor for a DIRECT solve and is what the host tests use, where
+      they measure exactly 0.0 and 1.7e-17. But this driver measures all four THROUGH a matrix-free
+      conjugate-gradient solve, so what reaches the predicate is the CG's error, not the operator's.
+      A floor belongs to a measurement PATH, not to a property: asserting direct-solve exactness on an
+      iteratively-solved quantity is a mis-specification, in the same class as GC-0001 asking an active
+      motor to be conservative. The proposed floor is the standard CG error bound and is DERIVED from
+      quantities the run already measures (its own stopping tolerance and the operator's condition
+      number) — it is not a constant, and it tightens automatically whenever the solve is tightened.
+      The argument does not rest on the pending result: it would hold if every residual had come out at
+      round-off, and the predicate on the one quantity measured with NO solve in the path
+      (operator_symmetry, compared against exact equality) is deliberately left unchanged.
+    evidence: aleph/outputs/ac/gate_t10_medium/REPORT.md
+    disclosed_by: "Lead session 2026-07-28d (ecm-adhesion lane), proposing — not applying"
+    pi_signature: PENDING
+    date: 2026-07-28
+    supporting_measurement: >-
+      A CG-tolerance sweep at 1e-6 / 1e-8 / 1e-10 / 1e-12 on the A5000 (642-node native membrane
+      surface) REFUTES the competing hypothesis that the operator itself is defective: an operator
+      defect is tolerance-INDEPENDENT, and none of the four residuals is. Their spans across the sweep
+      are x932 (isotropy), x150 (decoupling), x2.9e5 (time reversal) and x7.3e5 (transverse force),
+      every value stays under the cond*tol bound at every tolerance, and the physical answer — the
+      Stokes drag ratio — is BIT-IDENTICAL at 1.041539447 across all six decades. Honest limit: the
+      dependence is not a clean power law, because CG error is not monotone in the stopping tolerance
+      (it depends which Krylov iterate the test lands on), so `decoupling` sits near-flat over three
+      decades before dropping two. That is expected of the solver, not a second finding.
+    follow_up: >-
+      T10 has no versioned contract file either, the same hole GC-0001 exposed. Author
+      GATE_T10_exterior_medium.yaml so this gate's predicates, floors and void ceiling are hash-stamped
+      like GATE-A / GATE-B; until then the hashes above match no real query and this row, once signed,
+      would still authorise nothing machine-checkable.
+
+# Row template (copy into `changes:` — do not leave a template row live):
+#
+# - change_id: GC-0001
+#   gate_id: GATE-B.sf_motor
+#   kind: THRESHOLD                      # THRESHOLD | OBSERVABLE | CONFIGURATION_FIXED | CONFIGURATION_RECORDED
+#   from_hash: "gcv1:...."               # contract hash the FAIL was measured under
+#   to_hash: "gcv1:...."                 # contract hash the PASS is measured under
+#   fields_moved:
+#     - "claims[quantitative.inner_solve_converged_relative_to_tension].threshold.value"
+#   rationale: >-
+#     Why the contract is wrong, argued WITHOUT reference to whether the current run
+#     passes. If the argument mentions the pending result, it is a fit, not a fix.
+#   evidence: aleph/docs/v2_audit/....md
+#   disclosed_by: "session/agent that proposes the change"
+#   pi_signature: "Sungwook Yoon"        # a real name, dated below
+#   date: 2026-07-26
+
+# ----------------------------------------------------------------------------------
+# HISTORICAL RECORD — the four M2 instances the 35-agent audit found (2026-07-25).
+# AUTHORISES NOTHING. Present so the recurrence is machine-visible and so the ledger
+# has a truthful baseline instead of looking like a clean history.
+# ----------------------------------------------------------------------------------
+historical_unsigned_changes:
+  - change_id: GC-H0001
+    gate_id: H.2.angle_and_equipartition
+    kind: THRESHOLD
+    when: "commit 444ef010"
+    from_hash: UNCOMPUTABLE_PRE_CONTRACT
+    to_hash: UNCOMPUTABLE_PRE_CONTRACT
+    fields_moved:
+      - "angle_ks_p_min: 0.05 -> 1.0e-6"
+      - "equipartition_rel_tol_3d: -> 0.60 (+/-60%)"
+    what_makes_it_the_worst_instance: >-
+      "Existing H.2 production trajectory ... verified to PASS all 3 rebanded gates
+      without re-running." The bands were set against the failing data already in hand.
+      No re-run, so the new bands were fitted to the outcome by construction.
+    pi_signature: null
+    source: aleph/docs/v2_audit/TRAJECTORY_HOW_WE_GOT_TO_AC_2026-07-25.md:105
+
+  - change_id: GC-H0002
+    gate_id: KU-5.5.xi_v
+    kind: THRESHOLD
+    when: "commit 9d40c09"
+    from_hash: UNCOMPUTABLE_PRE_CONTRACT
+    to_hash: UNCOMPUTABLE_PRE_CONTRACT
+    fields_moved: ["xi_v band: 50-200 um -> [1, 400] um"]
+    note: >-
+      Disclosed in the commit body as "Deviations #2 KU-5.5 xi_v widened to [1, 400] um"
+      and shipped in the same breath as "8 brief-listed KU VALIDATIONs".
+    pi_signature: null
+    source: aleph/docs/v2_audit/TRAJECTORY_HOW_WE_GOT_TO_AC_2026-07-25.md:29
+
+  - change_id: GC-H0003
+    gate_id: ac_engine.connector_dispatch
+    kind: OBSERVABLE
+    when: 2026-07-22
+    from_hash: UNCOMPUTABLE_PRE_CONTRACT
+    to_hash: UNCOMPUTABLE_PRE_CONTRACT
+    fields_moved: ["evidence observable: native force/rollback gates -> structural tests that close by construction"]
+    note: >-
+      The project labelled this itself, in writing, in the same document: "citing them as
+      closure was a gate substitution". Self-caught, which is the good half; unblocked by
+      any machine check, which is this ledger's reason to exist.
+    pi_signature: null
+    source: aleph/docs/v2_audit/AC_ENGINE_INTEGRATION_PLAN_2026-07-22.md §6
+
+  - change_id: GC-H0004
+    gate_id: GATE-A.resting_baseline
+    kind: OBSERVABLE
+    when: 2026-07-24
+    from_hash: UNCOMPUTABLE_PRE_CONTRACT
+    to_hash: "gcv1:aa15a34ae1742239"
+    fields_moved:
+      - "claims[static.max_projected_force_under_gate].observable.id: max_abs_F -> max_abs_PF"
+      - "claims[static.max_projected_force_under_gate].observable.definition: raw net nodal force -> projected PF = F - J^T lambda"
+    note: >-
+      Technically correct on the merits (constrained equilibrium is PF = 0; the exact
+      projector shows raw 5.7892 = |J^T lambda| 4.4820 + max|PF| 1.7399, so ~70-80% of the
+      reported blocker was legitimate backbone Lagrange tension) AND a metric change
+      between a FAIL and a PASS. Both are true; only the first was headlined.
+    pi_signature: null
+    source: aleph/docs/v2_audit/GATE_A_RESTING_CONVERGENCE_2026-07-23.md §9
+
+  - change_id: GC-H0005
+    gate_id: GATE-A.resting_baseline
+    kind: CONFIGURATION_FIXED
+    when: 2026-07-24
+    from_hash: UNCOMPUTABLE_PRE_CONTRACT
+    to_hash: "gcv1:aa15a34ae1742239"
+    fields_moved:
+      - "configuration_fixed.resting_myosin.state: SEEDED (4,420 bound heads at f_head=1.5 pN) -> OFF"
+    note: >-
+      The second half of the same closure. Argued from CLAUDE.md's own
+      physiological-baseline rule ("add myosin as a modulator") and from the ratified
+      state-conditioned Event Runtime, and self-surfaced: §10 says the decision is
+      "SURFACED to PI for ratification". No ratification exists on disk, and the roadmap
+      headline reads "GATE A CLOSED". Under this ledger a PASS whose observable AND
+      configuration both moved cannot be reported as a closure until a signed row exists.
+    pi_signature: null
+    source: aleph/docs/v2_audit/GATE_A_RESTING_CONVERGENCE_2026-07-23.md §10

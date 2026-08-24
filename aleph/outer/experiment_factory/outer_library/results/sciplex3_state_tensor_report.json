@@ -1,0 +1,48 @@
+{
+  "aleph_authority": "none",
+  "annotation_dimensions_bound_all_sparse_indices": true,
+  "assigned_context_cell_count": 762795,
+  "cell_count_in_matrix": 799317,
+  "context_count": 4896,
+  "excluded_unassigned_cell_count": 36522,
+  "independent_lab_holdout": false,
+  "matrix_total_umi_all_cells": 1966579015,
+  "maximum_cell_index": 799317,
+  "maximum_gene_index": 110981,
+  "may_select_aleph_parameter": false,
+  "panel_gene_count": 2228,
+  "panel_provenance_schema": "aleph.outer_library.reactome_state_panel.v1",
+  "pathway_level_1_evaluable_count": 12,
+  "pathway_level_1_evaluable_on_all_holdouts": [
+    "Antioxidant",
+    "Apoptotic regulation",
+    "Cell cycle regulation",
+    "DNA damage & DNA repair",
+    "Epigenetic regulation",
+    "JAK/STAT signaling",
+    "Metabolic regulation",
+    "Neuronal signaling",
+    "Nuclear receptor signaling",
+    "Other",
+    "Protein folding & Protein degradation",
+    "Tyrosine kinase signaling"
+  ],
+  "pdata_total_umi_assigned_cells": 1886191404.0,
+  "rare_pathway_labels_are_train_only": true,
+  "replicate_holdout_is_same_lab": true,
+  "schema": "aleph.outer_library.sciplex3_state_tensor.v1",
+  "selected_panel_triplet_count": 155411197,
+  "sparse_triplet_count": 1007419688,
+  "state_label_authority": "drug_pathway_context_not_direct_cell_state_truth",
+  "tensor_shape": [
+    4896,
+    2228
+  ],
+  "treatment_disjoint_split_counts": {
+    "calibration": 21,
+    "selection": 21,
+    "test": 21,
+    "train": 125
+  },
+  "vehicle_reference_shared_as_supervised_target": false
+}

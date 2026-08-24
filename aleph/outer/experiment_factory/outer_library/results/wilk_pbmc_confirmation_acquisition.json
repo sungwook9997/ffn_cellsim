@@ -1,0 +1,22 @@
+{
+  "aleph_authority": "none",
+  "asset": {
+    "path": "GSE150728_Wilk_CELLxGENE.h5ad",
+    "sha256": "50fa832f6ce824a18f1a5d54d2481ada5bee24036630a56bac7f7e98123a7c16",
+    "size_bytes": 217094236
+  },
+  "collection": {
+    "asset_url": "https://datasets.cellxgene.cziscience.com/8d7fad46-2f37-4aa0-ac9d-babbc36efb6f.h5ad",
+    "collection_id": "a72afd53-ab92-4511-88da-252fb0e26b9a",
+    "collection_json_sha256": "a466286b3a6871a2dd6e1ce88714a7303a3ef5c9f4fdba2d7ca6593b44d7eba9",
+    "collection_version_id": "c64477fd-a118-43d2-a4db-34f1f557eb9f",
+    "dataset_id": "456e8b9b-f872-488b-871d-94534090a865",
+    "dataset_title": "Single-cell atlas of peripheral immune response to SARS-CoV-2 infection",
+    "declared_asset_size_bytes": 217094236
+  },
+  "observation_content_used_during_acquisition": false,
+  "protocol_frozen_commit": "73ac9e1",
+  "protocol_sha256": "a126111c0c02f21124911b2bdcaf27dd0c3693671fe96df3ab474fbee16b758c",
+  "role": "single_use_untouched_confirmation",
+  "schema": "aleph.outer_library.wilk_pbmc_confirmation_acquisition.v1"
+}

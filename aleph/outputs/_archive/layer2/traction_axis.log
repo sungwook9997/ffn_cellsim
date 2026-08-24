@@ -1,0 +1,17 @@
+ftr=0nN N0=120 R0=40.6 A/A0=2.55
+ftr=0nN N0=250 R0=53.3 A/A0=2.25
+ftr=0nN N0=450 R0=69.6 A/A0=1.82
+ftr=3nN N0=120 R0=40.6 A/A0=2.80
+ftr=3nN N0=250 R0=53.3 A/A0=2.35
+ftr=3nN N0=450 R0=69.6 A/A0=1.92
+Traceback (most recent call last):
+  File "<string>", line 20, in <module>
+    res=run_growth_pooled(r,p,n_cells_init=n,total_time=2*p.cycle_time_mean,epoch_steps=1200,settle_steps=1000,seed=s,max_cells=3000,cohesion='catch',cad=cad,substrate=sub,f_traction=ftr)
+  File "/Users/sw1/ffn_cellsim/ffn_sim/spheroid/proliferation.py", line 457, in run_growth_pooled
+    sim.run(epoch_steps)
+    ~~~~~~~^^^^^^^^^^^^^
+  File "/Users/sw1/miniconda3/envs/ffn_sim/lib/python3.13/site-packages/hoomd/simulation.py", line 561, in run
+    self._cpp_sys.run(steps_int, write_at_start)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Particle 2846 is out of bounds (x: -7.27832e-05, y: 2.28045e-05, z: 0.00123148, fx: 0.470248, fy: 0.509322, fz:1.0034)
+

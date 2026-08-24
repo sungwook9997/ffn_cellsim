@@ -1,0 +1,103 @@
+{
+  "all_three_paired_donor_differences_positive": true,
+  "donor_mean_signature_difference_IFN_minus_control": {
+    "A": 3.120288387110262,
+    "B": 3.281897340208389,
+    "C": 3.910020031197484
+  },
+  "numeric_scale_transfer_permitted": false,
+  "per_gene_log1p_differences": {
+    "A": {
+      "IFI27": 2.930415239337006,
+      "IFI44": 2.715832341544265,
+      "IFI44L": 3.1429551345727296,
+      "IFI6": 2.741514319411155,
+      "IFIT1": 4.379265473232554,
+      "IFIT2": 3.295654400900274,
+      "IFIT3": 3.6081680737307638,
+      "ISG15": 3.358397527001963,
+      "MX1": 3.2960887869025,
+      "OAS1": 2.3481770343163846,
+      "OAS2": 2.715177815026442,
+      "OAS3": 3.0824006561996646,
+      "RSAD2": 4.252913340155628,
+      "STAT1": 1.817077277212344
+    },
+    "B": {
+      "IFI27": 3.3342248984095333,
+      "IFI44": 2.7816934892327003,
+      "IFI44L": 3.2489281699346026,
+      "IFI6": 3.270577199245091,
+      "IFIT1": 4.347052212402051,
+      "IFIT2": 3.181135496885354,
+      "IFIT3": 3.601868077124306,
+      "ISG15": 3.6910385049706296,
+      "MX1": 3.4352915930051315,
+      "OAS1": 2.7846129152065826,
+      "OAS2": 2.7741403129312,
+      "OAS3": 3.3269445344629065,
+      "RSAD2": 4.237900675617963,
+      "STAT1": 1.9311546834893933
+    },
+    "C": {
+      "IFI27": 3.828039807568498,
+      "IFI44": 3.3902853482111728,
+      "IFI44L": 3.9332252130787486,
+      "IFI6": 3.6865032153720536,
+      "IFIT1": 5.358738426022802,
+      "IFIT2": 4.473263489090571,
+      "IFIT3": 4.787191937653132,
+      "ISG15": 4.058600943032474,
+      "MX1": 3.998540433284493,
+      "OAS1": 2.8833227059587507,
+      "OAS2": 3.20206870655182,
+      "OAS3": 3.715649695178541,
+      "RSAD2": 4.958280063762327,
+      "STAT1": 2.466570451999395
+    }
+  },
+  "protocol_sha256": "796809ce20c81c00186adcd9b94f0d72cf41238d400ed0e2e5677fa51744b73e",
+  "role": "direction_only_cross_lab_confirmation_for_pre_sweep_context; not a single-cell classifier holdout",
+  "sample_design": [
+    {
+      "donor": "A",
+      "geo_accession": "GSM1863325",
+      "sample": "SAM2707860",
+      "treatment": "none"
+    },
+    {
+      "donor": "B",
+      "geo_accession": "GSM1863326",
+      "sample": "SAM2707863",
+      "treatment": "none"
+    },
+    {
+      "donor": "C",
+      "geo_accession": "GSM1863327",
+      "sample": "SAM2707857",
+      "treatment": "none"
+    },
+    {
+      "donor": "B",
+      "geo_accession": "GSM1863328",
+      "sample": "SAM2707864",
+      "treatment": "interferon-alpha"
+    },
+    {
+      "donor": "A",
+      "geo_accession": "GSM1863329",
+      "sample": "SAM2707861",
+      "treatment": "interferon-alpha"
+    },
+    {
+      "donor": "C",
+      "geo_accession": "GSM1863330",
+      "sample": "SAM2707858",
+      "treatment": "interferon-alpha"
+    }
+  ],
+  "sample_design_sha256": "376812b52d1ce77be4d4c3c6dabd4717fd721db683be0056df63e0d56b0c7b72",
+  "schema": "aleph.outer_library.pbmc_ifn_direction.v1",
+  "source_sha256": "da5c24eb8b7a8895864e2dc9fb9951638c2ac5116d49973143cf5869cb026619",
+  "transformation": "per-gene log1p(RPKM), then unweighted mean of the 14 frozen gene differences"
+}

@@ -1,0 +1,25 @@
+{
+  "device": "GPU",
+  "n_cells": 200,
+  "nodes": 8400,
+  "steps": 2000,
+  "warmup": 200,
+  "A_original_loop": {
+    "ms_per_step": 39.478218883043155,
+    "wall_s": 78.95643776608631,
+    "finite": true
+  },
+  "B_vectorized": {
+    "ms_per_step": 18.647961559938267,
+    "wall_s": 37.295923119876534,
+    "finite": true,
+    "speedup_vs_A": 2.117025968557061
+  },
+  "C_fused": {
+    "ms_per_step": 17.621338689583354,
+    "wall_s": 35.24267737916671,
+    "finite": true,
+    "speedup_vs_A": 2.240364343395785,
+    "speedup_over_B": 1.058260208741223
+  }
+}

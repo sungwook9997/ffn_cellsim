@@ -1,0 +1,88 @@
+{
+  "schema": "aleph.outer_library.idr0072_if_optical_channel_protocol.v3",
+  "frozen_after_one_file_metadata_probe_but_before_pixel_array_access_or_prediction": true,
+  "scientific_role": "schema-and-optics-informed independent-provider domain-shift diagnostic; not a pristine source-selection holdout",
+  "current_program_objective": "independent_external_biophysical_inference_network",
+  "future_aleph_adapter_required_for_completion": false,
+  "discovery_disclosure": {
+    "annotation_rows_seen_before_v2": 1,
+    "metadata_manifest_commit": "9008cf1",
+    "flex_files_opened_for_metadata": 1,
+    "pixel_arrays_loaded": 0,
+    "model_predictions_made": 0,
+    "reports": ["results/idr0072_if_v1_schema_discovery.json", "results/idr0072_if_v2_channel_discovery.json"],
+    "effect_on_model_or_endpoints": "none"
+  },
+  "source_contract": {
+    "provider": "Image Data Resource / University of Dundee",
+    "study": "idr0072-schormann-subcellref",
+    "screens": [2952, 2953],
+    "data_doi": "10.17867/10000160",
+    "publication_doi": "10.1083/jcb.201904090",
+    "license": "CC BY 4.0",
+    "manifest": "results/idr0072_if_image_manifest.jsonl",
+    "manifest_sha256": "61ff86eec15bbaa90d54a950ab9e55a20fc6ad8f127aec89012cc38e4d8f9e8d",
+    "manifest_commit": "9008cf1"
+  },
+  "frozen_model": {
+    "checkpoint": "results/hpa_raw_if_cnn_checkpoint.pt",
+    "checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+    "training_report": "results/hpa_raw_if_cnn_training_report.json",
+    "commit": "e755bd9",
+    "weights_thresholds_temperature_and_conformal_values_may_change": false
+  },
+  "flex_channel_contract": {
+    "metadata_source": "PerkinElmer FLEX XML tag 65200",
+    "required_pages": 2,
+    "target_protein": {
+      "excitation_nm": 488,
+      "camera_suffix": "Cam1",
+      "emission_filter": "520/35"
+    },
+    "nucleus": {
+      "excitation_nm": 640,
+      "camera_suffix": "Cam3",
+      "emission_filter": "690/70"
+    },
+    "resolution_rule": "resolve Image BufferNo through LightSourceCombinationRef, LightSourceRef wavelength, CameraRef, and FilterCombinationRef; each role must resolve exactly once",
+    "mismatch": "refuse file before prediction"
+  },
+  "pixel_preprocessing_contract": {
+    "input_order": ["nucleus", "target_protein"],
+    "z_projection": "maximum intensity projection; a single plane is unchanged",
+    "per_channel_scaling": "finite p1/p99 clipping to [0,1] with all-zero output when p99 is not above p1",
+    "geometry": "center-crop to square then area-resize to 128x128",
+    "input_shape": [2, 128, 128],
+    "server_rendered_composite_used": false,
+    "absolute_intensity_claim": false
+  },
+  "evaluation_contract": {
+    "supported_primary_classes": ["nuclear_interior", "endoplasmic_reticulum", "golgi", "mitochondria", "plasma_membrane_or_junction", "vesicular_organelle"],
+    "unsupported_frozen_model_classes": ["nuclear_envelope", "cytosol", "cytoskeleton_or_adhesion"],
+    "thresholds_temperature_and_conformal": "use frozen HPA checkpoint values unchanged",
+    "prediction_aggregation": "image diagnostics plus arithmetic-mean logits per landmark protein and plate",
+    "external_labels_may_select_or_change_nothing": true
+  },
+  "frozen_endpoints": {
+    "supported_class_image_level_macro_average_precision_minimum": 0.45,
+    "supported_class_image_level_macro_F1_minimum": 0.45,
+    "multilabel_ECE_maximum": 0.20,
+    "positive_label_conformal_coverage_minimum": 0.85,
+    "mean_prediction_set_size_maximum": 4.0,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_diagnostic_if_endpoints_pass": true,
+    "pristine_holdout_authority": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  },
+  "failure_policy": {
+    "file_or_optical_metadata_mismatch": "refuse affected image before prediction",
+    "endpoint_failure": "retain as consumed independent-provider diagnostic only",
+    "endpoint_success": "record optics-informed independent-provider domain-shift support without pristine or uncertainty authority"
+  }
+}

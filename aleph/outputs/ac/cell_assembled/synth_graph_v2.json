@@ -1,0 +1,150 @@
+{
+  "stage": {
+    "name": "SYNTHETIC full-graph (13 comp / real topology)",
+    "evidence": "SCHEMA-PROOF",
+    "note": "topology real (reference_cell_architecture); geometry+forces synthetic \u2014 NOT physics"
+  },
+  "report": {},
+  "components": [
+    {
+      "key": "membrane",
+      "kind": "mesh",
+      "order": 0,
+      "n_actors": 1
+    },
+    {
+      "key": "cortex",
+      "kind": "filaments",
+      "order": 1,
+      "n_actors": 2000
+    },
+    {
+      "key": "nucleus",
+      "kind": "mesh",
+      "order": 2,
+      "n_actors": 1
+    },
+    {
+      "key": "sf_arc",
+      "kind": "filaments",
+      "order": 3,
+      "n_actors": 60
+    },
+    {
+      "key": "microtubule",
+      "kind": "filaments",
+      "order": 4,
+      "n_actors": 120
+    },
+    {
+      "key": "intermediate_filament",
+      "kind": "filaments",
+      "order": 5,
+      "n_actors": 150
+    },
+    {
+      "key": "lamellipodium",
+      "kind": "filaments",
+      "order": 6,
+      "n_actors": 66
+    },
+    {
+      "key": "filopodium",
+      "kind": "filaments",
+      "order": 7,
+      "n_actors": 8
+    },
+    {
+      "key": "ecm",
+      "kind": "filaments",
+      "order": 8,
+      "n_actors": 300
+    }
+  ],
+  "connectors": [
+    {
+      "key": "membrane_erm_cortex",
+      "family": "ERM",
+      "a_component": "membrane",
+      "b_component": "cortex"
+    },
+    {
+      "key": "integrin_collagen_clutch",
+      "family": "FA-clutch",
+      "a_component": "cortex",
+      "b_component": "ecm"
+    },
+    {
+      "key": "actin_cap_linc",
+      "family": "LINC",
+      "a_component": "sf_arc",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "mt_nucleus_linc",
+      "family": "LINC",
+      "a_component": "microtubule",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "if_nucleus_linc",
+      "family": "LINC",
+      "a_component": "intermediate_filament",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "nmii_sf_motor",
+      "family": "MOTOR",
+      "a_component": "sf_arc",
+      "b_component": "cortex"
+    },
+    {
+      "key": "mt_cortex_capture",
+      "family": "MOTOR",
+      "a_component": "microtubule",
+      "b_component": "cortex"
+    },
+    {
+      "key": "if_sf_plectin",
+      "family": "plectin",
+      "a_component": "intermediate_filament",
+      "b_component": "sf_arc"
+    },
+    {
+      "key": "mt_sf_spectraplakin",
+      "family": "spectraplakin",
+      "a_component": "microtubule",
+      "b_component": "sf_arc"
+    },
+    {
+      "key": "sf_cortex_transient",
+      "family": "transient-actin",
+      "a_component": "sf_arc",
+      "b_component": "cortex"
+    },
+    {
+      "key": "lamellipodium_cortex_seam",
+      "family": "transient-actin",
+      "a_component": "lamellipodium",
+      "b_component": "cortex"
+    },
+    {
+      "key": "filopodium_cortex_root",
+      "family": "transient-actin",
+      "a_component": "filopodium",
+      "b_component": "cortex"
+    },
+    {
+      "key": "sf_cytosol_transfer",
+      "family": "immersed-transfer",
+      "a_component": "sf_arc",
+      "b_component": "nucleus"
+    },
+    {
+      "key": "membrane_ecm_contact",
+      "family": "CONTACT",
+      "a_component": "membrane",
+      "b_component": "ecm"
+    }
+  ]
+}

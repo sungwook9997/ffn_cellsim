@@ -1,0 +1,32 @@
+{
+  "design_contract": {
+    "C1_and_C2_are_separate_OHSU_collection_periods": true,
+    "each_collection_has_at_least_three_biological_replicates": true,
+    "paper_reports_eight_biological_replicates": true,
+    "phenotype_rows_are_author_well_level_summaries": true
+  },
+  "files": [
+    {
+      "local_name": "42003_2022_3975_MOESM3_ESM.xlsx",
+      "role": "Supplementary_Data_1_author_well_level_IF_phenotypes",
+      "sha256": "a1055652224ba1f0e3f1df1e767637ae417ffb5544024131043d0907b133ca26",
+      "size": 25788,
+      "url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs42003-022-03975-9/MediaObjects/42003_2022_3975_MOESM3_ESM.xlsx"
+    },
+    {
+      "local_name": "42003_2022_3975_MOESM25_ESM.xlsx",
+      "role": "Supplementary_Data_23_author_sample_metadata",
+      "sha256": "0f74f51269c94dd8bde300ddfbcd20c1195672fc1be380efbd16d93351196814",
+      "size": 89683,
+      "url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs42003-022-03975-9/MediaObjects/42003_2022_3975_MOESM25_ESM.xlsx"
+    }
+  ],
+  "schema": "aleph.outer_library.lincs_mcf10a_acquisition.v1",
+  "source": {
+    "license_id": "cc-by-4.0",
+    "paper_doi": "10.1038/s42003-022-03975-9",
+    "paper_url": "https://www.nature.com/articles/s42003-022-03975-9",
+    "pmcid": "PMC9546880",
+    "provider": "Springer Nature article supplementary data"
+  }
+}

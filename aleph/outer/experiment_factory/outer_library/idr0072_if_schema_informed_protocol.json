@@ -1,0 +1,112 @@
+{
+  "schema": "aleph.outer_library.idr0072_if_schema_informed_protocol.v2",
+  "frozen_after_one_metadata_schema_row_but_before_remaining_annotations_images_or_predictions": true,
+  "scientific_role": "schema-informed independent-provider domain-shift diagnostic; not a pristine source-selection holdout",
+  "current_program_objective": "independent_external_biophysical_inference_network",
+  "future_aleph_adapter_required_for_completion": false,
+  "discovery_disclosure": {
+    "rows_seen": 1,
+    "screen_id": 2952,
+    "well_id": 2104073,
+    "image_objects_downloaded": 0,
+    "model_predictions_made": 0,
+    "report": "results/idr0072_if_v1_schema_discovery.json",
+    "effect_on_model_or_endpoints": "none"
+  },
+  "source_contract": {
+    "provider": "Image Data Resource / University of Dundee",
+    "study": "idr0072-schormann-subcellref",
+    "screens": [2952, 2953],
+    "data_doi": "10.17867/10000160",
+    "publication_doi": "10.1083/jcb.201904090",
+    "license": "CC BY 4.0",
+    "official_landing_page": "https://idr.openmicroscopy.org/study/idr0072/",
+    "api_base": "https://idr.openmicroscopy.org"
+  },
+  "frozen_model": {
+    "checkpoint": "results/hpa_raw_if_cnn_checkpoint.pt",
+    "checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+    "training_report": "results/hpa_raw_if_cnn_training_report.json",
+    "commit": "e755bd9",
+    "weights_thresholds_temperature_and_conformal_values_may_change": false
+  },
+  "isa_tab_column_contract": {
+    "normalization": "Unicode casefold; if a column has one bracketed ISA-Tab qualifier, resolve the bracket contents, then remove non-alphanumeric characters",
+    "required_exact_qualifiers": {
+      "cell_line": "cellline",
+      "gene_symbol": "genesymbol",
+      "protein_name": "proteinname",
+      "localization": "subcellularlocalization"
+    },
+    "required_exact_plain_column": "channels",
+    "ambiguous_or_missing_column": "refuse",
+    "manual_column_choice": "forbidden"
+  },
+  "fixed_value_mapping": {
+    "normalization": "Unicode casefold and collapse punctuation or whitespace to one space",
+    "precedence": ["nuclear_envelope", "plasma_membrane_or_junction", "endoplasmic_reticulum", "golgi", "mitochondria", "cytoskeleton_or_adhesion", "vesicular_organelle", "nuclear_interior"],
+    "nuclear_envelope": ["nuclear envelope", "nuclear membrane"],
+    "plasma_membrane_or_junction": ["plasma membrane", "cell membrane", "cell cell junction", "tight junction"],
+    "endoplasmic_reticulum": ["endoplasmic reticulum", " er "],
+    "golgi": ["golgi"],
+    "mitochondria": ["mitochond"],
+    "cytoskeleton_or_adhesion": ["actin", "microtub", "cytoskeleton", "focal adhesion"],
+    "vesicular_organelle": ["vesicl", "endosom", "lysosom", "secretory pathway"],
+    "nuclear_interior": ["nucleus", "nuclear", "nucleol"],
+    "match_rule": "one and only one canonical class must contain at least one fixed token after padded-space normalization; otherwise refuse row"
+  },
+  "sampling_contract": {
+    "salt": "aleph-idr0072-if-v2-20260807",
+    "selection": "salted SHA-256 order within screen, plate, well, landmark protein, and canonical class",
+    "human_screen_priority": 2952,
+    "mouse_screen_is_prespecified_species_shift_diagnostic": 2953,
+    "maximum_images_per_landmark_protein_and_plate": 24,
+    "minimum_images_per_landmark_protein": 12,
+    "minimum_primary_classes": 6,
+    "minimum_landmark_proteins": 10,
+    "minimum_total_images": 240,
+    "reporting_unit": "landmark protein and plate",
+    "cell_images_are_not_independent_biological_replicates": true
+  },
+  "image_contract": {
+    "input_channels": ["nucleus", "target_protein"],
+    "nucleus_channel_tokens": ["dna", "hoechst", "dapi", "draq5", "nucleus", "405", "647"],
+    "target_channel_tokens": ["egfp", "gfp", "protein of interest", "target", "488"],
+    "channel_resolution": "exactly one nucleus and one target channel must match; ambiguity or absence refuses image",
+    "z_projection": "maximum intensity projection per selected channel",
+    "per_channel_scaling": "finite p1/p99 clipping to [0,1] with all-zero output when p99 is not above p1",
+    "geometry": "center-crop to square then area-resize to 128x128",
+    "input_shape": [2, 128, 128],
+    "segmentation_or_server_composite_used": false,
+    "absolute_intensity_claim": false
+  },
+  "evaluation_contract": {
+    "primary_classes": ["nuclear_interior", "nuclear_envelope", "endoplasmic_reticulum", "golgi", "mitochondria", "plasma_membrane_or_junction", "cytoskeleton_or_adhesion", "vesicular_organelle"],
+    "model_output_class_not_in_primary_source": ["cytosol"],
+    "thresholds_temperature_and_conformal": "use frozen HPA checkpoint values unchanged",
+    "prediction_aggregation": "image diagnostics plus arithmetic-mean logits per landmark protein and plate",
+    "external_labels_may_select_or_change_nothing": true
+  },
+  "frozen_endpoints": {
+    "image_level_macro_average_precision_minimum": 0.45,
+    "image_level_macro_F1_minimum": 0.45,
+    "multilabel_ECE_maximum": 0.20,
+    "positive_label_conformal_coverage_minimum": 0.85,
+    "mean_prediction_set_size_maximum": 4.0,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_diagnostic_if_endpoints_pass": true,
+    "pristine_holdout_authority": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  },
+  "failure_policy": {
+    "insufficient_class_support_or_channel_mismatch": "refuse before prediction",
+    "endpoint_failure": "retain as consumed independent-provider diagnostic only",
+    "endpoint_success": "record schema-informed independent-provider domain-shift support without pristine or uncertainty authority"
+  }
+}

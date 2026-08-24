@@ -1,0 +1,31 @@
+{
+  "alpha": 16.35514018691589,
+  "L_p_continuum_m": 1.6355140186915887e-05,
+  "L_p_C1_predicted_m": 1.6439241320962104e-05,
+  "L_p_C1_sigma_m": 1.263617004010057e-07,
+  "L_p_C1_band_5sigma_m": [
+    1.5807432818957076e-05,
+    1.7071049822967132e-05
+  ],
+  "E_kT_target_3d_exact": 0.9898303231439906,
+  "E_kT_target_rayleigh": 1.0,
+  "phi2_target_3d_exact_rad2": 0.060521054043661135,
+  "chi2_n_bins": 50,
+  "chi2_df": 49,
+  "chi2_critical_95": 66.3386488629688,
+  "chi2_critical_99": 74.91947430847813,
+  "KL_nats_threshold_95": 0.001939726574940608,
+  "KL_nats_threshold_99": 0.0021906279037566703,
+  "n_indep_samples_effective": 17100,
+  "measured_canonical": {
+    "L_p_C1_m": 1.083e-05,
+    "L_p_tail_m": 2.711e-05,
+    "E_mean_kT": 1.5,
+    "rel_vs_3d_kT": 0.502
+  },
+  "diagnostics": {
+    "slab_Lz_10um": "pending",
+    "mu_8p6_nN": "pending"
+  },
+  "decision_logic": "Under independent-bond 3D Boltzmann at \u03b1=16.4, L_p_C1 = L_p_tail = 16.44 \u03bcm exactly (C(s)=a^s analytically).  Measurement gives L_p_C1 = 10.83 \u03bcm (~35\u03c3 below) and L_p_tail = 27.11 \u03bcm (~50% above); spread between estimators + +50% \u27e8E\u27e9 all point to chain being 1.5\u00d7 softer than independent-bond expectation.  Slab and \u03bc-coupling diagnostics needed to identify the system-level mechanism."
+}

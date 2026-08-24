@@ -1,0 +1,58 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 1 item
+
+ffn_sim/tests/validation/test_ku130.py F
+
+=================================== FAILURES ===================================
+__________ TestKU130_3_PointDipole.test_point_dipole_production_band ___________
+
+self = <ffn_sim.tests.validation.test_ku130.TestKU130_3_PointDipole object at 0x13c19e5d0>
+
+    @pytest.mark.skipif(
+        os.environ.get("H1_KU130_PRODUCTION", "") != "1",
+        reason="Production-scale KU-1.30 #3; opt-in via H1_KU130_PRODUCTION=1.",
+    )
+    def test_point_dipole_production_band(self):
+        """Production-scale point-dipole σ(r) ∝ 1/r² fit with
+        **paired-run baseline subtraction** (PI 2026-05-21).
+    
+        Two branches with identical seed (so identical Mikado topology +
+        identical BAOAB thermal-noise trajectory): one with the dipole
+        forces attached, one without.  Per-bond difference cancels the
+        ~3 300 Pa construction-residual baseline σ_xx, leaving only the
+        dipole-induced stress.
+        """
+        with open(CONFIG_PATH) as f:
+            cfg = yaml.safe_load(f)
+        p = resolve_derived(cfg)
+        t0 = time.time()
+        res = _point_dipole_stress_decay(
+            p,
+            n_softstart=100, n_baoab=900, n_after_dipole=2000,
+            n_time_avg_samples=5, time_avg_spacing=200,
+            paired_baseline=True,
+        )
+        elapsed = time.time() - t0
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            OUTPUTS_DIR / "ku130_point_dipole_production.npz",
+            bin_centers_m=res.bin_centers_m,
+            sigma_radial_pa=res.sigma_radial_pa,
+            fit_exponent=res.fit_exponent,
+            wall_time_s=elapsed,
+        )
+>       assert -2.5 <= res.fit_exponent <= -1.5, (
+            f"Point-dipole stress decay exponent {res.fit_exponent:.3f} "
+            f"outside KU-1.30 #3 band [-2.5, -1.5]. Surface to PI."
+        )
+E       AssertionError: Point-dipole stress decay exponent -0.498 outside KU-1.30 #3 band [-2.5, -1.5]. Surface to PI.
+E       assert -0.49829324619971177 <= -1.5
+E        +  where -0.49829324619971177 = DipoleResult(bin_centers_m=array([6.29977771e-07, 9.57510196e-07, 1.45533036e-06, 2.21197274e-06,\n       3.36200188e-0...0523,   7.1353028 ,  82.43411024,\n        47.92784295,  36.58748067,   9.7094785 ]), fit_exponent=-0.49829324619971177).fit_exponent
+
+ffn_sim/tests/validation/test_ku130.py:829: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/validation/test_ku130.py::TestKU130_3_PointDipole::test_point_dipole_production_band
+======================== 1 failed in 226.86s (0:03:46) =========================

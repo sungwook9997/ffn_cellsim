@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "authority": "external_non_authoritative_weak_supervision",
+  "seed": 20260805,
+  "split": {
+    "train": 0.7,
+    "validation": 0.15,
+    "test": 0.15,
+    "group_key": "source_family_id",
+    "hash": "sha256"
+  },
+  "features": {
+    "hash_buckets": 4096,
+    "title_prefix": "title",
+    "journal_prefix": "journal",
+    "year_bucket_width": 5,
+    "minimum_token_length": 2
+  },
+  "model": {
+    "kind": "sparse_bag_mlp",
+    "hidden_width": 64,
+    "epochs": 35,
+    "batch_size": 128,
+    "learning_rate": 0.01,
+    "l2": 0.0001,
+    "patience": 7
+  },
+  "retrieval": {
+    "top_k": 5,
+    "max_test_queries": 1200
+  }
+}
+

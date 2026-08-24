@@ -1,0 +1,71 @@
+{
+  "config": {
+    "n_fil": 300,
+    "n_motors_on": 60,
+    "n_xl": 450,
+    "bind_scale": 6.0,
+    "kon_scale": 300.0,
+    "n_sample": 3,
+    "interval": 3000
+  },
+  "motors_off": {
+    "signed_mN_m": 1.5019707992544723e-07,
+    "magnitude_mN_m": 1.6550444274886181e-07,
+    "r_over_r0": 1.0000014998301896,
+    "rows": [
+      {
+        "magnitude_mN_m": 1.6541344925618222e-07,
+        "signed_mN_m": 1.5040853106189704e-07,
+        "n_planes_positive": 10,
+        "n_planes": 12,
+        "r_over_r0": 1.000003393352959
+      },
+      {
+        "magnitude_mN_m": 1.660272643150285e-07,
+        "signed_mN_m": 1.5060378652184067e-07,
+        "n_planes_positive": 11,
+        "n_planes": 12,
+        "r_over_r0": 1.0000015986023247
+      },
+      {
+        "magnitude_mN_m": 1.6507261467537475e-07,
+        "signed_mN_m": 1.4957892219260402e-07,
+        "n_planes_positive": 11,
+        "n_planes": 12,
+        "r_over_r0": 0.9999995075352853
+      }
+    ]
+  },
+  "motors_on": {
+    "signed_mN_m": 0.00012792296388531834,
+    "magnitude_mN_m": 0.00012792296388531834,
+    "r_over_r0": 0.9999985873109937,
+    "rows": [
+      {
+        "magnitude_mN_m": 4.118823646201737e-05,
+        "signed_mN_m": 4.118823646201737e-05,
+        "n_planes_positive": 12,
+        "n_planes": 12,
+        "r_over_r0": 0.9999991629731038
+      },
+      {
+        "magnitude_mN_m": 0.0001229658731467762,
+        "signed_mN_m": 0.0001229658731467762,
+        "n_planes_positive": 12,
+        "n_planes": 12,
+        "r_over_r0": 0.99999837567995
+      },
+      {
+        "magnitude_mN_m": 0.00021961478204716143,
+        "signed_mN_m": 0.00021961478204716143,
+        "n_planes_positive": 12,
+        "n_planes": 12,
+        "r_over_r0": 0.9999982232799272
+      }
+    ]
+  },
+  "delta_signed_mN_m": 0.0001277727668053929,
+  "delta_magnitude_mN_m": 0.00012775745944256948,
+  "verdict": "CONTRACTILE (myosin adds net tensile hoop stress)",
+  "interpretation": "\u0394_signed = signed_stress(motors ON) \u2212 signed_stress(OFF). The gated estimator reports |stress| and cannot see this sign. A positive \u0394_signed is the FIRST evidence of net contraction; \u22480 confirms local-dipole cancellation (the wall); <0 means the current cortex is EXTENSILE. This gates whether the selector fix is needed and what it must achieve."
+}

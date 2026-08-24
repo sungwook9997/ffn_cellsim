@@ -1,0 +1,42 @@
+{
+  "aleph_authority": "none",
+  "extracted_tables": {
+    "Figure2_Data.xlsx": {
+      "archive_member": "data_zenodo/Figure Data/Figure2_Data.xlsx",
+      "crc32": "377026a2",
+      "sha256": "3b7fea5a2e77d4043093efad579cbe20d5a5dcd988ac2f375f539dac3848ba8f",
+      "size_bytes": 73775
+    },
+    "Figure3_Data.xlsx": {
+      "archive_member": "data_zenodo/Figure Data/Figure3_Data.xlsx",
+      "crc32": "dc2b5ece",
+      "sha256": "161fe872f9e4b19818403bca08f018ce0c8dbfc35fffb64222f5793b5187aa19",
+      "size_bytes": 9841
+    },
+    "FigureS2_Data.xlsx": {
+      "archive_member": "data_zenodo/Figure Data/FigureS2_Data.xlsx",
+      "crc32": "81b191a1",
+      "sha256": "2b3fde6dfe312dbea594b17e5c3d4c500af8e12efc6582ff4f96ed8eff097c14",
+      "size_bytes": 62130
+    },
+    "Kreysing_McHugh_key_resources.xlsx": {
+      "archive_member": "data_zenodo/Kreysing_McHugh_key_resources.xlsx",
+      "crc32": "36c09f39",
+      "sha256": "c6bfab40249a9422f441841750870f82f9a205d535bf598a9e00db20767bbfe5",
+      "size_bytes": 9720
+    }
+  },
+  "license_id": "cc-by-4.0",
+  "may_select_aleph_parameter": false,
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.zenodo_7432971_figure_tables.v1",
+  "source_archive": {
+    "central_directory_range_verified": true,
+    "full_archive_downloaded": false,
+    "member_count": 3408,
+    "name": "data_zenodo.zip",
+    "official_metadata_md5": "45fd97f362c83333452fc78e93592a55",
+    "size_bytes": 4942831343
+  },
+  "source_doi": "10.5281/zenodo.7432971"
+}

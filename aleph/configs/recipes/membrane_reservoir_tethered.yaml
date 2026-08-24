@@ -1,0 +1,40 @@
+# ============================================================================
+# RECIPE: membrane_reservoir_tethered  (H.7 platform — H.8 reservoir LIVE, 2026-06-09)
+# ============================================================================
+# The suspended/rounded MCF7 cell with the plasma-membrane RESERVOIR tether mesh
+# turned ON: an OWN radially-offset mem_node bead layer outside the cortex shell,
+# joined to the cortex by a static breakable mem_tether mesh (each node → a
+# distinct cortex bead, force-free at the membrane–cortex offset). This is the
+# explicit membrane–cortex adhesion (MCA) load path; mem_ bonds are γ-denylisted
+# (registry-driven) so the tether does NOT contaminate cortical γ.
+#
+# Extends suspended_round; membrane_surface is baseline-required (always on), which
+# the reservoir requires. ONLY the STATIC tether mesh activates here — the bleb
+# rupture updater (σ_crit_bleb) and reservoir-release buffering (f_excess) stay
+# PI-blocked (None → those code paths raise) until PI anchors the MCF7 values.
+# ============================================================================
+
+name: membrane_reservoir_tethered
+description: Suspended MCF7 cell with the plasma-membrane reservoir tether mesh (static MCA).
+scope: suspended
+extends: suspended_round
+
+observables: [cortical_tension, membrane_cortex_adhesion]
+
+enable:
+  - membrane_reservoir      # H.8 own mem_node layer + static mem_tether mesh
+
+disable: []
+declare_pending: []
+
+notes: >
+  STATIC tether mesh only. Own mem_node layer at membrane_offset=50 nm (¼ of the
+  200 nm acceptor reach) outside the cortex; each node tethers to a distinct cortex
+  bead (degree-aware acceptor selection bounds the per-cortex bond degree to +1 →
+  nlist exclusion-cap safe, the LINC/MTOC lesson), force-free at the offset
+  (one mem_tether type). W_MCA=1e-5 J/m² (KU-3.B1.4), k_tether=0.1 N/m (ERM order),
+  max_tether_dist=200 nm (KU-3.17) are anchored module defaults. The PRIMARY
+  no-contamination control (cortical γ_soft unchanged ON vs OFF, mem_ denylisted)
+  + cross-layer mesh (no self-pairs) + force-free build is the LIVE build-time gate.
+  ⚠ Bleb nucleation (σ_crit_bleb, Tinevez 2009) + reservoir release (f_excess,
+  Raucher-Sheetz/Figard) are PI-pending (None) → those paths stay blocked.

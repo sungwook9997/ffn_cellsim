@@ -1,0 +1,30 @@
+{
+  "aleph_parameter_authority": "none",
+  "input_manifest_sha256": "61ff86eec15bbaa90d54a950ab9e55a20fc6ad8f127aec89012cc38e4d8f9e8d",
+  "input_rows": 2594,
+  "metadata_receipts": {
+    "screenA": {
+      "bytes": 1402,
+      "plate_count": 10,
+      "sha256": "5d6dc94228c0e9c7f0920d1fc440e33ab98309a01179ca222f20615b42fba2f4",
+      "url": "https://raw.githubusercontent.com/IDR/idr0072-schormann-subcellref/85d154650a26f011b57f13f91e4be11d1f9dde12/screenA/idr0072-screenA-plates.tsv"
+    },
+    "screenB": {
+      "bytes": 11577,
+      "plate_count": 84,
+      "sha256": "78c19fc6b397fa22442d49045e53721bc5aa9b0a7e9fd19a2e0d3fc909c7afd9",
+      "url": "https://raw.githubusercontent.com/IDR/idr0072-schormann-subcellref/85d154650a26f011b57f13f91e4be11d1f9dde12/screenB/idr0072-screenB-plates.tsv"
+    }
+  },
+  "metadata_repository_commit": "85d154650a26f011b57f13f91e4be11d1f9dde12",
+  "model_predictions_made": 0,
+  "pristine_holdout_authority": false,
+  "resolved_manifest_sha256": "cd6b0c8c910419e90574624eebcbbd85b775b41999ca3c4169a4202ddcd1c308",
+  "resolved_rows": 2594,
+  "schema": "aleph.outer_library.idr0072_if_flex_resolution.v2",
+  "source_total_bytes_sum": 160286874035,
+  "status": "one_to_one_flex_sources_resolved_before_prediction",
+  "unique_image_ids": 2594,
+  "unique_local_paths": 2594,
+  "unique_source_urls": 2594
+}

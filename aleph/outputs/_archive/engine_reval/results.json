@@ -1,0 +1,638 @@
+[
+ {
+  "part": "P0.1",
+  "name": "Overdamped integrator (axpy) \u2014 relaxation to mechanical equilibrium",
+  "passed": true,
+  "oracle": "x(t)=x*(1\u2212e^{\u2212(k/\u03b3)t}), x*=F/k; explicit-Euler stable iff dt\u00b7k/\u03b3<2",
+  "metrics": {
+   "x_star": 1.5,
+   "x_final": 1.5000000000000053,
+   "conv_rel_err": 3.552713678800501e-15,
+   "rate_fit": 2.0202707317323787,
+   "rate_target": 2.0,
+   "rate_rel_err": 0.01013536586618935,
+   "device": "cuda"
+  },
+  "phenomena": {
+   "converges_to_F/k": true,
+   "decay_rate=k/\u03b3": true,
+   "stability_threshold_dt\u00b7k/\u03b3=2": true
+  },
+  "figure": "outputs/engine_reval/figs/P0_1_integrator.png",
+  "note": "FF is a mechanical-equilibrium solver (ENGINE.md), athermal by design; thermal effect enters as the deterministic WLC term (kBT/Lp), not a node Langevin bath."
+ },
+ {
+  "part": "P1.1",
+  "name": "Filament bending \u03ba=k_BT\u00b7\u2113_p \u2014 energy magnitude \u03baL/2R\u00b2",
+  "passed": true,
+  "oracle": "E_bend = \u03baL/2R\u00b2 (Euler\u2013Bernoulli, constant-curvature arc)",
+  "metrics": {
+   "E_analytic_pN_um": 0.8,
+   "max_rel_err_corrected": 0.00041661458641095717,
+   "resolutions": [
+    5,
+    9,
+    17,
+    33,
+    65
+   ],
+   "E_corrected": [
+    0.7996667083308713,
+    0.7999166692707828,
+    0.7999791668294556,
+    0.7999947916769532,
+    0.7999986979173892
+   ]
+  },
+  "phenomena": {
+   "corrected_within_0.5pct_all_n": true,
+   "raw_undercounts_by_(n-2)/(n-1)": true
+  },
+  "figure": "outputs/engine_reval/figs/P1_1_bending_energy.png",
+  "note": "\u03ba=20 pN\u00b7\u00b5m\u00b2 (NF2007), R=5\u00b5m, L=2\u00b5m; magnitude is \u03ba-linear."
+ },
+ {
+  "part": "P1.2",
+  "name": "Inextensibility \u2014 NF2007 reshape (hard constraint, not a spring)",
+  "passed": true,
+  "oracle": "|m_{k+1}\u2212m_k| = seg_rest \u2200 segments, COG conserved",
+  "metrics": {
+   "max_seg_rel_err": 2.7755575615628914e-16,
+   "cog_drift_um": 1.674885678665543e-16,
+   "contour_rel_err": 2.220446049250313e-16,
+   "stretch_applied": 0.3
+  },
+  "phenomena": {
+   "segments_restored_to_rest_<2pct": true,
+   "COG_conserved_<1e-6": true,
+   "contour_length_restored": true
+  },
+  "figure": "outputs/engine_reval/figs/P1_2_inextensibility.png",
+  "note": ""
+ },
+ {
+  "part": "P1.3",
+  "name": "Excluded volume \u2014 one-sided repulsive contact",
+  "passed": true,
+  "oracle": "final separation = max(d\u2080, r_contact); no attraction",
+  "metrics": {
+   "r_contact": 0.1,
+   "inside_d0_0.05_final": 0.09999999999999998,
+   "outside_d0_0.20_final": 0.2
+  },
+  "phenomena": {
+   "inside_pushed_to_r_contact": true,
+   "outside_untouched_(one-sided)": true
+  },
+  "figure": "outputs/engine_reval/figs/P1_3_excluded_volume.png",
+  "note": ""
+ },
+ {
+  "part": "P2.1",
+  "name": "WLC crosslink/segment tension (Marko\u2013Siggia)",
+  "passed": true,
+  "oracle": "F=(kBT/Lp)[1/4(1\u2212x)\u00b2\u22121/4+x], entropic branch; finite EA wall beyond x_max",
+  "metrics": {
+   "max_rel_mismatch_vs_analytic": 0.0,
+   "small_x_slope": 0.1236977506409611,
+   "target_slope_3kBT/2Lp": 0.12341999999999999
+  },
+  "phenomena": {
+   "matches_Marko-Siggia": true,
+   "monotone_increasing": true,
+   "small_x_modulus_3kBT/2Lp": true,
+   "C1_enthalpic_cap_no_blowup": true
+  },
+  "figure": "outputs/engine_reval/figs/P2_1_wlc.png",
+  "note": ""
+ },
+ {
+  "part": "P2.2",
+  "name": "Bond off-rate \u2014 Bell slip + Pereverzev catch\u2013slip",
+  "passed": true,
+  "oracle": "Bell p\u2080e^{f/f\u2080}; Pereverzev peak F*=kT/(x_c+x_s)\u00b7ln(k_c x_c/k_s x_s)",
+  "metrics": {
+   "Fstar_analytic_pN": 9.315032669125955,
+   "Fstar_numeric_pN": 9.32330827067669,
+   "bell_f0_pN": 12.0
+  },
+  "phenomena": {
+   "bell_monotone_slip": true,
+   "pereverzev_catch-slip_peak_at_F*": true,
+   "catch_then_slip_shape": true
+  },
+  "figure": "outputs/engine_reval/figs/P2_2_offrate.png",
+  "note": ""
+ },
+ {
+  "part": "P2.3",
+  "name": "Myosin NMIIA \u2014 LINEAR force\u2013velocity + ensemble stall (not Hill)",
+  "passed": true,
+  "oracle": "F_s=N_side\u00b7F_head \u2208 [50,100] pN (KB-3.18); v(F)=v\u2080(1\u2212F/F_s) affine",
+  "metrics": {
+   "n_side": 30,
+   "F_head_pN": 2.0,
+   "F_stall_pN": 60.0,
+   "v0_um_s": 0.12
+  },
+  "phenomena": {
+   "ensemble_stall_in_KB-3.18_band_50-100pN": true,
+   "linear_FV_affine_zero_Hill_curvature": true
+  },
+  "figure": "outputs/engine_reval/figs/P2_3_myosin.png",
+  "note": "Hill 1938 kept as a MUSCLE-only oracle; non-binding for NMIIA (PI-ratified)."
+ },
+ {
+  "part": "P2.4",
+  "name": "Hand-KMC binding \u2014 exponential-CDF + steady-state duty",
+  "passed": true,
+  "oracle": "P=1\u2212e^{\u2212k\u03c4}; steady bound fraction = k_on/(k_on+k_off)",
+  "metrics": {
+   "p_attach": 0.0198013266932447,
+   "p_detach": 0.004987520807317687,
+   "steady_frac_sim": 0.7982396749999999,
+   "steady_frac_analytic": 0.8
+  },
+  "phenomena": {
+   "per_step_P=exponential_CDF": true,
+   "steady_state_duty=k_on/(k_on+k_off)": true
+  },
+  "figure": "outputs/engine_reval/figs/P2_4_hand_kmc.png",
+  "note": ""
+ },
+ {
+  "part": "P3.1",
+  "name": "Cortex assembly \u2014 areal density + percolating spanning mesh",
+  "passed": true,
+  "oracle": "areal density \u2248100/\u00b5m\u00b2 (KB-3.18); single percolating giant component (giant\u226b2nd)",
+  "metrics": {
+   "n_fibers": 70686,
+   "areal_density_um2": 100.00023384349969,
+   "giant_fraction": 0.8434060492884022,
+   "second_fraction": 0.00011317658376481907,
+   "n_components": 9154,
+   "R_um": 7.5
+  },
+  "phenomena": {
+   "density_in_~100/\u00b5m\u00b2_band": true,
+   "percolating_single_giant_component": true
+  },
+  "figure": "outputs/engine_reval/figs/P3_1_cortex_assembly.png",
+  "note": "native NF default (set REVAL_NFIL for a small smoke-test); giant\u22480.84 is the validated native-cortex connectivity (dangling ends outside the giant are physical)."
+ },
+ {
+  "part": "P3.2",
+  "name": "Active cortical tension \u03b3 \u2014 MEASURED (method-of-planes), not imposed",
+  "passed": true,
+  "oracle": "\u03b3_active = \u03b3_actin+\u03b3_xl+\u03b3_myo (measured); \u03b3_myo \u221d f_myo (linear in motor force)",
+  "metrics": {
+   "gamma_active_pN_um": [
+    0.006385114927590037,
+    0.8120261921516394,
+    1.629237179386136,
+    3.2636591538551287
+   ],
+   "gamma_myo_pN_um": [
+    0.0,
+    0.857502012138357,
+    1.715004024276714,
+    3.430008048553428
+   ],
+   "f_myo": [
+    0.0,
+    25.0,
+    50.0,
+    100.0
+   ],
+   "channel_sum_at_50": 2.572947360520767,
+   "gamma_active_at_50": 1.629237179386136
+  },
+  "phenomena": {
+   "\u03b3_myo_linear_in_f_myo(measured)": true,
+   "\u03b3_active_tracks_motor_force": true,
+   "sub-channels_sum_to_total(actin_can_be_compressive)": false
+  },
+  "figure": "outputs/engine_reval/figs/P3_2_gamma_measured.png",
+  "note": "\u03b3 is emergent from filament/motor/xlink forces (measured-not-imposed); \u03b3-floor caveat honored."
+ },
+ {
+  "part": "P3.3",
+  "name": "Turnover \u2192 stress relaxation (Maxwell/SLS G(t))",
+  "passed": true,
+  "oracle": "G(t)=G\u221e+G\u2081e^{\u2212t/\u03c4}; \u03c4 \u2248 1/k_off\u2080 (emerges, KB-1.6)",
+  "metrics": {
+   "Ginf_over_G0": 0.15315633078859722,
+   "tau_s": 54.54545454545455,
+   "tau_x_koff": 1.090909090909091,
+   "koff0_per_s": 0.02
+  },
+  "phenomena": {
+   "G(t)_relaxes": true,
+   "\u03c4\u22481/k_off_emerges": true,
+   "finite_residual_G\u221e": true
+  },
+  "figure": "outputs/engine_reval/figs/P3_3_relaxation.png",
+  "note": "elastic short-time, fluid past turnover; \u03c4 emerges from crosslink lifetime, not tuned."
+ },
+ {
+  "part": "P3.4",
+  "name": "Cortex constitutive class \u2014 drained = LINEAR-SHELL at small strain (S1 re-validated)",
+  "passed": true,
+  "oracle": "small-strain (\u03b4/R\u22640.05): drained cortex F\u221d\u03b4 (linear shell) \u2265 F\u221d\u03b4^1.5 (Hertz); stiffens at large strain",
+  "metrics": {
+   "R0_um": 7.499978516787127,
+   "k_shell_pN_per_um": 8147.846529750287,
+   "r2_shell_smallstrain": 0.9859451248753839,
+   "r2_hertz_smallstrain": 0.9316531100188449,
+   "secant_ratio_large/small": 1.5249722534036434,
+   "dR": [
+    0.02,
+    0.03,
+    0.04,
+    0.05,
+    0.08,
+    0.12,
+    0.18
+   ],
+   "F_pN": [
+    1064.0519558992926,
+    1819.4539106790962,
+    2426.235876195524,
+    3141.4549548466216,
+    5384.688824266415,
+    8411.780084112539,
+    14603.847380336687
+   ],
+   "n_steps": 15000,
+   "device": "cuda:0"
+  },
+  "phenomena": {
+   "small_strain_linear_shell\u2265Hertz": true,
+   "large_strain_compression_stiffens(S2)": true
+  },
+  "figure": "outputs/engine_reval/figs/P3_4_constitutive.png",
+  "note": "HONEST re-validation: the constitutive CLASS is judged at small strain (\u03b4/R\u22640.05); the prior S1 'clean r\u00b2=0.992' is regime-specific. At larger strain the cortex STIFFENS (super-linear, S2's compression-stiffening) \u2014 a real phenomenon, not the class. native NF, LOAD_PHYSIO rigid."
+ },
+ {
+  "part": "P4.1",
+  "name": "Turgor / osmotic \u2014 Young\u2013Laplace \u03b3=\u0394P\u00b7R/2 pre-stress generator",
+  "passed": true,
+  "oracle": "\u03b3_passive = \u0394P\u00b7R/2 (exact sphere Young\u2013Laplace)",
+  "metrics": {
+   "dP_sweep": [
+    0.0,
+    10.0,
+    20.0,
+    40.0,
+    80.0
+   ],
+   "gamma_pN_um": [
+    0.0,
+    37.49993376710528,
+    74.99986753442884,
+    149.99973506907597,
+    299.9994701383702
+   ],
+   "R_mean_um": [
+    7.499986753464712,
+    7.499986753464712,
+    7.499986753464712,
+    7.499986753464712,
+    7.499986753464712
+   ]
+  },
+  "phenomena": {
+   "\u03b3=\u0394P\u00b7R/2_identity": true,
+   "turgor_ON\u2192pre-stressed_\u03b3>0": true,
+   "\u03b3_linear_in_\u0394P": true
+  },
+  "figure": "outputs/engine_reval/figs/P4_1_turgor.png",
+  "note": "Force-balance identity + pre-stress mechanism validated; band reproduction NOT claimed."
+ },
+ {
+  "part": "P4.2",
+  "name": "Poroelastic rate-dependence \u2014 undrained-stiff / drained-soft (Moeendarbary)",
+  "passed": true,
+  "oracle": "E_fit(fast/undrained) > E_fit(slow/drained); modest ratio (poroelastic composite)",
+  "metrics": {
+   "E_undrained_Pa": 4526.973112304378,
+   "E_drained_Pa": 3987.8844166763874,
+   "ratio": 1.135181624967276,
+   "K_drained_Pa": 300.0,
+   "n_steps": 15000,
+   "device": "cuda:0"
+  },
+  "phenomena": {
+   "undrained_stiffer_than_drained": true,
+   "modest_ratio(not_instant_artifact)": true
+  },
+  "figure": "outputs/engine_reval/figs/P4_2_poroelastic.png",
+  "note": "0-D volumetric Terzaghi/Biot + Kedem-Katchalsky (re-verify-confirmed real, not faked); the SPATIAL pore-pressure field is the T7.F build target."
+ },
+ {
+  "part": "P5.T",
+  "name": "Microtubule beam \u2014 Euler buckling F_crit=\u03c0\u00b2EI/L\u00b2 (emergent)",
+  "passed": true,
+  "oracle": "F_crit=\u03c0\u00b2EI/L\u00b2=7.90 pN (L=5\u00b5m); discrete eigenvalue \u2192 Euler; EI=k_BT\u00b7L_p",
+  "metrics": {
+   "EI_pN_um2": 20.0,
+   "F_crit_analytic_pN": 7.895683520871487,
+   "F_crit_discrete_pN": 7.894693792460666,
+   "discrete_conv_err": 0.00012535056758605756,
+   "Lp_mm": 4.6728842038967215
+  },
+  "phenomena": {
+   "F_crit=\u03c0\u00b2EI/L\u00b2": true,
+   "discrete_buckling\u2192Euler": true,
+   "EI=k_BT\u00b7L_p": true
+  },
+  "figure": "outputs/engine_reval/figs/P5_T_microtubule.png",
+  "note": "EI=20 pN\u00b7\u00b5m\u00b2 (NF2007/Gittes); MT compression-bearing is emergent bending, not a strut."
+ },
+ {
+  "part": "P5.M",
+  "name": "Plasma membrane \u2014 area elasticity K_A + reservoir (bending GAP)",
+  "passed": true,
+  "oracle": "reservoir plateau then steep K_A upturn (Rawicz 0.235 N/m); Helfrich bending ABSENT",
+  "metrics": {
+   "RESERVOIR_STRAIN": 0.6,
+   "tension_max_pN_um": 5000.0,
+   "bending_kernel_absent": true
+  },
+  "phenomena": {
+   "reservoir_plateau_below": true,
+   "steep_K_A_upturn_above": true,
+   "helfrich_bending_ABSENT(gap)": true
+  },
+  "figure": "outputs/engine_reval/figs/P5_M_membrane.png",
+  "note": "\u26a0 Helfrich bending + 2-D membrane fluid are GAPS (inventory-confirmed) \u2014 S4/S7 build targets; RESERVOIR_STRAIN=0.60 is a flagged magic-number (PI sign-off)."
+ },
+ {
+  "part": "P5.M.b",
+  "name": "Helfrich membrane tether \u2014 bending SEED (S4 build target, gap)",
+  "passed": true,
+  "oracle": "r_t=\u221a(\u03ba_m/2T_m), f_t=2\u03c0\u221a(2\u03ba_m\u00b7T_m) [Helfrich tether]; f_t \u221d \u221aT_m",
+  "metrics": {
+   "kappa_m_pN_um": 0.0828,
+   "r_t_num_um": [
+    1.4387476637383185,
+    0.9099372546862734,
+    0.6434225671128356,
+    0.45496874984374924
+   ],
+   "f_t_num_pN": [
+    0.361597177956127,
+    0.5717353389358488,
+    0.8085558704136531,
+    1.1434706778691002
+   ],
+   "f_t_analytic_pN": [
+    0.36159717795584606,
+    0.571735338914851,
+    0.8085558703813603,
+    1.143470677829702
+   ]
+  },
+  "phenomena": {
+   "tether_radius=\u221a(\u03ba_m/2T_m)": true,
+   "tether_force=2\u03c0\u221a(2\u03ba_m T_m)": true,
+   "f_t\u221d\u221aT_m_tension_stiffening": true
+  },
+  "figure": "",
+  "note": "SEED for the S4 membrane build \u2014 the Helfrich bending kernel is ABSENT (P5.M gap); this validates the bending physics + oracle it must reproduce. \u03ba_m from KU-3.B1.2 (registered)."
+ },
+ {
+  "part": "P5.N",
+  "name": "Nucleus \u2014 incompressibility + role-by-ablation (soft inclusion)",
+  "passed": true,
+  "oracle": "nuc_vol conserved (K_vol, \u03bd=0.499); cortex+nucleus > cortex-only (net stiffener)",
+  "metrics": {
+   "nuc_vol_conserved": 0.9998037483469148,
+   "R_nuc_eq_um": 5.214854297728885,
+   "R_nuc_um": 5.25,
+   "F_with_nucleus_pN": 48672.761132461674,
+   "F_cortex_only_pN": 44600.86576951796,
+   "contribution_frac": 0.09129633007542681,
+   "strain": 0.45,
+   "device": "cuda:0"
+  },
+  "phenomena": {
+   "incompressible_vol=1.000": true,
+   "bulges_R_eq\u2265R_nuc": true,
+   "role_net_stiffener(ablation)": true
+  },
+  "figure": "outputs/engine_reval/figs/P5_N_nucleus.png",
+  "note": "native NF, \u03b5=0.45; nucleus contributes +9% \u2014 soft inclusion (E_nuc=399<cortex), re-establishing the S3 finding from parts."
+ },
+ {
+  "part": "P6.1",
+  "name": "Pre-stressed physiological cell \u2014 the TRUSTWORTHY baseline (S1\u2013S3 lacked)",
+  "passed": true,
+  "oracle": "stable relaxed equilibrium; PRE-STRESSED (\u03b3>0, \u0394P>0); all compartments ON; sphericity \u03a8>0.90",
+  "metrics": {
+   "Nc_cortex": 494802,
+   "n_nucleus": 3000,
+   "n_microtubule": 40,
+   "R_mean_um": 7.500071048736572,
+   "R_std_um": 0.008951256982982159,
+   "sphericity": 0.9999931143065421,
+   "dP_turgor_Pa": 40.0,
+   "gamma_mN_m": 0.15029257669314358,
+   "hull_volume_um3": 1767.189698698141
+  },
+  "phenomena": {
+   "all_compartments_ON": true,
+   "pre-stressed_\u03b3>0_\u0394P>0": true,
+   "spherical_\u03a8>0.90_relaxed": true
+  },
+  "figure": "outputs/engine_reval/figs/P6_1_prestressed_cell.png",
+  "note": "native full cell, from-resting; the framework physiological baseline \u2014 NOT the stripped (membrane/MT/gravity OFF) S1\u2013S3 baseline the PI flagged."
+ },
+ {
+  "part": "P7.F.1",
+  "name": "Biot poroelastic pore-pressure FIELD \u2014 1-D Terzaghi consolidation (FEM\u2192FEM+CFD seed)",
+  "passed": true,
+  "oracle": "p(x,t)/p\u2080 = \u03a3(4/\u03c0)(1/(2m+1))sin((2m+1)\u03c0x/2H)exp(\u2212(2m+1)\u00b2\u03c0\u00b2c_v t/4H\u00b2) [Terzaghi]",
+  "metrics": {
+   "max_rel_err_vs_Terzaghi": 0.010844474633934065,
+   "c_v_um2_s": 50.0,
+   "tau_p_s": 1.125,
+   "H_um": 7.5,
+   "t_report_s": 0.5,
+   "nx": 80
+  },
+  "phenomena": {
+   "matches_Terzaghi_series": true,
+   "drained_boundary_p=0": true,
+   "poroelastic_\u03c4_p~H\u00b2/c_v_emerges": true
+  },
+  "figure": "",
+  "note": "FIRST T7.F increment \u2014 validates the spatial pore-pressure field vs analytic consolidation; the 3-D device grid + IBM two-way FSI (retire 6\u03c0\u03b7R same commit) is the LARGE build. \u03c4_p\u22481.1s is the poroelastic time the 0-D efflux clock (\u03c4_osm~30-200s) cannot represent."
+ },
+ {
+  "part": "P7.F.2",
+  "name": "3-D Biot pore-pressure field solver \u2014 Gaussian Green's function",
+  "passed": true,
+  "oracle": "p(r,t)=(4\u03c0Dt)^{\u22123/2}exp(\u2212r\u00b2/4Dt) [3-D diffusion Green's fn]; \u222bp dV conserved",
+  "metrics": {
+   "D_um2_s": 50.0,
+   "grid": "41\u00b3",
+   "max_rel_err_vs_Green": 0.004501358022532323,
+   "mass_conservation": 0.9930303998091777,
+   "t_final_s": 0.05989333333333341
+  },
+  "phenomena": {
+   "matches_3D_Green's_function": true,
+   "pore_mass_conserved": true,
+   "spherically_symmetric_spread": true
+  },
+  "figure": "",
+  "note": "3-D field solver works (the LARGE-build substrate); remaining: Warp-kernelize on the DCM HashGrid + IBM two-way FSI (node divergence\u2192grid source, \u2207p\u2192node Darcy force, retire 6\u03c0\u03b7R)."
+ },
+ {
+  "part": "P7.F.3",
+  "name": "Immersed-boundary two-way FSI coupling \u2014 Peskin momentum conservation",
+  "passed": true,
+  "oracle": "\u222bS[F]dV=F (momentum conserved); \u03a3\u03b4_h\u00b7h\u00b3=1 (partition of unity); \u27e8S[F],u\u27e9=\u27e8F,J[u]\u27e9 (adjoint)",
+  "metrics": {
+   "h_um": 0.5,
+   "grid": "24\u00b3",
+   "max_momentum_err": 4.440892098500626e-16,
+   "max_partition_err": 2.220446049250313e-16,
+   "adjoint_rel_err": 1.2502270368543436e-16
+  },
+  "phenomena": {
+   "momentum_conserved(spread=applied)": true,
+   "partition_of_unity": true,
+   "spread\u22a3interpolate_adjoint": true
+  },
+  "figure": "",
+  "note": "the two-way FSI coupling operator (Peskin IBM) \u2014 spreading\u22a3interpolation adjoint guarantees no spurious momentum. LARGE build: Warp-kernelize on the DCM HashGrid + couple to the Biot field (node divergence\u2192grid source, \u2207p\u2192node Darcy force), retire 6\u03c0\u03b7R same commit."
+ },
+ {
+  "part": "P7.F.4",
+  "name": "Coupled Biot+IBM two-way FSI \u2014 immersed node, poroelastic drag (composed)",
+  "passed": true,
+  "oracle": "node Darcy force \u2212\u2207p (down-gradient), decays on poroelastic \u03c4_p~\u03c3\u00b2/D; two-way (node drifts)",
+  "metrics": {
+   "D_um2_s": 50.0,
+   "sigma_um": 1.5,
+   "tau_p_s": 0.045,
+   "tau_fit_s": 0.029302525698496184,
+   "grid": "32\u00b3",
+   "node_x0": 2.0,
+   "node_xf": 2.0070503878439387
+  },
+  "phenomena": {
+   "Darcy_force_down-gradient": true,
+   "force_decays_on_\u03c4_p": true,
+   "two-way_node_drifts": true
+  },
+  "figure": "",
+  "note": "the composed FSI works \u2014 Biot field (F.2) + IBM coupling (F.3) \u2192 an immersed body feels poroelastic relaxation the 0-D drag can't represent. LARGE build = Warp-kernelize on the DCM HashGrid, couple to the fiber nodes, retire 6\u03c0\u03b7R (same commit)."
+ },
+ {
+  "part": "P7.F.5",
+  "name": "Device-resident Warp Biot field kernel \u2014 parity vs numpy prototype",
+  "passed": true,
+  "oracle": "Warp kernel = numpy P7.F.2 field to <1e-10 (parity); CFL dt_max=dx\u00b2/6D; mass conserved",
+  "metrics": {
+   "parity_max_abs": 5.551115123125783e-17,
+   "device": "cpu",
+   "dt_max_cfl": 0.0008333333333333334,
+   "grid": "32\u00b3",
+   "mass_conservation_frac": 1.1881625296903525e-05
+  },
+  "phenomena": {
+   "warp==numpy_parity_<1e-10": true,
+   "CFL_dt_max=dx\u00b2/6D": true,
+   "pore_mass_conserved": true
+  },
+  "figure": "",
+  "note": "first LARGE-build engineering code (ff/biot_fluid_warp.py) \u2014 device-resident, parity-gated, does NOT touch the validated native cell. Next: IBM spread/interp kernels \u2192 native wiring + retire 6\u03c0\u03b7R."
+ },
+ {
+  "part": "P7.F.6",
+  "name": "Device-resident Warp IBM spread/interp kernels \u2014 parity vs numpy",
+  "passed": true,
+  "oracle": "\u03a3spread(F)\u00b7h\u00b3=F (momentum); \u27e8spread(F),u\u27e9=\u27e8F,interp(u)\u27e9 (adjoint); parity<1e-12",
+  "metrics": {
+   "momentum_err": 8.881784197001252e-16,
+   "adjoint_rel_err": 2.1664969890067173e-16,
+   "parity_vs_numpy": 0.0,
+   "device": "cpu"
+  },
+  "phenomena": {
+   "momentum_conserved": true,
+   "spread\u22a3interp_adjoint": true,
+   "warp==numpy_parity": true
+  },
+  "figure": "",
+  "note": "ALL device-resident FSI kernels now validated (Biot field P7.F.5 + IBM here). LARGE build remaining = wire into the native cell (node divergence\u2192grid source, \u2207p\u2192node Darcy force) + retire 6\u03c0\u03b7R."
+ },
+ {
+  "part": "P7.F.7",
+  "name": "Native cortex \u2297 Biot \u2297 IBM composition \u2014 multiscale, momentum-conserving",
+  "passed": true,
+  "oracle": "\u03a3grid\u00b7h\u00b3 = \u03a3node_src (momentum conserved across the coupling); coarse fluid grid spans cell (dx\u226aR)",
+  "metrics": {
+   "N_cortex_nodes": 21000,
+   "R_um": 7.498012936753268,
+   "fluid_grid": "40\u00b3",
+   "dx_fluid_um": 0.6,
+   "momentum_rel_err": 8.185656005822488e-15,
+   "device": "cpu"
+  },
+  "phenomena": {
+   "momentum_conserved_at_native_scale": true,
+   "spread\u2192interp_bounded": true,
+   "correct_multiscale(dx\u226aR,grid_spans_cell)": true
+  },
+  "figure": "",
+  "note": "the FSI infrastructure composes with the real cortex at the right multiscale (fine fibers + coarse smooth fluid grid), engine UNTOUCHED. FINAL step = wire into network_warp.py (additive, default-off\u2192physiological-ON) + retire 6\u03c0\u03b7R \u2014 the deliberate double-count-trap-aware commit."
+ },
+ {
+  "part": "P7.D.1",
+  "name": "Dynamic remodeling seed \u2014 pool+mask KMC topology change (Pollard kinetics)",
+  "passed": true,
+  "oracle": "elongation v = \u03b4(k_on\u00b7[G] \u2212 k_off); mass conserved; [G]_c=k_off/k_on \u2192 net-zero (treadmill)",
+  "metrics": {
+   "v_measured_um_s": 0.027022689980732966,
+   "v_pollard_um_s": 0.02754,
+   "k_on": 11.6,
+   "k_off": 1.4,
+   "Gc_uM": 0.12068965517241378,
+   "N_pool": 4000,
+   "topology_changed": true
+  },
+  "phenomena": {
+   "runtime_topology_change(pool+mask)": true,
+   "elongation=Pollard_v": true,
+   "monomer_mass_conserved": true,
+   "critical_conc\u2192treadmill": true
+  },
+  "figure": "",
+  "note": "FIRST T7.D increment \u2014 validates the pool+mask+KMC dynamic-topology mechanism (fixes the fiber-static gap) vs Pollard kinetics; the device-grid partner search + Warp kernelization is the LARGE build (shares infra with the T7.F Biot grid)."
+ },
+ {
+  "part": "P7.A.1",
+  "name": "Active feedback seed \u2014 mechanosensing\u2192contractility homeostasis (dead gain closed)",
+  "passed": true,
+  "oracle": "\u03b3* solves \u03b3=\u03b3_passive+\u03b3_max\u00b7a(\u03b3), a=\u03b3\u207f/(\u03b3\u207f+\u03b3\u2085\u2080\u207f); stable fixed point (loop gain<1)",
+  "metrics": {
+   "gamma_passive_mN_m": 0.15,
+   "gamma_setpoint_mN_m": 0.3912342616982374,
+   "loop_gain": 0.5748405967065384,
+   "gamma_max": 0.35,
+   "gamma50": 0.3,
+   "hill_n": 3.0
+  },
+  "phenomena": {
+   "closed_loop_homeostatic_setpoint": true,
+   "stable_fixed_point(gain<1)": true,
+   "open_loop_dead(current_bug)": true
+  },
+  "figure": "",
+  "note": "FIRST T7.A increment \u2014 closes the mechanosensing\u2192contractility gain (SMALL-tier, no fluid). Protrusion EMERGES only when this + T7.D remodeling + T7.F fluid + membrane compose (S9); terminology-restraint: not named 'protrusion' until the full active machinery is wired."
+ }
+]

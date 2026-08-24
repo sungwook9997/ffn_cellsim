@@ -1,0 +1,24 @@
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "CPU"
+     "cuda:0"   : "NVIDIA RTX A5000 Laptop GPU" (16 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+NG-1 GAP-insensitivity sweep — transmission/load/PASS vs the L_p & head-arm k_θ GAP (default L_p=1.0 arm×1)
+L_p[µm]  arm×   k_θ,bb  k_θ,arm     cfl   trans   load  bound   reacA   PASS
+Module ffn_sim.ac.motor.minifilament_warp 86a280f load on device 'cuda:0' took 0.62 ms  (cached)
+Module ffn_sim.ac.motor.backbone_warp 384dda9 load on device 'cuda:0' took 0.45 ms  (cached)
+Module ffn_sim.ac.motor.native_gates.ng1_two_filament_stall dd284d7 load on device 'cuda:0' took 0.33 ms  (cached)
+Module ffn_sim.ac.motor.hand 050b832 load on device 'cuda:0' took 0.50 ms  (cached)
+   1.00   1.0    0.185     40.0   13000   1.006  0.407  1.000   4.163    6/6
+   0.30   1.0    0.055     40.0   13000   1.005  0.638  0.970   6.260    5/6
+   3.00   1.0    0.555     40.0   13000   0.991  0.619  0.979   6.182    5/6
+  10.00   1.0    1.849     40.0   13792   0.960  0.336  1.000   3.547    6/6
+   1.00  10.0    0.185    400.0   13000   0.975  0.633  0.900   5.869    5/6
+------------------------------------------------------------------------------
+transmission spread over the whole GAP range: [0.960, 1.006]  (ideal 1.0)
+per-head load spread:                         [0.336, 0.638] pN  (f_stall 0.5)
+cfl_stiffness (dt budget) spread:             [13000, 13792] → rigid-rod backbone dominates ⇒ dt ~fixed
+VERDICT: A ROW FLIPPED — surface to PI
+sweep exit=1

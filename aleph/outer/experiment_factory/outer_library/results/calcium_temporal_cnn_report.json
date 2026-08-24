@@ -1,0 +1,215 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "architecture": {
+    "filters_are_trainable": true,
+    "gpu_required": false,
+    "head": "two_class_linear_softmax",
+    "input": "baseline_subtracted_amplitude_normalized_curve_resampled_to_128",
+    "optimizer": "scipy_L-BFGS-B_exact_gradient",
+    "parameter_count": 114,
+    "pooling": [
+      "global_mean",
+      "global_max"
+    ],
+    "temporal_convolution": {
+      "activation": "ReLU",
+      "filter_count": 8,
+      "kernel_size": 9
+    }
+  },
+  "architecture_accepted": false,
+  "candidate_selection": [
+    {
+      "filter_count": 4,
+      "optimizer": {
+        "converged": true,
+        "final_loss": 0.36513252707041616,
+        "iterations": 177,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+      },
+      "regularization": 0.01,
+      "validation_metrics": {
+        "accuracy": 0.95,
+        "auroc": 0.9875,
+        "balanced_accuracy": 0.95,
+        "class_counts": {
+          "0": 20,
+          "1": 20
+        },
+        "macro_f1": 0.949874686716792,
+        "sample_count": 40
+      }
+    },
+    {
+      "filter_count": 4,
+      "optimizer": {
+        "converged": true,
+        "final_loss": 0.5050886517333079,
+        "iterations": 103,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+      },
+      "regularization": 0.1,
+      "validation_metrics": {
+        "accuracy": 0.925,
+        "auroc": 0.99,
+        "balanced_accuracy": 0.925,
+        "class_counts": {
+          "0": 20,
+          "1": 20
+        },
+        "macro_f1": 0.9249530956848031,
+        "sample_count": 40
+      }
+    },
+    {
+      "filter_count": 8,
+      "optimizer": {
+        "converged": true,
+        "final_loss": 0.35343140431558984,
+        "iterations": 240,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+      },
+      "regularization": 0.01,
+      "validation_metrics": {
+        "accuracy": 0.95,
+        "auroc": 0.99,
+        "balanced_accuracy": 0.95,
+        "class_counts": {
+          "0": 20,
+          "1": 20
+        },
+        "macro_f1": 0.949874686716792,
+        "sample_count": 40
+      }
+    },
+    {
+      "filter_count": 8,
+      "optimizer": {
+        "converged": true,
+        "final_loss": 0.5046011686575509,
+        "iterations": 133,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+      },
+      "regularization": 0.1,
+      "validation_metrics": {
+        "accuracy": 0.925,
+        "auroc": 0.99,
+        "balanced_accuracy": 0.925,
+        "class_counts": {
+          "0": 20,
+          "1": 20
+        },
+        "macro_f1": 0.9249530956848031,
+        "sample_count": 40
+      }
+    }
+  ],
+  "checkpoint": {
+    "contains": [
+      "trainable_filters_and_classifier",
+      "preprocessing_dimensions",
+      "training_embedding_standardization",
+      "training_class_centroids_for_OOD_distance",
+      "class_names"
+    ],
+    "filename": "calcium_temporal_cnn_checkpoint.npz",
+    "format": "numpy_npz_no_pickle",
+    "sha256": "a2979c36df06de90c7624d6216cc2355a29fb994d8d11681fe492663eea0c4e9"
+  },
+  "conditions": {
+    "external": [
+      "CaPINS (+GsMTx4)",
+      "CaPINS (+Mag)",
+      "LooPINS (+GsMTx4)",
+      "LooPINS (+Mag)"
+    ],
+    "training": [
+      "Piezo1_inhibited_GsMTx4",
+      "untreated_control"
+    ]
+  },
+  "external_embedding_ood": {
+    "external_vs_validation_auroc": 0.6196945337620579,
+    "ood_detected": false,
+    "score": "nearest_training_class_centroid_standardized_embedding_distance"
+  },
+  "external_retrospective_metrics": {
+    "accuracy": 0.5562700964630225,
+    "auroc": 0.7778437778437779,
+    "balanced_accuracy": 0.7105360855360855,
+    "class_counts": {
+      "0": 52,
+      "1": 259
+    },
+    "macro_f1": 0.5288706419601299,
+    "sample_count": 311
+  },
+  "limitations": [
+    "EA.hy926 was already inspected by earlier model revisions, so this is retrospective",
+    "external biological replicate identities are unavailable per cell",
+    "the CNN has no disjoint calibration partition; uncertainty authority remains with the existing conformal audit",
+    "a trainable temporal encoder does not by itself remove cross-lab conditional shift",
+    "nearest-centroid embedding distance does not detect this failed transfer, so OOD distance cannot substitute for task labels",
+    "unlabelled label-shift EM moves the inferred target prior in the wrong direction and is rejected",
+    "a new aligned lab is required before this architecture can be confirmatory"
+  ],
+  "production_eligible": false,
+  "schema": "aleph.outer_library.calcium_temporal_cnn.v1",
+  "selected_validation_metrics": {
+    "accuracy": 0.95,
+    "auroc": 0.99,
+    "balanced_accuracy": 0.95,
+    "class_counts": {
+      "0": 20,
+      "1": 20
+    },
+    "macro_f1": 0.949874686716792,
+    "sample_count": 40
+  },
+  "selection_protocol": "filter count and L2 regularization selected only on deterministic HeLa train/validation cells; EA.hy926 labels never select architecture, weights, threshold, or checkpoint",
+  "split": {
+    "external_dataset": "zenodo-19890985 EA.hy926",
+    "external_dataset_and_lab_holdout": true,
+    "external_was_opened_before_current_architecture": true,
+    "pristine_external_confirmation": false,
+    "sample_overlap_count": 0,
+    "split_unit": "cell_sample_id",
+    "train_cells": 60,
+    "training_dataset": "zenodo-18495219 HeLa",
+    "validation_cells": 40
+  },
+  "task": "binary_Piezo1_inhibitor_signature_temporal_CNN_transfer",
+  "task_holdout_passed": false,
+  "uncertainty_holdout_passed": false,
+  "unlabelled_label_shift_diagnostic": {
+    "actual_prior_used_for_fitting_or_selection": false,
+    "adaptation_accepted": false,
+    "adjusted_external_metrics": {
+      "accuracy": 0.5530546623794212,
+      "auroc": 0.7778437778437779,
+      "balanced_accuracy": 0.7086055836055836,
+      "class_counts": {
+        "0": 52,
+        "1": 259
+      },
+      "macro_f1": 0.5262315743328402,
+      "sample_count": 311
+    },
+    "estimated_external_prior_without_labels": [
+      0.5594759668085267,
+      0.4405240331914734
+    ],
+    "interpretation": "label-shift assumptions fail: unlabelled EM moves the prior in the wrong direction and does not repair conditional cross-lab shift",
+    "iterations": 26,
+    "method": "Saerens_EM_target_prior_from_unlabelled_probabilities",
+    "retrospective_actual_external_prior": [
+      0.16720257234726688,
+      0.8327974276527331
+    ],
+    "source_prior": [
+      0.5,
+      0.5
+    ]
+  }
+}

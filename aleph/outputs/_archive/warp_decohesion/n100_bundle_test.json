@@ -1,0 +1,172 @@
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "CPU"
+     "cuda:0"   : "NVIDIA RTX A5000 Laptop GPU" (16 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+  [integrator] IMPLICIT (IMEX linearly-implicit) dt=8.0e-04  cg_maxiter=80 — stiff operator (contact/turgor/edges/well/nucleus/bending) implicit, soft drivers explicit
+  [builder] fcc pack: 100 active + 0 parked, gap=2.05·R
+  [lamel] rim cells=7/100  pool=420  p_advance=8.000e-03  z_basal=0.300um
+  [cadherin] k_trans=2.60e-05N/m  r0=0.67um  r_bind=1.80um  k_on=28.0/s  batch=50  bundle_n=40 (per-bond force 1.17nN; catch-slip f0=29.2pN @ molecular load, Rakshit ×40 bridge)
+  [bending] k_bend=1.00e-05N/m  (biharmonic Δ²r thin-plate; resists curvature variation, distinct from surface tension)
+  [surface-tension] gamma=1.00e-04N/m  k_area=0.00e+00N/m  A0_cell=693.6um^2 (area-minimising membrane tension)
+  [nucleus] R_nuc=2.48um (0.33·R)  E_nuc=3000Pa  ratio_lamin=3.0  knee=0.1  k_chrom=5.76e-04N/m  k_lamin=1.15e-03N/m  (deformable core; bilinear chromatin→lamin)
+  [ecm-clutch] k_fa=1.67e-05N/m  engage=1.80um  k_on=1.0/s  batch=50  bundle_n=167 (per-FA force 5.01nN; Pereverzev F_s=30pN @ per-integrin load) — WETTING OFF
+Module ffn_sim.warp_port.dcm_neighbor_warp fddae58 load on device 'cuda:0' took 2.50 ms  (cached)
+Module ffn_sim.warp_port.dcm_warp_hybrid_multicell 6424708 load on device 'cuda:0' took 0.39 ms  (cached)
+Module ffn_sim.warp_port.dcm_turgor_warp 8d67fca load on device 'cuda:0' took 0.40 ms  (cached)
+Module ffn_sim.warp_port.dcm_warp_hybrid afb520f load on device 'cuda:0' took 3.32 ms  (cached)
+Module ffn_sim.warp_port.dcm_substrate_warp bb82eed load on device 'cuda:0' took 4.69 ms  (cached)
+Module ffn_sim.warp_port.dcm_warp_implicit 430d6cc load on device 'cuda:0' took 4.32 ms  (cached)
+  [aggregate] done (200 warmup + 1000 settle): A0_rested=5266.3um^2 (as-built 5272.0um^2 → compaction 1.00×)  maxZ=80.2um  Vsum/Vinit=1.035
+  step     375  A/A0=0.998  maxZ=80.1um  V/V0=1.000  drift=0.00um  pen=0.000  cfl=0.08  nsub=1  bonds=2643  clutch=33
+  step     750  A/A0=0.995  maxZ=80.0um  V/V0=1.000  drift=0.00um  pen=2.621  cfl=0.50  nsub=1  bonds=2698  clutch=69
+  step    1125  A/A0=0.993  maxZ=80.0um  V/V0=1.000  drift=0.01um  pen=2.426  cfl=1.03  nsub=1  bonds=2754  clutch=88
+  step    1500  A/A0=0.991  maxZ=79.9um  V/V0=1.000  drift=0.02um  pen=3.221  cfl=0.90  nsub=1  bonds=2787  clutch=130
+  step    1875  A/A0=0.988  maxZ=79.9um  V/V0=1.000  drift=0.02um  pen=3.058  cfl=0.05  nsub=1  bonds=2737  clutch=152
+  step    2250  A/A0=0.986  maxZ=79.8um  V/V0=1.000  drift=0.02um  pen=3.037  cfl=0.15  nsub=1  bonds=2783  clutch=175
+  step    2625  A/A0=0.984  maxZ=79.8um  V/V0=1.000  drift=0.03um  pen=2.347  cfl=0.53  nsub=1  bonds=2750  clutch=188
+  step    3000  A/A0=0.982  maxZ=79.7um  V/V0=1.000  drift=0.03um  pen=2.638  cfl=0.98  nsub=1  bonds=2769  clutch=220
+  step    3375  A/A0=0.980  maxZ=79.7um  V/V0=1.000  drift=0.03um  pen=2.666  cfl=0.11  nsub=1  bonds=2764  clutch=224
+  step    3750  A/A0=0.979  maxZ=79.7um  V/V0=1.000  drift=0.03um  pen=3.034  cfl=0.12  nsub=1  bonds=2790  clutch=247
+  step    4125  A/A0=0.977  maxZ=79.6um  V/V0=1.000  drift=0.03um  pen=2.061  cfl=0.27  nsub=1  bonds=2863  clutch=272
+  step    4500  A/A0=0.976  maxZ=79.6um  V/V0=1.000  drift=0.03um  pen=1.952  cfl=0.13  nsub=1  bonds=2856  clutch=304
+  step    4875  A/A0=0.975  maxZ=79.5um  V/V0=1.000  drift=0.03um  pen=2.195  cfl=1.03  nsub=1  bonds=2848  clutch=320
+  step    5250  A/A0=0.984  maxZ=79.5um  V/V0=1.000  drift=0.04um  pen=2.982  cfl=0.13  nsub=1  bonds=2850  clutch=324
+  step    5625  A/A0=0.985  maxZ=79.5um  V/V0=1.000  drift=0.04um  pen=2.778  cfl=0.05  nsub=1  bonds=2799  clutch=351
+  step    6000  A/A0=0.988  maxZ=79.5um  V/V0=1.000  drift=0.04um  pen=3.322  cfl=0.11  nsub=1  bonds=2807  clutch=341
+  step    6375  A/A0=0.994  maxZ=79.4um  V/V0=1.000  drift=0.04um  pen=2.576  cfl=0.11  nsub=1  bonds=2845  clutch=347
+  step    6750  A/A0=0.998  maxZ=79.4um  V/V0=1.000  drift=0.04um  pen=2.438  cfl=0.13  nsub=1  bonds=2845  clutch=330
+  step    7125  A/A0=0.999  maxZ=79.4um  V/V0=1.000  drift=0.04um  pen=2.758  cfl=0.05  nsub=1  bonds=2816  clutch=362
+  step    7500  A/A0=1.000  maxZ=79.4um  V/V0=1.000  drift=0.05um  pen=2.531  cfl=0.13  nsub=1  bonds=2826  clutch=359
+  step    7875  A/A0=1.003  maxZ=79.4um  V/V0=1.000  drift=0.04um  pen=2.703  cfl=0.07  nsub=1  bonds=2853  clutch=378
+  step    8250  A/A0=1.006  maxZ=79.4um  V/V0=1.000  drift=0.05um  pen=1.403  cfl=0.16  nsub=1  bonds=2841  clutch=376
+  step    8625  A/A0=1.018  maxZ=79.4um  V/V0=1.000  drift=0.05um  pen=1.905  cfl=0.11  nsub=1  bonds=2855  clutch=390
+  step    9000  A/A0=1.018  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=3.272  cfl=0.14  nsub=1  bonds=2798  clutch=383
+  step    9375  A/A0=1.018  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=3.447  cfl=0.07  nsub=1  bonds=2788  clutch=392
+  step    9750  A/A0=1.020  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=3.513  cfl=0.13  nsub=1  bonds=2817  clutch=407
+  step   10125  A/A0=1.022  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=3.514  cfl=0.06  nsub=1  bonds=2858  clutch=416
+  step   10500  A/A0=1.026  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=2.366  cfl=0.10  nsub=1  bonds=2870  clutch=417
+  step   10875  A/A0=1.031  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=2.660  cfl=0.35  nsub=1  bonds=2894  clutch=443
+  step   11250  A/A0=1.032  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=2.858  cfl=0.11  nsub=1  bonds=2880  clutch=426
+  step   11625  A/A0=1.036  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=3.166  cfl=0.07  nsub=1  bonds=2935  clutch=432
+  step   12000  A/A0=1.038  maxZ=79.3um  V/V0=1.000  drift=0.05um  pen=2.685  cfl=0.13  nsub=1  bonds=2898  clutch=446
+  step   12375  A/A0=1.041  maxZ=79.2um  V/V0=1.000  drift=0.05um  pen=2.271  cfl=0.07  nsub=1  bonds=2877  clutch=454
+  step   12750  A/A0=1.041  maxZ=79.2um  V/V0=1.000  drift=0.06um  pen=2.585  cfl=0.13  nsub=1  bonds=2903  clutch=444
+  step   13125  A/A0=1.044  maxZ=79.2um  V/V0=1.000  drift=0.06um  pen=2.317  cfl=0.08  nsub=1  bonds=2927  clutch=455
+  step   13500  A/A0=1.052  maxZ=79.2um  V/V0=1.000  drift=0.07um  pen=2.225  cfl=0.14  nsub=1  bonds=2954  clutch=472
+  step   13875  A/A0=1.053  maxZ=79.2um  V/V0=1.000  drift=0.07um  pen=1.797  cfl=0.07  nsub=1  bonds=2895  clutch=473
+  step   14250  A/A0=1.055  maxZ=79.2um  V/V0=1.000  drift=0.07um  pen=1.756  cfl=0.13  nsub=1  bonds=3008  clutch=472
+  step   14625  A/A0=1.056  maxZ=79.2um  V/V0=1.000  drift=0.07um  pen=1.998  cfl=0.09  nsub=1  bonds=2997  clutch=477
+  step   15000  A/A0=1.057  maxZ=79.2um  V/V0=1.000  drift=0.08um  pen=1.288  cfl=0.10  nsub=1  bonds=3039  clutch=457
+  saved 42 frames -> outputs/warp_decohesion/n100_bundle_test.npz
+  [GATES] finite=PASS  G2_interpenetration=FAIL  volume_conservation=PASS
+{
+  "device": "cuda:0",
+  "n_cells": 100,
+  "N": 16200,
+  "subdiv": 2,
+  "dt": 0.0008,
+  "steps": 15000,
+  "warmup": 200,
+  "settle_steps": 1000,
+  "truncated_at": null,
+  "steps_per_s": 3.059732876725585,
+  "substrate_wetting": true,
+  "use_substrate_well": true,
+  "lamellipodium": true,
+  "junction_switch": false,
+  "A0_rested_um2": 5266.32243121873,
+  "compaction_x": 1.0010802005435313,
+  "aa0_peak": 1.0567436404053872,
+  "aa0_final": 1.0567436404053872,
+  "maxZ_final_um": 79.18866696378346,
+  "vv0_final": 1.0000204186184314,
+  "drift_final_um": 0.07751316077348609,
+  "pen_frac_peak": 3.5144023018390795,
+  "pen_frac_final": 1.2884153133939324,
+  "cfl_frac_peak": 1.0303019556954394,
+  "cfl_limit": 0.0,
+  "max_substeps": 16,
+  "n_sub_final": 1,
+  "remesh_period": 0,
+  "remesh": null,
+  "edge_edge": true,
+  "cadherin": true,
+  "ecm_clutch": true,
+  "integrator": "implicit",
+  "accel_dt": 0.0008,
+  "cg_maxiter": 80,
+  "nucleus": true,
+  "surface_tension": true,
+  "gamma_surf": 0.0001,
+  "k_area": 0.0,
+  "bending": true,
+  "k_bend": 1e-05,
+  "necrosis": false,
+  "builder": "fcc",
+  "nucleus_params": {
+    "R_nuc": 2.475e-06,
+    "E_nuc": 3000.0,
+    "k_chrom": 0.0005759586531581287,
+    "k_lamin": 0.0011519173063162574,
+    "ratio_lamin": 3.0,
+    "knee_strain": 0.1
+  },
+  "W_cs_well_J": 1.2435470920459603e-14,
+  "gamma_node": 5.750859885321317e-05,
+  "lamel": {
+    "n_rim": 7,
+    "n_pool": 420,
+    "n_used": 399,
+    "n_seeded": 190,
+    "n_advanced": 209,
+    "p_advance": 0.008,
+    "n_lead_final": 523
+  },
+  "cadherin_bonds": {
+    "n_bonds_final": 3039,
+    "n_formed": 687826,
+    "n_broken": 684787,
+    "k_trans": 2.6013472356344868e-05,
+    "r0_trans": 6.73497169466757e-07,
+    "k_on": 27.96,
+    "batch_steps": 50
+  },
+  "ecm_clutch_stats": {
+    "n_clutches_final": 457,
+    "n_engaged": 3821,
+    "n_slipped": 3364,
+    "k_fa": 1.67038563932009e-05,
+    "engage_range": 1.795992451911352e-06,
+    "F_s": 3e-11,
+    "F_c": 7e-12,
+    "fa_batch_steps": 50
+  },
+  "gates": {
+    "finite": {
+      "pass": true,
+      "truncated_at": null
+    },
+    "G2_interpenetration": {
+      "pass": false,
+      "pen_frac_peak": 3.5144023018390795,
+      "threshold": 0.3
+    },
+    "volume_conservation": {
+      "pass": true,
+      "vv0_final": 1.0000204186184314,
+      "tol": 0.1
+    },
+    "G1_contact_angle": {
+      "pass": null,
+      "note": "sweep-level (Young-Dupre); not a single run"
+    },
+    "G3_size_law_fit": {
+      "pass": null,
+      "note": "sweep-level (A/A0=a+b/R+c/R\u00b2 r\u00b2\u22650.95)"
+    }
+  },
+  "gates_all_pass": false
+}

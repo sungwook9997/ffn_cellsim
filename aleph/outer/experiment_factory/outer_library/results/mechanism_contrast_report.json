@@ -1,0 +1,66 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "cell_state_classifier_holdout_passed": false,
+  "discovery": {
+    "bootstrap_ci95": [
+      -0.3994004704777778,
+      -0.21780983086666678
+    ],
+    "bootstrap_probability_negative": 1.0,
+    "contrast": "GsMTx4 minus untreated control",
+    "control_n": 50,
+    "dataset": "zenodo-18495219 HeLa",
+    "hedges_g": -1.2936403983071496,
+    "mean_difference": -0.305306104,
+    "treated_n": 50
+  },
+  "external_confirmatory": {
+    "bootstrap_probability_negative": 1.0,
+    "dataset": "zenodo-19890985 EA.hy926",
+    "direction_consistency": "2/2",
+    "equal_stratum_bootstrap_ci95": [
+      -0.26093470252119505,
+      -0.08741553011439492
+    ],
+    "equal_stratum_mean_difference": -0.1670409493898102,
+    "lab_holdout": true,
+    "predeclared_active_strata": [
+      "LooPINS",
+      "CaPINS"
+    ],
+    "strata": {
+      "CaPINS": {
+        "bootstrap_ci95": [
+          -0.10311259242739454,
+          0.006488963491376242
+        ],
+        "bootstrap_probability_negative": 0.9583,
+        "control_n": 27,
+        "hedges_g": -0.2711931631434544,
+        "mean_difference": -0.04751835327387524,
+        "treated_n": 88
+      },
+      "LooPINS": {
+        "bootstrap_ci95": [
+          -0.4647751524031725,
+          -0.13718389145085255
+        ],
+        "bootstrap_probability_negative": 1.0,
+        "control_n": 25,
+        "hedges_g": -1.6290724773119862,
+        "mean_difference": -0.28571910152939917,
+        "treated_n": 171
+      }
+    }
+  },
+  "limitations": [
+    "confirmatory endpoint is a condition-level contrast, not per-cell classification",
+    "biological replicate identity is not available per EA.hy926 cell",
+    "the two active nanoswitch strata are heterogeneous and are weighted equally"
+  ],
+  "mechanism_holdout_passed": true,
+  "observable_constraint_eligible": true,
+  "representation": "within-study treated-minus-matched-control effect",
+  "task": "within_study_Piezo1_inhibition_calcium_AUC_contrast"
+}

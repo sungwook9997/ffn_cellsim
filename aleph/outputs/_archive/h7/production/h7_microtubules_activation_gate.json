@@ -1,0 +1,45 @@
+{
+  "gate": "H.MT microtubules activation",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "n_mt": 7,
+    "beads_per_mt": 25,
+    "L_mt_m": 5e-06,
+    "l0_m": 2.0833333333333336e-07,
+    "EI_Nm2": 2.2e-23,
+    "L_p_m": 0.0052,
+    "Y_stretch_N": 2.3e-07,
+    "gamma_b_cytoplasm_Nspm": 1.5527321690367553e-05,
+    "dt_cfl_stretch_s": 1.4064602980405396e-06
+  },
+  "controls": {
+    "aster_assembled": true,
+    "n_particle_delta": 176,
+    "expect_particles": 176,
+    "n_bond_delta": 175,
+    "expect_bonds": 175,
+    "cfl_gate_passed_at_build": true,
+    "no_contamination": {
+      "mt_types": [
+        "mt_backbone"
+      ],
+      "mask_excludes_all_mt": true,
+      "cortex_bonds_counted": true,
+      "gamma_soft_off_N_per_m": 5.141050220221626e-10,
+      "gamma_soft_on_N_per_m": 5.141050220221626e-10,
+      "gamma_identical": true
+    },
+    "off_identity": true
+  },
+  "PRIMARY_persistence": {
+    "L_p_m": 0.0052,
+    "band_m": [
+      0.001,
+      0.008
+    ],
+    "in_band": true,
+    "note": "rod-like thermal stability validated in smoke_microtubules (rms dev 0.03%)"
+  },
+  "note": "REAL activation gate on the full physiological baseline. The KEY activation control is no-contamination: cortical \u03b3_soft is identical OFF vs ON because mt_ bonds are registry-denylisted. CFL gate passed at cytoplasm drag. Stepped rod-like L_p validated in the standalone smoke (full-cell raw run needs the equilibration prelude)."
+}

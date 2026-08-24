@@ -1,0 +1,75 @@
+{
+  "article_manifest_set_sha256": "cf618563667281631b8df4f5453a83c65402e95ae619ba8788c72297607ac069",
+  "authority_status": "proposed",
+  "chunks": 139573,
+  "extractor_version": "1",
+  "failed_source_family_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "failure_classes": {},
+  "failures": 0,
+  "figures": 17173,
+  "payload_bytes": 445899949,
+  "receipt_successes": 2701,
+  "resumed_articles": 2701,
+  "schema": "aleph.external_training.jats_extraction_summary.v1",
+  "sections": 79071,
+  "tables": 2213,
+  "tag_counts": {
+    "cell_type_state": {
+      "apoptotic": 961,
+      "cancer_tumor": 919,
+      "differentiating": 1466,
+      "epithelial": 1206,
+      "fibroblast": 690,
+      "immune": 696,
+      "migrating": 1357,
+      "mitotic": 522,
+      "muscle": 625,
+      "neural": 411,
+      "stem_progenitor": 811
+    },
+    "measurement_modality": {
+      "afm": 515,
+      "flow_cytometry": 521,
+      "immunofluorescence": 1016,
+      "live_cell_imaging": 287,
+      "magnetic_tweezers": 69,
+      "micropipette_aspiration": 112,
+      "optical_tweezers": 132,
+      "pcr": 817,
+      "piv": 143,
+      "single_cell_sequencing": 265,
+      "traction_force_microscopy": 215,
+      "western_blot": 896
+    },
+    "mechanics_observable": {
+      "adhesion_force": 61,
+      "cell_volume": 176,
+      "cortical_tension": 88,
+      "membrane_tension": 321,
+      "migration_speed": 175,
+      "pressure": 148,
+      "stiffness_modulus": 523,
+      "strain_deformation": 1174,
+      "traction_force": 348,
+      "viscosity_viscoelasticity": 546
+    },
+    "perturbation": {
+      "confinement": 220,
+      "drug": 1886,
+      "genetic": 1385,
+      "laser_ablation": 54,
+      "osmotic": 155,
+      "shear_flow": 504,
+      "stretch_compression": 552,
+      "substrate_stiffness": 561,
+      "temperature": 69
+    }
+  },
+  "tagged_articles": {
+    "cell_type_state": 2496,
+    "measurement_modality": 2118,
+    "mechanics_observable": 1564,
+    "perturbation": 2425
+  },
+  "xml_parsed": 2701
+}

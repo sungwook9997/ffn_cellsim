@@ -1,0 +1,266 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "preload_never_applied_audit",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "finding": "No resting run recorded in this repository has ever applied either physiological preload. Every one started from a force-free cortex and force-free ERM tethers against a positive 40 Pa turgor -- the configuration the driver's own docstring states has no force-balanced equilibrium and gives as the reason no inner solver converges.",
+ "evidence_mechanism": {
+  "source": "aleph/components/incumbent/driver.py:1087-1090",
+  "code": [
+   "if cortex_prestrain:",
+   "    cell.ledger['cortex_pretension'] = _preload_cortex_pretension(cell, cortex_prestrain)",
+   "if preload_erm_balance:",
+   "    cell.ledger['erm_preload'] = _preload_erm_resting_balance(cell)"
+  ],
+  "why_this_is_decisive": "each ledger key is written ONLY when its preload runs, and the record's ledger IS cell.ledger, so the key's absence is a witness to non-application rather than an absence of logging"
+ },
+ "cortex_prestrain_is_cli_unreachable": {
+  "parameter": "run_from_resting(..., cortex_prestrain: float = 0.0)  # driver.py:1066",
+  "argparse_flag": null,
+  "call_site": "driver.py:1508 passes preload_erm_balance=args.preload_erm_balance and never cortex_prestrain",
+  "consequence": "no CLI-driven run could have applied cortex hoop pre-tension even if asked to"
+ },
+ "what_the_driver_says_about_this_state": {
+  "driver.py:235-240": "At build each ERM rest length equals its formation length, so every tether is force-free and the membrane carries the full turgor pressure unbalanced ... a relaxed cortex plus a positive turgor is not a valid resting baseline (PI physiological-baseline rule) -- there is no force-balanced equilibrium there, which is why no inner solver converges from it.",
+  "driver.py:24-26": "if the membrane/cortex is not equilibrated at the Young-Laplace preload, NG-3 and inner_converged remain false."
+ },
+ "reconciles_rather_than_contradicts_d71f52c0": "preload_mechanically_feasible_upper_bound is a CAPACITY field -- whether 40,962 tethers COULD hold 40 Pa if pre-tensioned -- not a record of whether they WERE. Subdiv 6 made the shell capable and left it unloaded: every tether still at force-free formation length. So 'a feasible shell does not descend either' is what this predicts, and ffn-cellsim-45's refutation of the infeasibility hypothesis stands: it refuted the right thing, and the capacity ratio was never the live variable.",
+ "NOT_CLAIMED": [
+  "that applying the preload makes the residual descend -- untested, and it is the decisive control",
+  "that no equilibrium exists -- that is the CODE's claim, resting on a physical argument (a force-free cortex carries no tension so it cannot hold turgor), not a measurement taken here",
+  "any statement about the operator conclusion, which this neither supports nor refutes"
+ ],
+ "decisive_control_not_run": "one resting run with the preload ON, same binary criterion declared before launch (DESCENDS iff candidate < start), everything else fixed. Needs the card and PI approval; not launched by this session.",
+ "records_audited": [
+  {
+   "record": "aleph/outputs/ac/foundation-hardening/native_resting_70686.json",
+   "committed": "2026-08-09",
+   "preload_keys_present": [],
+   "inner_converged": false,
+   "residual_start": 2634.1191655118346,
+   "residual_end": 2634.1191655118346
+  },
+  {
+   "record": "aleph/outputs/ac/implicit/fire_nosteric_20000.json",
+   "committed": "2026-08-09",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 3,
+   "inner_converged": false,
+   "residual_start": 47.405172429438764,
+   "residual_end": 47.405172429438764,
+   "preload_mechanically_feasible_upper_bound": false,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "fire"
+  },
+  {
+   "record": "aleph/outputs/ac/implicit/native70686_implicit_memcpy_profile.json",
+   "committed": "2026-08-09",
+   "preload_keys_present": [],
+   "inner_converged": false,
+   "residual_start": 2634.1191655118346,
+   "residual_end": 2634.1191655118346,
+   "preload_mechanically_feasible_upper_bound": false,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "analytic_implicit"
+  },
+  {
+   "record": "aleph/outputs/ac/resting_native/kxb_sensitivity.json",
+   "committed": "2026-08-09",
+   "preload_keys_present": [],
+   "residual_start": 5.789150843299386,
+   "residual_end": 5.789150843299386,
+   "inner_converged": false
+  },
+  {
+   "record": "aleph/outputs/ac/resting_native/resting_native_probe2_capture0.6_2026-07-23.json",
+   "committed": "2026-08-09",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 2634.1191655118346,
+   "residual_end": 2634.1191655118346,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "erm_gauss_seidel_tournament"
+  },
+  {
+   "record": "aleph/outputs/ac/resting_native/resting_native_probe_2026-07-23.json",
+   "committed": "2026-08-09",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 2634.1191655118346,
+   "residual_end": 2634.1191655118346,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "erm_gauss_seidel_tournament"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s1_pressure_off.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 3,
+   "inner_converged": false,
+   "residual_start": 3.405036476700343,
+   "residual_end": 3.405036476700343,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "explicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s1_pressure_on.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 3,
+   "inner_converged": false,
+   "residual_start": 47.405172429438764,
+   "residual_end": 47.405172429438764,
+   "preload_mechanically_feasible_upper_bound": false,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "explicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s1b_pi0_default.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 3,
+   "inner_converged": false,
+   "residual_start": 47.405172429438764,
+   "residual_end": 47.405172429438764,
+   "preload_mechanically_feasible_upper_bound": false,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "explicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s1b_pi0_zero.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 3,
+   "inner_converged": false,
+   "residual_start": 3.405036476700343,
+   "residual_end": 3.405036476700343,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "explicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s4_subdiv3.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 3,
+   "inner_converged": false,
+   "residual_start": 47.405172429438764,
+   "residual_end": 47.405172429438764,
+   "preload_mechanically_feasible_upper_bound": false,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "explicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s4_subdiv6.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 0.776558506775506,
+   "residual_end": 0.776558506775506,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "explicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s5_subdiv6_analytic_implicit.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 0.776558506775506,
+   "residual_end": 0.776558506775506,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "analytic_implicit"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s5_subdiv6_anderson.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 0.776558506775506,
+   "residual_end": 0.776558506775506,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "anderson"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s5_subdiv6_block_descent.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 0.776558506775506,
+   "residual_end": 0.776558506775506,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "block_descent"
+  },
+  {
+   "record": "aleph/outputs/ac/arena_prestudy/s5_subdiv6_rkc1.json",
+   "committed": "2026-08-15",
+   "preload_keys_present": [],
+   "membrane_subdivisions": 6,
+   "inner_converged": false,
+   "residual_start": 0.776558506775506,
+   "residual_end": 0.776558506775506,
+   "preload_mechanically_feasible_upper_bound": true,
+   "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+   "inner_solver": "rkc1"
+  }
+ ],
+ "n_records_audited": 16,
+ "n_records_with_a_preload_applied": 0,
+ "the_control_that_was_already_in_the_repo": {
+  "source": [
+   "aleph/outputs/ac/arena_prestudy/s1_pressure_off.json",
+   "aleph/outputs/ac/arena_prestudy/s1_pressure_on.json"
+  ],
+  "pressure_off": {
+   "residual_start": 3.405036476700343,
+   "residual_candidate": 3.403676,
+   "delta_pct": -0.0399,
+   "direction": "DESCENDS"
+  },
+  "pressure_on": {
+   "residual_start": 47.405172429438764,
+   "residual_candidate": 47.471519,
+   "delta_pct": 0.14,
+   "direction": "DIVERGES"
+  },
+  "reading": "With the turgor load off the explicit solver DESCENDS; with it on the same solver at the same scale diverges. The sign of the step flips with the load, not with the solver. This does not show convergence -- inner_converged is False in both and one step at -0.04% is not a converged solve -- but it locates the failure in the LOAD rather than in the iteration, and the load is unbalanced precisely because neither preload was ever applied."
+ },
+ "five_solvers_are_not_five_failures": {
+  "subdiv6_candidates": {
+   "explicit": 1.763638,
+   "anderson": 1.763638,
+   "analytic_implicit": 1.763638,
+   "block_descent": 2.20212,
+   "rkc1": 11.464588
+  },
+  "reading": "explicit, anderson and analytic_implicit land on the IDENTICAL candidate 1.763638. The line search is doing its job -- it rejects every accelerated proposal as worse and falls back to the matched explicit update -- so this is ONE failure mode observed three times, not three independent solvers failing. block_descent and rkc1 are simply worse. Counting these as five independent negative results overstates the evidence."
+ },
+ "audit_scope": {
+  "as_of_commit": "be1301f2",
+  "predicate": "JSON under aleph/outputs/ac/** carrying a `residual_start`, i.e. a resting RUN record",
+  "n_matched": 16,
+  "n_with_a_preload_applied": 0,
+  "re_check_caveat": "re-running this audit will additionally match THIS record, which quotes the two key names in its own evidence block and is not a run record. Peers running more resting arms will also raise the denominator. The durable claim is `0 resting RUN records applied a preload as of the commit above`, not a bare zero -- a bare zero is the kind of number that gets quoted and then fails a re-check for a reason that has nothing to do with the finding. Raised by ffn-cellsim-45."
+ },
+ "independently_verified_by": {
+  "session": "ffn-cellsim-45",
+  "checks": [
+   "driver.py:1087-1090 both keys written only inside their `if` \u2014 confirmed",
+   "grep prestrain in driver.py: no add_argument, call site 1508 passes only preload_erm_balance \u2014 CLI-unreachable confirmed",
+   "driver.py:233-241 docstring quoted verbatim \u2014 confirmed"
+  ],
+  "direct_testimony": "did not pass --preload-erm-balance on any of the nine runs today, so the ledger-key inference and the operator's own account agree"
+ }
+}

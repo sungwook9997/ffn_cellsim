@@ -1,0 +1,180 @@
+{
+  "schema": "aleph.outer_library.multiprovider_if_protocol.v1",
+  "frozen_before_new_opencell_projection_or_allencell_metadata_and_pixel_access": true,
+  "objective": "train a domain-robust coarse subcellular-localization image encoder on HPA plus the already-consumed OpenCell provider, then evaluate exactly once on an untouched Allen Cell Collection provider without requiring an Aleph sweep",
+  "objective_rationale": "Aleph parameter sweeps are not yet computationally executable at the required scale; the independent observation encoder is useful now, while its outputs remain non-authoritative context for a future forward-sensitivity-calibrated sweep",
+  "frozen_inputs": {
+    "hpa_checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+    "hpa_training_report_sha256": "3f6dc3df3f09245e0d9020af09e9be0294656fd63064d95477af84826200152e",
+    "opencell_annotation_receipt_sha256": "c2feb6b1452ee501858b5b3b6badda3b519e68543d65464b96068c498da91193",
+    "opencell_first_attempt_refusal_sha256": "d38743d4235a4a42293eb04e541614a8bbe504c7d2a9d23d34019cd6947338d6",
+    "allencell_first_index_receipt_sha256": "aaece3828c517dfa46ecc57a46029311a818612e5f2decab6786b49f205cc24b",
+    "prior_allencell_schema_refusal": "results/allencell_if_schema_refusal.json",
+    "prior_allencell_image_objects_downloaded": 0,
+    "prior_allencell_model_predictions_made": 0
+  },
+  "provider_roles": {
+    "HPA": {
+      "role": "development_train_selection_calibration_internal_screen",
+      "provider": "Human Protein Atlas v25.1",
+      "image_type": "fixed-cell four-channel immunofluorescence",
+      "admitted_channels": ["blue_nucleus", "green_target_protein"],
+      "external_authority": false
+    },
+    "OpenCell": {
+      "role": "consumed_development_train_selection_calibration_only",
+      "provider": "CZ Biohub OpenCell 2022 final release",
+      "paper_doi": "10.1126/science.abi6983",
+      "license": "CC BY-SA 4.0",
+      "image_type": "live-cell endogenous fluorescent protein confocal projection",
+      "admitted_channels": ["405_nucleus", "488_target_protein"],
+      "annotation_csv_url": "https://opencell.sf.czbiohub.org/data/datasets/opencell-localization-annotations.csv",
+      "aws_bucket": "czb-opencell",
+      "aws_region": "us-west-2",
+      "raw_projection_prefix": "microscopy/raw/",
+      "raw_projection_suffix": "_proj.tif",
+      "annotation_state": "already consumed by the refused v1 external-holdout attempt; never pristine again",
+      "external_authority": false
+    },
+    "AllenCell": {
+      "role": "single_use_external_provider_confirmation",
+      "provider": "Allen Institute for Cell Science Cell Feature Explorer hiPSC single-cell image dataset",
+      "official_page": "https://cfe.allencell.org/",
+      "named_quilt_package": "aics/hipsc_single_cell_image_dataset",
+      "frozen_pointer_manifest_sha256": "c791759a51d817abaa3218e92109770dfdd8d3425dffef786a3f4485af376921",
+      "image_type": "live-cell endogenous fluorescent protein 3D single-cell image",
+      "expected_channels": ["DNA", "cell_membrane", "tagged_structure"],
+      "admitted_channels": ["DNA", "tagged_structure"],
+      "metadata_or_pixels_opened_for_this_protocol_before_freeze": false,
+      "model_predictions_made_before_freeze": 0
+    }
+  },
+  "coarse_ontology_in_order": [
+    {
+      "canonical": "nuclear_interior",
+      "author_tokens": ["nucleoplasm", "nuclear body", "nuclear bodies", "nuclear speckle", "nucleolus", "nucleoli", "nucleolus_fc_dfc", "nucleolus_gc", "chromatin", "chromosome"]
+    },
+    {
+      "canonical": "nuclear_envelope",
+      "author_tokens": ["nuclear envelope", "nuclear membrane", "nuclear_membrane"]
+    },
+    {
+      "canonical": "cytosol",
+      "author_tokens": ["cytosol", "cytoplasm", "cytoplasmic"]
+    },
+    {
+      "canonical": "endoplasmic_reticulum",
+      "author_tokens": ["endoplasmic reticulum", "er"]
+    },
+    {
+      "canonical": "golgi",
+      "author_tokens": ["golgi"]
+    },
+    {
+      "canonical": "mitochondria",
+      "author_tokens": ["mitochondria", "mitochondrion"]
+    },
+    {
+      "canonical": "plasma_membrane_or_junction",
+      "author_tokens": ["plasma membrane", "membrane", "cell junction", "cell junctions", "cell_contact", "tight junction", "adherens", "desmosome"]
+    },
+    {
+      "canonical": "cytoskeleton_or_adhesion",
+      "author_tokens": ["actin", "microtubule", "microtubules", "intermediate filament", "cytoskeleton", "cytoskeletal", "focal adhesion", "focal adhesions", "centrosome", "spindle", "cytokinetic", "midbody"]
+    },
+    {
+      "canonical": "vesicular_organelle",
+      "author_tokens": ["vesicle", "vesicles", "endosome", "lysosome", "peroxisome", "lipid droplet", "secretory"]
+    }
+  ],
+  "mapping_contract": {
+    "normalization": "Unicode casefold, trim surrounding whitespace, replace runs of hyphen or whitespace with one underscore; first use normalized whole-label equality, and only when no equality exists use casefolded substring tokens",
+    "multiple_canonical_matches": "retain as multilabel",
+    "mixed_mapped_and_unmapped_author_labels": "exclude from supervised development and report",
+    "all_unmapped_author_labels": "semantic_OOD development rows or confirmation OOD rows",
+    "manual_per_target_relabeling": "forbidden",
+    "gene_or protein_identity_as_model_input": false
+  },
+  "opencell_development_contract": {
+    "released_target_count": 1310,
+    "eligible_source_labels": "grade 2 or 3 only",
+    "selection": "admit every target whose grade-2-or-3 labels all map; exclude exact HPA gene overlap only from external claims, not from development training",
+    "split_unit": "target_name",
+    "split_salt": "aleph-opencell-multiprovider-development-v1-20260807",
+    "split_assignment": "sha256(salt + '|' + target_name) modulo 20: 0-2 calibration, 3-5 selection, 6-19 train",
+    "maximum_projections_per_target": 2,
+    "projection_selection": "ascending sha256(salt + '|' + full_S3_key)",
+    "minimum_train_targets": 300,
+    "minimum_selection_targets": 50,
+    "minimum_calibration_targets": 50,
+    "minimum_supported_classes": 7,
+    "minimum_targets_per_supported_class": 10,
+    "semantic_OOD_development_selection": "admit every target whose grade-2-or-3 labels are all unmapped; OOD labels never enter the localization loss"
+  },
+  "allencell_metadata_gate": {
+    "metadata_selection": "from the frozen named Quilt package, select the lexicographically first CSV or Parquet member whose normalized headers uniquely resolve cell_id, tagged_structure, tagged_gene_or_protein, and image_object_path",
+    "required_semantic_fields": ["cell_id", "tagged_structure", "tagged_gene_or_protein", "image_object_path"],
+    "optional_group_fields": ["cell_line", "clone", "field_of_view", "plate", "well"],
+    "ambiguous_or_missing_required_field": "refuse before any Allen image object or prediction",
+    "minimum_distinct_tagged_structures": 10,
+    "minimum_mapped_canonical_classes": 6,
+    "minimum_cells_per_reported_structure": 10,
+    "allowed_metadata_access_before_model_freeze": true,
+    "allowed_image_pixel_access_before_model_freeze": false,
+    "metadata_labels_may_change_ontology_or_model": false
+  },
+  "allencell_confirmation_sampling": {
+    "unit": "tagged structure cell line or clone; cells are nested technical observations",
+    "selection_salt": "aleph-allencell-single-use-confirmation-v1-20260807",
+    "per_structure_cell_limit": 24,
+    "cell_selection": "ascending sha256(salt + '|' + cell_id), after metadata gate",
+    "exact_development_gene_overlap": "retain but report separately; primary endpoint requires the macro result over structures whose exact tagged gene is absent from both HPA and OpenCell development targets when at least six such structures exist",
+    "insufficient_unseen_structure_support": "refuse unseen-protein authority but still perform and report provider-transfer confirmation",
+    "confirmation_pixels_may_be_opened": "only after the exact model checkpoint, thresholds, calibration scores, and fit embedding reference are frozen"
+  },
+  "image_contract": {
+    "input_shape": [2, 128, 128],
+    "channel_order": ["nucleus_or_DNA", "target_protein_or_tagged_structure"],
+    "3D_to_2D": "maximum projection independently per admitted channel",
+    "geometry": "center-crop to square then area-resize",
+    "normalization": "per-channel finite p1-p99 clip and scale to [0,1]; constant channel becomes all zeros and is reported",
+    "absolute_intensity_claim": false,
+    "cell_membrane_channel_used": false
+  },
+  "model_contract": {
+    "family": "domain_balanced_residual_CNN_with_64d_embedding",
+    "training_providers": ["HPA", "OpenCell"],
+    "provider_balancing": "equal expected batch contribution from HPA and OpenCell, then inverse-sqrt class-frequency target weighting within provider",
+    "study_or_provider_identifier_as_input": false,
+    "loss": "multilabel BCE plus supervised contrastive coarse-label loss; no Allen term",
+    "selection": "maximize the minimum normalized macro-average-precision ratio over HPA selection and OpenCell selection; ties choose earlier epoch",
+    "calibration": "per-class positive-label split conformal thresholds from disjoint HPA and OpenCell calibration targets, using the maximum provider-specific quantile",
+    "OOD": "fit-reference diagonal Mahalanobis score on the frozen 64d embedding",
+    "Allen_labels_or_pixels_used_for_model_threshold_or_ood_fitting": false,
+    "device": "CPU unless a separately recorded valid Slurm GPU grant exists"
+  },
+  "confirmation_endpoints": {
+    "supported_class_rule": "at least one Allen tagged structure and at least 10 selected cells for the class; metrics are aggregated to tagged structure before macro averaging",
+    "macro_structure_average_precision_minimum": 0.45,
+    "macro_structure_F1_minimum": 0.45,
+    "multilabel_ECE_maximum": 0.15,
+    "positive_label_conformal_coverage_range_inclusive": [0.85, 0.95],
+    "mean_prediction_set_size_maximum": 4.0,
+    "semantic_OOD_AUROC_minimum": 0.70,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "authority_contract": {
+    "successful_confirmation_scope": "coarse two-channel subcellular-localization observation only",
+    "general_cell_state_production_authority": false,
+    "Aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_Aleph_parameter": false,
+    "future_sweep_connection": "context conditioning only after a geometry- and unit-matched Aleph observation operator plus forward-sensitivity and identifiability validation"
+  },
+  "failure_policy": {
+    "OpenCell_development_gate_failure": "retain metadata audit and refuse training",
+    "Allen_metadata_gate_failure": "retain schema audit and refuse before image access",
+    "development_selection_failure": "freeze failed checkpoint and keep Allen pixels sealed",
+    "confirmation_failure": "consume Allen confirmation, report every failed endpoint, grant no evidence or uncertainty authority, and never tune on it"
+  }
+}

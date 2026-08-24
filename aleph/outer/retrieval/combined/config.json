@@ -1,0 +1,12 @@
+{
+  "authority": "external_non_authoritative_combined_proposed_literature_routing",
+  "candidate_pool": 80,
+  "default_source_k": 5,
+  "derived_roots": {
+    "first": "data/external_training/derived/articles",
+    "second": "data/external_training/derived_second_pass/articles"
+  },
+  "maximum_snippet_chars": 280,
+  "maximum_source_k": 20,
+  "schema_version": "1.0.0"
+}

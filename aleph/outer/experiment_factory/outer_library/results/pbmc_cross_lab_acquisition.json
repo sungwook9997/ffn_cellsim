@@ -1,0 +1,135 @@
+{
+  "aleph_authority": "none",
+  "official_files": [
+    {
+      "container_members": [
+        "GSM2560245_A.mat.gz",
+        "GSM2560245_barcodes.tsv.gz",
+        "GSM2560246_B.mat.gz",
+        "GSM2560246_barcodes.tsv.gz",
+        "GSM2560247_C.mat.gz",
+        "GSM2560247_barcodes.tsv.gz",
+        "GSM2560248_2.1.mtx.gz",
+        "GSM2560248_barcodes.tsv.gz",
+        "GSM2560249_2.2.mtx.gz",
+        "GSM2560249_barcodes.tsv.gz"
+      ],
+      "name": "GSE96583_RAW.tar",
+      "sha256": "e5d41a3248a813f99d68fd5c9eb9773de7f46a83680a67f4a02d683b8955fe80",
+      "size_bytes": 76195840,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE96nnn/GSE96583/suppl/GSE96583_RAW.tar"
+    },
+    {
+      "container_members": null,
+      "name": "GSE96583_batch1.total.tsne.df.tsv.gz",
+      "sha256": "adfa8a71afc155682185f7cfd5906374b83379ff897404fc21e662437c8f7ea8",
+      "size_bytes": 372786,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE96nnn/GSE96583/suppl/GSE96583_batch1.total.tsne.df.tsv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE96583_batch2.total.tsne.df.tsv.gz",
+      "sha256": "1d57e72e92ca8695250e88cc0f1c3fa8c0be1175d974f8b427c58f1274dc6c09",
+      "size_bytes": 756342,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE96nnn/GSE96583/suppl/GSE96583_batch2.total.tsne.df.tsv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE96583_batch2.genes.tsv.gz",
+      "sha256": "93aa4e9b530ef9d6411ca129b416324c5cc1cc5a01a1fa6ed4f4a845480ed3ca",
+      "size_bytes": 277054,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE96nnn/GSE96583/suppl/GSE96583_batch2.genes.tsv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE132044_pbmc_hg38_cell.tsv.gz",
+      "sha256": "1011261d57c4a8c694e6c6ddebfd7107603d3789f6d5bc7ce30d91f8ecea3900",
+      "size_bytes": 212165,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132044/suppl/GSE132044_pbmc_hg38_cell.tsv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE132044_pbmc_hg38_gene.tsv.gz",
+      "sha256": "ddb188e8fd1331d0098067273a882ed98bac7679a763701d838e6ff08898c00f",
+      "size_bytes": 238709,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132044/suppl/GSE132044_pbmc_hg38_gene.tsv.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE132044_pbmc_hg38_count_matrix.mtx.gz",
+      "sha256": "e057891069195275e89f00c6b852380e9515367122fec06a0e563942901f09cb",
+      "size_bytes": 127509347,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132044/suppl/GSE132044_pbmc_hg38_count_matrix.mtx.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE72502_PBMC_RPKMs.xls.gz",
+      "sha256": "da5c24eb8b7a8895864e2dc9fb9951638c2ac5116d49973143cf5869cb026619",
+      "size_bytes": 5289179,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE72nnn/GSE72502/suppl/GSE72502_PBMC_RPKMs.xls.gz"
+    },
+    {
+      "container_members": null,
+      "name": "GSE72502_series_matrix.txt.gz",
+      "sha256": "376812b52d1ce77be4d4c3c6dabd4717fd721db683be0056df63e0d56b0c7b72",
+      "size_bytes": 2023,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE72nnn/GSE72502/matrix/GSE72502_series_matrix.txt.gz"
+    },
+    {
+      "container_members": null,
+      "name": "SCP424_Harmony_TSNE_CellType.json",
+      "sha256": "634fa4a8b01418c80b71c53c46d2aa3cf042af750cfb3f3bbb14e8b79d3e3ae6",
+      "size_bytes": 2612021,
+      "url": "https://singlecell.broadinstitute.org/single_cell/api/v1/studies/SCP424/clusters/Harmony%20TSNE?annotation_name=CellType&annotation_type=group&annotation_scope=study&subsample=all&consensus="
+    }
+  ],
+  "protocol_frozen_commit": "b49f9ed",
+  "protocol_sha256": "796809ce20c81c00186adcd9b94f0d72cf41238d400ed0e2e5677fa51744b73e",
+  "schema": "aleph.outer_library.pbmc_cross_lab_acquisition.v1",
+  "secondary_benchmark_label_source": {
+    "archive_checksum": "md5:b799a660b8bcaf5f3580a9b6f9372e5b",
+    "archive_size_bytes": 3671466589,
+    "classifier_target_authority": "none_pending_compatibility_audit",
+    "full_archive_downloaded": false,
+    "record": "https://zenodo.org/api/records/3357167",
+    "record_id": 3357167,
+    "selected_members": [
+      {
+        "member": "Inter-dataset/PbmcBench/10Xv2/10Xv2_pbmc1Labels.csv",
+        "sha256": "96342bd9f11233c9d593dcc31629a09352a54362383a449540afd2c09f1e07c3",
+        "size_bytes": 373141
+      },
+      {
+        "member": "Inter-dataset/PbmcBench/10Xv3/10Xv3_pbmc1Labels.csv",
+        "sha256": "937587288218c35587bba91c3282e2e4d8f15a6460b9c810580d2aabc99b24ae",
+        "size_bytes": 319871
+      },
+      {
+        "member": "Inter-dataset/PbmcBench/CEL-Seq/CL_pbmc1Labels.csv",
+        "sha256": "58b1d66a7cad5beb74c0f631327edf37dc884148022195402df576f743ba0b02",
+        "size_bytes": 320454
+      },
+      {
+        "member": "Inter-dataset/PbmcBench/Drop-Seq/DR_pbmc1Labels.csv",
+        "sha256": "3dc7089c8c021643357282a5a6ff65e4618e658a24b249fe85d526dcfd5656ee",
+        "size_bytes": 372218
+      },
+      {
+        "member": "Inter-dataset/PbmcBench/inDrop/iD_pbmc1Labels.csv",
+        "sha256": "6ed5f202f318e648ef452cdd47d2c15353001715dc60378ebb6dfbffb70ae6d1",
+        "size_bytes": 347843
+      },
+      {
+        "member": "Inter-dataset/PbmcBench/Smart-Seq2/SM2_pbmc1Labels.csv",
+        "sha256": "a62be0a064a16626c0648ff09a8dd3c2970788cef21691aaf9c6f5ce05abc1a3",
+        "size_bytes": 301647
+      },
+      {
+        "member": "Inter-dataset/PbmcBench/Seq-Well/SW_pbmc1Labels.csv",
+        "sha256": "8583820585803ed0de2817e61cf2349c69034a5da62d579f0db3423e15411b1c",
+        "size_bytes": 303600
+      }
+    ],
+    "title": "A comparison of automatic cell identification methods for single-cell RNA-sequencing data"
+  }
+}

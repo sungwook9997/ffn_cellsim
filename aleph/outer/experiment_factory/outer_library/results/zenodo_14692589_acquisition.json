@@ -1,0 +1,112 @@
+{
+  "aleph_authority": "none",
+  "article_doi": "10.1038/s42003-026-09514-0",
+  "dataset_doi": "10.5281/zenodo.14692589",
+  "license_id": "cc-by-4.0",
+  "may_select_aleph_parameter": false,
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.zenodo_14692589_acquisition.v1",
+  "source_file": {
+    "name": "Source-Data.zip",
+    "provider_md5": "acf57b9c3e159cc9bb60f4dedfa1f679",
+    "sha256": "ecd063c5175356b7c7fb231d94921a139d1725c83ab23af5bcb57e0a99c353d8",
+    "size_bytes": 2499140
+  },
+  "structure": {
+    "nested_prism": {
+      "SD_Fig2b_2f.prism": {
+        "crc_verified": true,
+        "data_table_count": 29,
+        "document_json_present": true,
+        "member_count": 445
+      },
+      "SD_Fig2c.prism": {
+        "crc_verified": true,
+        "data_table_count": 3,
+        "document_json_present": true,
+        "member_count": 60
+      },
+      "SD_Fig3d.prism": {
+        "crc_verified": true,
+        "data_table_count": 8,
+        "document_json_present": true,
+        "member_count": 123
+      },
+      "SD_Fig3e.prism": {
+        "crc_verified": true,
+        "data_table_count": 3,
+        "document_json_present": true,
+        "member_count": 35
+      },
+      "SD_Fig4d_4e_4f.prism": {
+        "crc_verified": true,
+        "data_table_count": 15,
+        "document_json_present": true,
+        "member_count": 199
+      },
+      "SD_Fig4g.prism": {
+        "crc_verified": true,
+        "data_table_count": 3,
+        "document_json_present": true,
+        "member_count": 51
+      },
+      "SD_Fig4i.prism": {
+        "crc_verified": true,
+        "data_table_count": 24,
+        "document_json_present": true,
+        "member_count": 654
+      },
+      "SD_Fig5e_5f_5g.prism": {
+        "crc_verified": true,
+        "data_table_count": 23,
+        "document_json_present": true,
+        "member_count": 486
+      },
+      "SD_SI_Fig1.prism": {
+        "crc_verified": true,
+        "data_table_count": 49,
+        "document_json_present": true,
+        "member_count": 747
+      },
+      "SD_SI_Fig2.prism": {
+        "crc_verified": true,
+        "data_table_count": 14,
+        "document_json_present": true,
+        "member_count": 224
+      },
+      "SD_SI_Fig3.prism": {
+        "crc_verified": true,
+        "data_table_count": 3,
+        "document_json_present": true,
+        "member_count": 77
+      },
+      "SD_SI_Fig4a_h.prism": {
+        "crc_verified": true,
+        "data_table_count": 28,
+        "document_json_present": true,
+        "member_count": 397
+      },
+      "SD_SI_Fig4i_p.prism": {
+        "crc_verified": true,
+        "data_table_count": 22,
+        "document_json_present": true,
+        "member_count": 361
+      },
+      "SD_SI_Fig7a.prism": {
+        "crc_verified": true,
+        "data_table_count": 12,
+        "document_json_present": true,
+        "member_count": 167
+      },
+      "SD_SI_Fig7b_7c.prism": {
+        "crc_verified": true,
+        "data_table_count": 24,
+        "document_json_present": true,
+        "member_count": 654
+      }
+    },
+    "outer_crc_verified": true,
+    "outer_member_count": 15
+  },
+  "title": "Source Data - Linking Molecular Tension and Cellular Tractions: A Multiscale Approach to Focal Adhesion Mechanics"
+}

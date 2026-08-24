@@ -1,0 +1,42 @@
+[resolve] r0=15.00 µm  D_e=1.950e-14 J (4556075 kT)  alpha=6.667e+05 1/m  dt=1.731e+00 s  gamma_cell=0.300 N·s/m
+[anchor] single-cell cortical tension gamma = 0.570 mN/m
+
+[run] cohesive spheroid: N=200, settle=40000 ...
+[run] repulsive-only CONTROL (same config) ...
+
+=== EMERGENT surface tension (cohesive spheroid) ===
+  R_edge            = 55.39 µm  (Rg = 39.06 µm)
+  core / interior / exterior cells = 200 / 58 / 142
+  P_whole (virial)  = +7.9180e-04 Pa  (~0 => self-bound drop, no external wall — expected)
+  [diag] P_interior = +6.6917e+00 Pa, P_exterior = -1.9111e+00 Pa (naive radial split — does NOT isolate sigma)
+  -> emergent sigma (Irving-Kirkwood) = 0.0275 mN/m
+     gamma (anchor)                   = 0.5700 mN/m
+     sigma / gamma                    = 0.048
+
+=== sign CONTROL (repulsive-only, same geometry) ===
+  sigma_IK (repulsive-only) = -0.0029 mN/m  (should be <= 0 / sign-flipped vs cohesive: no adhesion to make a surface)
+  sign convention validated: True  (cohesive sigma>0 and > repulsive-only control)
+
+=== MCF7 emergent beta/gamma (cell-cell contact geometry) ===
+  mean NN sep / r0  = 0.9812
+  contact radius    = 1.447 µm  (area 6.58 µm²)
+  work de-adhesion  = 19.500 fJ (= D_e)
+  beta (adhesion)   = 2.9633 mN/m
+  beta / gamma      = 5.199  (Roffay window (0.375, 0.5))
+  -> beta/gamma lands ABOVE the Roffay 0.375-0.5 window
+
+=== ensemble (seed x N) — honest noise estimate ===
+  seed=42 N=150: sigma=+0.0209 mN/m (sigma/g=+0.037)  beta/g=6.19
+  seed=42 N=200: sigma=+0.0275 mN/m (sigma/g=+0.048)  beta/g=5.20
+  seed=42 N=300: sigma=+0.0158 mN/m (sigma/g=+0.028)  beta/g=4.88
+  seed=7 N=150: sigma=+0.0440 mN/m (sigma/g=+0.077)  beta/g=4.99
+  seed=7 N=200: sigma=+0.0150 mN/m (sigma/g=+0.026)  beta/g=5.61
+  seed=7 N=300: sigma=-0.0072 mN/m (sigma/g=-0.013)  beta/g=5.17
+  seed=101 N=150: sigma=+0.0072 mN/m (sigma/g=+0.013)  beta/g=11.20
+  seed=101 N=200: sigma=-0.0163 mN/m (sigma/g=-0.029)  beta/g=5.15
+  seed=101 N=300: sigma=+0.0049 mN/m (sigma/g=+0.009)  beta/g=5.06
+  -> sigma = 0.0124 +/- 0.0170 mN/m (sigma/gamma ~ 0.022)
+  -> beta/gamma = 5.94 [4.88, 11.20] (all ABOVE Roffay 0.375-0.5)
+
+[json] /Users/sw1/ffn_cellsim/ffn_sim/outputs/layer2/emergent_sigma.json
+[viz]  /Users/sw1/ffn_cellsim/ffn_sim/outputs/layer2/emergent_sigma.png

@@ -1,0 +1,74 @@
+{
+  "status": "C2_REJECTED_ROLLED_BACK",
+  "physical_step_index": 0,
+  "device": "cuda:0",
+  "full_native": {
+    "n_filaments": 70686,
+    "n_total_nodes": 536406,
+    "membrane_subdivisions": 6,
+    "nucleus_subdivisions": 3
+  },
+  "solver": {
+    "name": "analytic_implicit",
+    "dt_phys_s": 0.01,
+    "iterations_per_chunk": 40,
+    "max_inner_retries": 0,
+    "iteration_budget": 40,
+    "line_search_steps": 12,
+    "coarse_modes": 0,
+    "coarse_iterations": 8,
+    "reported_iterations": 40,
+    "attempts": 1,
+    "candidate_residual_pN": 0.7917947145030306,
+    "max_projected_force_pN": 0.7902487517841555,
+    "max_displacement_um": 2.7947336973209235e-08,
+    "constraint_residual_um": 1.4988010832439613e-15,
+    "dt_mu_um_per_pN": 3.535943748517097e-08,
+    "displacement_tolerance_um": 7.449122950141183e-09,
+    "projected_force_tolerance_pN": 0.21066859316597425,
+    "accepted_trial_counts": {
+      "accelerated": 0,
+      "explicit": 40,
+      "stationary": 0,
+      "accelerated_by_family_and_scale": {
+        "analytic_implicit": {
+          "1": 0,
+          "0.5": 0,
+          "0.25": 0,
+          "0.125": 0,
+          "0.0625": 0,
+          "0.03125": 0,
+          "0.015625": 0,
+          "0.0078125": 0,
+          "0.00390625": 0,
+          "0.001953125": 0,
+          "0.0009765625": 0,
+          "0.00048828125": 0
+        }
+      }
+    },
+    "convergence_history": {
+      "iteration": [
+        20,
+        40
+      ],
+      "max_displacement_um": [
+        2.8037792229348053e-08,
+        2.7947336973209235e-08
+      ],
+      "constraint_residual_um": [
+        1.4988010832439613e-15,
+        1.4988010832439613e-15
+      ],
+      "projected_force_pN": [
+        0.7928120282968365,
+        0.7902487517841555
+      ]
+    }
+  },
+  "acceptance": {
+    "accepted": false,
+    "candidate_geometry_captured_before_rollback": true,
+    "rejected_candidate_never_advanced_biological_time": true
+  }
+}

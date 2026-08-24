@@ -1,0 +1,37 @@
+{
+  "schema": "ffn-ac-kxb-sensitivity-v1",
+  "n_filaments": 70686,
+  "n_inner": 6000,
+  "fraction": 0.5,
+  "force_pn": 1.5,
+  "capture_um": 0.6,
+  "k_xb_sweep": [
+    100.0,
+    1000.0
+  ],
+  "gate_pn": 0.21,
+  "results": [
+    {
+      "k_xb_pn_per_um": 100.0,
+      "residual_start": 5.789150843299386,
+      "residual_candidate": 5.470947473040849,
+      "residual_end": 5.789150843299386,
+      "r_max_end": 7.411668331973714,
+      "r_mean_end": 7.299813096203852,
+      "descent_pct": 5.496546538027067,
+      "inner_converged": false,
+      "wall_s": 1274.5884235082194
+    },
+    {
+      "k_xb_pn_per_um": 1000.0,
+      "residual_start": 5.789150843299386,
+      "residual_candidate": 5.4709474724042275,
+      "residual_end": 5.789150843299386,
+      "r_max_end": 7.411668331973714,
+      "r_mean_end": 7.299813096203852,
+      "descent_pct": 5.4965465490238685,
+      "inner_converged": false,
+      "wall_s": 1101.9556330861524
+    }
+  ]
+}

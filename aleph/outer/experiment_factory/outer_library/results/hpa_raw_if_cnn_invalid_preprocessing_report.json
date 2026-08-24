@@ -1,0 +1,291 @@
+{
+  "HPA_sealed_test": {
+    "exact_match_accuracy": 0.0,
+    "macro_auroc": NaN,
+    "macro_average_precision": 0.24849365271701884,
+    "macro_f1": 0.0,
+    "mean_prediction_set_size": 0.0,
+    "micro_f1": 0.0,
+    "multilabel_ece_15_bin": 0.0,
+    "per_class": [
+      {
+        "auroc": null,
+        "average_precision": 0.5380692654048943,
+        "f1": 0.0,
+        "support": 30
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.04,
+        "f1": 0.0,
+        "support": 1
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.45567898334625867,
+        "f1": 0.0,
+        "support": 11
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.10529100529100528,
+        "f1": 0.0,
+        "support": 3
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.06955266955266955,
+        "f1": 0.0,
+        "support": 3
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.060199223819506834,
+        "f1": 0.0,
+        "support": 4
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.35781895076249914,
+        "f1": 0.0,
+        "support": 8
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.4648526859451389,
+        "f1": 0.0,
+        "support": 21
+      },
+      {
+        "auroc": null,
+        "average_precision": 0.14498009033119705,
+        "f1": 0.0,
+        "support": 8
+      }
+    ],
+    "positive_label_conformal_coverage": 0.0,
+    "sample_count": 56
+  },
+  "OpenCell_accessed": false,
+  "aleph_authority": "none",
+  "architecture": [
+    "Conv2d(2,16,3,padding=1), GroupNorm(4,16), GELU, MaxPool2d(2)",
+    "Conv2d(16,32,3,padding=1), GroupNorm(8,32), GELU, MaxPool2d(2)",
+    "Conv2d(32,64,3,padding=1), GroupNorm(8,64), GELU, MaxPool2d(2)",
+    "Conv2d(64,96,3,padding=1), GroupNorm(8,96), GELU, AdaptiveAvgPool2d(1)",
+    "Linear(96,9)"
+  ],
+  "calibration": {
+    "class_eligible": {
+      "cytoskeleton_or_adhesion": true,
+      "cytosol": true,
+      "endoplasmic_reticulum": false,
+      "golgi": true,
+      "mitochondria": true,
+      "nuclear_envelope": false,
+      "nuclear_interior": true,
+      "plasma_membrane_or_junction": true,
+      "vesicular_organelle": true
+    },
+    "conformal_thresholds": {
+      "cytoskeleton_or_adhesion": NaN,
+      "cytosol": NaN,
+      "endoplasmic_reticulum": 1.0,
+      "golgi": NaN,
+      "mitochondria": NaN,
+      "nuclear_envelope": 1.0,
+      "nuclear_interior": NaN,
+      "plasma_membrane_or_junction": NaN,
+      "vesicular_organelle": NaN
+    },
+    "decision_thresholds": {
+      "cytoskeleton_or_adhesion": 0.49999999999999994,
+      "cytosol": 0.49999999999999994,
+      "endoplasmic_reticulum": 0.49999999999999994,
+      "golgi": 0.49999999999999994,
+      "mitochondria": 0.49999999999999994,
+      "nuclear_envelope": 0.49999999999999994,
+      "nuclear_interior": 0.49999999999999994,
+      "plasma_membrane_or_junction": 0.49999999999999994,
+      "vesicular_organelle": 0.49999999999999994
+    },
+    "negative_log_likelihood": NaN,
+    "temperature": 0.4930244760809842
+  },
+  "checkpoint_sha256": "5ee7bac456c0fc59a2640a2284edaa860c127e65835a74fd16eaeacdc68a5059",
+  "classes": [
+    "nuclear_interior",
+    "nuclear_envelope",
+    "cytosol",
+    "endoplasmic_reticulum",
+    "golgi",
+    "mitochondria",
+    "plasma_membrane_or_junction",
+    "cytoskeleton_or_adhesion",
+    "vesicular_organelle"
+  ],
+  "external_holdout_status": "unopened",
+  "forbidden_HPA_channels_used": false,
+  "frozen_internal_endpoint_passed": false,
+  "manifest_sha256": "c66fe1f11e0eace9bb84bd4a9e480bd9c30a02b2a0f117bfa97709fecb2454ae",
+  "mapped_image_count": 498,
+  "may_select_aleph_parameter": false,
+  "protocol_sha256": "bc82a82017e84af17ab194d4a9dd70e323f565d44dd23e0c304aa836034633db",
+  "receipt_sha256": "19aaa8a1eb4129666ca95eb4c7d391c6b0b89f8af65b6606b3df9faa75d90453",
+  "schema": "aleph.outer_library.hpa_raw_if_cnn_training.v1",
+  "software": {
+    "numpy": "2.5.1",
+    "torch": "2.8.0"
+  },
+  "split_counts": {
+    "calibration": 56,
+    "test": 56,
+    "train": 309,
+    "validation": 77
+  },
+  "split_positive_counts": {
+    "calibration": {
+      "cytoskeleton_or_adhesion": 18,
+      "cytosol": 16,
+      "endoplasmic_reticulum": 2,
+      "golgi": 3,
+      "mitochondria": 3,
+      "nuclear_envelope": 2,
+      "nuclear_interior": 26,
+      "plasma_membrane_or_junction": 9,
+      "vesicular_organelle": 14
+    },
+    "test": {
+      "cytoskeleton_or_adhesion": 21,
+      "cytosol": 11,
+      "endoplasmic_reticulum": 3,
+      "golgi": 3,
+      "mitochondria": 4,
+      "nuclear_envelope": 1,
+      "nuclear_interior": 30,
+      "plasma_membrane_or_junction": 8,
+      "vesicular_organelle": 8
+    },
+    "train": {
+      "cytoskeleton_or_adhesion": 100,
+      "cytosol": 74,
+      "endoplasmic_reticulum": 13,
+      "golgi": 19,
+      "mitochondria": 18,
+      "nuclear_envelope": 11,
+      "nuclear_interior": 167,
+      "plasma_membrane_or_junction": 34,
+      "vesicular_organelle": 59
+    },
+    "validation": {
+      "cytoskeleton_or_adhesion": 25,
+      "cytosol": 18,
+      "endoplasmic_reticulum": 3,
+      "golgi": 6,
+      "mitochondria": 5,
+      "nuclear_envelope": 3,
+      "nuclear_interior": 35,
+      "plasma_membrane_or_junction": 13,
+      "vesicular_organelle": 20
+    }
+  },
+  "trained_before_opencell_annotation_or_image_content_access": true,
+  "training": {
+    "epochs_executed": 16,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 2,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 3,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 4,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 5,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 6,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 7,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 8,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 9,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 10,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 11,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 12,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 13,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 14,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 15,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      },
+      {
+        "epoch": 16,
+        "train_loss": NaN,
+        "validation_macro_average_precision": 0.254704231672552
+      }
+    ],
+    "positive_weights": {
+      "cytoskeleton_or_adhesion": 2.09,
+      "cytosol": 3.175675675675676,
+      "endoplasmic_reticulum": 20.0,
+      "golgi": 15.263157894736842,
+      "mitochondria": 16.166666666666668,
+      "nuclear_envelope": 20.0,
+      "nuclear_interior": 1.0,
+      "plasma_membrane_or_junction": 8.088235294117647,
+      "vesicular_organelle": 4.237288135593221
+    },
+    "selected_epoch": 1,
+    "selected_validation_macro_average_precision": 0.254704231672552
+  }
+}

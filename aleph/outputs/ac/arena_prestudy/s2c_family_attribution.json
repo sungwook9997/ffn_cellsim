@@ -1,0 +1,78 @@
+{
+  "n_dof": 156,
+  "n_bound_heads": 20,
+  "baseline_zero_modes": 40,
+  "baseline_lambda_max_pN_per_um": 453011.1647052789,
+  "baseline_condition_number": 2284004331691.3,
+  "families": [
+    {
+      "family": "sf_axial",
+      "zero_only": 108,
+      "lambda_max_only": 3879.385241571817,
+      "zero_without": 44,
+      "delta_vs_baseline": 4,
+      "cond_without": 16566743128518.312
+    },
+    {
+      "family": "sf_bending",
+      "zero_only": 114,
+      "lambda_max_only": 1.9288521516594155,
+      "zero_without": 40,
+      "delta_vs_baseline": 0,
+      "cond_without": 2284279085922.0825
+    },
+    {
+      "family": "alpha_actinin_arc",
+      "zero_only": 156,
+      "lambda_max_only": 0.0,
+      "zero_without": 40,
+      "delta_vs_baseline": 0,
+      "cond_without": 2284004331691.3
+    },
+    {
+      "family": "nmii_backbone",
+      "zero_only": 143,
+      "lambda_max_only": 3949.8516451569258,
+      "zero_without": 42,
+      "delta_vs_baseline": 2,
+      "cond_without": 9457430.024741057
+    },
+    {
+      "family": "nmii_head_arm",
+      "zero_only": 136,
+      "lambda_max_only": 300.0,
+      "zero_without": 43,
+      "delta_vs_baseline": 3,
+      "cond_without": 29895569191.303894
+    },
+    {
+      "family": "nmii_angle_backbone",
+      "zero_only": 144,
+      "lambda_max_only": 5393.684004341219,
+      "zero_without": 41,
+      "delta_vs_baseline": 1,
+      "cond_without": 9345924.544452403
+    },
+    {
+      "family": "nmii_angle_arm",
+      "zero_only": 136,
+      "lambda_max_only": 447514.30443736474,
+      "zero_without": 43,
+      "delta_vs_baseline": 3,
+      "cond_without": 220053.66152445553
+    },
+    {
+      "family": "crossbridge",
+      "zero_only": 136,
+      "lambda_max_only": 9674.870001920905,
+      "zero_without": 43,
+      "delta_vs_baseline": 3,
+      "cond_without": 9457630.608880138
+    }
+  ],
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "device": "cuda:0",
+  "build_commit": "c8a46ec1",
+  "wall_seconds": 12.88720363198081
+}

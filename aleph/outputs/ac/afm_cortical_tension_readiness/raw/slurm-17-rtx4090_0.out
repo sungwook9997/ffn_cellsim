@@ -1,0 +1,157 @@
+[OK] Granted sungwook access to /dev/dxg for Slurm job 17.
+[GPU SUBMIT]
+  reserved_token: rtx4090_0
+  physical_gpu:   0
+  visible_device: cuda:0
+  CUDA_VISIBLE_DEVICES=0
+  cpus:           8
+  mem_gb:         48
+  PWD=/home/sungwook/ffn/ffn_cellsim
+
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.3
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA GeForce RTX 4090" (24 GiB, sm_89, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+Module aleph.components.incumbent.live_mesh_domain 07b917a load on device 'cuda:0' took 2.33 ms  (cached)
+Module aleph.laws.network_warp 25d681b load on device 'cuda:0' took 2.27 ms  (cached)
+Module aleph.laws.forces_warp f7f4cb5 load on device 'cuda:0' took 0.44 ms  (cached)
+Module aleph.laws.membrane_surface 6fb4428 load on device 'cuda:0' took 0.95 ms  (cached)
+Module aleph.components.nucleus.envelope 1572811 load on device 'cuda:0' took 0.93 ms  (cached)
+Module aleph.components.incumbent.compartments 8111c33 load on device 'cuda:0' took 0.53 ms  (cached)
+Module aleph.components.incumbent.erm_tether 2edfc82 load on device 'cuda:0' took 0.87 ms  (cached)
+Module aleph.components.incumbent.membrane_pressure 61de45d load on device 'cuda:0' took 0.71 ms  (cached)
+Module aleph.components.solid.steric_warp 75a3ba0 load on device 'cuda:0' took 1.82 ms  (cached)
+Module aleph.components.fluid.biot_substrate fd600cf load on device 'cuda:0' took 2.05 ms  (cached)
+Module aleph.components.incumbent.inner_mechanics 81f500f load on device 'cuda:0' took 1.51 ms  (cached)
+{
+  "out": "/home/sungwook/ffn/c2_force_audit_fd65733f.json",
+  "projected_max": {
+    "global_node": 469721,
+    "owner": "cortex",
+    "norm_pn": 0.8000254546480318,
+    "raw_total_vector_pn": [
+      0.7535477577658937,
+      -0.26797207567176223,
+      0.02056250289496495
+    ],
+    "projected_total_vector_pn": [
+      0.7530337499931288,
+      -0.2697474250032176,
+      0.014738594241290174
+    ],
+    "channel_contributions": {
+      "actin_bending_cytosim": {
+        "vector_pn": [
+          0.022685182132473298,
+          -0.007990423532050026,
+          0.0013047021087455877
+        ],
+        "norm_pn": 0.02408664784061057
+      },
+      "actin_crosslink_link_spring": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "arp23_branch_angle": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "biot_pressure_coupling": {
+        "vector_pn": [
+          -9.188862433273057e-18,
+          3.671898864396343e-18,
+          1.3594313678301014e-18
+        ],
+        "norm_pn": 9.988297539211196e-18
+      },
+      "membrane_compartment_force": {
+        "vector_pn": [
+          0.7308625756334204,
+          -0.2599816521397122,
+          0.019257800786219362
+        ],
+        "norm_pn": 0.7759648360602002
+      },
+      "membrane_pressure_traction": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "nmii_minifilament_force": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "nucleus_compartment_force": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "steric_wca": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      }
+    }
+  },
+  "projected_blocks": {
+    "cortex": {
+      "node_count": 494802,
+      "max_norm_pn": 0.8000254546480318,
+      "max_global_node": 469721,
+      "resultant_pn": [
+        -1.2795567756763613,
+        -24.788812441455384,
+        6.325222325396728
+      ],
+      "sum_norm_pn": 34169.52921175353
+    },
+    "nucleus": {
+      "node_count": 642,
+      "max_norm_pn": 0.1605796776518945,
+      "max_global_node": 494804,
+      "resultant_pn": [
+        1.221557577313348e-13,
+        -1.7646127614678875e-13,
+        5.431592675630981e-14
+      ],
+      "sum_norm_pn": 6.928706209096809
+    },
+    "membrane": {
+      "node_count": 40962,
+      "max_norm_pn": 0.37761404417256683,
+      "max_global_node": 531704,
+      "resultant_pn": [
+        1.2795567756763149,
+        24.788812441455175,
+        -6.325222325397799
+      ],
+      "sum_norm_pn": 2643.315014191521
+    }
+  },
+  "assembly_relative_error": 2.0535042465877256e-14
+}
+[OK] Revoked sungwook access to /dev/dxg.

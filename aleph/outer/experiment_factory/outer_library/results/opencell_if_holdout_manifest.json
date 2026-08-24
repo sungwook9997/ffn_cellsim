@@ -1,0 +1,66 @@
+{
+  "aleph_authority": "none",
+  "annotation_audit": {
+    "released_target_count": 1310,
+    "role_counts_before_sampling": {
+      "excluded_mixed_mapped_unmapped": 259,
+      "excluded_shared_HPA_gene": 321,
+      "in_domain": 635,
+      "semantic_OOD": 95
+    },
+    "shared_HPA_gene_count": 321,
+    "source_grade_2_or_3_label_counts": {
+      "big_aggregates": 50,
+      "cell_contact": 46,
+      "centrosome": 64,
+      "chromatin": 115,
+      "cytoplasmic": 594,
+      "cytoskeleton": 46,
+      "er": 119,
+      "focal_adhesions": 11,
+      "golgi": 90,
+      "membrane": 155,
+      "mitochondria": 13,
+      "nuclear_membrane": 36,
+      "nuclear_punctae": 120,
+      "nucleolus_fc_dfc": 28,
+      "nucleolus_gc": 87,
+      "nucleoplasm": 485,
+      "vesicles": 299
+    }
+  },
+  "annotation_labels_consumed": true,
+  "annotation_receipt_sha256": "c2feb6b1452ee501858b5b3b6badda3b519e68543d65464b96068c498da91193",
+  "evaluable_class_count": 5,
+  "first_attempt_projection_metadata_listed": true,
+  "forbidden_posthoc_repairs_not_applied": [
+    "er to endoplasmic reticulum",
+    "membrane to plasma membrane",
+    "cell_contact to cell junction",
+    "underscore to space normalization",
+    "lowering the six-class requirement"
+  ],
+  "frozen_checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+  "in_domain_class_support_before_projection": {
+    "cytoskeleton_or_adhesion": 38,
+    "cytosol": 120,
+    "endoplasmic_reticulum": 0,
+    "golgi": 49,
+    "mitochondria": 8,
+    "nuclear_envelope": 0,
+    "nuclear_interior": 74,
+    "plasma_membrane_or_junction": 0,
+    "vesicular_organelle": 99
+  },
+  "may_be_reused_as_pristine": false,
+  "may_select_aleph_parameter": false,
+  "model_prediction_executed": false,
+  "projection_image_content_downloaded": false,
+  "protocol_sha256": "571eb998fb48023bcd93e3eaa901456bcceca85212be1f37aadb6714e55690ff",
+  "reason": "literal frozen ontology produced fewer sufficiently supported common classes than preregistered",
+  "required_evaluable_class_count": 6,
+  "schema": "aleph.outer_library.opencell_if_external_holdout_refusal.v1",
+  "selected_in_domain_target_count_before_projection": 231,
+  "selected_semantic_OOD_target_count_before_projection": 95,
+  "status": "refused_before_projection_download"
+}

@@ -1,0 +1,96 @@
+{
+  "stage": {
+    "name": "incumbent build_cell (N=70,686)",
+    "evidence": "CONNECTED",
+    "accepted": false
+  },
+  "report": {
+    "source_note": "composed AssembledCell after one transactional --from-resting outer-step attempt",
+    "n_actin": 494802,
+    "n_total": 511114,
+    "n_myosin_particles": 15028,
+    "n_fibers": 70686,
+    "n_crosslinks": 1413720,
+    "with_steric": true,
+    "with_myosin": true,
+    "with_pressure": true,
+    "dt_phys": 0.05,
+    "n_inner": 1,
+    "max_inner_retries": 0,
+    "n_biot_subcycles": 67,
+    "inner_iters": 1,
+    "inner_attempts": 1,
+    "residual_start_pN": 47.405172429438764,
+    "residual_candidate_pN": 47.40100398972372,
+    "residual_committed_pN": 47.405172429438764,
+    "residual_end_pN": 47.405172429438764,
+    "inner_converged": false,
+    "inner_finite": true,
+    "fluid_finite": true,
+    "outer_accepted": false,
+    "outer_rolled_back": true,
+    "com_drift_um": 0.0,
+    "r_mean_start_um": 7.299813096203852,
+    "r_mean_end_um": 7.299813096203852,
+    "r_min_end_um": 7.188294607780649,
+    "r_max_end_um": 7.411668331973714,
+    "n_interpenetrating_pre": 0,
+    "n_interpenetrating_post": 0,
+    "f_total_pre_pN": {
+      "min": 1.2613022587614729e-05,
+      "p50": 0.023733596242377787,
+      "p99": 0.024360836854864645,
+      "p999": 0.025922442541683067,
+      "max": 0.03563540033213392
+    },
+    "f_total_post_pN": {
+      "min": 1.2613022587614729e-05,
+      "p50": 0.023733596242377787,
+      "p99": 0.024360836854864645,
+      "p999": 0.025922442541683067,
+      "max": 0.03563540033213392
+    },
+    "f_steric_pre_pN": {},
+    "f_steric_post_pN": {},
+    "pos_finite": true,
+    "force_finite": true,
+    "stable": false,
+    "steric_sigma_um": 0.007,
+    "steric_force_cap_pN": 1000.0,
+    "wall_s": 11.296589612960815
+  },
+  "components": [
+    {
+      "key": "cortex",
+      "kind": "filaments",
+      "order": 0,
+      "n_actors": 70686
+    },
+    {
+      "key": "nmii",
+      "kind": "lines_raw",
+      "order": 1,
+      "n_actors": 442
+    },
+    {
+      "key": "nucleus",
+      "kind": "mesh",
+      "order": 2,
+      "n_actors": 1
+    },
+    {
+      "key": "membrane",
+      "kind": "mesh",
+      "order": 3,
+      "n_actors": 1
+    }
+  ],
+  "connectors": [
+    {
+      "key": "linc",
+      "family": "LINC",
+      "a_component": "nucleus",
+      "b_component": "cortex"
+    }
+  ]
+}

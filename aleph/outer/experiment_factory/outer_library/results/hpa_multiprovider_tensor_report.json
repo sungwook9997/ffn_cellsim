@@ -1,0 +1,71 @@
+{
+  "Allen_pixels_accessed": 0,
+  "HPA_is_external_confirmation": false,
+  "aleph_authority": "none",
+  "channel_order": [
+    "nucleus_or_DNA",
+    "target_protein_or_tagged_structure"
+  ],
+  "class_names": [
+    "nuclear_interior",
+    "nuclear_envelope",
+    "cytosol",
+    "endoplasmic_reticulum",
+    "golgi",
+    "mitochondria",
+    "plasma_membrane_or_junction",
+    "cytoskeleton_or_adhesion",
+    "vesicular_organelle"
+  ],
+  "component_count": 2858,
+  "component_overlap_across_splits": 0,
+  "constant_channel_count": 2,
+  "dtype": "uint8",
+  "encoding": "round(normalized_float_0_1 * 255); model decodes by division by 255",
+  "excluded_unmapped_author_location_counts": {
+    "Aggresome": 3,
+    "Centriolar satellite": 8,
+    "Rods & Rings": 4
+  },
+  "excluded_unmapped_image_count": 14,
+  "geometry": "center-crop to square then area-resize",
+  "image_count": 2858,
+  "manifest_sha256": "df0efca52970c4cd10bc904109df1b207afbb0466149ec0f06b1a3a9e6c40af3",
+  "may_emit_numeric_sweep_range": false,
+  "model_predictions_made": 0,
+  "normalization": "per-channel finite p1-p99 clip and scale to [0,1]; constant channel becomes all zeros and is reported",
+  "positive_image_counts": {
+    "cytoskeleton_or_adhesion": 444,
+    "cytosol": 753,
+    "endoplasmic_reticulum": 402,
+    "golgi": 321,
+    "mitochondria": 310,
+    "nuclear_envelope": 249,
+    "nuclear_interior": 1249,
+    "plasma_membrane_or_junction": 437,
+    "vesicular_organelle": 474
+  },
+  "protocol_sha256": "41dc73848e0208dd1b4c7295e2740dd18accb07e26d0f9e2cc1155e59684f77a",
+  "receipt_sha256": "893ecac001f53cf7d3923c5c3777801f1676ddac9e32d34ede3881d4919543e0",
+  "schema": "aleph.outer_library.hpa_multiprovider_tensor.v1",
+  "shape": [
+    2858,
+    2,
+    128,
+    128
+  ],
+  "source_manifest_image_count": 2872,
+  "split_component_counts": {
+    "calibration": 384,
+    "selection": 381,
+    "test": 56,
+    "train": 2037
+  },
+  "split_image_counts": {
+    "calibration": 384,
+    "selection": 381,
+    "test": 56,
+    "train": 2037
+  },
+  "tensor_sha256": "88cac80d6504904b7f47c8b84bbe3b6dc7ebf418998938f7bff988e936932ae9"
+}

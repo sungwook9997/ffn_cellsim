@@ -1,0 +1,27 @@
+{
+  "aggregate_files": {
+    "aggregate_profiles_DINO_adjusted.parquet": {
+      "archive_member": "features/aggregate_profiles_DINO_adjusted.parquet",
+      "sha256": "b7c23d661a945d16ac8eb98a9d9df2ce25259ac39fd16d54fccffab1e3ab8076",
+      "size_bytes": 8179545
+    },
+    "aggregate_profiles_DP_adjusted.parquet": {
+      "archive_member": "features/aggregate_profiles_DP_adjusted.parquet",
+      "sha256": "856dd96574258b1dc59ec5ae4e7b77336f46dab7b7ec51e301001c8cc748960b",
+      "size_bytes": 16347512
+    },
+    "aggregate_profiles_DP_aggregated.parquet": {
+      "archive_member": "features/aggregate_profiles_DP_aggregated.parquet",
+      "sha256": "01d10a24f2fa448cb560425ce41712ff264ce701fab82a5ae5aaba273f677844",
+      "size_bytes": 16579528
+    }
+  },
+  "aleph_authority": "none",
+  "archive_member_count": 7,
+  "archive_paths_safe": true,
+  "may_select_aleph_parameter": false,
+  "schema": "aleph.outer_library.figshare_cell_death_aggregate_receipt.v1",
+  "single_cell_profiles_extracted": false,
+  "source_archive_md5": "680c12ebc351f260f56ef722ffc7c2aa",
+  "source_doi": "10.17044/scilifelab.28202864.v2"
+}

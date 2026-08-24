@@ -1,0 +1,137 @@
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "CPU"
+     "cuda:0"   : "NVIDIA RTX A5000 Laptop GPU" (16 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+[ac.cell] building composed cell: n_filaments=70686 myosin=True steric=True nucleus=True membrane=True pressure=True device=cuda
+Module ffn_sim.ac.cell.live_mesh_domain 07b917a load on device 'cuda:0' took 1.12 ms  (cached)
+Module ffn_sim.ff.network_warp 25d681b load on device 'cuda:0' took 1.96 ms  (cached)
+Module ffn_sim.ff.forces_warp f7f4cb5 load on device 'cuda:0' took 0.36 ms  (cached)
+Module ffn_sim.ac.motor.minifilament_warp e8bfd02 load on device 'cuda:0' took 0.49 ms  (cached)
+Module ffn_sim.ff.membrane_surface 6fb4428 load on device 'cuda:0' took 0.61 ms  (cached)
+Module ffn_sim.ac.nucleus.envelope 1572811 load on device 'cuda:0' took 0.80 ms  (cached)
+Module ffn_sim.ac.cell.compartments 8111c33 load on device 'cuda:0' took 0.41 ms  (cached)
+Module ffn_sim.ac.cell.erm_tether 57e0b40 load on device 'cuda:0' took 0.39 ms  (cached)
+Module ffn_sim.ac.cell.membrane_pressure 61de45d load on device 'cuda:0' took 0.55 ms  (cached)
+Module ffn_sim.ac.solid.steric_warp 75a3ba0 load on device 'cuda:0' took 0.40 ms  (cached)
+Module ffn_sim.ac.fluid.biot_substrate fd600cf load on device 'cuda:0' took 2.98 ms  (cached)
+Module ffn_sim.ac.fluid.field_grid 77e35cf load on device 'cuda:0' took 0.50 ms  (cached)
+Module ffn_sim.ac.fluid.boundary e41e225 load on device 'cuda:0' took 0.82 ms  (cached)
+Module ffn_sim.ac.fluid.scheduler fe53bd6 load on device 'cuda:0' took 0.65 ms  (cached)
+Module ffn_sim.ac.cell.inner_mechanics 7ab41b2 load on device 'cuda:0' took 89.23 ms  (cached)
+Module ffn_sim.ac.fluid.domain e91c184 load on device 'cuda:0' took 360.08 ms  (cached)
+Module ffn_sim.ac.cell.fsi_coupling 90bc223 load on device 'cuda:0' took 4.41 ms  (cached)
+
+=== population ledger ===
+  N_unique_active_fibers       70,686
+  N_dormant_fibers             0
+  N_allocated_fibers           70,686
+  N_nodes                      494,802
+  N_crosslinks                 70,686
+  N_motor_seeds                442
+  N_branch_junctions_active    0
+  N_cross_region_bonds         0
+  N_fa_sites                   0
+  N_linc_sites                 0
+  n_actin_nodes                494,802
+  n_total_nodes                511,114
+  n_myosin_particles           15,028
+  n_nucleus_nodes              642
+  n_membrane_nodes             642
+  nucleus_faces                1,280
+  nucleus_hinges               1,920
+  nucleus_linc_tethers         642
+  membrane_faces               1,280
+  membrane_erm_tethers         642
+  n_bending_triples            353,430
+  n_crosslink_links            70,686
+  myosin_n_minifilaments       442
+  myosin_n_myosin_particles    15,028
+  myosin_n_heads               8,840
+  myosin_n_backbone_beads      6,188
+  field_grid_cells             79,507
+  resting_pressure_Pa          40.0
+  pressure_control_volume_um3  1751.9375322111337
+  analytic_sphere_volume_um3   1767.1458676442585
+  kmax_pN_per_um               2828099.2886817832
+  mechanical_kmax_pN_per_um    2828099.2886817832
+  pressure_edge_um             1.1304727889616157
+  dt_mu                        3.535943748517097e-08
+  gpu_bytes_used               452,001,792
+  gpu_bytes_total              16,760,569,856
+  warp_mempool_used_current_bytes 258,521,867
+  warp_mempool_used_high_bytes 258,522,474
+  gpu_memory_accounting_status PARTIAL_MEMPOOL_ONLY
+  gpu_memory_accounting_reason Warp mempool high-water excludes non-mempool CUDA allocations; NVML exact probe status=ACCOUNTING_DISABLED
+  gpu_bytes_observed_after_step 487,653,376
+  gpu_memory_accounting_backend NVML_PROCESS_LIFETIME_ACCOUNTING
+  gpu_memory_accounting_probe_status ACCOUNTING_DISABLED
+  gpu_memory_accounting_device_uuid GPU-ede1b117-f5f3-1bfc-f96b-a77f8fa87c2d
+  gpu_memory_accounting_pid    3,889,451
+  gpu_memory_accounting_mode_enabled 0
+  inner_iteration_chunk_size   60
+  inner_max_retries            0
+  inner_max_attempts           1
+  inner_iteration_budget       60
+
+=== --from-resting stability ===
+  ran                    True
+  n_actin                494802
+  n_total                511114
+  dt_phys                0.05
+  n_biot_subcycles       67
+  inner_iters            60
+  inner_attempts         1
+  inner_max_attempts     1
+  inner_iteration_budget 60
+  inner_converged        False
+  inner_tolerance_um     7.449163398500275e-09
+  inner_max_displacement_um 0.000994599592689581
+  inner_constraint_residual_um 1.4432899320127035e-15
+  inner_finite           True
+  fluid_finite           True
+  inner_dt_mu            3.535943748517097e-08
+  residual_start         2634.1191655118346
+  residual_candidate     1864.6351358252696
+  residual_end           2634.1191655118346
+  force_finite           True
+  com_drift_um           0.0
+  r_mean_start           7.3999869364342725
+  r_mean_end             7.3999869364342725
+  r_min_end              7.387963204119982
+  r_max_end              7.412036744586812
+  pos_finite             True
+  content_start          4.905000000000001
+  content_end            4.905000000000001
+  content_delta          0.0
+  membrane_surface_flux_integral 0.0
+  membrane_grid_source_integral 0.0
+  interior_source_integral 0.0
+  solid_dilatation_integral 0.0
+  moving_face_delta      0.0
+  membrane_deposition_error 0.0
+  solver_conservation_error 0.0
+  physical_conservation_error 0.0
+  membrane_flux_unresolved_faces 0
+  membrane_pressure_unresolved_faces 0
+  membrane_mask_query_failures 0
+  membrane_mask_surface_ties 24
+  nucleus_mask_query_failures 0
+  nucleus_mask_surface_ties 24
+  hot_loop_dtoh_copies   0
+  hot_loop_dtoh_elapsed_ms 0.0
+  profiler_positive_control_dtoh_copies 1
+  outer_accepted         False
+  outer_rolled_back      True
+  committed_time_s       0.0
+  build_wall_s           7.166307064704597
+  precheck_wall_s        0.0674281120300293
+  outer_step_wall_s      1.130682397633791
+  postcheck_wall_s       0.0674772160127759
+  wall_s                 8.433483297936618
+  stable                 False
+
+STABLE: False
+wrote ffn_sim/outputs/ac/foundation-hardening/native_resting_70686.json

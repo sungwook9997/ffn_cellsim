@@ -1,0 +1,57 @@
+{
+  "acquisition_receipt_sha256": "ae96b96bd9d81eb28875a41a920bbcb54d81af4cd2b665ef6cfdd6638f09c266",
+  "acquisition_set_count": 2472,
+  "aleph_authority": "none",
+  "alignment_method_counts": {
+    "lower_median_z_fallback": 1064,
+    "nearest_PositionZ": 3253,
+    "singleton_input": 57
+  },
+  "confirmation_pair_count": 0,
+  "confirmation_pixels_accessed": 0,
+  "dtype": "float16",
+  "input_constant_image_count": 2,
+  "input_modality_counts": {
+    "BF": 3290,
+    "DIC": 527,
+    "PC": 557
+  },
+  "input_normalized_mean": 0.4035511314868927,
+  "may_emit_numeric_sweep_range": false,
+  "normalization": {
+    "absolute_intensity_prediction_permitted": false,
+    "clip_range": [
+      0.0,
+      1.0
+    ],
+    "per_image_percentiles": [
+      1.0,
+      99.5
+    ],
+    "resize": "Pillow_BOX",
+    "spatial_side_length": 64
+  },
+  "pair_count": 4374,
+  "pair_manifest_sha256": "b9e6b35468b4d449fae55283c90dec9774adf83e32cca2eb81e620761302ebaf",
+  "role_counts": {
+    "calibration": 569,
+    "fit": 3744,
+    "selection": 61
+  },
+  "schema": "aleph.outer_library.lightmycells_spatial_tensor.v1",
+  "shape": [
+    4374,
+    64,
+    64
+  ],
+  "study_count": 24,
+  "target_channel_counts": {
+    "Actin": 17,
+    "Mitochondria": 1728,
+    "Nucleus": 2429,
+    "Tubulin": 200
+  },
+  "target_constant_image_count": 1,
+  "target_normalized_mean": 0.13687212765216827,
+  "tensor_sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0"
+}

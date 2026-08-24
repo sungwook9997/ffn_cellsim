@@ -1,0 +1,84 @@
+{
+  "formulations": [
+    {
+      "formulation": "3/0.06",
+      "acrylamide_pct": 3.0,
+      "bis_pct": 0.06,
+      "E_lit_Pa": 150.0,
+      "E_uniaxial_Pa": 151.29699327939161,
+      "E_indent_Pa": 182.72312106780888,
+      "tissue": "brain / neural (soft, neurogenic ~0.1-1 kPa, Engler 2006)",
+      "indent_over_lit": 1.2181541404520593
+    },
+    {
+      "formulation": "8/0.01",
+      "acrylamide_pct": 8.0,
+      "bis_pct": 0.01,
+      "E_lit_Pa": 620.0,
+      "E_uniaxial_Pa": 625.3609055548186,
+      "E_indent_Pa": 564.3197958318806,
+      "tissue": "fat / marrow / very soft stroma (Subramani 2020, AFM+rheo)",
+      "indent_over_lit": 0.9101932190836783
+    },
+    {
+      "formulation": "5/0.10",
+      "acrylamide_pct": 5.0,
+      "bis_pct": 0.1,
+      "E_lit_Pa": 1970.0,
+      "E_uniaxial_Pa": 1987.0338450693428,
+      "E_indent_Pa": 1544.3692172986562,
+      "tissue": "soft tissue (Subramani 2020)",
+      "indent_over_lit": 0.7839437651262214
+    },
+    {
+      "formulation": "8/0.06",
+      "acrylamide_pct": 8.0,
+      "bis_pct": 0.06,
+      "E_lit_Pa": 3400.0,
+      "E_uniaxial_Pa": 3429.3985143328764,
+      "E_indent_Pa": 2515.6334641772705,
+      "tissue": "spreading threshold ~3 kPa (Yeung 2005)",
+      "indent_over_lit": 0.739892195346256
+    },
+    {
+      "formulation": "8/0.20",
+      "acrylamide_pct": 8.0,
+      "bis_pct": 0.2,
+      "E_lit_Pa": 7930.0,
+      "E_uniaxial_Pa": 7998.567711370501,
+      "E_indent_Pa": 5374.395887605417,
+      "tissue": "muscle-range (Subramani 2020)",
+      "indent_over_lit": 0.6777296201267865
+    },
+    {
+      "formulation": "8/0.40",
+      "acrylamide_pct": 8.0,
+      "bis_pct": 0.4,
+      "E_lit_Pa": 13000.0,
+      "E_uniaxial_Pa": 13112.406084213937,
+      "E_indent_Pa": 8324.710995329813,
+      "tissue": "striated muscle / stiff (Subramani 2020)",
+      "indent_over_lit": 0.6403623842561394
+    },
+    {
+      "formulation": "12/0.15",
+      "acrylamide_pct": 12.0,
+      "bis_pct": 0.15,
+      "E_lit_Pa": 25000.0,
+      "E_uniaxial_Pa": 25216.165546565262,
+      "E_indent_Pa": 14489.745784723536,
+      "tissue": "osteoid / pre-calcified bone (osteogenic, Engler 2006)",
+      "indent_over_lit": 0.5795898313889415
+    },
+    {
+      "formulation": "15/0.20",
+      "acrylamide_pct": 15.0,
+      "bis_pct": 0.2,
+      "E_lit_Pa": 40000.0,
+      "E_uniaxial_Pa": 40345.86487450443,
+      "E_indent_Pa": 20826.74834959761,
+      "tissue": "stiff osteoid ceiling (~40 kPa, Tse-Engler)",
+      "indent_over_lit": 0.5206687087399402
+    }
+  ]
+}

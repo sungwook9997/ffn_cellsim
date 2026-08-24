@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/external-training/annotation-candidate-v1.json",
+  "title": "Project Aleph proposed annotation candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority_status", "review_state", "selection_rank",
+    "source_family_id", "pmcid", "title", "journal", "acquisition_pass", "publication_year",
+    "year_stratum", "primary_domain", "discovery_domain", "modality_tags",
+    "cell_state_tags", "mechanics_tags", "priority_score",
+    "observation_locator_count", "leakage_component_id",
+    "eligible_component_size", "related_out_of_pool_count", "selection_reason",
+    "source_record_sha256", "source_payload_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.external_training.annotation_candidate.v1"},
+    "authority_status": {"const": "proposed"},
+    "review_state": {"const": "gold_candidate"},
+    "selection_rank": {"type": "integer", "minimum": 1},
+    "source_family_id": {"type": "string", "minLength": 4},
+    "pmcid": {"type": ["string", "null"], "pattern": "^PMC[0-9]+$"},
+    "title": {"type": "string", "minLength": 1},
+    "journal": {"type": ["string", "null"]},
+    "acquisition_pass": {"enum": ["first", "second"]},
+    "publication_year": {"type": "integer", "minimum": 2010, "maximum": 2026},
+    "year_stratum": {"enum": ["2010_2013", "2014_2017", "2018_2021", "2022_2026"]},
+    "primary_domain": {"type": "string"},
+    "discovery_domain": {"type": "string"},
+    "modality_tags": {"type": "array", "items": {"type": "string"}},
+    "cell_state_tags": {"type": "array", "items": {"type": "string"}},
+    "mechanics_tags": {"type": "array", "items": {"type": "string"}},
+    "priority_score": {"type": "integer"},
+    "observation_locator_count": {"type": "integer", "minimum": 0},
+    "leakage_component_id": {"type": "string", "pattern": "^lc:[0-9a-f]{16}$"},
+    "eligible_component_size": {"type": "integer", "minimum": 1},
+    "related_out_of_pool_count": {"type": "integer", "minimum": 0},
+    "selection_reason": {"enum": ["accession_component_preserved", "domain_stratified_fill"]},
+    "source_record_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

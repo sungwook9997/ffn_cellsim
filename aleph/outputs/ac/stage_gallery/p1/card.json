@@ -1,0 +1,199 @@
+{
+  "stage": "P1",
+  "stage_name": "SYNTHETIC full-graph (13 comp / real topology)",
+  "evidence": "SCHEMA-PROOF",
+  "npz": "ffn_sim/outputs/ac/cell_assembled/synth_graph_v2.npz",
+  "html": "/Users/sw1/ffn_cellsim/ffn_sim/outputs/ac/stage_gallery/p1/ac_stage_p1.html",
+  "components": [
+    {
+      "key": "membrane",
+      "nodes": 920,
+      "actors": 1
+    },
+    {
+      "key": "cortex",
+      "nodes": 4000,
+      "actors": 2000
+    },
+    {
+      "key": "nucleus",
+      "nodes": 476,
+      "actors": 1
+    },
+    {
+      "key": "sf_arc",
+      "nodes": 120,
+      "actors": 60
+    },
+    {
+      "key": "microtubule",
+      "nodes": 240,
+      "actors": 120
+    },
+    {
+      "key": "intermediate_filament",
+      "nodes": 300,
+      "actors": 150
+    },
+    {
+      "key": "lamellipodium",
+      "nodes": 132,
+      "actors": 66
+    },
+    {
+      "key": "filopodium",
+      "nodes": 16,
+      "actors": 8
+    },
+    {
+      "key": "ecm",
+      "nodes": 600,
+      "actors": 300
+    }
+  ],
+  "connectors": [
+    {
+      "family": "ERM",
+      "a": "membrane",
+      "b": "cortex",
+      "n": 120
+    },
+    {
+      "family": "FA-clutch",
+      "a": "cortex",
+      "b": "ecm",
+      "n": 60
+    },
+    {
+      "family": "LINC",
+      "a": "sf_arc",
+      "b": "nucleus",
+      "n": 40
+    },
+    {
+      "family": "LINC",
+      "a": "microtubule",
+      "b": "nucleus",
+      "n": 30
+    },
+    {
+      "family": "LINC",
+      "a": "intermediate_filament",
+      "b": "nucleus",
+      "n": 30
+    },
+    {
+      "family": "MOTOR",
+      "a": "sf_arc",
+      "b": "cortex",
+      "n": 40
+    },
+    {
+      "family": "MOTOR",
+      "a": "microtubule",
+      "b": "cortex",
+      "n": 30
+    },
+    {
+      "family": "plectin",
+      "a": "intermediate_filament",
+      "b": "sf_arc",
+      "n": 30
+    },
+    {
+      "family": "spectraplakin",
+      "a": "microtubule",
+      "b": "sf_arc",
+      "n": 25
+    },
+    {
+      "family": "transient-actin",
+      "a": "sf_arc",
+      "b": "cortex",
+      "n": 30
+    },
+    {
+      "family": "transient-actin",
+      "a": "lamellipodium",
+      "b": "cortex",
+      "n": 25
+    },
+    {
+      "family": "transient-actin",
+      "a": "filopodium",
+      "b": "cortex",
+      "n": 12
+    },
+    {
+      "family": "immersed-transfer",
+      "a": "sf_arc",
+      "b": "nucleus",
+      "n": 20
+    },
+    {
+      "family": "CONTACT",
+      "a": "membrane",
+      "b": "ecm",
+      "n": 40
+    }
+  ],
+  "scenes_total": 33,
+  "scenes_checked": [
+    "composed cell \u00b7 cortex |F| (log pN) \u00b7 CUT slider",
+    "\u25e6 sf_arc only \u00b7 stress fibers / arcs (synthetic)",
+    "\u21c4 MOTOR \u00b7 sf_arc\u2194cortex",
+    "\u21c4 transient-actin \u00b7 sf_arc\u2194cortex",
+    "\u25b8 compose 1/9 \u00b7 +membrane",
+    "\u25b8 compose 2/9 \u00b7 +cortex",
+    "\u25b8 compose 3/9 \u00b7 +nucleus",
+    "\u25b8 compose 4/9 \u00b7 +sf_arc",
+    "\u25b8 compose 5/9 \u00b7 +microtubule",
+    "\u25b8 compose 6/9 \u00b7 +intermediate_filament",
+    "\u25b8 compose 7/9 \u00b7 +lamellipodium",
+    "\u25b8 compose 8/9 \u00b7 +filopodium",
+    "\u25b8 compose 9/9 \u00b7 +ecm"
+  ],
+  "scenes_failed": [],
+  "gifs": [
+    "gifs/ac_p1_stress.gif",
+    "gifs/ac_p1_shape.gif",
+    "gifs/ac_p1_shape1.gif"
+  ],
+  "counts": {
+    "n_components": 9,
+    "n_connectors": 14,
+    "n_scenes": 33,
+    "comp:membrane_nodes": 920,
+    "comp:cortex_nodes": 4000,
+    "comp:nucleus_nodes": 476,
+    "comp:sf_arc_nodes": 120,
+    "comp:microtubule_nodes": 240,
+    "comp:intermediate_filament_nodes": 300,
+    "comp:lamellipodium_nodes": 132,
+    "comp:filopodium_nodes": 16,
+    "comp:ecm_nodes": 600,
+    "comp:membrane_actors": 1,
+    "comp:cortex_actors": 2000,
+    "comp:nucleus_actors": 1,
+    "comp:sf_arc_actors": 60,
+    "comp:microtubule_actors": 120,
+    "comp:intermediate_filament_actors": 150,
+    "comp:lamellipodium_actors": 66,
+    "comp:filopodium_actors": 8,
+    "comp:ecm_actors": 300,
+    "conn:ERM_membrane-cortex": 120,
+    "conn:FA-clutch_cortex-ecm": 60,
+    "conn:LINC_sf_arc-nucleus": 40,
+    "conn:LINC_microtubule-nucleus": 30,
+    "conn:LINC_intermediate_filament-nucleus": 30,
+    "conn:MOTOR_sf_arc-cortex": 40,
+    "conn:MOTOR_microtubule-cortex": 30,
+    "conn:plectin_intermediate_filament-sf_arc": 30,
+    "conn:spectraplakin_microtubule-sf_arc": 25,
+    "conn:transient-actin_sf_arc-cortex": 30,
+    "conn:transient-actin_lamellipodium-cortex": 25,
+    "conn:transient-actin_filopodium-cortex": 12,
+    "conn:immersed-transfer_sf_arc-nucleus": 20,
+    "conn:CONTACT_membrane-ecm": 40
+  }
+}

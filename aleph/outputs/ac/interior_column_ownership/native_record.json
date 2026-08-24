@@ -1,0 +1,92 @@
+{
+  "record": "run-record@2",
+  "kind": "gate",
+  "gate": "card5_interior_column_array_ownership",
+  "device": "cuda:0",
+  "build": {
+    "commit": "89eb2a60c12daba38582989e5b4e7a157672bc0e",
+    "source": "declared",
+    "why": "the run host is an rsync'd tree, not a git checkout \u2014 the caller asserts the commit and run_provenance.remote_mismatches is what checks the assertion"
+  },
+  "population": {
+    "n_actin": 494802,
+    "n_total": 536406,
+    "membrane_verts": 40962,
+    "nucleus_verts": 642,
+    "nucleus_faces": 1280
+  },
+  "blocks": {
+    "cortex": {
+      "node_off": 0,
+      "n_nodes": 494802
+    },
+    "membrane": {
+      "node_off": 495444,
+      "n_nodes": 40962
+    },
+    "nucleus": {
+      "node_off": 494802,
+      "n_nodes": 642
+    }
+  },
+  "byte_spans": {
+    "membrane": {
+      "position": [
+        "cuda:0",
+        146046887392,
+        146047870480
+      ],
+      "force": [
+        "cuda:0",
+        146098537952,
+        146099521040
+      ],
+      "n_nodes": 40962
+    },
+    "cortex": {
+      "position": [
+        "cuda:0",
+        146034996736,
+        146046871984
+      ],
+      "force": [
+        "cuda:0",
+        146086647296,
+        146098522544
+      ],
+      "n_nodes": 494802
+    },
+    "nucleus": {
+      "position": [
+        "cuda:0",
+        146046871984,
+        146046887392
+      ],
+      "force": [
+        "cuda:0",
+        146098522544,
+        146098537952
+      ],
+      "n_nodes": 642
+    }
+  },
+  "arrays_private": false,
+  "ownership_class": "disjoint_slice_views",
+  "what_this_is_not": "Slice views of the incumbent's global arrays, NOT private allocations. The incumbent's inner solve relaxes one global pos_d; a private allocation without splitting that solve would be a passenger (the T2 negative control). This certifies exclusive ADDRESSING only.",
+  "positive_control": {
+    "arrangement": "membrane and cortex both handed the whole cell.pos_d/cell.f_d (pre-Card-5)",
+    "refused": true,
+    "message": "component 'cortex'.position_d shares one allocation with 'membrane'.position_d \u2014 co-location in an array is NEVER a connection, so this composition would report a weld as a coupling"
+  },
+  "verdict": "PASS",
+  "timing": {
+    "build_s": 13.206237077713013,
+    "comparable": true
+  },
+  "may_not_be_quoted_for": [
+    "any CONNECTED rung",
+    "private device allocations",
+    "STATE.md (c) 4 being closed",
+    "any physics magnitude"
+  ]
+}

@@ -1,0 +1,232 @@
+# ============================================================================
+# MCF7 single-cell PHYSIOLOGICAL-BASELINE manifest  (A2, H.7 — 2026-06-05)
+# ============================================================================
+# SINGLE source of truth for "what a resting physiological MCF7 single cell IS".
+# Every compartment is declared here with its in-vivo setpoint and an explicit
+# ON/OFF flag — no null/default-off physics (physiological-baseline HARD rule,
+# CLAUDE.md PI 2026-06-04). Perturbations & measurements happen FROM this state.
+#
+# Loaded by aleph/cell/manifest.py -> resolve_baseline() -> Cell.build (the
+# A1-unified assembler). Values were externalised from the PI-ratified MCF7 dict
+# in scripts/mcf7_fullcell_stage1.py (previously hardcoded in the driver).
+#
+# Citations are attached to each setpoint; none are tuning magic numbers.
+# ============================================================================
+
+cell_type: MCF7
+R_cell: 7.5e-6            # m   cell radius, 15 um diameter (Wagner 2011)
+
+# SCOPE (PI-RATIFIED 2026-06-06): model the cell as ACTIVE-SPREADING (primary),
+# NOT a passive settled droplet. The emergent operating point arises from Arp2/3
+# lamellipodial spreading + FA adhesion to the substrate. => lamellipodium + FA +
+# substrate are B1-ESSENTIAL (see optional_subsystems), pending the KU-5.x
+# membrane-load unblock (today lamellipodium barbed-end rates are inert at F=0).
+scope: active_spreading
+
+# Detailed H.3 cortex/myosin/crosslinker physics come from this base config;
+# the manifest applies only MCF7 cell-type overrides + the R_cell above.
+base_cortex_config: phase1_h3.yaml
+# Production myosin = Route B (PI-ratified 2026-05-31; bug-fix confirmed 2026-06-07):
+# grip_walk stepping + mesoscale_force_scaling ON. The ×40 mesoscopic coarse-graining
+# reduces the MOTOR COUNT ~21× (native 3/µm²·4πR² → n_motors); without force-scaling the
+# aggregate active stress is undercounted by that factor (the M1 diagnostic showed the
+# active-γ ceiling jump 0.001→0.021 mN/m once ON, with N_eff·F_eff = N_native·F_native
+# conserved exactly). binned_r0 (no scaling) stays the legacy-test default; physiological
+# PRODUCTION must run Route B. (Scale n_filaments/n_xl still inherited; drivers MERGE.)
+cortex_overrides:
+  cortex:
+    myosin:
+      stepping_mode: grip_walk
+      mesoscale_force_scaling: true
+      # Per-head stall re-anchored 0.5→2.0 pN (PI 2026-06-07 "NMII-realistic"): the KB-
+      # authoritative PARAM-F_stall_motor = 2 pN (KU-2.4/2.18; Chugh 2017 NatCellBiol "individual
+      # myosin II motors produce 2-5 pN"). The prior 0.5 pN was "per brief", under-anchored. NMII
+      # bears load on one head at a time, so per-motor ≈ per-engaged-head here. (Force-scaling then
+      # ×factor for the ×40 lumping; native per-head stays 2 pN. Stall comment refined: the 2 pN
+      # is Chugh 2017's IN-ENSEMBLE figure (40 pN minifilament / ~heads); single-molecule corrob
+      # NMIIB 2.2 pN (Norstrom 2010, PMID 20511646), skeletal 3-4 pN (Finer 1994). Do NOT raise to
+      # single-molecule values (would double-count Chugh's ensemble derating).
+      F_stall_per_head: 2.0e-12
+      # --- EM-anchored geometry re-anchors (PI-signed-off 2026-06-07; generation-gap audit) ---
+      # heads/minifilament 20→56: 28 molecules/filament (Niederman & Pollard 1975, PMID 240861;
+      # Billington 2013 PMID 24072716) × 2 motor heads, 28/side. The prior 10/side (20 total) was
+      # an un-anchored "Hocky convention" magic number.
+      n_heads_per_side: 28
+      # bipolar minifilament length / dipole lever 700→301 nm: Billington 2013 EM contour 301±24 nm
+      # (NMIIA). The prior 700 nm had NO EM referent (>2× the whole filament).
+      backbone_length: 301.0e-9
+      # Minifilament areal density RE-ANCHORED 3.0→0.6/µm² (PI-signed-off 2026-06-07). The prior
+      # 3.0 "Salbreux 2012" was a CONFIRMED MISATTRIBUTION (no Salbreux paper states a per-area
+      # minifilament density; Chugh-Salbreux 2017 uses only a 2D line-concentration N_m/W) — see
+      # H7_CORTICAL_MYOSIN_DENSITY_DATUM_2026-06-07.md. The only real proxy is Nie et al. 2015
+      # Cytoskeleton (PMID 25641802, HeLa interphase adhered medial cortex, 40±20 MRLC foci/8×8µm
+      # = 0.625/µm², author-intensity-calibrated as MINIFILAMENTS so NO foci→mf conversion);
+      # LOW-MEDIUM confidence; NO MCF7/breast cortical-myosin density exists in the literature.
+      # HONEST CONSEQUENCE (not gate-chasing): ceiling ∝ density, so the M1 active-γ ceiling drops
+      # 0.10→~0.02 mN/m — WIDENING the gap to the MCF7 datum, which CONFIRMS the floor is
+      # generation-limited (per-head force / engagement / buckling), NOT a density deficit.
+      areal_density_per_um2: 0.6
+
+# ----------------------------------------------------------------------------
+# Compartments — ON at their physiological setpoint (the baseline IS this state)
+# ----------------------------------------------------------------------------
+compartments:
+
+  cytoplasm:             # H.10 — effective-viscosity drag (Tier-1)
+    enabled: true
+    cell_type: MCF7      # -> eta_eff = 65.9 Pa.s (Hu 2024; NOT water 6.9e-4)
+
+  enclosed_volume:       # KU-3.1 — osmotic turgor pre-tensions the cortex
+    enabled: true
+    turgor_dP0: 133.0    # Pa   B3 PI-RATIFIED 2026-06-06: band-implied turgor.
+    # Derivation (not a fudge, grid-invariant): Young-Laplace Pi_0 = 2*gamma/R
+    # with band-centre gamma = 0.50 mN/m at R = 7.5 um -> 133 Pa. The cortical-
+    # tension band [0.35,0.65] mN/m implies Pi_0 in [93,173] Pa.
+    # The cell is pressurised to THIS resting baseline; active myosin is then a
+    # MODULATOR on top (physiological-baseline rule: measure tension on an
+    # already-turgor-pressurised cell, then add myosin). GATE-B MUST report the
+    # active vs passive(turgor) gamma DECOMPOSITION so an in-band total is not
+    # mistaken for active-cortex closure. (Stewart 2011 interphase 40 Pa is the
+    # lower alternative, superseded for the MCF7 baseline by this PI call.)
+
+  nucleus:               # H.9 / KU-3.B2.1 — confinement + lamin strain-stiffening
+    enabled: true
+    E_nuc: 4700.0        # Pa   4.7 kPa MCF7 indentation, in-situ band [1e3,1e4]
+    ratio_lamin: 1.4     # —    nucleus:cytoplasm stiffness, in-situ band min [1.4,5.0]
+    R_nuc_frac: 0.25     # —    nucleus:cell radius ratio
+    n_beads: 3000        # —    CFL-safe discretization at ratio_lamin=1.4 (k_hi ~ 1/n)
+
+  membrane_surface:      # H.8 / KU-3.B1 — Young-Laplace area-elastic shell
+    enabled: true
+    gamma_mem: 1.0e-4    # N/m  0.10 mN/m, KU-3.B1 mid-band
+
+# ----------------------------------------------------------------------------
+# Optional subsystems — coded but PI-GATED. Declared here for completeness so
+# the manifest is the one place that lists the whole cell. They stay OFF until
+# their gate clears (Phase B / GATE-B); enabling one via the loader currently
+# raises (surface to PI) rather than silently wiring un-ratified physics.
+# ----------------------------------------------------------------------------
+optional_subsystems:
+
+  fa:                    # H.4 focal-adhesion clutch to substrate ligands
+    enabled: false       # WIREABLE + clutches auto-form (south-cap seeding, 52/52);
+    base_config: phase1_h4.yaml  # SubstrateLigandPin = rigid-dish adhesion (no k_sub).
+                         # OFF in the RESTING reference: the FA-adhered build needs an
+                         # EQUILIBRATION prelude to settle onto the substrate before
+                         # free integration (a raw run blows up the BAOAB guard — the
+                         # cell isn't born relaxed-on-substrate). The KU-3.5 SETTLED
+                         # operating point = this FA-adhered cell AFTER equilibration
+                         # (the GATE-B operating-point build). PI 2026-06-06: KU-3.5
+                         # needs adhesion, NOT the lamellipodium (cortex tension is a
+                         # cortex property; lamellipodium is a parallel enhancement).
+  substrate:             # ECM compliant substrate spring (paired with FA)
+    enabled: false       # OFF — and for the PI's experimental prep it stays OFF by
+                         # PHYSICS, not by missing data. Prep = col-I 167 µl : 5 ml PBS,
+                         # 1 h on a glass-bottom confocal dish = a thin 2D LIGAND coating
+                         # (dilute in PBS, NOT a gelled 3D collagen). Glass E ~ 64-70 GPa
+                         # (orders of mag > ECM); a thin col-I coating's mechanical effect
+                         # is negligible vs the bulk -> cells perceive RIGID. In the
+                         # Chan-Odde clutch (k_sub ~ 1 pN/nm per kPa) glass -> k_sub
+                         # ~1e6 pN/nm = rigid limit. => use FA's rigid SubstrateLigandPin
+                         # (the (b)-dish endpoint, k_sub->inf); a FINITE compliant k_sub is
+                         # only for defined soft gels (kPa PAA), a SEPARATE ECM variant.
+                         # (Chan & Odde 2008; Elosegui-Artola 2016; glass-GPa: Sigma/PMC.)
+  lamellipodium:         # H.5 Arp2/3 leading edge — the active-spreading machine
+    enabled: false       # OFF: NOT a KU-3.5 blocker (PI 2026-06-06). Active-spreading
+    base_config: phase1_h5.yaml  # enhancement; spherical-cortex geometry below.
+    geometry: basal_ring # DEFAULT (PI 2026-06-07): single-cell isotropic spreading rim.
+                         # polarized_patch is a SEPARATE migration condition (use only when
+                         # the PI assay is directed migration); set geometry: polarized_patch
+                         # (+ polarization) for that condition.
+  membrane_load:         # KU-5.2 leading-edge Brownian-ratchet brake on barbed ends
+    enabled: false       # KU-5.x PI-APPROVED 2026-06-06; wires when lamellipodium is on
+                         # (loads its barbed ends; y_plane=Y_max, A_mem=wave_area).
+  erm:                   # KU-3.18 ezrin/radixin/moesin membrane-cortex tether
+    enabled: false       # declarable, Phase B2 wire-on
+  turnover:              # cortex actin cofilin severing / re-annealing
+    enabled: false       # Phase B; k_sev = ln2/tau_half (Chugh 2017 anchor)
+  osmotic_regulation:    # H.11 dynamic volume regulation (RVD/RVI) — LIVE 2026-06-09
+    enabled: false       # default-OFF: a perturbation study, NOT the resting baseline.
+                         # Modulates the enclosed_volume turgor setpoint over time
+                         # (water-flux Kedem-Katchalsky / van't Hoff).
+    Lp: 1.0e-12          # m/(s.Pa) MCF7 AQP5 water permeability (Jung 2011 PLoS ONE
+                         # 6:e28492; PI-ratified 2026-06-09). Olbrich band [1.8e-13,1.1e-12].
+    batch_steps: 1000    # setpoint-update stride (slow-mode CFL-gated vs tau_Kvol).
+                         # delta_c (osmolar shock, mol/m3) is a per-RUN knob set in the
+                         # osmotic_rvd recipe / driver, NOT a baseline setpoint.
+  microtubules:          # H.MT centrosomal aster (stiff radial array) — LIVE 2026-06-09
+    enabled: false       # default-OFF: NOT part of the resting cortical-γ baseline
+                         # (MTs are internal compression-bearing, γ-denylisted via mt_).
+    n_mt: 7              # aster arms. CAPPED at 7 by the HOOMD nlist per-particle
+                         # exclusion limit: the single-hub MTOC carries n_mt backbone
+                         # bonds, and n_mt>7 overflows the compile-time exclusion cap
+                         # once the full-cell LJ nlist is on. A DENSER interphase aster
+                         # (PI candidate 20, up to ~250) needs a multi-bead MTOC core —
+                         # microtubules.py topology change, see PLATFORM_PI_QUEUE.
+    beads_per_mt: 25     # ℓ0≈L_mt/24 (Dmitrieff 2017 125 nm Cytosim segmentation)
+    L_mt: 5.0e-6         # m contour length ~R_cell-R_nuc (PI-ratified; ORDER)
+    Y_stretch: 2.3e-7    # N axial E·A (Kis 2002 / Pampaloni 2006; PI-ratified; ORDER)
+                         # EI/L_p use the module Gittes-1993 defaults (SOLID, not pending).
+  intermediate_filaments:  # H.IF keratin/vimentin perinuclear cage — LIVE 2026-06-09
+    enabled: false       # default-OFF; if_ bonds γ-denylisted (registry-driven).
+    n_filaments: 60      # cage filament count (layout; grid-free)
+    beads_per_fil: 8     # beads per IF chain
+                         # E_if=6e6 (ORDER Kreplak/Guo), Lp=0.5e-6 (keratin Lichtenstern),
+                         # d_if=10e-9, max_stretch_ratio=3.0 (Kreplak) use module defaults.
+                         # The nonlinear strain-stiffening Table law is PI-pending
+                         # (NotImplementedError); the LIVE path is the linear small-strain cage.
+  linc:                  # H.LINC nesprin-SUN bridges (nucleus ↔ IF cage) — LIVE 2026-06-09
+    enabled: false       # default-OFF; linc_ bonds γ-denylisted (registry-driven).
+                         # Option A: bonds nucleus_bead → nearest perinuclear if_bead
+                         # (requires intermediate_filaments + nucleus ON), per-bond
+                         # EXACT-r0 (force-free at the as-built separation). capture_radius
+                         # (= IF l_seg) and n_bridges_max (= IF n_filaments) are
+                         # geometry-derived from the IF cage in manifest.resolve_baseline.
+    k_linc: 1.0e-2       # N/m per-nesprin stiffness. ROUTE A (Rief 1999 folded-rod
+                         # pre-unfolding secant); ORDER / conf MEDIUM — PI-pending
+                         # ratification (module default None; this candidate makes the
+                         # LIVE path runnable). ⚠ At the ×40 mesoscale the nucleus↔if_bead
+                         # separation is ~0.5-1.5 µm (NOT the 50 nm real nesprin span), so
+                         # r0 is an EFFECTIVE mesoscale coupling length and the 8 pN f_rest
+                         # oracle is approximate — see PLATFORM_PI_QUEUE.
+  membrane_reservoir:    # H.8 plasma-membrane reservoir / tether mesh — LIVE 2026-06-09
+    enabled: false       # default-OFF; mem_ bonds γ-denylisted (registry-driven).
+                         # Own radially-offset mem_node layer + static mem_tether mesh
+                         # (each node → a distinct cortex bead, force-free at the offset;
+                         # BLOCKER-1 fix). requires membrane_surface ON.
+    n_mem_nodes: 2000    # membrane-shell node count (discretisation; grid-free observable).
+                         # W_MCA=1e-5 J/m² (KU-3.B1.4 SOLID), k_tether=0.1 N/m (ERM order),
+                         # max_tether_dist=200nm (KU-3.17), membrane_offset=50nm (¼ reach)
+                         # use module defaults. ⚠ bleb rupture (σ_crit_bleb) + reservoir
+                         # release (f_excess) stay PI-pending (None) → those paths blocked.
+  ventral_stress_fibers: # H.SF ventral actomyosin bundles (FA→FA) — LIVE 2026-06-09
+    enabled: false       # default-OFF; sf_ bonds γ-denylisted (registry-driven).
+                         # PASSIVE backbone only (NMII deferred → sf_myosin_* prefix +
+                         # equilibrated active gate). requires fa ON (anchors on integrin
+                         # clutch beads); FA-pairs LONG-AXIS-ALIGNED on the basal footprint
+                         # (PI 2026-06-09) via select_aligned_fa_pairs.
+    N_filaments: 20      # vSF cross-section filament count → μ_SF = N·EA_single.
+                         # Cramer 1997 (10-30); ORDER / conf MEDIUM — PI-pending ratification
+                         # (module default None → enabled build HALTS until set). EA_single=
+                         # 4.3e-8 N (Gittes 1993, SOLID) is the module default.
+    n_SF: 20             # bundle count (layout; grid-free observable)
+    n_beads_per_SF: 24   # beads per bundle (grid-invariant; T=μ_SF·ε independent of count)
+                         # ⚠ Kumar 2006 10-30 nN single-SF tension band is the ACTIVE+
+                         # equilibrated gate (needs NMII) — DEFERRED. See PLATFORM_PI_QUEUE.
+  junctional_actin:      # H.junctional_actin α-catenin/vinculin cadherin↔cortex clutch — LIVE 2026-06-09
+    enabled: false       # default-OFF; junc_actin bonds γ-denylisted. Built on the
+                         # two-cell doublet (cell/doublet.py with_junctional_actin); couples
+                         # each cell's cadherins to its OWN cortex. Depends on cadherin_junction.
+                         # Catch-set CANDIDATES (module defaults None → enabled build raises):
+    x_catch: 4.0e-9      # m   α-catenin/F-actin catch arm (Buckley 2014; SOLID)
+    x_slip: 0.4e-9       # m   slip arm (Buckley 2014; SOLID)
+    k_catch0: 1.0        # 1/s catch zero-force rate (ORDER; matched to Buckley τ(0)~1s)
+    k_slip0: 0.02        # 1/s slip zero-force rate (ORDER; Pereverzev k_slip0≪k_catch0)
+    k_couple: 1.0e-6     # N/m head↔cortex clutch stiffness (DERIVED H.3 transfer; ORDER)
+    k_anchor: 1.0e-5     # N/m head↔cadherin anchor stiffness (DERIVED H.3 transfer)
+    k_on: 10.0           # 1/s single-head bind rate (DERIVED H.3 transfer)
+    max_couple_dist: 6.0e-8  # m  cortex-acceptor reach (DERIVED H.3 transfer)
+    anchor_r0: 5.0e-9    # m  head↔cadherin rest length (DERIVED)
+                         # ⚠ DYNAMIC catch-slip maintenance (JunctionalActinCouplingUpdater
+                         # as a live Action) is the deferred active gate; build-time = the
+                         # belt topology + force-free + no-contam. See PLATFORM_PI_QUEUE.

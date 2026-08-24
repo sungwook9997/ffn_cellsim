@@ -1,0 +1,19 @@
+{
+  "authority_status": "proposed",
+  "class_weighting": "balanced inverse train support",
+  "early_stopping": "validation macro-F1 only",
+  "gold_candidate_used_for_model_selection": false,
+  "l2": 0.0001,
+  "learning_rate": 0.03,
+  "max_epochs": 300,
+  "patience": 35,
+  "projection_sha256": "929adbbbd5b5ee7c59cabd5612c3961bd8e4a93edcdaafeb3e3eb654a7f42421",
+  "schema": "aleph.external_training.weak_route_baseline.v1",
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "split_assignment_sha256": "386f8208e393c09cf8ad7d8070f572036fa3b49e23a0ba876d65c6ab526d792f",
+  "test_used_for_model_selection": false
+}

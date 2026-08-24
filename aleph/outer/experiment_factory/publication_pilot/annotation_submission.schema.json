@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/external-training/annotation-submission-v1.json",
+  "title": "Blinded atomic-claim annotation submission",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "authority_status", "review_state", "assignment_id", "annotation_slot", "annotator_id", "source_family_id", "claims", "completed_at"],
+  "properties": {
+    "schema": {"const": "aleph.external_training.annotation_submission.v1"},
+    "authority_status": {"const": "proposed"},
+    "review_state": {"enum": ["single_annotator", "adjudicated"]},
+    "assignment_id": {"type": "string", "minLength": 1},
+    "annotation_slot": {"enum": ["A", "B", "ADJUDICATION"]},
+    "annotator_id": {"type": "string", "minLength": 1},
+    "source_family_id": {"type": "string", "minLength": 4},
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim_type", "experiment_anchor", "value", "evidence_key", "status", "notes"],
+        "properties": {
+          "claim_type": {
+            "enum": ["experiment_boundary", "organism", "tissue", "cell_type", "cell_line", "cell_state", "condition_role", "condition_factor", "protocol_modality", "instrument", "calibration", "measured_entity", "reported_value", "normalized_unit", "uncertainty_type", "biological_n", "technical_n", "comparison_direction", "figure_panel", "table_cell"]
+          },
+          "experiment_anchor": {"type": "string", "minLength": 1},
+          "value": {},
+          "evidence_key": {"type": "string", "minLength": 1},
+          "status": {"enum": ["reported", "missing", "ambiguous", "adjudicated"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "completed_at": {"type": "string", "minLength": 1}
+  }
+}

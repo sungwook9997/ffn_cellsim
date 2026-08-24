@@ -1,0 +1,100 @@
+# Fingerprints of the claims STATE.md (c) forbids quoting — the machine-checkable side of that list.
+#
+# WHY THIS FILE EXISTS. (c) is prose, and prose cannot be enforced. On 2026-07-28 the boot-context audit
+# found `MEMORY.md` — which loads on EVERY session — carrying three numbers (c) had already retired, so
+# the retraction and the retracted number were being injected into the same window and the retracted one
+# arrived first. That was found by hand. It will recur, and the next one will not be found by hand.
+#
+# WHAT AN ENTRY IS. A `pattern` is a distinctive FINGERPRINT of a retired claim: a string specific enough
+# that its presence means someone is repeating the claim, not merely using the same digits. Choosing that
+# is a judgement, which is why the list is curated rather than derived — but once chosen, the check is
+# mechanical and runs on every commit.
+#
+# WHAT A HIT MEANS. Not "delete this". A file may legitimately RECORD a retired claim — that is what
+# STATE_NONQUOTABLE.md does. It must carry a `RETIRED` marker so a reader meets the retraction and the
+# number together. Files listed under `exempt` are the retraction record itself.
+#
+# ADDING TO (c) MEANS ADDING HERE. An entry in (c) with no fingerprint is unenforced, and the check
+# reports how many are in that state rather than letting the gap be invisible.
+
+exempt:
+  # The retraction record itself, and the documents whose job is to hold the history.
+  - STATE_NONQUOTABLE.md
+  - STATE.md
+  - aleph/docs/STATE_LOG.md
+  - aleph/docs/nonquotable_strings.yaml
+  - aleph/docs/v2_audit/_historical/
+
+# ⚠ SCOPE BLOCKS — (c) rows that forbid a CLASS OF RESULTS ON A CONFIGURATION, not a repeated number.
+#
+# A fingerprint works by catching a retired MAGNITUDE being re-quoted. These rows retire no magnitude,
+# so there is nothing distinctive to catch. c20 says so in its own text — *"there is no magnitude to
+# withdraw, only a configuration to stop reporting against"* — and c19's forbidden thing is "any MT
+# tensegrity result MEASURED ON THIS CELL".
+#
+# ⚠ AND ATTEMPTING A FINGERPRINT ANYWAY IS WORSE THAN NONE, measured 2026-08-22: the numbers that
+# would identify these rows are the numbers of the measurements that JUSTIFY them, and those appear
+# legitimately in the records that establish the block. `0 of 442` hits three tracked files including
+# `world/geometry.py` and `world/build/__init__.py` — comments explaining why the defect was fixed.
+# `68.6%` hits five, `0.2501` twelve. Marking those RETIRED would be marking the repair as the defect.
+#
+# So they are DECLARED here and counted separately, rather than inflating a ratchet that measures
+# something else. ⚠ This is not an exemption from scrutiny: a scope block must still appear as a (c)
+# row, must NOT carry a fingerprint entry (that would mean it is a magnitude retraction after all),
+# and the test asserts both.
+scope_blocks:
+  - id: c19
+    why: >-
+      forbids MT tensegrity / MT-nucleus / MT-cortex results MEASURED ON THIS CELL, because the MTOC
+      sits at the nuclear centre. A configuration, not a number.
+  - id: c20
+    why: >-
+      forbids NMII binding and contractility results on the cell as built before 2026-08-22, because
+      no minifilament could reach the actin. Its own entry states that it retires no magnitude.
+  - id: c21
+    why: >-
+      forbids every gamma, tau, reliability, seed-scatter and residual taken from a PHASE 4 run before
+      2026-08-24, because of the CELL rather than the statistic: two of eleven populations carried a
+      law, build/nmii.py ran in no production cell, and the cortex ran at a tenth of actin. There is
+      no single magnitude to fingerprint — the block is over everything one configuration produced,
+      which is what c19 and c20 are too. ⚠ A pattern for it would have to match "gamma" or "tau" and
+      would fire on every correct future use of the same words.
+
+marker: RETIRED
+
+entries:
+  - id: c2
+    claim: 'gamma-floor "~530x under band"'
+    patterns: ["530×", "530x", "~530"]
+
+  - id: c3
+    claim: "gamma = 3.72 pN/um and every SF/cortex motor tension"
+    patterns: ["3.72 pN", "0→4.39", "0->4.39", "γ 0→4.39"]
+
+  - id: c6
+    claim: 'engine_reval "19/21 native PASS"'
+    patterns: ["19/21"]
+
+  - id: c8
+    claim: '"physiological crawl 28-45 nm/s"'
+    patterns: ["28-45nm/s", "28-45 nm/s", "28–45 nm/s"]
+
+  - id: c10
+    claim: '"266k particles" and "~530x short"'
+    patterns: ["266k"]
+
+  - id: c14
+    claim: "the population-dependent numbers from the 2026-07-28 observe run"
+    patterns: ["2.03e11", "11.31 decades", "439 of 2,712", "1.871×"]
+
+  - id: c16
+    claim: "the blebbistatin dose response, all six points"
+    patterns: ["4.32 → 3.47", "4.32->3.47", "myosin is NOT a passenger"]
+  - id: c18
+    claim: >-
+      the ECM tier-(a) row's "zero crosslink bonds" read as a scoping choice. It was not one —
+      ECMWorld validated a crosslink_connector with nothing satisfying the Protocol, so the zero
+      is about the code, not the configuration. Found 2026-08-09 by session 97fb3916 while
+      authoring the first real ecm_crosslink runtime (94775e5d).
+    patterns:
+      - "zero crosslink bonds"

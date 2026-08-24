@@ -1,0 +1,276 @@
+{
+  "OOD_refusal": {
+    "declared_domains": [
+      "2D_C2C12_cell_line",
+      "MPa_to_GPa_LCN_substrate",
+      "mLCN_1.0_stiffness_anisotropy",
+      "10_uM_blebbistatin"
+    ],
+    "refuse": [
+      "primary_or_iPSC_muscle_without_external_validation",
+      "physiologic_soft_or_3D_matrix_transfer",
+      "direct_force_or_traction_magnitude_inference",
+      "numeric_Aleph_active_tension_inference"
+    ]
+  },
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "author_exclusion_audit": {
+    "green_maximum_density_cells": 9,
+    "maximum_density_time_after_confluence_h": 36,
+    "red_filled_cells_not_emitted": 112,
+    "style_annotations_verified_against_OOXML": true
+  },
+  "design_audit": {
+    "cross_split_biological_replicate_overlap_allowed": false,
+    "independent_dataset_holdout": false,
+    "independent_lab_holdout": false,
+    "observables_are_nested_technical_observations": true,
+    "reason": "this acquisition adds an independent provider and replicated perturbation, but no same-task model was trained on another aligned lab and sealed before this evaluation",
+    "split_unit": "author_independent_LCN_substrate",
+    "timepoints_are_nested_technical_observations": true
+  },
+  "fibronectin_orientation_nematic_order": {
+    "control_minus_blebbistatin": {
+      "all_group_A_replicates_above_all_group_B_replicates": true,
+      "biological_cluster_bootstrap_95ci": [
+        0.3863176618814721,
+        0.6768114140321015
+      ],
+      "bootstrap_is_exploratory_due_small_n": true,
+      "difference_definition": "vehicle_control_minus_blebbistatin",
+      "exact_randomization_two_sided_p": 0.3333333333333333,
+      "group_A_label": "vehicle_control",
+      "group_A_minus_group_B": 0.5315645379567868,
+      "group_A_replicate_means": [
+        0.8486674463829116,
+        0.595113750837645
+      ],
+      "group_B_label": "blebbistatin",
+      "group_B_replicate_means": [
+        0.20879608895617285,
+        0.17185603235081
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    },
+    "per_replicate": {
+      "author_independent_fig4_blebbistatin_10_micromolar_daily_mLCN_replicate_1": 0.20879608895617285,
+      "author_independent_fig4_blebbistatin_10_micromolar_daily_mLCN_replicate_2": 0.17185603235081,
+      "author_independent_fig4_vehicle_control_mLCN_replicate_1": 0.8486674463829116,
+      "author_independent_fig4_vehicle_control_mLCN_replicate_2": 0.595113750837645
+    }
+  },
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "late_post_blebbistatin_contrasts_t_ge_42h": {
+    "cell_speed": {
+      "biological_cluster_bootstrap_95ci": null,
+      "difference_definition": "vehicle_control_minus_blebbistatin",
+      "exact_randomization_two_sided_p": null,
+      "group_A_minus_group_B": -0.006905654670330108,
+      "reason": "fewer_than_two_biological_replicates_in_one_group"
+    },
+    "nematic_correlation_length": {
+      "all_group_A_replicates_above_all_group_B_replicates": true,
+      "biological_cluster_bootstrap_95ci": [
+        314.43205373333325,
+        471.95002060000024
+      ],
+      "bootstrap_is_exploratory_due_small_n": true,
+      "difference_definition": "vehicle_control_minus_blebbistatin",
+      "exact_randomization_two_sided_p": 0.3333333333333333,
+      "group_A_label": "vehicle_control",
+      "group_A_minus_group_B": 393.1910371666668,
+      "group_A_replicate_means": [
+        970.2809154666668,
+        815.8210647333333
+      ],
+      "group_B_label": "blebbistatin",
+      "group_B_replicate_means": [
+        498.33089486666654,
+        501.38901100000004
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    },
+    "orientation_order_parameter": {
+      "all_group_A_replicates_above_all_group_B_replicates": true,
+      "biological_cluster_bootstrap_95ci": [
+        0.24943333333333334,
+        0.3267066666666667
+      ],
+      "bootstrap_is_exploratory_due_small_n": true,
+      "difference_definition": "vehicle_control_minus_blebbistatin",
+      "exact_randomization_two_sided_p": 0.3333333333333333,
+      "group_A_label": "vehicle_control",
+      "group_A_minus_group_B": 0.28807000000000005,
+      "group_A_replicate_means": [
+        0.5636333333333334,
+        0.62134
+      ],
+      "group_B_label": "blebbistatin",
+      "group_B_replicate_means": [
+        0.2946333333333333,
+        0.3142000000000001
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    },
+    "velocity_correlation_length": {
+      "all_group_A_replicates_above_all_group_B_replicates": true,
+      "biological_cluster_bootstrap_95ci": [
+        32.1687800714285,
+        77.17115895604388
+      ],
+      "bootstrap_is_exploratory_due_small_n": true,
+      "difference_definition": "vehicle_control_minus_blebbistatin",
+      "exact_randomization_two_sided_p": 0.3333333333333333,
+      "group_A_label": "vehicle_control",
+      "group_A_minus_group_B": 54.66996951373619,
+      "group_A_replicate_means": [
+        356.838467,
+        400.6185303846153
+      ],
+      "group_B_label": "blebbistatin",
+      "group_B_replicate_means": [
+        323.44737142857144,
+        324.6696869285715
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    }
+  },
+  "limitations": [
+    "Fig. 4 has only two independent LCN substrates per condition",
+    "blebbistatin-treated speed is available for only one substrate and is descriptive only",
+    "the substrate is orders of magnitude stiffer than physiological muscle and is two-dimensional",
+    "PIV, order, and correlation lengths are observations rather than direct traction or tension measurements",
+    "another aligned lab and an Aleph observation operator are required before this head can constrain a numeric sweep"
+  ],
+  "manifest": {
+    "PIV_live_actin_observations": 1435,
+    "author_independent_LCN_substrates": 16,
+    "fibronectin_IF_orientation_observations": 720,
+    "observations": 2155,
+    "samples": 16
+  },
+  "maximum_density_anisotropy_contrasts": {
+    "orientation_order_parameter": {
+      "all_group_A_replicates_above_all_group_B_replicates": false,
+      "biological_cluster_bootstrap_95ci": [
+        0.009559803874999998,
+        0.48375612000000007
+      ],
+      "bootstrap_is_exploratory_due_small_n": false,
+      "difference_definition": "mLCN_anisotropic_minus_iLCN_isotropic",
+      "exact_randomization_two_sided_p": 0.07936507936507936,
+      "group_A_label": "mLCN_anisotropic",
+      "group_A_minus_group_B": 0.2672608999999999,
+      "group_A_replicate_means": [
+        0.8289303,
+        0.7387738,
+        0.4552751,
+        0.818214,
+        0.9161708
+      ],
+      "group_B_label": "iLCN_isotropic",
+      "group_B_replicate_means": [
+        0.4444002,
+        0.2929423,
+        0.3833801,
+        0.816125
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    },
+    "spatial_disorder_fraction": {
+      "all_group_A_replicates_above_all_group_B_replicates": false,
+      "biological_cluster_bootstrap_95ci": [
+        -0.23923608700000004,
+        -0.004435961000000044
+      ],
+      "bootstrap_is_exploratory_due_small_n": false,
+      "difference_definition": "mLCN_anisotropic_minus_iLCN_isotropic",
+      "exact_randomization_two_sided_p": 0.07936507936507936,
+      "group_A_label": "mLCN_anisotropic",
+      "group_A_minus_group_B": -0.13425534699999997,
+      "group_A_replicate_means": [
+        0.0,
+        0.05381944,
+        0.24305556,
+        0.01239669,
+        0.0
+      ],
+      "group_B_label": "iLCN_isotropic",
+      "group_B_replicate_means": [
+        0.2653061,
+        0.2678571,
+        0.1964286,
+        0.05484694
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    },
+    "velocity_correlation_length": {
+      "all_group_A_replicates_above_all_group_B_replicates": false,
+      "biological_cluster_bootstrap_95ci": [
+        0.43692452275001137,
+        76.31348343000002
+      ],
+      "bootstrap_is_exploratory_due_small_n": false,
+      "difference_definition": "mLCN_anisotropic_minus_iLCN_isotropic",
+      "exact_randomization_two_sided_p": 0.21428571428571427,
+      "group_A_label": "mLCN_anisotropic",
+      "group_A_minus_group_B": 34.846056869999984,
+      "group_A_replicate_means": [
+        148.245079,
+        242.1920472,
+        120.5292844,
+        134.78603,
+        181.385785
+      ],
+      "group_B_label": "iLCN_isotropic",
+      "group_B_replicate_means": [
+        131.154987,
+        127.908123,
+        143.292685,
+        119.970558
+      ],
+      "inference_unit": "author_independent_LCN_substrate"
+    }
+  },
+  "observable_evidence_eligible": false,
+  "pre_sweep_constraint": {
+    "directional_observation_constraint_eligible": true,
+    "expected_when_contractility_is_inhibited": {
+      "fibronectin_orientation_nematic_order": "decreases",
+      "late_nematic_correlation_length": "decreases",
+      "late_orientation_order_parameter": "decreases",
+      "late_velocity_correlation_length": "decreases"
+    },
+    "future_sweep_range_reduction_intended": true,
+    "identifiability": "blebbistatin is a multiscale nonmuscle-myosin-II perturbation and does not identify one Aleph parameter",
+    "latent": "supracellular_contractility_and_reciprocal_cell_ECM_alignment",
+    "may_emit_numeric_parameter_range": false,
+    "may_select_Aleph_parameter": false,
+    "required_Aleph_operators": [
+      "live_actin_orientation_order",
+      "nematic_correlation_length",
+      "velocity_correlation_length",
+      "fibronectin_orientation_distribution"
+    ]
+  },
+  "replicated_contractility_direction": true,
+  "representation_training_eligible": true,
+  "schema": "aleph.outer_library.dryad_08kprr59c_evidence.v1",
+  "source": {
+    "accession": "10.5061/dryad.08kprr59c",
+    "independent_provider_relative_to_existing_outer_library_PIV_sources": true,
+    "lab_group": "anseth-white-skillin-lab-cu-boulder",
+    "license": "cc0-1.0",
+    "paper_doi": "10.1126/sciadv.adn0235"
+  },
+  "task": "C2C12_supracellular_contractility_collective_flow_and_ECM_alignment_constraint",
+  "uncertainty": {
+    "cluster_bootstrap_unit": "LCN_substrate",
+    "formal_uncertainty_holdout_passed": false,
+    "n_per_Fig4_condition": 2,
+    "reason": "two substrates per treatment are insufficient for calibrated external uncertainty"
+  },
+  "uncertainty_holdout_passed": false
+}

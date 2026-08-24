@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "tag": "cg_smoke",
+    "nf": 500,
+    "Nc": 3500,
+    "n_nuc": 3000,
+    "n_fa": 190,
+    "R_um": 7.476932535510518,
+    "material": "collagen_I",
+    "conc": 1.5,
+    "S_list": [
+      0.0,
+      0.83
+    ],
+    "seeds": 1,
+    "steps": 120,
+    "relax_steps": 300,
+    "ecm_substeps": 12,
+    "dt": 0.05,
+    "device": "cpu",
+    "resting": {
+      "dP_Pa": 41.51220189346109,
+      "gamma_mN_m": 0.15793157812017564,
+      "V_over_V0": 0.9949593270217963,
+      "R_eq_um": 7.608923204097861
+    },
+    "coarse_nonauthoritative": true,
+    "A_F_mean": [
+      1.9676850447423235,
+      0.9282982467650662
+    ],
+    "R_sigma_mean": [
+      0.7806553850128559,
+      4.2639627941130165
+    ],
+    "verdict": "A_F rises 1.97(S=0) \u2192 0.93(S=0.83)  [NON-MONOTONE] \u00b7 below Ray 3\u00d7 (expected 2\u20134\u00d7, clutch-limited)",
+    "validation": {
+      "primary": "Ray 2017 Nat Commun 8:14923 (force anisotropy >3\u00d7)",
+      "secondary": "Szulczewski 2021 Acta Biomater (up to 35\u00d7 matrix directional stiffness)",
+      "saturation": "Niraula 2025 ACS Nano (traction saturates, \u22725\u00d7)",
+      "context": [
+        "Riching 2014 Biophys J 107:2546",
+        "Han 2016 PNAS 113:11208"
+      ]
+    },
+    "microtubules": "OFF (same as NEAR #1/#2 sensing family; open PI item)"
+  },
+  "rows": [
+    {
+      "material": "collagen_I",
+      "E_pa": 1.5,
+      "E_or_conc": 1.5,
+      "alignment_S": 0.0,
+      "S_measured": 0.09096035764612702,
+      "director": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "A_F": 1.9676850447423235,
+      "A_F_rms": 2.491942733304902,
+      "F_par_pN": 1905.3550838829922,
+      "F_perp_pN": 968.3232024221164,
+      "S_bound": 0.16123445411648793,
+      "n_engaged": 71,
+      "R_sigma": 0.7806553850128559,
+      "sigma_par_Pa": 0.4862435747255703,
+      "sigma_perp_Pa": 0.6228658433164626,
+      "is_fibrillar": true,
+      "traction_nN": 2.659851672762028,
+      "bound_frac": 0.3736842105263158,
+      "force_per_clutch_pN": 37.46269961636659,
+      "silhouette_um2": 176.26145398027046,
+      "n_clutch": 190,
+      "n_bound": 71,
+      "n_ecm_nodes": 861,
+      "mesh_um": 2.0,
+      "connectivity_z": 1.853658536585366,
+      "ecm_mean_disp_um": 0.003535627139554162,
+      "ecm_max_disp_um": 0.3311837571298505,
+      "kmc_every": 30,
+      "dt": 0.05,
+      "dt_cfl_s": 5.476076918615019e-06,
+      "ecm_dt_s": 5.787452476068921e-07,
+      "ecm_substeps": 12,
+      "wall_s": 5.2612998485565186,
+      "diverged": false,
+      "S_target": 0.0,
+      "seed": 1
+    },
+    {
+      "material": "collagen_I",
+      "E_pa": 1.5,
+      "E_or_conc": 1.5,
+      "alignment_S": 0.83,
+      "S_measured": 0.8184684396510774,
+      "director": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "A_F": 0.9282982467650662,
+      "A_F_rms": 0.5438235308559074,
+      "F_par_pN": 1119.061100110123,
+      "F_perp_pN": 1205.4973754499993,
+      "S_bound": 0.08948644947687702,
+      "n_engaged": 56,
+      "R_sigma": 4.2639627941130165,
+      "sigma_par_Pa": 0.505845378912705,
+      "sigma_perp_Pa": 0.11863269060675054,
+      "is_fibrillar": true,
+      "traction_nN": 2.047146524802579,
+      "bound_frac": 0.29473684210526313,
+      "force_per_clutch_pN": 36.5561879429032,
+      "silhouette_um2": 175.8008032081597,
+      "n_clutch": 190,
+      "n_bound": 56,
+      "n_ecm_nodes": 861,
+      "mesh_um": 2.0,
+      "connectivity_z": 2.0,
+      "ecm_mean_disp_um": 0.0014578886760368507,
+      "ecm_max_disp_um": 0.20662457676876395,
+      "kmc_every": 30,
+      "dt": 0.05,
+      "dt_cfl_s": 5.476076918615019e-06,
+      "ecm_dt_s": 5.787452476068921e-07,
+      "ecm_substeps": 12,
+      "wall_s": 5.129577875137329,
+      "diverged": false,
+      "S_target": 0.83,
+      "seed": 1
+    }
+  ]
+}

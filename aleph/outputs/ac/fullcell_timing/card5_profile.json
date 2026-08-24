@@ -1,0 +1,484 @@
+{
+  "driver": "ac_fullcell_step_timing",
+  "device": "cuda:0",
+  "label": "card5-profile",
+  "evidence_class": "TIMING at a FORCE-ACCEPTED step",
+  "quantitative_claim_status": "SCOPED",
+  "evidence_basis": "wall-clock per accepted step of the composed native cell, device-synchronized, warm-up excluded. The steps are FORCE-ACCEPTED: this measures the cost of the step the runtime currently takes, NOT the cost of a converged step, and the two are not the same number.",
+  "timing": {
+    "n_timed_steps": 6,
+    "n_warmup_steps": 2,
+    "dt_phys_s": 0.01,
+    "wall_per_step_s": 0.2346999238313098,
+    "wall_per_step_stdev_s": 0.00011475951258192514,
+    "wall_per_step_min_s": 0.23453070397954434,
+    "wall_per_step_max_s": 0.2348519219958689,
+    "real_time_factor": 0.04260759797769463,
+    "wall_seconds_per_second_of_cell": 23.46999238313098,
+    "per_step_s": [
+      0.23465615199529566,
+      0.23453070397954434,
+      0.23480254199239425,
+      0.2348519219958689,
+      0.23469907601247542,
+      0.2346591470122803
+    ],
+    "build_seconds": 15.225672247004695,
+    "comparable": false,
+    "not_comparable_reason": "force-accepted steps; cost is only cost at a stated acceptance, and no acceptance predicate gated these"
+  },
+  "scope": {
+    "target_full_cell_components": [
+      "cortex",
+      "cytosol",
+      "filopodium",
+      "focal_adhesion",
+      "intermediate_filament",
+      "lamellipodium",
+      "membrane",
+      "microtubule",
+      "nmii",
+      "nucleus",
+      "sf_arc"
+    ],
+    "n_target_components": 11,
+    "n_target_in_cell_connectors": 31,
+    "excluded_by_goal": [
+      "ecm",
+      "extracellular_medium",
+      "world_boundary"
+    ],
+    "bound_components_in_scope": [
+      "cortex",
+      "cytosol",
+      "membrane",
+      "nmii",
+      "nucleus",
+      "sf_arc"
+    ],
+    "fraction_of_target_components": 0.5454545454545454,
+    "bound_connectors": [
+      "dorsal_arc_crosslink",
+      "membrane_cytosol_boundary",
+      "nmii_cortex_motor",
+      "nucleus_cytosol_boundary",
+      "sf_cortex_transient",
+      "surface_porous_transfer"
+    ],
+    "n_bound_connectors": 6,
+    "bound_connectors_in_target": [
+      "dorsal_arc_crosslink",
+      "membrane_cytosol_boundary",
+      "nmii_cortex_motor",
+      "nucleus_cytosol_boundary",
+      "sf_cortex_transient",
+      "surface_porous_transfer"
+    ]
+  },
+  "census": {
+    "cortex_filaments": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 551434,
+    "n_heads": 8840,
+    "fraction_of_native_cortex": 1.0
+  },
+  "sf_relax": {
+    "attached": false
+  },
+  "kernel_profile": [
+    {
+      "kernel": "forward kernel _interp_grad_force_kernel_fd8db48a",
+      "launches": 44,
+      "device_ms": 85.14115166664124,
+      "share": 0.3650560984376336
+    },
+    {
+      "kernel": "forward kernel wca_steric_kernel_698b46be",
+      "launches": 44,
+      "device_ms": 56.92819106578827,
+      "share": 0.24408858601018088
+    },
+    {
+      "kernel": "forward kernel membrane_pressure_traction_kernel_e5fe9bc1",
+      "launches": 44,
+      "device_ms": 54.543840646743774,
+      "share": 0.23386530802713762
+    },
+    {
+      "kernel": "forward kernel link_spring_kernel_3ad5a815",
+      "launches": 47,
+      "device_ms": 7.559872150886804,
+      "share": 0.032414142609858
+    },
+    {
+      "kernel": "forward kernel project_constraint_forces_kernel_4acf9c08",
+      "launches": 43,
+      "device_ms": 5.729567885398865,
+      "share": 0.024566424778545457
+    },
+    {
+      "kernel": "forward kernel _pressure_gradient_masked_kernel_7314fb13",
+      "launches": 44,
+      "device_ms": 5.3139519691467285,
+      "share": 0.02278440607354087
+    },
+    {
+      "kernel": "forward kernel point_to_segment_query_hashgrid_kernel_1245b640",
+      "launches": 1,
+      "device_ms": 3.5768320560455322,
+      "share": 0.015336230830645892
+    },
+    {
+      "kernel": "forward kernel helfrich_bending_kernel_3c068e36",
+      "launches": 88,
+      "device_ms": 3.02454396430403,
+      "share": 0.01296820864586127
+    },
+    {
+      "kernel": "forward kernel cytosim_bending_kernel_0313e47d",
+      "launches": 46,
+      "device_ms": 2.5169600173830986,
+      "share": 0.010791862523388858
+    },
+    {
+      "kernel": "forward kernel conditional_reshape_kernel_f9e50252",
+      "launches": 3,
+      "device_ms": 2.0992000102996826,
+      "share": 0.009000650691227295
+    },
+    {
+      "kernel": "forward kernel nucleoplasm_volume_force_arr_kernel_1b54e99b",
+      "launches": 44,
+      "device_ms": 1.1778879910707474,
+      "share": 0.005050380292016929
+    },
+    {
+      "kernel": "forward kernel membrane_area_kernel_a4db845d",
+      "launches": 44,
+      "device_ms": 1.0238080099225044,
+      "share": 0.004389738103553792
+    },
+    {
+      "kernel": "forward kernel conditional_axpy_kernel_3c880174",
+      "launches": 40,
+      "device_ms": 0.6636480018496513,
+      "share": 0.002845495339782764
+    },
+    {
+      "kernel": "forward kernel erm_tether_force_kernel_25eedcaf",
+      "launches": 44,
+      "device_ms": 0.5085440063849092,
+      "share": 0.0021804625286441304
+    },
+    {
+      "kernel": "forward kernel lamina_areal_tension_kernel_9f0809d1",
+      "launches": 44,
+      "device_ms": 0.5029759993776679,
+      "share": 0.002156588821578299
+    },
+    {
+      "kernel": "forward kernel _zero_7bfb88b0",
+      "launches": 44,
+      "device_ms": 0.4918720042333007,
+      "share": 0.0021089786933955797
+    },
+    {
+      "kernel": "forward kernel pos_to_f32_09b43d88",
+      "launches": 44,
+      "device_ms": 0.3842880064621568,
+      "share": 0.00164769535729003
+    },
+    {
+      "kernel": "forward kernel linc_tether_kernel_d3afa59a",
+      "launches": 44,
+      "device_ms": 0.3526079999282956,
+      "share": 0.0015118623393269748
+    },
+    {
+      "kernel": "forward kernel nucleoplasm_volume_reduce_kernel_13da5931",
+      "launches": 44,
+      "device_ms": 0.293984005227685,
+      "share": 0.0012605027281247872
+    },
+    {
+      "kernel": "forward kernel max_displacement_kernel_4d802961",
+      "launches": 3,
+      "device_ms": 0.20070400461554527,
+      "share": 0.0008605500328751912
+    },
+    {
+      "kernel": "forward kernel _nucleoplasm_pressure_kernel_2609ea59",
+      "launches": 44,
+      "device_ms": 0.1844799993559718,
+      "share": 0.000790987054865674
+    },
+    {
+      "kernel": "forward kernel _zero_scalar_kernel_5958721e",
+      "launches": 44,
+      "device_ms": 0.17187199997715652,
+      "share": 0.000736928271630566
+    },
+    {
+      "kernel": "forward kernel max_force_kernel_23889bf4",
+      "launches": 4,
+      "device_ms": 0.1587199978530407,
+      "share": 0.000680536990938572
+    },
+    {
+      "kernel": "forward kernel max_constraint_error_kernel_5fb0182e",
+      "launches": 3,
+      "device_ms": 0.12624000012874603,
+      "share": 0.0005412738847391304
+    },
+    {
+      "kernel": "forward kernel refresh_segment_barbed_kernel_f322eaba",
+      "launches": 2,
+      "device_ms": 0.11795200034976006,
+      "share": 0.0005057377802356952
+    },
+    {
+      "kernel": "forward kernel finite_vec3_kernel_b06cd58e",
+      "launches": 10,
+      "device_ms": 0.06979200104251504,
+      "share": 0.0002992441974768144
+    },
+    {
+      "kernel": "forward kernel angle_harmonic_kernel_9b3157ca",
+      "launches": 2,
+      "device_ms": 0.029695999808609486,
+      "share": 0.00012732627662567946
+    },
+    {
+      "kernel": "forward kernel reset_active_reduction_kernel_3c16f71c",
+      "launches": 6,
+      "device_ms": 0.021504000294953585,
+      "share": 9.220178838094358e-05
+    },
+    {
+      "kernel": "forward kernel _increment_epoch_if_accepted_kernel_40927cb0",
+      "launches": 2,
+      "device_ms": 0.02047999994829297,
+      "share": 8.781122560333e-05
+    },
+    {
+      "kernel": "forward kernel _zero_vec3d_kernel_f3becf92",
+      "launches": 3,
+      "device_ms": 0.019456000067293644,
+      "share": 8.342066482231253e-05
+    },
+    {
+      "kernel": "forward kernel conditional_rollback_vec3_kernel_4893179c",
+      "launches": 1,
+      "device_ms": 0.018432000651955605,
+      "share": 7.903010603789118e-05
+    },
+    {
+      "kernel": "forward kernel _restore_vec3_if_rejected_kernel_5172adeb",
+      "launches": 1,
+      "device_ms": 0.01740800030529499,
+      "share": 7.463954326027759e-05
+    },
+    {
+      "kernel": "forward kernel compute_descent_step_kernel_71a1ffc9",
+      "launches": 1,
+      "device_ms": 0.016383999958634377,
+      "share": 7.0248980482664e-05
+    },
+    {
+      "kernel": "forward kernel _conditional_restore_f64_3d_kernel_a785cc3e",
+      "launches": 4,
+      "device_ms": 0.01580799976363778,
+      "share": 6.777928892025636e-05
+    },
+    {
+      "kernel": "forward kernel harmonic_bond_kernel_3c1d3deb",
+      "launches": 2,
+      "device_ms": 0.014336000196635723,
+      "share": 6.146785892062905e-05
+    },
+    {
+      "kernel": "forward kernel _restore_vec3_if_rejected_kernel_d2cc0293",
+      "launches": 3,
+      "device_ms": 0.013503999914973974,
+      "share": 5.790052666381802e-05
+    },
+    {
+      "kernel": "forward kernel update_convergence_kernel_bb45f854",
+      "launches": 3,
+      "device_ms": 0.013311999849975109,
+      "share": 5.707729614301547e-05
+    },
+    {
+      "kernel": "forward kernel _restore_int32_if_rejected_kernel_a21a40fa",
+      "launches": 3,
+      "device_ms": 0.011455999920144677,
+      "share": 4.911940410348502e-05
+    },
+    {
+      "kernel": "forward kernel _segment_midpoints_f32_kernel_f2cc1f20",
+      "launches": 1,
+      "device_ms": 0.010304000228643417,
+      "share": 4.4180023973563905e-05
+    },
+    {
+      "kernel": "forward kernel step_detach_segment_gated_kernel_6caade36",
+      "launches": 1,
+      "device_ms": 0.010239999741315842,
+      "share": 4.390561180336694e-05
+    },
+    {
+      "kernel": "forward kernel _segment_joint_force_kernel_c70160f8",
+      "launches": 1,
+      "device_ms": 0.009375999681651592,
+      "share": 4.020107545805353e-05
+    },
+    {
+      "kernel": "forward kernel max_abs_pressure_kernel_5b34850d",
+      "launches": 1,
+      "device_ms": 0.009344000369310379,
+      "share": 4.0063873366147285e-05
+    },
+    {
+      "kernel": "forward kernel crossbridge_segment_split_r0bind_kernel_7cfc59ca",
+      "launches": 1,
+      "device_ms": 0.009216000325977802,
+      "share": 3.951505301894559e-05
+    },
+    {
+      "kernel": "forward kernel _alpha_actinin_propose_kernel_b6466dee",
+      "launches": 1,
+      "device_ms": 0.0071680000983178616,
+      "share": 3.0733929460314526e-05
+    },
+    {
+      "kernel": "forward kernel _refresh_bound_walk_dir_kernel_5583134b",
+      "launches": 1,
+      "device_ms": 0.0071680000983178616,
+      "share": 3.0733929460314526e-05
+    },
+    {
+      "kernel": "forward kernel conditional_rupture_update_kernel_3fee3c3a",
+      "launches": 1,
+      "device_ms": 0.0071680000983178616,
+      "share": 3.0733929460314526e-05
+    },
+    {
+      "kernel": "forward kernel attach_segment_gated_r0bind_kernel_04009c28",
+      "launches": 1,
+      "device_ms": 0.0071680000983178616,
+      "share": 3.0733929460314526e-05
+    },
+    {
+      "kernel": "forward kernel compute_head_loads_segment_split_r0bind_kernel_ae8d8694",
+      "launches": 1,
+      "device_ms": 0.006144000217318535,
+      "share": 2.6343368679297057e-05
+    },
+    {
+      "kernel": "forward kernel _commit_joint_state_kernel_d897fa3f",
+      "launches": 1,
+      "device_ms": 0.005216000135987997,
+      "share": 2.23644221603828e-05
+    },
+    {
+      "kernel": "forward kernel _collagen_bend_alpha_kernel_726090c3",
+      "launches": 1,
+      "device_ms": 0.005119999870657921,
+      "share": 2.195280590168347e-05
+    },
+    {
+      "kernel": "forward kernel _refresh_rest_on_bind_kernel_0c153521",
+      "launches": 1,
+      "device_ms": 0.005119999870657921,
+      "share": 2.195280590168347e-05
+    },
+    {
+      "kernel": "forward kernel _conditional_restore_i32_3d_kernel_e511286b",
+      "launches": 1,
+      "device_ms": 0.004352000076323748,
+      "share": 1.8659885815069396e-05
+    },
+    {
+      "kernel": "forward kernel _restore_int32_if_rejected_kernel_23d4305a",
+      "launches": 1,
+      "device_ms": 0.0041600000113248825,
+      "share": 1.7836655294266847e-05
+    },
+    {
+      "kernel": "forward kernel _gather_head_pos_kernel_b5da83a9",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel _head_pos_f32_kernel_163ee1e5",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel inner_state_init_kernel_6c92d3ba",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel begin_inner_attempt_kernel_aabc5d1c",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel invalidate_convergence_kernel_5a71b1fa",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel _restore_vec3_if_rejected_kernel_082e9347",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel _restore_int64_if_rejected_kernel_e14af065",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel _rollback_candidate_state_kernel_afa4f4fc",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel _bump_epoch_if_accepted_kernel_451a588f",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel _collagen_segment_stiffness_kernel_487c2cff",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    },
+    {
+      "kernel": "forward kernel advance_event_clock_kernel_2ec338cb",
+      "launches": 1,
+      "device_ms": 0.004095999989658594,
+      "share": 1.7562245120666e-05
+    }
+  ],
+  "config": {
+    "k_axial_pn_per_um": 1000.0,
+    "k_xb_pn_per_um": 1000.0,
+    "n_fibers_ecm": 200,
+    "seed": 0
+  },
+  "parameter_provenance": {
+    "k_axial_pn_per_um": "PI_GAP",
+    "k_xb_pn_per_um": "PI_GAP"
+  }
+}

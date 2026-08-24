@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# ffn_cellsim pre-commit — run the KB integrity gates before each commit.
+#
+# Pure-Python, sub-second, reads only committed artifacts. BLOCKS the commit on a
+# DRIFT (a result or constant claimed better than what the disk + citation audit
+# support). Fails OPEN on environment problems (no python / no pyyaml) since CI
+# is the authoritative enforcement — a missing local dep must not block a commit.
+#
+# Enable:        make hooks       (git config core.hooksPath .githooks)
+# Bypass once:   git commit --no-verify
+set -e
+TKB="aleph/outputs/tag_kb"
+# Pick the first interpreter that can actually RUN the gates, not the first that exists.
+# Until 2026-07-28 this resolved /usr/bin/python3, which has no pyyaml, so the hook took its
+# fail-open branch on EVERY commit: the KB gates never ran locally, and neither did the two
+# parallel-session guards below — the guards that exist because two sessions silently
+# overwrote each other twice in one hour. Failing open is still correct for a genuinely
+# missing dependency; failing open because we looked in the wrong place is not.
+PY=""
+for c in "$CONDA_PREFIX/bin/python" "$HOME/miniconda3/envs/ffn_sim/bin/python" \
+         "$(command -v python 2>/dev/null)" "$(command -v python3 2>/dev/null)"; do
+  if [ -x "$c" ] && "$c" -c "import yaml" >/dev/null 2>&1; then PY="$c"; break; fi
+done
+if [ -z "$PY" ]; then
+  echo "[pre-commit] no interpreter with pyyaml — skipping gates (CI still enforces)"; exit 0
+fi
+echo "[pre-commit] KB integrity gates ..."
+"$PY" "$TKB/verify_runs.py" --gate
+"$PY" "$TKB/verify_params.py" --gate
+echo "[pre-commit] KB gates OK"
+
+# Boot-context gates: budget, no magnitudes in the charter, MEMORY.md is an index, and no file repeats
+# a claim STATE.md (c) retired without saying so. That last one is the reason this exists — the audit
+# that added it found MEMORY.md, which loads on EVERY boot, carrying three already-retired magnitudes.
+"$PY" aleph/scripts/check_boot.py
+
+# --- parallel-session guards (added 2026-07-28) -------------------------------
+# Both fail OPEN on environment problems, for the same reason the KB gates do: a
+# missing local dep must never block a commit. They exist for the SILENT failure
+# — not merge conflicts, which git reports, but two sessions editing one shared
+# file minutes apart where the loser's edit is simply absent. That happened twice
+# in one hour on 2026-07-28, once carrying away a whole commit's staged content.
+
+# 1) may this session commit these paths?  (off entirely when FFN_SESSION unset)
+if [ -n "$FFN_SESSION" ]; then
+  "$PY" aleph/scripts/check_ownership.py || exit 1
+fi
+
+# 2) is STATE.md's generated tier-(a) block in sync with its append-only source?
+if [ -f aleph/docs/state_rows.yaml ]; then
+  "$PY" aleph/scripts/render_state_rows.py --check || exit 1
+fi
+
+
+# --- the test suite (added 2026-08-23, PI ruling) -----------------------------
+# WHY. Three defects landed in ONE session because a check existed and nothing I
+# ran executed it: six builder `_demo()` self-checks that no test imported, the
+# STATE.md (c) fingerprint ratchet, and a bare `%` in two argparse helps that had
+# `tests/scripts` red since ef591c01. All three sat in directories this hook did
+# not touch. So the hook now runs the suite.
+#
+# ⚠ **AND CI DOES NOT COVER THE GAP — this is not a belt beside a brace.**
+# `.github/workflows/ci.yml` declares `CI_TEST_SCOPE="aleph/tests/ac
+# aleph/tests/coordination"`: 2 of the 13 areas a bare pytest collects. `world`,
+# `architecture`, `scripts`, `units`, `laws`, `ports`, `mechanics`, `c1`,
+# `validation`, `outer` and every root-level `test_*.py` run in NO CI job — which
+# is exactly where all three defects were. Worse, the last CI run on the GitHub
+# remote is 2026-07-13 and it FAILED; nothing has been pushed since. Until that is
+# fixed this hook is not the fast half of a two-tier gate, it is the only tier.
+#
+# ⚠ **EXCLUDED, NOT SELECTED — and the difference is the whole point.** A typed
+# list of directories to RUN is the same defect one level up: a directory added
+# tomorrow would be silently uncovered, which is how this hook got here. Everything
+# under `aleph/tests` runs by default. Three paths are excluded by name, each for a
+# measured cost printed below, and adding a fourth means editing this file.
+#
+# Measured 2026-08-23 on the dev machine, whole suite 7 m 39 s:
+#     aleph/tests/ac                    249 s   the live engine; the CI scope
+#     aleph/tests/ff                    131 s
+#     test_cadherin_cluster.py           58 s   3 parametrised host-solve cases
+#     ---------------------------------------
+#     everything else                    18 s   <- what runs here
+#
+# ⚠ **This tests the WORKING TREE, not the commit.** With a pathspec or a partial
+# `git add`, the tree pytest sees is not the tree being recorded. Narrowing that
+# would mean a stash dance, which fails messily mid-conflict and would cost more
+# than it catches; the shared tree makes a green suite on the tree the useful fact
+# anyway. Named rather than fixed.
+#
+# Fails OPEN if pytest is missing, for the same reason the KB gates do.
+# Bypass once: git commit --no-verify
+if "$PY" -c "import pytest" >/dev/null 2>&1; then
+  echo "[pre-commit] test suite — all of aleph/tests EXCEPT ac (249s), ff (131s), test_cadherin_cluster.py (58s); ~18s"
+  "$PY" -m pytest aleph/tests \
+      --ignore=aleph/tests/ac \
+      --ignore=aleph/tests/ff \
+      --ignore=aleph/tests/test_cadherin_cluster.py \
+      -q -p no:cacheprovider || exit 1
+else
+  echo "[pre-commit] no pytest — skipping the suite (⚠ and CI does not cover it either; see ci.yml scope)"
+fi
+
+# --- oversized blob gate (added 2026-08-24, PI ruling) ------------------------
+# WHY. Four blobs over GitHub's 100 MB hard limit are reachable from `engine/main`, and they are why
+# this repository has had no off-machine remote since 2026-07-13 — no CI, no backup, no second reader.
+# ⚠ One of the three commits that introduced them is `f7442321`, 2026-07-28, `feat(ac/engine): D2-B`:
+# a LIVE ENGINE COMMIT carrying a 116.5 MB viewer. This is not old DCM debris, it is a practice that
+# was alive four weeks ago and nothing stops it recurring.
+#
+# ⚠ **`.gitignore` CANNOT DO THIS.** It matches PATHS, not sizes, and the rule that exists names three
+# specific files — a typed list, so the fourth oversized viewer was never covered. A size gate has to
+# read the staged blob, which means a hook.
+#
+# 50 MB, not 100: GitHub warns at 50 and hard-rejects at 100, and a cap set AT the hard limit leaves
+# no margin for the one that arrives 2 MB under it. Nothing in the current tree needs to exceed it —
+# every offender is a regenerable full-frame viewer under `aleph/outputs/`, and the committed record
+# is the PNG + curves + JSON per the PI's native-viewer rule.
+#
+# ⚠ RATCHET, NOT A SWEEP. Only files being ADDED or MODIFIED in this commit are checked. The 14
+# oversized HTML viewers already in the tree (1,224 MB, all under `_archive/`) are untouched: removing
+# them from HEAD would not shrink history and so would not unblock a push, which needs an orphan
+# branch. This stops the list growing.
+#
+# Bypass once: git commit --no-verify
+MAX_BLOB_MB=50
+oversized=$(git diff --cached --name-only --diff-filter=AM | while read -r f; do
+  [ -f "$f" ] || continue
+  sz=$(wc -c < "$f" 2>/dev/null || echo 0)
+  if [ "$sz" -gt $((MAX_BLOB_MB * 1024 * 1024)) ]; then
+    printf '  %6.1f MB  %s\n' "$(echo "scale=1; $sz/1048576" | bc)" "$f"
+  fi
+done)
+if [ -n "$oversized" ]; then
+  echo "[pre-commit] REFUSED — staged file(s) over ${MAX_BLOB_MB} MB:"
+  echo "$oversized"
+  echo "  A blob this size is what has kept this repository off GitHub since 2026-07-13."
+  echo "  A full-frame viewer is regenerable: commit the PNG + curves + JSON instead, and keep the"
+  echo "  HTML untracked. If this one genuinely must be versioned, say so and use --no-verify."
+  exit 1
+fi

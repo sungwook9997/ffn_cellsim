@@ -1,0 +1,13 @@
+{
+  "schema": "aleph.external_training.experiment_record.v1",
+  "authority_status": "proposed",
+  "review_state": "gold_candidate",
+  "experiment_record_id": "aleph:experiment:0123456789abcdef",
+  "source": {"source_family_id": "doi:10.0000/broken", "pmcid": null, "acquisition_pass": "first", "publication_year": 2024, "primary_domain": "measurement_inference"},
+  "biological_systems": [{"biological_system_id": "bio:1"}],
+  "conditions": [{"condition_id": "cond:1", "biological_system_id": "bio:1"}],
+  "protocols": [{"protocol_id": "protocol:1", "evidence": [{"document_sha256": "NOT_A_HASH", "section_path": [], "locator_type": "paragraph", "locator_id": null, "text_or_asset_sha256": "also-bad", "char_start": 10, "char_end": 2}]}],
+  "observations": [],
+  "comparisons": [],
+  "provenance": {"source_receipt_sha256": "bad", "candidate_record_sha256": "bad", "record_sha256": null}
+}

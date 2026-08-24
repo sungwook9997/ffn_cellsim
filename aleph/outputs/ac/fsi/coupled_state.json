@@ -1,0 +1,56 @@
+{
+  "report": {
+    "n_filaments": 70686,
+    "n_actin": 494802,
+    "n_total": 509830,
+    "with_steric": false,
+    "with_myosin": true,
+    "activate_myosin": true,
+    "n_bound_heads": 1126,
+    "bound_fraction": 0.12737556561085972,
+    "eps_compression": 0.01,
+    "dt_phys": 0.05,
+    "n_biot_subcycles": 67,
+    "c_v_um2_s": 50.0,
+    "phi_provisional_GAP": 0.5,
+    "p_excess_max_Pa": 426.96708699943446,
+    "max_q_um_s": 0.886332240011976,
+    "max_vf_um_s": 1.7920064222049292,
+    "composed_force_max_pN": 2364.5609019306876,
+    "composed_force_mean_pN": 125.12206964548207,
+    "wall_s": 9.237685203552246
+  },
+  "ledger": {
+    "N_unique_active_fibers": 70686,
+    "N_dormant_fibers": 0,
+    "N_allocated_fibers": 70686,
+    "N_nodes": 494802,
+    "N_crosslinks": 70686,
+    "N_motor_seeds": 442,
+    "N_branch_junctions_active": 0,
+    "N_cross_region_bonds": 0,
+    "N_fa_sites": 0,
+    "N_linc_sites": 0,
+    "per_region": {
+      "cortex": {
+        "active_fibers": 70686,
+        "dormant_fibers": 0,
+        "total_fibers": 70686
+      }
+    },
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 509830,
+    "n_myosin_particles": 15028,
+    "n_bending_triples": 353430,
+    "n_crosslink_links": 70686,
+    "myosin_n_minifilaments": 442,
+    "myosin_n_myosin_particles": 15028,
+    "myosin_n_heads": 8840,
+    "myosin_n_backbone_beads": 6188,
+    "field_grid_cells": 79507,
+    "kmax_pN_per_um": 820000.0,
+    "dt_mu": 1.2195121951219514e-07,
+    "gpu_bytes_used": 280035328,
+    "gpu_bytes_total": 16760569856
+  }
+}

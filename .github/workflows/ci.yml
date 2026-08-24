@@ -1,0 +1,281 @@
+name: CI
+
+# First automated correctness gate for ffn_cellsim (added 2026-06-19).
+#
+# Why this exists: the repo had ZERO CI and no GitHub remote — every "done /
+# passes / validated" claim was hand-run, and GPU results left no reproducible
+# trace. This gate makes "the suite imports cleanly + the CPU tests pass" a
+# machine-checked fact on every push, so a green checkmark means something.
+#
+# 2026-07-25 REWORK (adversarial audit, docs/v2_audit/AUDIT_WHOLE_REPO_2026-07-25.md).
+# Three things were wrong with the previous version of this file, all in the same
+# direction — the gate contradicted the charter it was supposed to protect:
+#   1. The env CREATED `hoomd=7.0.1` and the test step passed `aleph/tests`
+#      EXPLICITLY, overriding the pyproject `testpaths` quarantine. Result: the 35
+#      HOOMD-importing legacy test modules were executed on every push, i.e. CI was
+#      the single largest violator of "Warp-CUDA is the only simulation runtime;
+#      HOOMD is never imported or executed" (I0-A, PI 2026-07-16).
+#   2. `pytest aleph/tests` cannot even finish collection: the flat legacy
+#      directory contains scripts named `test_*.py` that call `sys.exit()` at import
+#      (e.g. test_cad_subcycle_gate5.py:66), which aborts pytest with INTERNALERROR
+#      (measured 2026-07-25: exit code 3). So the "CPU test gate" step was crashing,
+#      not passing.
+#   3. The green checkmark therefore pointed at finished June work, while the live
+#      engines carried the load.
+# The scope is now the quarantine itself: `aleph/tests/ac` (the live Active Cell
+# engine) + `aleph/tests/coordination` (the ownership and GPU-lease guards). It
+# named `aleph/tests/dcm` until 2026-07-29, when that directory was DELETED with
+# the HOOMD tree — the parity leg is gone, not merely unrun, and per STATE.md (c) 13
+# its 25 `warp-*` claims are permanently uncheckable. Legacy tests are NOT
+# deleted; they are quarantined by collection scope, which is the contract that
+# pyproject `[tool.pytest.ini_options] testpaths` and CLAUDE.md's "executable-scope
+# quarantine" already state.
+#
+# Scope (honest): this is the CPU gate. Warp runs its CPU backend here, so every
+# test whose verdict needs a real GPU self-skips ("I0-A: ... requires a CUDA GPU")
+# — ~70 of them. A green run means "the CPU-decidable part of the live suite passes
+# and nothing in it imports HOOMD". It does NOT mean the CUDA kernels, the native
+# 70,686-filament population, or any GPU bit-parity verdict was checked; those are
+# gbook/A5000 work and are tracked separately. A per-test timeout backstops hangs.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The ONE place the executable scope is written. The scope gate and the test step
+  # both read it, so the checked scope and the run scope cannot drift apart.
+  #
+  # ⚠ WIDENED 2026-08-24 by PI ruling, from "aleph/tests/ac aleph/tests/coordination" — TWO of the
+  # thirteen areas a bare pytest collects. `world`, `architecture`, `scripts`, `units`, `laws`,
+  # `ports`, `mechanics`, `c1`, `validation`, `outer` and every root-level test_*.py ran in NO CI job,
+  # and that is exactly where three defects landed in one session on 2026-08-23: six builder _demo()
+  # self-checks no test imported, the STATE.md (c) fingerprint ratchet, and a bare `%` in two argparse
+  # helps that had tests/scripts red since ef591c01. A gate that watches 2/13 and reports green is
+  # worse than no gate, because the green is read as coverage.
+  #
+  # The scope is now EXCLUSION-BASED for the same reason the pre-commit hook is: a typed list of
+  # directories to RUN silently drops the one added tomorrow, which is how this got here. `ff` is left
+  # out with its cost stated (131 s) and `test_cadherin_cluster.py` likewise (58 s, three parametrised
+  # host solves); `ac` is IN, at 249 s, because it is the live engine.
+  CI_TEST_SCOPE: "aleph/tests --ignore=aleph/tests/ff --ignore=aleph/tests/test_cadherin_cluster.py"
+  CI_TEST_SCOPE_CSV: "aleph/tests"
+
+jobs:
+  cpu-tests:
+    name: CPU tests (Warp CPU backend, no HOOMD)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Dependency set MEASURED, not guessed: on 2026-07-25 the in-scope suite was
+      # run locally with hoomd / freud / gsd / duckdb / requests / matplotlib / h5py
+      # made un-importable, and it still ran to completion — so they are not CI
+      # dependencies. HOOMD is absent on purpose, and the root conftest.py also
+      # blocks `import hoomd` in-process, so the ban is enforced rather than
+      # incidental. Python is pinned to 3.13 to match pyproject `requires-python`
+      # and environment-gpu.yml; the old file drifted onto py3.12 only because
+      # conda-forge resolved HOOMD there, and that reason is gone.
+      - name: Set up micromamba env (Warp CPU + scientific stack, NO HOOMD)
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: ffn_sim
+          condarc: |
+            channels:
+              - conda-forge
+            channel_priority: strict
+          create-args: >-
+            python=3.13
+            numpy>=2.0
+            scipy>=1.13
+            pyyaml>=6.0
+            pytest>=8
+            pytest-timeout
+
+      # No editable install: `python -m pytest` from the repo root puts cwd on
+      # sys.path so `import aleph` resolves, and the root conftest.py asserts that
+      # the ffn_sim which resolves is THIS working tree (no stale-editable shadow).
+      # warp-lang is the runtime under test; the pin matches requirements.txt /
+      # environment-gpu.yml. CPU backend on the runner (GPU verdict = gbook/A5000).
+      - name: Install warp-lang (the only simulation runtime; CPU backend here)
+        run: pip install warp-lang==1.14.0
+
+      - name: Assert HOOMD is genuinely absent from the CI environment
+        run: |
+          if python -c "import hoomd" 2>/dev/null; then
+            echo "HOOMD is importable in the CI env — I0-A forbids installing it here."
+            exit 1
+          fi
+          echo "hoomd not importable: OK"
+
+      # The default invocation (no args) must resolve to the tree the pyproject `testpaths` setting
+      # names. ⚠ REWRITTEN 2026-08-24: this step asserted that a bare pytest collects ONLY
+      # `aleph/tests/ac`, while `[tool.pytest.ini_options] testpaths` has been `aleph/tests` — which
+      # collects 275 modules across 13 areas. THE STEP COULD NOT PASS ON THIS TREE, and the last CI
+      # run (2026-07-13) failed. An invariant written against a scope the project had already left is
+      # not a guard, it is a permanent red light that stops meaning anything.
+      - name: Default-scope invariant (bare `pytest` resolves to the declared testpaths)
+        run: |
+          python -m pytest --collect-only -q -p no:cacheprovider > "${RUNNER_TEMP:-.}/default_scope.txt"
+          python - <<'PY'
+          import os, pathlib, re, sys
+          text = (pathlib.Path(os.environ.get("RUNNER_TEMP", ".")) / "default_scope.txt").read_text()
+          files = sorted({m.group(1) for m in re.finditer(r"^(\S+\.py):\s*\d+$", text, re.M)})
+          bad = [f for f in files if not f.startswith("aleph/tests")]
+          print(f"bare-pytest collected {len(files)} modules; outside aleph/tests: {bad}")
+          if not files:
+              sys.exit("bare `pytest` collected NOTHING — that is not a pass")
+          if bad:
+              sys.exit(f"bare pytest collected outside the declared testpaths: {bad}")
+          print("default-scope invariant OK")
+          PY
+
+      - name: Collection + quarantine scope gate
+        run: |
+          # Tolerate a nonzero collect exit long enough to PRINT the diagnosis (a
+          # bare "exit 3" is how the old broad scope failed, with no explanation),
+          # then still fail the step on it below.
+          set +e
+          python -m pytest $CI_TEST_SCOPE --collect-only -q -p no:cacheprovider > "${RUNNER_TEMP:-.}/collected.txt"
+          collect_rc=$?
+          set -e
+          if [ "$collect_rc" -ne 0 ]; then
+            echo "pytest --collect-only exited $collect_rc — last 40 lines of the listing:"
+            tail -40 "${RUNNER_TEMP:-.}/collected.txt"
+          fi
+          python - <<'PY'
+          import ast, os, pathlib, re, sys
+
+          roots = tuple(os.environ["CI_TEST_SCOPE_CSV"].split(","))
+          text = (pathlib.Path(os.environ.get("RUNNER_TEMP", ".")) / "collected.txt").read_text()
+
+          def imports_hoomd(path: pathlib.Path) -> bool:
+              tree = ast.parse(path.read_text(encoding="utf-8"))
+              for node in ast.walk(tree):
+                  if isinstance(node, ast.Import):
+                      if any(a.name == "hoomd" or a.name.startswith("hoomd.")
+                             for a in node.names):
+                          return True
+                  elif isinstance(node, ast.ImportFrom):
+                      if node.module and (node.module == "hoomd"
+                                         or node.module.startswith("hoomd.")):
+                          return True
+                  elif isinstance(node, ast.Call):
+                      fn = node.func
+                      name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", "")
+                      if name in ("importorskip", "import_module") and node.args:
+                          a0 = node.args[0]
+                          if (isinstance(a0, ast.Constant) and isinstance(a0.value, str)
+                                  and (a0.value == "hoomd"
+                                       or a0.value.startswith("hoomd."))):
+                              return True
+              return False
+
+          # A. STATIC: nothing in the executable scope may import HOOMD. Static on
+          #    purpose — the verdict must not depend on what happens to be installed.
+          in_scope = sorted(p for r in roots for p in pathlib.Path(r).rglob("test_*.py"))
+          hoomd_files = [str(p) for p in in_scope if imports_hoomd(p)]
+          # B/C/D: what pytest actually collected under the CI invocation.
+          collected = sorted({m.group(1) for m in re.finditer(r"^(\S+\.py):\s*\d+$", text, re.M)})
+          # ⚠ `roots` is now the tests tree itself, so this checks that collection stays inside
+          # `aleph/tests` rather than that it stays inside two subdirectories.
+          outside = [f for f in collected if not f.startswith(roots)]
+          errors = len(re.findall(r"^ERROR ", text, re.M))
+          kb = [f for f in collected if f.endswith("test_kb_integrity_gates.py")]
+
+          print(f"scope roots           : {list(roots)}")
+          print(f"test modules in scope : {len(in_scope)}  (importing HOOMD: {len(hoomd_files)})")
+          for f in hoomd_files[:10]:
+              print(f"    {f}")
+          print(f"pytest collected      : {len(collected)} modules, {errors} collection error(s)")
+          print(f"outside declared scope: {outside}")
+          print(f"KB gate-logic module  : {kb}")
+
+          problems = []
+          if hoomd_files:
+              problems.append(f"{len(hoomd_files)} in-scope test module(s) import HOOMD "
+                              f"(I0-A forbids executing them): {hoomd_files[:10]}")
+          if outside:
+              problems.append(f"collected outside the declared scope: {outside}")
+          if not collected:
+              problems.append("collected NOTHING — refusing to call that a pass")
+          if errors:
+              problems.append(f"{errors} collection error(s)")
+          # The 2026-07-25 sequencing trap: narrowing the scope must NOT silently stop
+          # running the KB gate-logic tests. They were moved into tests/ac for exactly
+          # this reason; if they leave the collected set again, this gate says so.
+          if not kb:
+              problems.append("KB gate-logic tests (test_kb_integrity_gates.py) are NOT "
+                              "collected — the scope narrowing dropped them")
+          for p in problems:
+              print(f"SCOPE GATE FAIL: {p}")
+          sys.exit(1 if problems else 0)
+          PY
+          if [ "$collect_rc" -ne 0 ]; then
+            echo "SCOPE GATE FAIL: pytest collection itself exited $collect_rc"
+            exit "$collect_rc"
+          fi
+          echo "SCOPE GATE PASS"
+
+      - name: CPU test gate (all of aleph/tests except ff and the cadherin host solves)
+        run: |
+          python -m pytest $CI_TEST_SCOPE --timeout=600 -p no:cacheprovider
+
+  lint:
+    name: ruff (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          args: check --output-format=github
+
+  # Results-integrity gate — the teeth of the RAG/TAG results audit. Fast,
+  # blocking, no HOOMD: checks every headline result-claim in
+  # aleph/outputs/tag_kb/results_manifest.yaml against committed disk artifacts.
+  # FAILS if any claim's disk verdict is worse than its declared level (an
+  # over-claim): a forbidden basal-footprint A/A0 metric, a value drift, or a
+  # claimed artifact that isn't committed. This is what stops the 2026-06-19
+  # drift class (PNG-title numbers, forbidden-metric REPORTs) from recurring.
+  # The gate LOGIC itself is unit-tested by
+  # aleph/tests/ac/test_kb_integrity_gates.py in the cpu-tests job above.
+  results-gate:
+    name: results-integrity gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pyyaml
+      - name: verify result-claims vs committed disk artifacts
+        run: python aleph/outputs/tag_kb/verify_runs.py --gate
+
+  # Parameter-provenance gate — the PARAMETERS-side twin of results-gate. Fast,
+  # blocking, no HOOMD: checks every headline simulation constant in
+  # aleph/outputs/tag_kb/params_manifest.yaml against (a) its value in the real
+  # config YAML on disk and (b) its citation's verdict in the committed
+  # source_audit_report.md. FAILS if any constant's disk verdict is worse than
+  # declared (an over-claim): a value drifted off its sourced value, an
+  # over-declared citation, or a constant claimed sourced that isn't. This is the
+  # machine enforcement of the "no empirical magic numbers" HARD rule.
+  params-gate:
+    name: parameter-provenance gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pyyaml
+      - name: verify simulation constants vs disk + citation audit
+        run: python aleph/outputs/tag_kb/verify_params.py --gate

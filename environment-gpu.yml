@@ -1,0 +1,60 @@
+# ffn_cellsim — GPU conda environment (cloud / gbook production).
+#
+# Reproduces the `ffn_sim` env on a fresh CUDA GPU VM (RunPod / Lambda / Vast /
+# Paperspace / KAIST-KISTI) or on the gbook (RTX A5000, the MANDATORY minimum —
+# PI 2026-05-31). A CUDA GPU is required: CPU simulation execution is forbidden,
+# including for dev and fallback.
+#
+# 2026-07-25 FIX (adversarial audit R9). This file was pre-I0-A and actively
+# provisioned the wrong runtime: it pinned `hoomd=7.0.1`, told you to verify the
+# install with `assert hoomd.version.gpu_enabled`, and contained NO warp entry at
+# all — so following the repo's own documented setup path produced a HOOMD-GPU
+# environment with no simulation runtime in it. Warp-CUDA is the ONLY simulation
+# runtime (I0-A, PI 2026-07-16); HOOMD must not be installed or executed, and
+# aleph/archive/hoomd_legacy/ is a read-only port specification. The pins below
+# match requirements.txt (the one file that was already correct) and the warp-lang
+# pin matches .github/workflows/ci.yml.
+#
+# warp-lang is pip-installed (NVIDIA's supported channel) rather than conda —
+# hence the `pip:` section; `pip` itself is already a dependency. cupy stays
+# pip-installed by cloud_bootstrap.sh so its CUDA minor can match the host driver.
+#
+# Usage:
+#   conda env create -f environment-gpu.yml
+#   conda activate ffn_sim
+#   # install check — the runtime AND a real CUDA device, not just the import:
+#   python -c "import warp as wp; wp.init(); d = wp.get_device(); \
+#     assert d.is_cuda, f'Warp has no CUDA device (got {d!r}) — CPU execution is forbidden'; \
+#     print('Warp', wp.config.version, '| device', d)"
+#
+# If that assertion fires, the box has no usable CUDA device (or the driver is not
+# visible to the container): fix the driver/GPU allocation. Do NOT proceed on CPU —
+# a CPU run is not an admissible ffn_cellsim result.
+#
+# NOTE for whoever owns aleph/scripts/cloud_bootstrap.sh: its GPU smoke step still
+# does `import hoomd, cupy` + `assert hoomd.version.gpu_enabled`, which cannot work
+# against this env any more. It needs the same Warp-CUDA check (not fixed here —
+# different file owner; flagged 2026-07-25).
+name: ffn_sim
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13.13
+  # gsd: HOOMD's trajectory FORMAT, an independent library — kept because
+  # aleph/common/gsd_traj.py writes it for renderer-agnostic visualization.
+  # Reading/writing the format is not running HOOMD. (`freud` was dropped: it was
+  # HOOMD-ecosystem analysis with no importer left outside archive/hoomd_legacy.)
+  - gsd
+  - numpy>=2.0
+  - scipy>=1.13
+  - h5py>=3.10
+  - pyyaml>=6.0
+  - matplotlib>=3.8
+  - pytest
+  - pip
+  - pip:
+      # The simulation runtime. Pin kept in lockstep with ci.yml so the CPU CI
+      # backend and the production GPU box run the same Warp.
+      - warp-lang==1.14.0
+  # cupy is pip-installed by cloud_bootstrap.sh (cupy-cuda12x) to match the host
+  # CUDA driver; do not pin a conda cupy here (it can pull a mismatched toolkit).

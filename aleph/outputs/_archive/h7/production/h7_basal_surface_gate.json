@@ -1,0 +1,38 @@
+{
+  "verdict": "PASS",
+  "controls": {
+    "n_vert": 347,
+    "n_tri": 629,
+    "n_fa_placed": 60,
+    "planar": true,
+    "max_z_dev": 0.0,
+    "within_disk": true,
+    "connected": true,
+    "area_m2": 7.840967919420566e-11,
+    "area_fraction_of_disk": 0.9983430424006058,
+    "area_matches": true
+  },
+  "resolution_invariance": {
+    "analytic_disk_area": 7.853981633974483e-11,
+    "area_by_rings": {
+      "6": 7.818243038334861e-11,
+      "10": 7.840967919420566e-11,
+      "16": 7.848916725724418e-11
+    },
+    "fraction_by_rings": {
+      "6": 0.9954496206758333,
+      "10": 0.9983430424006058,
+      "16": 0.9993551158525562
+    },
+    "rel_spread": 0.003905495176722895,
+    "invariant": true
+  },
+  "gate": "S1 flat basal_surface (positioning + connectivity, NO force)",
+  "params": {
+    "footprint_radius_m": 5e-06,
+    "z_basal_m": -7e-06,
+    "n_fa": 60,
+    "n_rings": 10
+  },
+  "note": "S-layer = FLAT ventral surface mesh (adherent cells flatten the ventral surface; PI 2026-06-09). Positions FA ON the 2D surface + patch connectivity; NO in-plane/edge force (\u03b3-invisible), per the 7b19276 cortex-as-mesh rejection. Real forces = the F-layer filament network (B1/B2) anchored to these FA \u2014 wired in B3. Flat surface also eases the lamellipodium."
+}

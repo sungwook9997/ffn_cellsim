@@ -1,0 +1,24 @@
+{
+  "aleph_authority": "none",
+  "article_doi": "10.1093/pnasnexus/pgac299",
+  "cell_types": [
+    "NIH_3T3_fibroblast",
+    "Xenopus_laevis_retinal_ganglion_axon",
+    "Xenopus_laevis_retinal_ganglion_growth_cone"
+  ],
+  "cells_are_not_called_biological_replicates": true,
+  "dataset_id": "zenodo-7432971-tfm-tether",
+  "frames_collapsed_to_cell_level": true,
+  "independent_dataset_from_figshare_16826740": true,
+  "independent_lab_from_figshare_16826740": true,
+  "may_select_aleph_parameter": false,
+  "modalities": {
+    "optical_tweezers_membrane_tether_derived": 376,
+    "traction_force_microscopy_derived": 648
+  },
+  "observation_count": 1024,
+  "sample_count": 380,
+  "schema": "aleph.outer_library.zenodo_7432971_manifest.v1",
+  "source_workbooks_formula_error_count": 0,
+  "source_workbooks_visual_header_check": true
+}

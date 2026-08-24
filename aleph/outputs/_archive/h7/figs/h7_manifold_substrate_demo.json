@@ -1,0 +1,32 @@
+{
+  "R_cell_m": 7.5e-06,
+  "subdivisions": 2,
+  "n_tri": 320,
+  "fit": {
+    "mean_centroid_r_before_m": 7.386672776075982e-06,
+    "mean_centroid_r_after_m": 7.406396598655461e-06,
+    "cortex_beads": 1120
+  },
+  "regions": {
+    "basal_ring_patches": 114,
+    "polarized_patch_patches": 30,
+    "basal_ring_area_frac": 0.3568757470779715,
+    "polarized_patch_area_frac": 0.09265682672719297
+  },
+  "contact": {
+    "n_ligands": 43,
+    "n_contact_patches": 39,
+    "contact_area_m2": 8.563179935846538e-11,
+    "partition_passed": true
+  },
+  "traction": {
+    "n_integrin_bonds": 0,
+    "n_basal_patches": 0,
+    "total_tangential_traction_Pa": 0.0
+  },
+  "cross_gate_FA_subset_contact": {
+    "passed": true,
+    "n_fa_outside_contact": 0
+  },
+  "figure": "/Users/sw1/ffn_cellsim/ffn_sim/outputs/h7/figs/h7_manifold_substrate_demo.png"
+}

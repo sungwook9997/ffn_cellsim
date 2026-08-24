@@ -1,0 +1,22 @@
+# Inherited from Project_Aleph, unchanged. These five patterns are why 50 files (406 MB) were never
+# in git upstream — and why the merge that copied this tree dropped them: a file-level copy that
+# honours .gitignore reads "not versioned" as "not needed". They are neither. The code reads them
+# from this directory, so they belong here on disk and out of the index, which is what these lines
+# have always said.
+*_observations.jsonl
+*_rows.npz
+*_vectors.npz
+*_checkpoint.npz
+*_predictions.jsonl
+
+# Added 2026-08-09. The remaining 16 built artifacts (226 MB) match none of the patterns above, so
+# they would be committed by the next `git add` on this directory. Same category, same rule: the
+# pipeline makes them, `PROVENANCE.md` records what they are, git does not carry them.
+*_tensor.npz
+*_manifest.jsonl
+*_manifest_v*.jsonl
+*_pairs.jsonl
+*_pairs_v*.jsonl
+hpa_raw_if_expanded_manifest.json
+lightmycells_pair_acquisition.json
+lightmycells_pair_resolution*.json

@@ -1,0 +1,42 @@
+{
+  "schema": "aleph.outer_library.lightmycells_source_integrity_protocol.v3",
+  "frozen_before_model_or_confirmation_access": true,
+  "pair_resolution_protocol": {
+    "path": "lightmycells_pair_resolution_protocol.json",
+    "sha256": "ac166b06d7a59e84a67a267984251ec0edb018c2f41cf41c8d4680d950db44c0"
+  },
+  "v2_resolution_report": {
+    "path": "results/lightmycells_pair_resolution_v2.json",
+    "sha256": "faca2c0cce447feb853e0bc43f719f1713d5f69c8174b20d2e08487e67670122"
+  },
+  "v2_pair_manifest": {
+    "path": "results/lightmycells_spatial_pairs_v2.jsonl",
+    "sha256": "8de6967928d30c2cea68f92665256089540e97794eebfc16b3b998e640aa452a"
+  },
+  "observed_source_inconsistency": {
+    "path": "Images/Study_28/image_2492_Nucleus.ome.tiff",
+    "file_list_size_bytes": 6108577,
+    "remote_content_length_bytes": 4096,
+    "remote_etag": "\"1000-64c1c2bce4e80\"",
+    "remote_content_range": "bytes 0-4095/4096",
+    "payload_kind": "metadata-only BigTIFF without listed image pixels",
+    "full_model_predictions_made_before_detection": 0,
+    "confirmation_headers_or_pixels_accessed": 0
+  },
+  "integrity_rules": {
+    "listed_and_remote_size_must_match": true,
+    "classic_TIFF_or_BigTIFF_magic_required": true,
+    "decoded_2D_integer_pixel_array_required": true,
+    "failed_payload_action": "refuse every pair referencing the payload",
+    "backfill_or_replacement_permitted": false,
+    "posthoc_size_override_permitted": false,
+    "all_other_payloads_require_listed_size_and_local_SHA256_receipt": true
+  },
+  "authority_contract": {
+    "refused_pairs_may_not_train_or_calibrate": true,
+    "confirmation_remains_sealed": true,
+    "general_cell_state_production_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false
+  }
+}

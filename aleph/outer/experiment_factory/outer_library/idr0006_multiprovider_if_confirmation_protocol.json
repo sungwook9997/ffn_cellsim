@@ -1,0 +1,130 @@
+{
+  "schema": "aleph.outer_library.idr0006_multiprovider_if_confirmation_protocol.v1",
+  "frozen_before_idr0006_annotation_csv_parquet_api_or_pixel_access": true,
+  "scientific_role": "single-use independent-provider nuclear-localization subset confirmation after the Allen schema refusal and imaging-OOD-v2 development pass",
+  "scope": "nuclear_interior versus nuclear_envelope only; no nine-class or general cell-state authority",
+  "official_source": {
+    "study_id": "idr0006-fong-nuclearbodies",
+    "screen": "screenA",
+    "IDR_screen_id": 253,
+    "official_study_page": "https://idr.openmicroscopy.org/study/idr0006/",
+    "publication_DOI": "10.1083/jcb.201303145",
+    "publication_PMID": "24127217",
+    "license": "CC BY-NC-SA 3.0",
+    "license_constraint": "validation-only research use; do not redistribute source pixels; retain attribution and noncommercial/share-alike limitations in derived reporting",
+    "official_reported_ORF_count": 15483,
+    "official_reported_nuclear_body_hit_count": 325,
+    "official_reported_nuclear_envelope_hit_count": 48,
+    "official_reported_image_dimensions": [1392, 1040, 1, 2, 1],
+    "official_reported_total_5D_images": 240848,
+    "annotation_repository_commit": "da808c33ef415a06b9fe451ddb03e87c6ed7754f",
+    "annotation_csv_url": "https://raw.githubusercontent.com/IDR/idr0006-fong-nuclearbodies/da808c33ef415a06b9fe451ddb03e87c6ed7754f/screenA/idr0006-screenA-annotation.csv",
+    "annotation_csv_expected_repository_size_range_bytes": [3000000, 5000000],
+    "parquet_metadata_url": "https://idr.openmicroscopy.org/searchengine/api/v1/resources/container_data/?container_name=idr0006-fong-nuclearbodies%2FscreenA&container_type=screen&file_type=parquet",
+    "study_json_url": "https://idr.openmicroscopy.org/study/idr0006/json/"
+  },
+  "frozen_model_contract": {
+    "localization_checkpoint_sha256": "c63c124813f800742f5bc55672e449cab61be787ff168041b8361fd65bbc8e1c",
+    "localization_model_report_sha256": "2367a63eb1f613597c76ab4c88b5c9bbf30667466217d0fa71bc9d0e1899808b",
+    "imaging_OOD_v2_head_sha256": "0450ac55185539179bd398e568cc98ac3f461ab62bb66e226367d1ad516c18ec",
+    "imaging_OOD_v2_report_sha256": "0167e438aacdfa76d20915065101898cee3ecbb5b597bb22a1fb4700c281ded4",
+    "checkpoint_threshold_temperature_conformal_or_OOD_head_may_change": false,
+    "IDR0006_labels_or_pixels_used_for_any_model_choice_before_freeze": false
+  },
+  "metadata_gate": {
+    "annotation_csv_may_be_opened_after_this_protocol_freeze": true,
+    "pixels_may_be_opened_before_metadata_and_channel_gate_pass": false,
+    "normalized_header": "Unicode casefold; remove every non-alphanumeric character",
+    "required_unique_column_aliases": {
+      "plate": ["plate", "plateid", "plateidentifier", "platename"],
+      "well": ["well", "wellid", "wellidentifier", "wellname"],
+      "ORF_identifier": ["orfidentifier", "orfid", "openreadingframeidentifier", "reagentidentifier"],
+      "gene_symbol": ["genesymbol", "symbol", "genes" ]
+    },
+    "accepted_phenotype_schema_A_long_column_aliases": ["phenotype", "localization", "localisation", "nuclearbody", "subcellularlocalization", "subcellularlocalisation"],
+    "accepted_phenotype_schema_B_wide_exact_author_columns": [
+      "Nucleolus", "PML body", "Nuclear speckles", "Paraspeckles",
+      "Cajal bodies", "Sam68 nuclear bodies", "Polycomb bodies",
+      "Uncharacterized nuclear subcompartments", "Nuclear envelope"
+    ],
+    "positive_value_tokens_for_wide_schema": ["1", "true", "yes", "positive", "+"],
+    "phenotype_mapping": {
+      "nuclear_interior": [
+        "nucleolus", "pml body", "nuclear speckles", "paraspeckles",
+        "cajal bodies", "sam68 nuclear bodies", "polycomb bodies",
+        "uncharacterized nuclear subcompartments"
+      ],
+      "nuclear_envelope": ["nuclear envelope"]
+    },
+    "mixed_interior_and_envelope_ORF": "exclude and report",
+    "unmapped_or_missing_phenotype": "exclude from supervised confirmation and report",
+    "ambiguous_or_missing_required_column_or_phenotype_schema": "refuse before pixel access",
+    "minimum_unique_nuclear_interior_ORFs": 48,
+    "minimum_unique_nuclear_envelope_ORFs": 24
+  },
+  "channel_and_image_gate": {
+    "metadata_only_API_queries_allowed_after_protocol_freeze": true,
+    "required_channel_count": 2,
+    "nucleus_channel_name_aliases": ["dapi", "dna", "hoechst", "nucleus", "nuclear stain"],
+    "target_channel_name_aliases": ["gfp", "orf", "target", "tagged protein", "protein"],
+    "channel_index_fallback_allowed": false,
+    "required_image_linkage": "a unique IDR image or original-file pair resolvable from plate, well, field and channel metadata",
+    "minimum_fields_per_selected_ORF": 1,
+    "missing_named_nucleus_or_target_channel": "refuse before pixel access",
+    "ambiguous_image_or_channel_linkage": "refuse before pixel access"
+  },
+  "single_use_sampling": {
+    "inference_unit": "ORF/gene; fields and cells are nested technical observations",
+    "selection_salt": "aleph-idr0006-single-use-nuclear-confirmation-v1-20260807",
+    "maximum_ORFs_per_class": 48,
+    "ORF_selection": "ascending sha256(selection_salt|'ORF'|ORF_identifier) independently within nuclear_interior and nuclear_envelope",
+    "maximum_fields_per_ORF": 1,
+    "field_selection": "ascending sha256(selection_salt|'field'|IDR_image_id_or_original_file_pair)",
+    "development_gene_overlap": "report exact gene-symbol overlap with HPA and OpenCell; retain in secondary all-ORF analysis",
+    "primary_unseen_gene_analysis": "use ORFs whose exact gene symbol is absent from both HPA and OpenCell when at least 20 selected ORFs exist in each class; otherwise refuse unseen-gene authority and use all-ORF result as provider transfer only",
+    "pixels_become_permanently_consumed_at_first_decode": true,
+    "no_resampling_after_pixel_access": true
+  },
+  "image_contract": {
+    "input_shape": [2, 128, 128],
+    "channel_order": ["named_nucleus", "named_target_protein"],
+    "2D_processing": "p1-p99 per-channel clip, center-crop square, BOX resize, uint8 encoding exactly as frozen multiprovider preprocessing",
+    "if_source_is_3D": "maximum project independently per admitted channel before 2D processing",
+    "absolute_intensity_claim": false,
+    "segmentation_or_cell_crop_required": false,
+    "whole_field_prediction": true
+  },
+  "confirmation_endpoints": {
+    "localization_classes": ["nuclear_interior", "nuclear_envelope"],
+    "field_logits_aggregation": "mean logits per ORF before temperature and sigmoid",
+    "primary_metric_unit": "ORF",
+    "macro_ORF_average_precision_minimum": 0.70,
+    "macro_ORF_F1_minimum": 0.60,
+    "multilabel_ECE_maximum": 0.20,
+    "positive_label_conformal_coverage_range_inclusive": [0.80, 0.98],
+    "imaging_OOD_clean_false_refusal_rate_maximum": 0.10,
+    "external_corruption_suite": "apply the already-frozen seven imaging-OOD-v2 corruption families to each selected external field without fitting",
+    "external_corruption_minimum_family_AUROC": 0.75,
+    "external_corruption_macro_family_AUROC": 0.90,
+    "all_applicable_endpoints_must_pass": true,
+    "confidence_interval": "ORF bootstrap with 10000 deterministic resamples seeded from selection_salt; descriptive because one source laboratory"
+  },
+  "authority_contract": {
+    "successful_scope": "independent-provider two-channel nuclear-interior versus nuclear-envelope localization and imaging-contract refusal only",
+    "independent_dataset_holdout": true,
+    "independent_provider_holdout": true,
+    "independent_lab_holdout": true,
+    "general_nine_class_localization_authority": false,
+    "general_cell_state_production_authority": false,
+    "external_uncertainty_authority_beyond_nuclear_subset": false,
+    "Aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_remove_sweep_axis": false,
+    "future_Aleph_role": "nuclear localization observation context only after a matched observation operator; never a direct parameter value"
+  },
+  "failure_policy": {
+    "metadata_or_channel_gate_failure": "record structural refusal with zero pixels and permit a separately preregistered replacement source",
+    "confirmation_endpoint_failure_after_pixel_decode": "consume the source, freeze every endpoint result, grant no external localization or OOD authority, and never tune on IDR0006",
+    "confirmation_success": "promote only the declared nuclear-subset provider-transfer and imaging-refusal scope; retain every Aleph authority block"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "accession": "GSE250041",
+  "aleph_authority": "none",
+  "author_state_label": "ionizing_radiation_induced_senescence",
+  "barcode_counts": {
+    "IR_10_Gy_day_10_senescent": 4949,
+    "untreated_proliferating": 8664
+  },
+  "biological_replicate_count_per_condition": 1,
+  "cell_line": "WI-38",
+  "cell_type": "human_fetal_lung_fibroblast",
+  "conditions": [
+    "untreated_proliferating",
+    "IR_10_Gy_day_10_senescent"
+  ],
+  "eligible_role": "direct_senescence_state_representation_training_only",
+  "external_validation_eligible": false,
+  "feature_axis_identical_across_conditions": true,
+  "feature_type_counts": {
+    "Antibody Capture": 8,
+    "Gene Expression": 36601
+  },
+  "independent_dataset_from_sciplex3": true,
+  "independent_lab_from_sciplex3": true,
+  "license_status": "no_explicit_reuse_license_on_GEO_record",
+  "matrix_files": {
+    "GSE250041_Proliferating_matrix.mtx.gz": {
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Proliferating_matrix.mtx.gz",
+      "sha256": "bd57314c8d4be01d242c1d1b8a785d73cc5b93589dbcce2d677c6e0bac33027c",
+      "shape": {
+        "barcodes": 8664,
+        "features": 36609,
+        "nonzero": 40926426
+      },
+      "size_bytes": 152191341
+    },
+    "GSE250041_Senescent_matrix.mtx.gz": {
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Senescent_matrix.mtx.gz",
+      "sha256": "133e326e31d3a90e1b493e0d13320a690a951d5c51659a1f6952621a43765d40",
+      "shape": {
+        "barcodes": 4949,
+        "features": 36609,
+        "nonzero": 18104663
+      },
+      "size_bytes": 68344555
+    }
+  },
+  "matrix_training_ready": true,
+  "may_select_aleph_parameter": false,
+  "organism": "Homo sapiens",
+  "provider_lab": "NIA_IRP_NIH_Laboratory_of_Genetics_and_Genomics",
+  "public_date": "2026-03-23",
+  "pubmed_id": "39143693",
+  "reason_not_external_validation": "one pooled CITE-seq capture per condition; cells do not replace biological replicates",
+  "schema": "aleph.outer_library.gse250041_senescence_design.v1",
+  "single_cells_are_not_independent_biological_replicates": true,
+  "total_cell_barcodes": 13613,
+  "verified_files": {
+    "GSE250041_Proliferating_barcodes.tsv.gz": {
+      "sha256": "d4a9d7945ee894797ed2e79c2cc94cf439fd0b1fa85d0018429a385d7278ce25",
+      "size": 44407,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Proliferating_barcodes.tsv.gz"
+    },
+    "GSE250041_Proliferating_features.tsv.gz": {
+      "sha256": "e034835514a64c40721b95aff253ff30d2b7cf4fba73de3327c4813540885e37",
+      "size": 333557,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Proliferating_features.tsv.gz"
+    },
+    "GSE250041_Senescent_barcodes.tsv.gz": {
+      "sha256": "d075bad15bef08eb6e2282f68bfd1d5d29ac41e4c643a9054512dded29cbb65e",
+      "size": 26244,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Senescent_barcodes.tsv.gz"
+    },
+    "GSE250041_Senescent_features.tsv.gz": {
+      "sha256": "8ead549950cc2640cdac915ac3de5c57f92a284db0b82bad94bd1e1b6a87ac83",
+      "size": 333557,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/suppl/GSE250041_Senescent_features.tsv.gz"
+    },
+    "GSE250041_family.soft.gz": {
+      "sha256": "906358053dbc7517fcd95e52b8fe8080318ef197123cc5a53806cd74e66e461b",
+      "size": 3920,
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE250nnn/GSE250041/soft/GSE250041_family.soft.gz"
+    }
+  }
+}

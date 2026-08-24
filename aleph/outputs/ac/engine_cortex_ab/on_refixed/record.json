@@ -1,0 +1,261 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "gate_b_cortex_motor \u2014 cortical tension trajectory from NMII binding events",
+  "build": {
+    "commit": "5aab4e63",
+    "dirty": null,
+    "branch": null,
+    "source": "declared",
+    "reason": "/home/sungwook/ffn_ac_native is not a git repository; the commit is the caller's assertion and was not verified here"
+  },
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "recorded the per-sample cortical tension, its source/network split and the bound-head count over accepted physical steps at the stated population, and judged each series for stationarity (gamma_total: TOO_SHORT). BLOCKED because every NMII magnitude here is a PI-GAP (k_xb, f_stall, kappa, N_side, L_bb) and every step is force-accepted rather than admitted on the balance predicate",
+  "config": {
+    "steps_requested": 30,
+    "steps_run": 30,
+    "dt_phys": 0.01,
+    "n_inner": 40,
+    "detach": "CATCH_SLIP (Kovacs 2007, PROVISIONAL proxy)",
+    "k_xb": 1000.0,
+    "filaments": 70686,
+    "cortex_seg_um": 0.5,
+    "cortex_density": 20.0,
+    "cortex_length_um": 3.0,
+    "membrane_subdiv": 7,
+    "seed": 0,
+    "acceptance": "force-accept (accepted_d = ones); --balance-gate is not implemented",
+    "engine_cortex": true,
+    "omitted_channels": [
+      "actin_bending_cytosim",
+      "actin_crosslink_link_spring"
+    ],
+    "gamma_every": 5,
+    "sample_dt_s": 0.05,
+    "until_stationary": false,
+    "max_steps": 30,
+    "max_wall_minutes": 0.0,
+    "stationarity_contract": {
+      "min_windows": 5.0,
+      "drift_sigma": 1.0,
+      "driving_tau_s_override": 0.0
+    }
+  },
+  "config_sha256": "sha256:51600d916cab9a9e547688d7c6190794f9487e221093ec78e0e173fe27daff9e",
+  "census": {
+    "cortex_filaments": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 674314,
+    "n_heads": 8840,
+    "fraction_of_native": 1.0
+  },
+  "parameter_provenance": {
+    "k_xb": "PI_GAP",
+    "f_stall": "PI_GAP",
+    "kappa_hill": "PI_GAP",
+    "N_side": "PI_GAP",
+    "L_bb": "PI_GAP",
+    "k_on": "PI_GAP",
+    "k_off0": "SOURCED"
+  },
+  "t0": {
+    "n_bound": 7942,
+    "gamma_total_pn_per_um": 3.9163813830831824,
+    "note": "the first ACCEPTED step; heads start unbound, so t0 is the state after one dt"
+  },
+  "timing": {
+    "wall_seconds": 85.59722048416734,
+    "physical_time_s": 0.3,
+    "real_time_factor": 285.3240682805578,
+    "n_steps": 30,
+    "wall_seconds_per_step": 2.853240682805578,
+    "n_inner_iterations": 1200,
+    "wall_seconds_per_inner_iteration": 0.07133101707013945,
+    "device_note": "telemetry (gamma readback + host force norm) runs BETWEEN steps every 5 step(s) and is included in this wall-clock; it is not free \u2014 at native it dominated the per-step cost until the stride existed",
+    "comparable": false,
+    "not_comparable_reason": "the gate verdict is absent, so this run did not establish the convergence its cost would have to be quoted at. Quoting it as the engine's speed compares the cost of NOT converging"
+  },
+  "measurements": {
+    "trajectory": [
+      {
+        "step": 4,
+        "t_s": 0.05,
+        "n_bound": 7942,
+        "bound_fraction": 0.8984162895927602,
+        "gamma_source_pn_per_um": 0.020679971469976164,
+        "gamma_network_pn_per_um": 3.895701411613206,
+        "gamma_total_pn_per_um": 3.9163813830831824,
+        "max_pf_pn": 0.5234877834187555,
+        "max_f_cortex_pn": 6.101970662650187
+      },
+      {
+        "step": 9,
+        "t_s": 0.1,
+        "n_bound": 8622,
+        "bound_fraction": 0.9753393665158371,
+        "gamma_source_pn_per_um": 0.021956559562869953,
+        "gamma_network_pn_per_um": 4.265364693610804,
+        "gamma_total_pn_per_um": 4.287321253173674,
+        "max_pf_pn": 0.5864024140601525,
+        "max_f_cortex_pn": 6.522488517394829
+      },
+      {
+        "step": 14,
+        "t_s": 0.15,
+        "n_bound": 8683,
+        "bound_fraction": 0.9822398190045248,
+        "gamma_source_pn_per_um": 0.02279110109785435,
+        "gamma_network_pn_per_um": 4.299088242669704,
+        "gamma_total_pn_per_um": 4.3218793437675584,
+        "max_pf_pn": 0.5866524887284681,
+        "max_f_cortex_pn": 6.5224630285476675
+      },
+      {
+        "step": 19,
+        "t_s": 0.2,
+        "n_bound": 8695,
+        "bound_fraction": 0.9835972850678733,
+        "gamma_source_pn_per_um": 0.022536726301316777,
+        "gamma_network_pn_per_um": 4.299042560483585,
+        "gamma_total_pn_per_um": 4.321579286784901,
+        "max_pf_pn": 0.5866518930528416,
+        "max_f_cortex_pn": 6.522525469860864
+      },
+      {
+        "step": 24,
+        "t_s": 0.25,
+        "n_bound": 8689,
+        "bound_fraction": 0.982918552036199,
+        "gamma_source_pn_per_um": 0.022488791877998945,
+        "gamma_network_pn_per_um": 4.30243595518999,
+        "gamma_total_pn_per_um": 4.32492474706799,
+        "max_pf_pn": 0.5866971208967448,
+        "max_f_cortex_pn": 6.039953309413583
+      },
+      {
+        "step": 29,
+        "t_s": 0.3,
+        "n_bound": 8677,
+        "bound_fraction": 0.9815610859728506,
+        "gamma_source_pn_per_um": 0.022770931997656885,
+        "gamma_network_pn_per_um": 4.297576386170526,
+        "gamma_total_pn_per_um": 4.320347318168183,
+        "max_pf_pn": 0.5865160338461284,
+        "max_f_cortex_pn": 6.522485841262628
+      }
+    ],
+    "physical_time_s": 0.3,
+    "sample_dt_s": 0.05,
+    "bound_head_lifetime": {
+      "zero_load_s": 1.4285714285714286,
+      "mean_load_s": 1.4557731661355346,
+      "conservative_s": 1.4557731661355346,
+      "n_bound": 8677,
+      "derivation": "Pereverzev two-pathway at zero load: k_catch0 + k_slip0 = 0.35 + 0.35 = 0.7 /s; mean_load_s = 1/<k_off> over the bound bonds' own loads through the same closed form the device kernel implements"
+    },
+    "bound_head_lifetime_s": 1.4557731661355346,
+    "lifetimes_covered": 0.2060760611465135,
+    "stationarity": {
+      "gamma_total_pn_per_um": {
+        "verdict": "TOO_SHORT",
+        "observable": "gamma_total_pn_per_um",
+        "mean": null,
+        "sem": null,
+        "std": 0.14918523850962156,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.30000000000000004,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 1.4557731661355346,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 7.28 s (5 x the 1.46 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 6
+      },
+      "gamma_network_pn_per_um": {
+        "verdict": "TOO_SHORT",
+        "observable": "gamma_network_pn_per_um",
+        "mean": null,
+        "sem": null,
+        "std": 0.1484855555307486,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.30000000000000004,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 1.4557731661355346,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 7.28 s (5 x the 1.46 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 6
+      },
+      "gamma_source_pn_per_um": {
+        "verdict": "TOO_SHORT",
+        "observable": "gamma_source_pn_per_um",
+        "mean": null,
+        "sem": null,
+        "std": 0.0007350513047349995,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.30000000000000004,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 1.4557731661355346,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 7.28 s (5 x the 1.46 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 6
+      },
+      "bound_fraction": {
+        "verdict": "TOO_SHORT",
+        "observable": "bound_fraction",
+        "mean": null,
+        "sem": null,
+        "std": 0.03094538748600175,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.30000000000000004,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 1.4557731661355346,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 7.28 s (5 x the 1.46 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 6
+      }
+    },
+    "stationarity_during_run": [],
+    "stop_reason": "step target reached"
+  },
+  "gate": null,
+  "notes": {
+    "not_a_claim": "no steady state is asserted by the run label. Whether this trajectory reached one is answered by measurements.stationarity, and the series is here so it can be re-judged without re-running",
+    "verdict_is_not_yet_a_gate": "the stationarity verdicts are RECORDED, not acceptance criteria. The amendment that would make settling what stage 1's outer gate scores is PROPOSED and PI ratification is pending, so nothing here rejects a run; a DRIFTING or TOO_SHORT verdict says the mean must not be quoted, which is a statement about the number and not about the run"
+  }
+}

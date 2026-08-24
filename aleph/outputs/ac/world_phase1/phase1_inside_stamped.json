@@ -1,0 +1,386 @@
+{
+  "schema": "ffn-world-phase1-native@1",
+  "provenance": {
+    "build_commit": "c39112f4 (COMMIT_STAMP, hand-deployed)",
+    "closure_digest": "sha256:0742a2fa87b3ab65713c54f03d1dbf684d497e888800516470adb6148d296f2e",
+    "closure_files": "30",
+    "session": "unnamed@pid3175772",
+    "argv": "/home/sungwook/ffn/world/aleph/scripts/world_phase1_native.py --out aleph/outputs/ac/world_phase1/phase1_inside_stamped.json"
+  },
+  "kind": "diagnostic",
+  "quantitative_claim_status": "BLOCKED",
+  "device": "cuda:0",
+  "cortex_seg_um": 0.05,
+  "stages": [
+    {
+      "population": "A1: cortex+membrane+envelope",
+      "wall_s": 0.0439,
+      "live_after": {
+        "node": 4402458,
+        "segment": 4128840,
+        "angle3": 4060026,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 0,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "microtubule",
+      "wall_s": 0.0035,
+      "live_after": {
+        "node": 4476459,
+        "segment": 4202340,
+        "angle3": 4133026,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 500,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "intermediate_filament",
+      "wall_s": 0.003,
+      "live_after": {
+        "node": 4478919,
+        "segment": 4204740,
+        "angle3": 4135366,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 560,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "filopodium",
+      "wall_s": 0.003,
+      "live_after": {
+        "node": 4539919,
+        "segment": 4264740,
+        "angle3": 4194366,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 1560,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "lamellipodium",
+      "wall_s": 0.0026,
+      "live_after": {
+        "node": 4544119,
+        "segment": 4268740,
+        "angle3": 4198166,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 1760,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "sf_arc",
+      "wall_s": 0.0027,
+      "live_after": {
+        "node": 4546719,
+        "segment": 4271240,
+        "angle3": 4200566,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 1860,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "stress_fiber",
+      "wall_s": 0.0029,
+      "live_after": {
+        "node": 4555959,
+        "segment": 4280340,
+        "angle3": 4209526,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 2000,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "lamina",
+      "wall_s": 0.0022,
+      "live_after": {
+        "node": 4558002,
+        "segment": 4280340,
+        "angle3": 4209526,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 2000,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "chromatin",
+      "wall_s": 0.0034,
+      "live_after": {
+        "node": 4558554,
+        "segment": 4280891,
+        "angle3": 4209526,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 2001,
+        "bond": 0,
+        "grid_cell": 0
+      }
+    },
+    {
+      "population": "E: cytosol field",
+      "wall_s": 0.2862,
+      "live_after": {
+        "node": 4558554,
+        "segment": 4280891,
+        "angle3": 4209526,
+        "angle4": 614400,
+        "face": 409600,
+        "strand": 2001,
+        "bond": 0,
+        "grid_cell": 250047
+      }
+    }
+  ],
+  "total_build_s": 1.703,
+  "census": {
+    "capacity": {
+      "node": 12000000,
+      "segment": 12000000,
+      "angle3": 12000000,
+      "angle4": 2000000,
+      "face": 1500000,
+      "strand": 200000,
+      "bond": 1000000,
+      "grid_cell": 4000000
+    },
+    "live": {
+      "node": 4558554,
+      "segment": 4280891,
+      "angle3": 4209526,
+      "angle4": 614400,
+      "face": 409600,
+      "strand": 2001,
+      "bond": 0,
+      "grid_cell": 250047
+    },
+    "utilisation": {
+      "node": 0.3798795,
+      "segment": 0.3567409166666667,
+      "angle3": 0.35079383333333336,
+      "angle4": 0.3072,
+      "face": 0.2730666666666667,
+      "strand": 0.010005,
+      "bond": 0.0,
+      "grid_cell": 0.06251175
+    },
+    "populations": {
+      "cortex": {
+        "node": 4197654,
+        "segment": 4128840,
+        "angle3": 4060026
+      },
+      "membrane": {
+        "node": 163842,
+        "face": 327680,
+        "angle4": 491520
+      },
+      "nuclear_envelope": {
+        "node": 40962,
+        "face": 81920,
+        "angle4": 122880
+      },
+      "microtubule": {
+        "node": 74001,
+        "strand": 500,
+        "segment": 73500,
+        "angle3": 73000
+      },
+      "intermediate_filament": {
+        "node": 2460,
+        "strand": 60,
+        "segment": 2400,
+        "angle3": 2340
+      },
+      "filopodium": {
+        "node": 61000,
+        "strand": 1000,
+        "segment": 60000,
+        "angle3": 59000
+      },
+      "lamellipodium": {
+        "node": 4200,
+        "strand": 200,
+        "segment": 4000,
+        "angle3": 3800
+      },
+      "sf_arc": {
+        "node": 2600,
+        "strand": 100,
+        "segment": 2500,
+        "angle3": 2400
+      },
+      "stress_fiber": {
+        "node": 9240,
+        "strand": 140,
+        "segment": 9100,
+        "angle3": 8960
+      },
+      "lamina": {
+        "node": 2043
+      },
+      "chromatin": {
+        "node": 552,
+        "strand": 1,
+        "segment": 551
+      },
+      "cytosol": {
+        "grid_cell": 250047
+      }
+    },
+    "n_claims": 38,
+    "device": "cuda:0",
+    "node_arrays": [
+      "force",
+      "mobility",
+      "position",
+      "position_snap",
+      "range_id",
+      "strand_id"
+    ],
+    "node_bytes_arithmetic": 1056000000
+  },
+  "partitioned": true,
+  "placement_envelope": {
+    "r_cell_um": 7.5,
+    "z_basal_um": -7.0,
+    "r_footprint_um": 2.6926,
+    "footprint_basis": "sqrt(R_cell^2 - z_basal^2) \u2014 the basal contact disc, DERIVED from the built membrane radius, not a call-site constant",
+    "sf_pitch_um": 0.5,
+    "n_stress_fibres": 7,
+    "sf_pitch_source_class": "PI_GAP",
+    "n_stress_fibres_source_class": "PI_GAP",
+    "n_stress_fibres_inheritance": "the count INHERITS the pitch's source class \u2014 a derivation must not launder its input. Register a sourced pitch and this reports DERIVED with no edit here.",
+    "n_stress_fibres_basis": "floor(2 half_side / pitch) + 1. The pitch is held and the count yields, so the sourced quantity stays sourced.",
+    "sf_length_um": 3.2367,
+    "lamellipodium_width_um": 1.2367,
+    "lamellipodium_depth_um": 0.6184,
+    "filopodium_root_r_um": 4.25,
+    "nmii_radius_um": 6.95,
+    "sf_origin_um": [
+      -1.6184,
+      0.0,
+      -7.0
+    ],
+    "lamellipodium_origin_um": [
+      -0.3092,
+      0.0,
+      -7.0
+    ],
+    "origin_note": "`origin` is where a builder STARTS its rectangle, not where it centres it; passing the disc centre pushed both sheets into +x and their far corners outside the membrane",
+    "inscribed_square_clearance": 0.85,
+    "inscribed_square_note": "the contact region is a DISC and every builder lays down a RECTANGLE; sizing it to the disc diameter puts the corners outside the sphere while every edge midpoint is inside",
+    "filopodium_note": "rooted so the tip REACHES the membrane and stops. A real filopodium protrudes and the membrane follows it; this membrane is a rigid icosphere, so protrusion and 'inside the membrane' cannot both hold. PHASE 2 property, recorded rather than silently traded away."
+  },
+  "placement_check": {
+    "cortex": {
+      "n_nodes": 4197654,
+      "r_max_um": 7.499999320507052,
+      "n_outside": 0
+    },
+    "membrane": {
+      "n_nodes": 163842,
+      "r_max_um": 7.500000000000002,
+      "n_outside": 0
+    },
+    "nuclear_envelope": {
+      "n_nodes": 40962,
+      "r_max_um": 5.100000000000002,
+      "n_outside": 0
+    },
+    "microtubule": {
+      "n_nodes": 74001,
+      "r_max_um": 7.400000000000002,
+      "n_outside": 0
+    },
+    "intermediate_filament": {
+      "n_nodes": 2460,
+      "r_max_um": 7.250000000000002,
+      "n_outside": 0
+    },
+    "filopodium": {
+      "n_nodes": 61000,
+      "r_max_um": 7.250035034398111,
+      "n_outside": 0
+    },
+    "lamellipodium": {
+      "n_nodes": 4200,
+      "r_max_um": 7.290693333709313,
+      "n_outside": 0
+    },
+    "sf_arc": {
+      "n_nodes": 2600,
+      "r_max_um": 7.2731173611562765,
+      "n_outside": 0
+    },
+    "stress_fiber": {
+      "n_nodes": 9240,
+      "r_max_um": 7.359355943406575,
+      "n_outside": 0
+    },
+    "lamina": {
+      "n_nodes": 2043,
+      "r_max_um": 5.1000000000000005,
+      "n_outside": 0
+    },
+    "chromatin": {
+      "n_nodes": 552,
+      "r_max_um": 4.799031703261257,
+      "n_outside": 0
+    }
+  },
+  "placement_rule": "PI 2026-08-20 \u2014 every node of every population lies inside the built membrane. Enforced after the build by assert_inside_membrane, which raises and names the population; assert_partitioned does not cover it.",
+  "nmii": {
+    "skipped": true,
+    "why": "--nmii-heads-per-side not given. The head count is unratified (decision-queue item 9) and inventing one to make the driver run is the defect class this engine spent 2026-08-20 cataloguing. The population is absent by decision, not by oversight."
+  },
+  "cytosol": {
+    "dx_um": 0.25,
+    "dx_basis": "PI 2026-08-20 test point inside the sourced band; NOT a derivation",
+    "poroelastic_diffusion_um2_s": 50.0,
+    "poroelastic_diffusion_scope": "KB-3.B3.2 verified 40-60, self-declared CROSS-CELL-TYPE anchor and NOT breast-specific \u2014 a scope-recorded proxy for MCF7, not a sourced MCF7 value",
+    "dt_phys_s": 0.05,
+    "dt_phys_basis": "this driver's outer step, not a physiological quantity",
+    "shape": [
+      63,
+      63,
+      63
+    ],
+    "n_cells": 250047,
+    "origin_um": [
+      -7.75,
+      -7.75,
+      -7.75
+    ],
+    "dx_provenance": "PI set 0.25 um in session, transcript d380041d-06a6-49ea-9daf-1e4e57e76bf0. NOT DERIVED and not a threshold: a FLUID_VOLUME has no per-cell structure count \u2014 it has a RESOLUTION, and dx is a discretisation choice, not a physiological density. It is still passed as an argument and never defaulted, so a record states the resolution it ran at rather than inheriting one. Reopened if k_xl lands in the field band. The band is sourced at both ends: FLOOR = pore/mesh size 14-40 nm (KB-DRAFT-3.B-27, KB-DRAFT-3.B-18, both DRAFT), below which a continuum pore pressure is undefined; CEILING = the poroelastic diffusion length sqrt(D_p * dt_phys), which must be resolved rather than stepped over. The incumbent's 0.5 um sits inside the band and was not chosen from it \u2014 assemble.py:333 labels it 'numerical sizing; not literature', the same class as the cortex seg_um=0.5 this phase already replaced. \u26a0 dx enters cost as dx^-5 (cells dx^-3 x CFL subcycles dx^-2), so the choice is worth more than the k_xl lever it runs against.",
+    "field_bytes": 15002820,
+    "fluid_volume_um3": 1208.625,
+    "reference_volume_um3": 1211.5140832132795,
+    "volume_error": 0.002384688096746529,
+    "physics_claim": "NONE \u2014 seven fields allocated and zero; no Biot step, no pressure, no flux"
+  },
+  "exact_peak_gpu_bytes": null,
+  "exact_peak_note": "gpu_memory_accounting.query_process_peak -> NvmlAccountingResult(probe_status='ACCOUNTING_DISABLED', device_uuid='GPU-22357b0e-e9ec-dd49-0722-90a3133041a3', pid=3175772, accounting_enabled=False, exact_peak_bytes=None, error=None)",
+  "not_a_claim": "five of the eight populations carry PI_GAP counts \u2014 no sourced per-cell structure count exists for microtubule, intermediate filament, filopodium, lamellipodium or stress fibre. This measures what a world of this SIZE costs to stand; it does not say a cell has these many of anything."
+}

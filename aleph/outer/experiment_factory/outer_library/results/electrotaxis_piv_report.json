@@ -1,0 +1,73 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "biological_replicate_counts": {
+    "control": 1,
+    "stimulated": 1
+  },
+  "external_holdout_passed": false,
+  "frame_counts": {
+    "control": 60,
+    "stimulated": 60
+  },
+  "inferential_status": "descriptive_only_no_biological_replication",
+  "limitations": [
+    "the release contains one representative tissue per condition",
+    "frames and PIV vectors are temporally/spatially correlated measurements, not biological replicates",
+    "source velocity units are not declared in the released MAT object",
+    "no inferential confidence interval or external holdout claim is emitted"
+  ],
+  "metric_count": 8,
+  "metric_summaries": {
+    "mean_speed": {
+      "control_frame_mean": 2.0872705870367456,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 2.6394528369166697,
+      "stimulated_minus_control_frame_mean": 0.552182249879924
+    },
+    "mean_velocity_x": {
+      "control_frame_mean": -0.018016407961264014,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 0.9207063181555885,
+      "stimulated_minus_control_frame_mean": 0.9387227261168525
+    },
+    "mean_velocity_y": {
+      "control_frame_mean": 0.14273989878838342,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 0.004406268104048528,
+      "stimulated_minus_control_frame_mean": -0.13833363068433488
+    },
+    "rms_speed": {
+      "control_frame_mean": 2.3951293409731025,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 3.0615453819792995,
+      "stimulated_minus_control_frame_mean": 0.666416041006197
+    },
+    "speed_p90": {
+      "control_frame_mean": 3.7407705417772643,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 4.676949614288704,
+      "stimulated_minus_control_frame_mean": 0.9361790725114396
+    },
+    "valid_vector_fraction": {
+      "control_frame_mean": 1.0,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 1.0,
+      "stimulated_minus_control_frame_mean": 0.0
+    },
+    "velocity_nematic_order": {
+      "control_frame_mean": 0.08812578245140856,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 0.11870913220449439,
+      "stimulated_minus_control_frame_mean": 0.030583349753085826
+    },
+    "velocity_polar_order": {
+      "control_frame_mean": 0.11569633869861633,
+      "inferential_ci95": null,
+      "stimulated_frame_mean": 0.240211709458769,
+      "stimulated_minus_control_frame_mean": 0.12451537076015266
+    }
+  },
+  "observable_constraint_eligible": false,
+  "task": "representative_MDCK_electrotaxis_PIV_description"
+}

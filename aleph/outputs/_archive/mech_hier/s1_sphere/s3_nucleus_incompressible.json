@@ -1,0 +1,149 @@
+{
+  "nfil": 70686,
+  "R0_um": 7.499978516787127,
+  "R_nuc_um": 5.249984961750989,
+  "E_nuc_Pa": 399.0,
+  "n_beads": 3000,
+  "s_contact_theory": 0.30000000000000004,
+  "force_ratio": {
+    "0.15": 1.0083843527060814,
+    "0.25": 1.0247085490973369,
+    "0.35": 1.0558784108574153,
+    "0.45": 1.115324027332028
+  },
+  "R_nuc_eq": {
+    "0.15": 5.259060824975161,
+    "0.25": 5.259066804261846,
+    "0.35": 5.2729593020067185,
+    "0.45": 5.39875689041051
+  },
+  "R_nuc_eq_max": 5.39875689041051,
+  "ratio_increments": [
+    [
+      0.2,
+      0.016324196391255485
+    ],
+    [
+      0.3,
+      0.03116986176007841
+    ],
+    [
+      0.4,
+      0.05944561647461266
+    ]
+  ],
+  "inc_lo_mean": 0.023747029075666948,
+  "inc_hi_mean": 0.05944561647461266,
+  "contact_accel_x": 2.503286465233045,
+  "ratio_max": 1.115324027332028,
+  "nucleus_pct_at_max": 11.532402733202796,
+  "g1_contact_onset_pass": true,
+  "g2_nucleus_active_pass": true,
+  "s3_pass": true,
+  "rows": [
+    {
+      "strain": 0.15,
+      "with_nucleus": false,
+      "F_plate_pN": 11958.872905973069,
+      "dP_turgor_Pa": 44.416091211540014,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "R_nuc_z_um": 0.0,
+      "nuc_vol_conserved": 1.0,
+      "K_vol_nuc_Pa": 0.0,
+      "V_over_V0": 0.9730096707334219,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.15,
+      "with_nucleus": true,
+      "F_plate_pN": 12059.140314383947,
+      "dP_turgor_Pa": 46.98596462630532,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.259060824975161,
+      "R_nuc_z_um": 5.255197535899304,
+      "nuc_vol_conserved": 0.999998340441504,
+      "K_vol_nuc_Pa": 66499.99999999994,
+      "V_over_V0": 0.9589861941552998,
+      "n_nuc": 3000
+    },
+    {
+      "strain": 0.25,
+      "with_nucleus": false,
+      "F_plate_pN": 22611.069422933466,
+      "dP_turgor_Pa": 57.711713669274445,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "R_nuc_z_um": 0.0,
+      "nuc_vol_conserved": 1.0,
+      "K_vol_nuc_Pa": 0.0,
+      "V_over_V0": 0.9275068568409964,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.25,
+      "with_nucleus": true,
+      "F_plate_pN": 23169.756141913313,
+      "dP_turgor_Pa": 65.99931173737377,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.259066804261846,
+      "R_nuc_z_um": 5.2545670651612895,
+      "nuc_vol_conserved": 0.9999983403811215,
+      "K_vol_nuc_Pa": 66499.99999999994,
+      "V_over_V0": 0.8900569152104207,
+      "n_nuc": 3000
+    },
+    {
+      "strain": 0.35,
+      "with_nucleus": false,
+      "F_plate_pN": 32954.08136596699,
+      "dP_turgor_Pa": 74.8815048555225,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "R_nuc_z_um": 0.0,
+      "nuc_vol_conserved": 1.0,
+      "K_vol_nuc_Pa": 0.0,
+      "V_over_V0": 0.8626101114814447,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.35,
+      "with_nucleus": true,
+      "F_plate_pN": 34795.50306396319,
+      "dP_turgor_Pa": 92.98449342633509,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.2729593020067185,
+      "R_nuc_z_um": 4.874986035911633,
+      "nuc_vol_conserved": 0.9999786305300019,
+      "K_vol_nuc_Pa": 66499.99999999994,
+      "V_over_V0": 0.7926223124447386,
+      "n_nuc": 3000
+    },
+    {
+      "strain": 0.45,
+      "with_nucleus": false,
+      "F_plate_pN": 44600.86994749747,
+      "dP_turgor_Pa": 97.09588809019228,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 0.0,
+      "R_nuc_z_um": 0.0,
+      "nuc_vol_conserved": 1.0,
+      "K_vol_nuc_Pa": 0.0,
+      "V_over_V0": 0.7811835881288073,
+      "n_nuc": 0
+    },
+    {
+      "strain": 0.45,
+      "with_nucleus": true,
+      "F_plate_pN": 49744.4218923549,
+      "dP_turgor_Pa": 126.94101037931469,
+      "nucleus_contact": false,
+      "R_nuc_eq_um": 5.39875689041051,
+      "R_nuc_z_um": 4.124988184232921,
+      "nuc_vol_conserved": 0.9997570454129711,
+      "K_vol_nuc_Pa": 66499.99999999994,
+      "V_over_V0": 0.6743061308835531,
+      "n_nuc": 3000
+    }
+  ]
+}

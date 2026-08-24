@@ -1,0 +1,52 @@
+{
+  "claims": {
+    "afm_c2": "accepted_3_seeds_numerical_transaction_scope",
+    "aleph_parameter_authority": "none",
+    "cortical_engine_comparison": "blocked",
+    "gpu_used": false,
+    "mechanics_state_transfer": "failed",
+    "physics_run": false,
+    "shared_cell_state_network": "not_implemented",
+    "validation_gate_scored": false
+  },
+  "inputs": {
+    "afm_c2_snapshot": {
+      "path": "aleph/outputs/outer/mechanics_protocol/afm_c2_readiness_snapshot.json",
+      "sha256": "b4a8d5f5b6343830451243cc6ceca289a74d411cada897a77c7d6dbada50cca4"
+    },
+    "allen_figure": {
+      "path": "aleph/outer/experiment_factory/outer_library/results/allencell_label_free_v2_v3_comparison.png",
+      "sha256": "e1132aca1197204ac304addf3693b2aaba6c48e8dc4468d3a2adcbcbf44671e8"
+    },
+    "cortical_readiness": {
+      "path": "aleph/outer/experiment_factory/outer_library/results/cortical_tension_engine_readiness.json",
+      "sha256": "d04e426ae41daf4817cc073a2f9d7a9a5a9ba8749571ed17779d1dbed99c005e"
+    },
+    "mechanics_receipt": {
+      "path": "aleph/outputs/outer/mechanics_protocol/source_receipt.json",
+      "sha256": "70e53c0f8dc82e5959921a54f4d1bb5f8587be27c28b2ba134cde15b4172fb4a"
+    },
+    "mechanics_report": {
+      "path": "aleph/outputs/outer/mechanics_protocol/model/mechanics_protocol_report.json",
+      "sha256": "bdd08fb180c5eb9462a6a7cf08469bc68e6c94363f492eb255c4129b246ba808"
+    },
+    "multitask": {
+      "path": "aleph/outer/experiment_factory/outer_library/results/multitask_outer_model_report.json",
+      "sha256": "c7f100a328bd0396828500d18f238b4b97d14fd14510e086651b171d65e2d822"
+    },
+    "vision_external": {
+      "path": "aleph/outer/experiment_factory/outer_library/results/allencell_label_free_confirmation_evaluation.json",
+      "sha256": "8a1b428d07c616357c9b187ab85bd29464cf3cf6df1aae4de639738c0c0e1eba"
+    },
+    "vision_v3": {
+      "path": "aleph/outer/experiment_factory/outer_library/results/lightmycells_model_training_report_v3.json",
+      "sha256": "551ae3e7b169519d695a63bcf40f961fc2dbde6520b1b566b5169d712639a7c8"
+    }
+  },
+  "report": {
+    "path": "aleph/outputs/outer/mechanics_protocol/external_neural_network_architecture_report_2026-08-10_v2.pdf",
+    "sha256": "cfdabab607d81d4f0e9e69418eaa6c430925c6a3854cefd09d0c1a55ac066550",
+    "size_bytes": 754701
+  },
+  "schema": "aleph.outer.external_network_architecture_report.v2"
+}

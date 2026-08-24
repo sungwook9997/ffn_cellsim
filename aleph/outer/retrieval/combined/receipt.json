@@ -1,0 +1,37 @@
+{
+  "authority_status": "proposed",
+  "chunk_count": 284620,
+  "index_sha256": "ede8d2aff2a8786efa8e01bba6fbb398f46bdfdcc34eda0ef2662bdefe7a5887",
+  "local_source_families": 5675,
+  "model": {
+    "coarse_taxonomy_sha256": "2b0d69827c88eee5dcd8f4cc8956a05eb33dd93ed26362e7ddf4ccc98a2ae403",
+    "neural_routable_source_families": 5669,
+    "splits_sha256": "fcc7afd0bec12ebf199bef39039d8f0b694e494465a2e1a1ac59ff63166b0a5d",
+    "weights_sha256": "ff2f0fb927ce484095bd881449b83ebf36b35e2414c7d7578f3718a173062bdb"
+  },
+  "pass_source_families": {
+    "first": 2701,
+    "second": 2974
+  },
+  "ragtagcag": {
+    "combined_source_families": 10208,
+    "ledger_head_hash": "662cea6bcf553d441b622de5a9c3d34745453f3586b8b187b7878728ea9e146d",
+    "projection_hash": "15ff31f6719ed3df70a71556eb00a695eedb94d654f84dc326a178162aca963a",
+    "snapshot_manifest_hash": "f2de469010ce8de4bd234767d08fcbfb7c3c9676c1cbabfda28f2a65c9e9f203",
+    "validation_receipt_sha256": "ad04ef98df8159d1405c9ffe7990aa11530ca0c88bd6eef883c3c02b38da0613"
+  },
+  "schema": "aleph.external_training.combined_retrieval_index_receipt.v1",
+  "section_class_counts": {
+    "abstract": 7588,
+    "conclusion": 3819,
+    "discussion": 20019,
+    "figure_caption": 42162,
+    "introduction": 16738,
+    "methods": 13866,
+    "other": 166611,
+    "results": 8010,
+    "supplementary": 1715,
+    "table_caption": 4092
+  },
+  "text_committed": false
+}

@@ -1,0 +1,13 @@
+  morse seed=1000 core_A/A0=1.88 n_frag=1
+  morse seed=1001 core_A/A0=1.81 n_frag=1
+  morse seed=1002 core_A/A0=1.82 n_frag=1
+  morse seed=1003 core_A/A0=2.06 n_frag=1
+  morse seed=1004 core_A/A0=1.99 n_frag=5
+morse  core_A/A0=1.91+-0.10  frag_runs=1/5  mean_frags=1.8
+  catch seed=1000 core_A/A0=1.86 n_frag=1
+  catch seed=1001 core_A/A0=1.85 n_frag=1
+  catch seed=1002 core_A/A0=1.77 n_frag=1
+  catch seed=1003 core_A/A0=1.78 n_frag=1
+  catch seed=1004 core_A/A0=1.74 n_frag=1
+catch  core_A/A0=1.80+-0.05  frag_runs=0/5  mean_frags=1.0
+peak RSS=864 MB [631s]

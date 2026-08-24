@@ -1,0 +1,17 @@
+{
+  "scale": "medium",
+  "device": "gpu",
+  "n_filaments": 500,
+  "n_part": 3500,
+  "n_snapshots": 50,
+  "L_p_mean_m": 1.7458696373423543e-05,
+  "L_p_mean_um": 17.458696373423543,
+  "KU11_band_um": [
+    15.299999999999999,
+    18.7
+  ],
+  "in_band": true,
+  "wall_s": 966.5787742137909,
+  "hoomd": "7.0.1",
+  "gpu_build": true
+}

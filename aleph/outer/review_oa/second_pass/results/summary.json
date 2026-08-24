@@ -1,0 +1,81 @@
+{
+  "article_types": {
+    "research_article_metadata": 2974
+  },
+  "articles": 2974,
+  "articles_with_dataset_accession": 214,
+  "articles_with_observation_locator": 2803,
+  "authority_status": "proposed",
+  "automatic_tier_a_promotions": 0,
+  "combined": {
+    "articles": 5675,
+    "automatic_tier_a_promotions": 0,
+    "dataset_leakage": {
+      "cross_pass_groups": 70,
+      "duplicate_groups": 120,
+      "within_first_groups": 61,
+      "within_second_groups": 18
+    },
+    "decisions": {
+      "exception_candidate": 74,
+      "hold": 4558,
+      "manual_priority": 1043
+    },
+    "source_family_overlap": 0
+  },
+  "combined_leakage_sha256": "16442a2b92b17fc0560fe7ed774f72d1a79ecde13cb3f50f85d759ad0152868c",
+  "compact_index_sha256": "d9f494d552114f832130f4e8b90cfc714d7fe3641ab872a01926a854f96cbaa0",
+  "correction_retraction_status": {
+    "flagged_title_metadata": 4,
+    "metadata_unavailable": 2966,
+    "no_correction_or_retraction_link_in_europe_pmc_core": 4
+  },
+  "decisions": {
+    "hold": 2467,
+    "manual_priority": 507
+  },
+  "first_pass_compact_index_sha256": "0bd55f32829196ac65a13268988854aad6436dccdc0d79c8c8500f7b8a90e598",
+  "input_manifest_set_sha256": "9627db89509f0a2f363ec93e65a2da4b68d3ab1b0415195788145b54a30bcf0f",
+  "limitations": [
+    "regex and vocabulary hits indicate recoverability only, not adequacy or truth",
+    "correction/retraction relations are absent for most second-pass candidates",
+    "independent replication and affiliation-resolved laboratory groups require manual review",
+    "dataset-accession co-membership is a leakage lead, not proof of identical processed data",
+    "no decision is Tier A or training authorization"
+  ],
+  "local_record_set_sha256": "9458ca24348103ad9b61013bf02d333c061bb68dd52dea834a4dc58bff1702ce",
+  "manual_queue_sha256": "fbfa296e3fcb78f43aac63fd5b43b32933786d71cbbe0ad9354c0c4af81f3143",
+  "missing_review_fields": {
+    "affiliation_resolved_lab_group": 2974,
+    "biological_replicates": 2386,
+    "calibration": 2350,
+    "cell_type_state": 446,
+    "correction_retraction_check": 2966,
+    "exact_observation_locator": 171,
+    "exclusions": 2066,
+    "independent_replication_check": 2974,
+    "measurement_modality": 626,
+    "sample_size": 617,
+    "source_data": 1894,
+    "uncertainty": 375,
+    "units": 109
+  },
+  "schema": "aleph.external_training.oa_recoverability_second_pass_summary.v1",
+  "screen_version": "1",
+  "signal_recoverability_articles": {
+    "biological_replicates": 588,
+    "calibration": 624,
+    "exclusions": 908,
+    "sample_size": 2357,
+    "source_data": 1080,
+    "uncertainty": 2599,
+    "units": 2865
+  },
+  "within_leakage_sha256": "e0fa668b31f32f993aad57acf4117e3e1676dfba973a6c56a9df685e6fc15faa",
+  "within_second_pass_leakage": {
+    "cross_pass_groups": 0,
+    "duplicate_groups": 18,
+    "within_first_groups": 0,
+    "within_second_groups": 18
+  }
+}

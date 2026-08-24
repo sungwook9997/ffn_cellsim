@@ -1,0 +1,115 @@
+{
+  "aleph_authority": "none",
+  "contexts": {
+    "bbbc013_ly294002_compound_transfer": {
+      "bootstrap_unit": "author_replica_plate_row_not_biological_replicate",
+      "extreme_dose_discrimination": {
+        "auroc": 1.0,
+        "field_count": 32,
+        "high_dose_fields": 24,
+        "low_dose_fields": 8
+      },
+      "field_count": 48,
+      "spearman_dose_vs_translocation_score": 0.9274529855785448,
+      "technical_row_bootstrap_spearman_ci95": [
+        0.9125280490450348,
+        0.946391930320138
+      ]
+    },
+    "bbbc013_wortmannin": {
+      "bootstrap_unit": "author_replica_plate_row_not_biological_replicate",
+      "extreme_dose_discrimination": {
+        "auroc": 1.0,
+        "field_count": 32,
+        "high_dose_fields": 24,
+        "low_dose_fields": 8
+      },
+      "field_count": 48,
+      "spearman_dose_vs_translocation_score": 0.919714833100912,
+      "technical_row_bootstrap_spearman_ci95": [
+        0.8905457975589857,
+        0.9414936928946941
+      ]
+    },
+    "bbbc014_a549_dataset_holdout": {
+      "bootstrap_unit": "author_replica_plate_row_not_biological_replicate",
+      "extreme_dose_discrimination": {
+        "auroc": 1.0,
+        "field_count": 24,
+        "high_dose_fields": 12,
+        "low_dose_fields": 12
+      },
+      "field_count": 48,
+      "spearman_dose_vs_translocation_score": 0.8394730060753673,
+      "technical_row_bootstrap_spearman_ci95": [
+        0.7864791596720448,
+        0.871842563632695
+      ]
+    },
+    "bbbc014_mcf7_dataset_holdout": {
+      "bootstrap_unit": "author_replica_plate_row_not_biological_replicate",
+      "extreme_dose_discrimination": {
+        "auroc": 1.0,
+        "field_count": 24,
+        "high_dose_fields": 12,
+        "low_dose_fields": 12
+      },
+      "field_count": 48,
+      "spearman_dose_vs_translocation_score": 0.6673962871341269,
+      "technical_row_bootstrap_spearman_ci95": [
+        0.6312140160700712,
+        0.7459120149967812
+      ]
+    }
+  },
+  "dataset_holdout": {
+    "dataset_holdout_present": true,
+    "different_acquisition_site_and_instrument": true,
+    "different_cell_types": true,
+    "different_perturbation": true,
+    "different_protein": true,
+    "independent_lab_holdout": false,
+    "sealed_external_dataset": "bbbc014-v1-nfkb-translocation",
+    "shared_provider_lineage": true,
+    "train_dataset": "bbbc013-v1-fkhr-translocation",
+    "translocation_representation_passed": false
+  },
+  "feature_count": 12,
+  "field_count": 192,
+  "limitations": [
+    "Four author replica rows per context are plate-level technical replicas, not reported biological replicates.",
+    "The two datasets share Ilya Ravkin provider lineage and cannot establish an independent-lab holdout.",
+    "Dose-transfer validates an IF translocation observable, not a universal cell-state classifier.",
+    "No segmentation ground truth is supplied; image-derived field features are not per-cell labels."
+  ],
+  "may_select_aleph_parameter": false,
+  "may_set_parameter_range": false,
+  "observable_evidence_eligible": false,
+  "observation_unit": "one intact two-channel field per well",
+  "ood": {
+    "dataset_ood_detected": true,
+    "dataset_shift_auroc": 1.0,
+    "external_fields": 96,
+    "method": "training-standardized_shrunk_mahalanobis",
+    "reference_fields": 48
+  },
+  "production_eligible": false,
+  "representation_training_eligible": true,
+  "schema": "aleph.outer_library.if_translocation_evaluation.v1",
+  "score_feature": "signal_nuclear_perinuclear_log_ratio",
+  "score_orientation_selected_on": "BBBC013 Wortmannin rows A-C only; BBBC014 remained sealed",
+  "task": "paired-channel_IF_nuclear_translocation_representation",
+  "training_orientation_spearman": 0.924938132061884,
+  "uncertainty": {
+    "calibration_field_count": 12,
+    "calibration_group": "BBBC013 Wortmannin row D",
+    "external_coverage": 0.8333333333333334,
+    "external_group": "all BBBC014 fields",
+    "external_mean_interval_width": 0.7389426966184457,
+    "interval_radius_normalized_dose": 0.36947134830922285,
+    "method": "fixed_ridge_split_conformal",
+    "nominal_coverage": 0.9,
+    "train_group": "BBBC013 Wortmannin rows A-C",
+    "uncertainty_holdout_passed": false
+  }
+}

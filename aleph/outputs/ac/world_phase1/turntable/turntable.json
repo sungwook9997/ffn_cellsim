@@ -1,0 +1,639 @@
+{
+ "schema": "ffn-world-turntable@1",
+ "kind": "viewer",
+ "quantitative_claim_status": "BLOCKED",
+ "not_a_claim": "A pre-rendered turntable. No force is evaluated, nothing moves, and a picture is not evidence. Every frame is a FULL-density render of the same issued geometry; the reduction is in ANGLES, never in nodes.",
+ "source": "aleph/outputs/ac/world_phase1/cell_current.alephcell",
+ "populations": [
+  "cortex",
+  "membrane",
+  "nuclear_envelope",
+  "microtubule",
+  "intermediate_filament",
+  "filopodium",
+  "lamellipodium",
+  "sf_arc",
+  "stress_fiber",
+  "lamina",
+  "chromatin",
+  "nmii"
+ ],
+ "n_nodes": 4591262,
+ "cut": "y-",
+ "elevation_deg": 18.0,
+ "radius_um": 32.0,
+ "size_px": [
+  1200,
+  800
+ ],
+ "frames": [
+  {
+   "file": "frame_000.webp",
+   "azimuth_deg": 0.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_001.webp",
+   "azimuth_deg": 3.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_002.webp",
+   "azimuth_deg": 6.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_003.webp",
+   "azimuth_deg": 9.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_004.webp",
+   "azimuth_deg": 12.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_005.webp",
+   "azimuth_deg": 15.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_006.webp",
+   "azimuth_deg": 18.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_007.webp",
+   "azimuth_deg": 21.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_008.webp",
+   "azimuth_deg": 24.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_009.webp",
+   "azimuth_deg": 27.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_010.webp",
+   "azimuth_deg": 30.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_011.webp",
+   "azimuth_deg": 33.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_012.webp",
+   "azimuth_deg": 36.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_013.webp",
+   "azimuth_deg": 39.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_014.webp",
+   "azimuth_deg": 42.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_015.webp",
+   "azimuth_deg": 45.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_016.webp",
+   "azimuth_deg": 48.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_017.webp",
+   "azimuth_deg": 51.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_018.webp",
+   "azimuth_deg": 54.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_019.webp",
+   "azimuth_deg": 57.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_020.webp",
+   "azimuth_deg": 60.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_021.webp",
+   "azimuth_deg": 63.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_022.webp",
+   "azimuth_deg": 66.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_023.webp",
+   "azimuth_deg": 69.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_024.webp",
+   "azimuth_deg": 72.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_025.webp",
+   "azimuth_deg": 75.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_026.webp",
+   "azimuth_deg": 78.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_027.webp",
+   "azimuth_deg": 81.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_028.webp",
+   "azimuth_deg": 84.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_029.webp",
+   "azimuth_deg": 87.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_030.webp",
+   "azimuth_deg": 90.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_031.webp",
+   "azimuth_deg": 93.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_032.webp",
+   "azimuth_deg": 96.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_033.webp",
+   "azimuth_deg": 99.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_034.webp",
+   "azimuth_deg": 102.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_035.webp",
+   "azimuth_deg": 105.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_036.webp",
+   "azimuth_deg": 108.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_037.webp",
+   "azimuth_deg": 111.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_038.webp",
+   "azimuth_deg": 114.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_039.webp",
+   "azimuth_deg": 117.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_040.webp",
+   "azimuth_deg": 120.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_041.webp",
+   "azimuth_deg": 123.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_042.webp",
+   "azimuth_deg": 126.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_043.webp",
+   "azimuth_deg": 129.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_044.webp",
+   "azimuth_deg": 132.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_045.webp",
+   "azimuth_deg": 135.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_046.webp",
+   "azimuth_deg": 138.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_047.webp",
+   "azimuth_deg": 141.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_048.webp",
+   "azimuth_deg": 144.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_049.webp",
+   "azimuth_deg": 147.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_050.webp",
+   "azimuth_deg": 150.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_051.webp",
+   "azimuth_deg": 153.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_052.webp",
+   "azimuth_deg": 156.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_053.webp",
+   "azimuth_deg": 159.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_054.webp",
+   "azimuth_deg": 162.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_055.webp",
+   "azimuth_deg": 165.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_056.webp",
+   "azimuth_deg": 168.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_057.webp",
+   "azimuth_deg": 171.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_058.webp",
+   "azimuth_deg": 174.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_059.webp",
+   "azimuth_deg": 177.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_060.webp",
+   "azimuth_deg": 180.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_061.webp",
+   "azimuth_deg": 183.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_062.webp",
+   "azimuth_deg": 186.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_063.webp",
+   "azimuth_deg": 189.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_064.webp",
+   "azimuth_deg": 192.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_065.webp",
+   "azimuth_deg": 195.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_066.webp",
+   "azimuth_deg": 198.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_067.webp",
+   "azimuth_deg": 201.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_068.webp",
+   "azimuth_deg": 204.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_069.webp",
+   "azimuth_deg": 207.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_070.webp",
+   "azimuth_deg": 210.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_071.webp",
+   "azimuth_deg": 213.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_072.webp",
+   "azimuth_deg": 216.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_073.webp",
+   "azimuth_deg": 219.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_074.webp",
+   "azimuth_deg": 222.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_075.webp",
+   "azimuth_deg": 225.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_076.webp",
+   "azimuth_deg": 228.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_077.webp",
+   "azimuth_deg": 231.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_078.webp",
+   "azimuth_deg": 234.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_079.webp",
+   "azimuth_deg": 237.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_080.webp",
+   "azimuth_deg": 240.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_081.webp",
+   "azimuth_deg": 243.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_082.webp",
+   "azimuth_deg": 246.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_083.webp",
+   "azimuth_deg": 249.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_084.webp",
+   "azimuth_deg": 252.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_085.webp",
+   "azimuth_deg": 255.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_086.webp",
+   "azimuth_deg": 258.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_087.webp",
+   "azimuth_deg": 261.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_088.webp",
+   "azimuth_deg": 264.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_089.webp",
+   "azimuth_deg": 267.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_090.webp",
+   "azimuth_deg": 270.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_091.webp",
+   "azimuth_deg": 273.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_092.webp",
+   "azimuth_deg": 276.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_093.webp",
+   "azimuth_deg": 279.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_094.webp",
+   "azimuth_deg": 282.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_095.webp",
+   "azimuth_deg": 285.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_096.webp",
+   "azimuth_deg": 288.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_097.webp",
+   "azimuth_deg": 291.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_098.webp",
+   "azimuth_deg": 294.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_099.webp",
+   "azimuth_deg": 297.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_100.webp",
+   "azimuth_deg": 300.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_101.webp",
+   "azimuth_deg": 303.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_102.webp",
+   "azimuth_deg": 306.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_103.webp",
+   "azimuth_deg": 309.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_104.webp",
+   "azimuth_deg": 312.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_105.webp",
+   "azimuth_deg": 315.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_106.webp",
+   "azimuth_deg": 318.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_107.webp",
+   "azimuth_deg": 321.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_108.webp",
+   "azimuth_deg": 324.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_109.webp",
+   "azimuth_deg": 327.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_110.webp",
+   "azimuth_deg": 330.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_111.webp",
+   "azimuth_deg": 333.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_112.webp",
+   "azimuth_deg": 336.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_113.webp",
+   "azimuth_deg": 339.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_114.webp",
+   "azimuth_deg": 342.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_115.webp",
+   "azimuth_deg": 345.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_116.webp",
+   "azimuth_deg": 348.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_117.webp",
+   "azimuth_deg": 351.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_118.webp",
+   "azimuth_deg": 354.0,
+   "cut_faces_away": false
+  },
+  {
+   "file": "frame_119.webp",
+   "azimuth_deg": 357.0,
+   "cut_faces_away": false
+  }
+ ],
+ "encoding": {
+  "format": "webp",
+  "quality": 82,
+  "lossy": true,
+  "measured_error": "mean |delta| 1.3/255 (0.5%) at quality 82 on a native frame; max 163 at single-pixel filament edges; caption legible"
+ },
+ "render_s": 467.8,
+ "total_mb": 21.4
+}

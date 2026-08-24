@@ -1,0 +1,57 @@
+[OK] Granted sungwook access to /dev/dxg for Slurm job 53.
+[GPU SUBMIT]
+  reserved_token: rtx3090
+  physical_gpu:   2
+  visible_device: cuda:0
+  CUDA_VISIBLE_DEVICES=2
+  cpus:           8
+  mem_gb:         48
+  PWD=/home/sungwook/ffn/ffn_cellsim_cortical_tension
+
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.3
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA GeForce RTX 3090" (24 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+[gate-b-column] device=cuda:0  steps=1  dt=0.01s  inner=40  solver=explicit retries=9 membrane_subdiv=8  nucleus_subdiv=3
+Module aleph.components.incumbent.live_mesh_domain 07b917a load on device 'cuda:0' took 1.92 ms  (cached)
+[gate-b-column] built cell in 36.2s: n_actin=494802 n_total=1150806 nucleus_faces=1280 membrane_verts=655362 field_cells=79507
+========================================================================================================
+  GATE-B PROVISIONAL PARAMETERS  —  interior column membrane→cytosol→nucleus (fluid + Core Body)
+  MECHANISM DEMONSTRATION, NOT quantitative production — the nucleus + osmotic magnitudes are PI GAPs.
+--------------------------------------------------------------------------------------------------------
+    nucleus k_soft [pN/µm] =         30   I0-B2 GAP-PI (chromatin+lamin-B areal modulus)
+    nucleus k_ac   [pN/µm] =        150   I0-B2 GAP-PI (lamin-A/C strain-stiffened tangent)
+    nucleus knee   [-]      =        0.1   I0-B2 provisional (strain crossover)
+    nucleus eps_rupt [-]    =        0.5   I0-B2 GAP-PI — do NOT keep the ff proxy 0.50
+    nucleus k_vol [pN/µm²]  =       1000   I0-B2 (nucleoplasm incompressible penalty)
+    nucleus k_linc[pN/µm]   =        100   I0-B2 HALT→PI (nesprin nonlinear, no Hookean k)
+    cytosol Π₀    [Pa]      =         40   GAP (HeLa proxy; osmotic vertical deferred POST-GATE-A)
+========================================================================================================
+Module aleph.laws.network_warp 25d681b load on device 'cuda:0' took 2.05 ms  (cached)
+Module aleph.laws.forces_warp f7f4cb5 load on device 'cuda:0' took 0.45 ms  (cached)
+Module aleph.laws.membrane_surface 6fb4428 load on device 'cuda:0' took 2.57 ms  (cached)
+Module aleph.components.nucleus.envelope 1572811 load on device 'cuda:0' took 0.94 ms  (cached)
+Module aleph.components.incumbent.compartments 8111c33 load on device 'cuda:0' took 0.49 ms  (cached)
+Module aleph.components.incumbent.erm_tether 2edfc82 load on device 'cuda:0' took 1.28 ms  (cached)
+Module aleph.components.incumbent.membrane_pressure 61de45d load on device 'cuda:0' took 0.79 ms  (cached)
+Module aleph.components.solid.steric_warp 75a3ba0 load on device 'cuda:0' took 32.73 ms  (cached)
+Module aleph.components.fluid.biot_substrate fd600cf load on device 'cuda:0' took 3.65 ms  (cached)
+[gate-b-column] RESTING PRELOAD ON: cortex_prestrain=0 ({'n_xl': 1413720, 'prestrain': 0.0}); ERM balance={'n_erm': 655362, 'res_before': 0.16057967765172929, 'res_after': 0.33300122143049027}
+[gate-b-column] ARRAY OWNERSHIP: membrane/cortex/nucleus address DISJOINT blocks of the global arrays — cortex=[0, 494802), membrane=[495444, 1150806), nucleus=[494802, 495444) of 1150806 nodes. These are SLICE VIEWS, not private allocations: the incumbent's inner solve still relaxes one global pos_d, so `arrays_private` is FALSE and STATE.md (c) 4 stands until the PI says otherwise.
+[gate-b-column] interior column composed: 7 transaction participants (membrane+cortex+cytosol+nucleus + surface_porous_transfer + membrane/nucleus cytosol boundaries), one accepted-step predicate.
+
+step  p_mean_Pa   p_max_Pa    memb_flux  noflux_teeth  ruptured      maxPF
+Module aleph.components.incumbent.inner_mechanics 81f500f load on device 'cuda:0' took 1.67 ms  (cached)
+Module aleph.engine.erm_cortex_slice 162d65d load on device 'cuda:0' took 4875.63 ms  (cached)
+Module aleph.components.fluid.scheduler fe53bd6 load on device 'cuda:0' took 0.92 ms  (cached)
+Module aleph.engine.erm_cortex_connector c29d5cf load on device 'cuda:0' took 0.53 ms  (cached)
+Module aleph.engine.events edf5d3b load on device 'cuda:0' took 0.44 ms  (cached)
+Module aleph.components.fluid.boundary e41e225 load on device 'cuda:0' took 1.05 ms  (cached)
+   0         40         40            0             0         0     0.2056
+[gate-b-column] C-2 diagnostic: aleph/outputs/ac/afm_cortical_tension_readiness/raw/c2_subdiv8_explicit400_seed1.json
+
+[gate-b-column] DONE: 1 accepted steps. Interior column drove membrane→cytosol→nucleus as one transaction: field Π_mean=40 Pa, membrane permeation flux 0, no-flux teeth 0 (impermeable envelope held at 0 applied flux), 0 ruptured envelope faces. Coupled state EMERGED from the pressure field, no imposed prestress. (Nucleus + osmotic magnitudes PROVISIONAL — a PI decision.)
+[OK] Kept sungwook access to /dev/dxg; another Slurm job is still active.

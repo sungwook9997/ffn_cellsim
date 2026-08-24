@@ -1,0 +1,164 @@
+# Phase 1 — Unit H.5 Lamellipodium (Bieling/Funk greenfield) defaults.
+#
+# Implements PHASE_0_3_DECISIONS.md §D1 (greenfield Arp2/3 branching, NOT
+# AFINES port).  Per the H.5 brief `aleph/docs/briefs/H5_lamellipodium.md`.
+#
+# Inherits per-filament force constants (κ_B, μ, ℓ_0) from H.1/H.2/H.3 so
+# the lamellipodial actin physics matches the cortex actin physics —
+# brief: "WLC formulas live in aleph/archive/filament_math.py".
+#
+# Per CLAUDE.md hard rules:
+# - No magic numbers — every parameter is KU-anchored or derived.
+# - First-principles acceptance bands ONLY (no measurement-anchored
+#   tuning, H.2 Day 5 lesson).
+# - Sanity Gate §1-6 enforced in `aleph/cell/lamellipodium.py`.
+
+cortex: null      # Lamellipodium-only mode (Cell.build composes with cortex separately).
+filament: null    # placeholder for resolver compat.
+
+lamellipodium:
+
+  # ---- WAVE membrane plane geometry ----
+  # Default Y_max sits inside the box top (= 0.45 · L_box) leaving a
+  # sliver of space for thermal excursion of WAVE-pinned particles.
+  # n_WAVE = sigma_NPF · wave_area (defaults below give n_WAVE = 100 for
+  # the 30 μm cube box used by H.3 cortex; cell.h5 production overrides).
+  Y_max: 13.5e-6              # m   = 0.45 × L_box (L_box=30 μm cortex default)
+  wave_area: 9.0e-10          # m²  = L_box² = (30 μm)² = 9·10⁻¹⁰ m²
+  sigma_NPF: 1.11e11          # 1/m² ≈ 100 WAVE / wave_area (KU-5.1 reference)
+  n_WAVE: 100                 # explicit override (computed as sigma·area otherwise)
+  k_wave_pin: 1.0e-4          # N/m radial pin stiffness (CFL-safe at dt=13ns)
+                              # rationale: τ_wave = γ_b / k_wave_pin
+                              # = 3.91e-10 / 1e-4 = 3.91 μs ≫ dt_CFL=13ns
+
+  # ---- Actin per-filament force constants (mirrors H.2 single bundle) ----
+  bead_radius: 30.0e-9         # m   ×40 actin bundle cross-section (brief)
+  rest_length: 0.5e-6          # m   ℓ_0 (= L_filament/(N-1) = 0.5 μm)
+  bond_k: 3.0e-3               # N/m μ_actin / ℓ_0 = 1.5 nN / 0.5 μm
+                               #     (AFINES Freedman 2017; matches H.2)
+
+  # ---- Arp2/3 branch geometry (cryo-ET, Fäßler 2020; audit C5 2026-05-30) ----
+  # Magic-Number Block — angle_branch_t0:
+  #   Value: 1.2217304764 rad = 70.0°.
+  #   Derivation: Arp2/3 branch junction angle measured in situ by cryo-
+  #     electron tomography = 68 ± 9° (Fäßler et al. 2020, EMBO J 39:e104254,
+  #     "Cryo-electron tomography structure of Arp2/3 complex in cells").
+  #     Audit 2026-05-30 (C5) corrects the prior 72° "Arp2/3 crystal" value
+  #     (Mullins 1998 negative-stain EM) to the in-cell cryo-ET central value
+  #     70° (rounded from 68° mean toward the canonical dendritic-network
+  #     value; within the 68 ± 9° band).
+  #   Grid-invariant: pure geometry, independent of bead size / dt / box.
+  #   Not gate-tuned: set from literature, no current gate depends on it.
+  angle_branch_t0: 1.2217304764   # rad  70.0° (Fäßler 2020 cryo-ET 68±9°)
+  # Magic-Number Block — angle_branch_k:
+  #   Value: 1.73e-19 J/rad².
+  #   Derivation (equipartition from the measured angular spread):
+  #     A harmonic angle bond U = ½ k (θ−θ₀)² has, at thermal equilibrium,
+  #     ⟨(θ−θ₀)²⟩ = kT / k  (1-DoF equipartition). Inverting:
+  #         k = kT / Var(θ).
+  #     Fäßler 2020 reports σ_θ = 9° = 0.157080 rad ⇒ Var = σ² = 0.024674 rad².
+  #     kT at T = 310 K: kT = 1.380649e-23 · 310 = 4.280e-21 J.
+  #         k = 4.280e-21 / 0.024674 = 1.7346e-19 J/rad² ≈ 1.73e-19.
+  #   Replaces the prior "literature TBD" magic number 1.0e-19 (audit C5).
+  #   Primary citation: Fäßler 2020 (σ_θ); Blanchoin 2000 J Cell Biol 150:1287
+  #     (Arp2/3 dendritic branch angular distribution corroboration).
+  #   Grid-invariant: thermodynamic identity, independent of grid.
+  angle_branch_k: 1.73e-19       # J/rad² = kT/Var(θ), σ_θ=9° (Fäßler 2020)
+
+  # ---- D1 elongation (Bieling 2016 slip Bell-Evans) ----
+  k_elong_0: 11.6                # 1/s unloaded per barbed end (Bieling 2016)
+  delta_elong: 2.7e-9            # m   G-actin attachment length (Bieling 2016)
+  F_stall_elong: 1.0e-12         # N   per-barbed-end stall (~1 pN, Bieling)
+
+  # ---- D1 Arp2/3 branching (Bieling 2016 + Funk 2021 mechanistic, γ-Phase 1) ----
+  # γ-Phase 1 (PI-ratified 2026-05-29, design `H5_GAMMA_BRANCHING_DESIGN.md`):
+  # - Rate gated by CP-NPF release: `k_b_eff = k_b⁰ · force · (n_capped/n_total)`.
+  # - Geometry: search ANY actin_lamel bead within r_branch_eff (Funk 2021 +
+  #   Bieling 2023: Arp2/3 binds along F-actin side, not only at barbed tip).
+  k_b_0: 0.037                   # 1/s per WAVE unloaded (Bieling 2016)
+  F_stall_branch: 1.0e-12        # N   per-WAVE branching stall
+  r_branch_eff: 100.0e-9         # m   WAVE → any actin_lamel reach (PI 2026-05-29)
+                                 #     ≈ Arp2/3 ⌀22nm + F-actin ⌀7nm + access window
+  abortive_pressure_Pa: 500.0    # Pa  Funk 2021 Nat Commun abortive-failure threshold
+
+  # ---- D1 capping (Li/Bieling 2022, eLife 11:e73145) ----
+  k_cap_0: 3.0                   # 1/s at 100 nM capping protein
+  # Magic-Number Block — delta_cap:
+  #   Value: 2.7e-9 m = 2.7 nm.
+  #   Derivation: capping protein and elongation/profilin-actin compete for
+  #     the SAME barbed-end site, so the Bell-Evans force-sensitivity length
+  #     of capping equals that of elongation, δ_cap = δ_elong = 2.7 nm
+  #     (Li, Bieling et al. 2022, eLife 11:e73145 — single barbed-end gap /
+  #     half-site G-actin addition length shared by capping and elongation).
+  #   Audit 2026-05-30 (C2) corrects the prior 0.3 nm (3.0e-10 m), which was
+  #     an un-sourced placeholder, to the shared barbed-end gap 2.7 nm.
+  #   Grid-invariant: molecular length, independent of grid/dt.
+  #   Not gate-tuned: KU-5.x capping gates not run in this edit.
+  delta_cap: 2.7e-9              # m   = δ_elong, shared barbed-end gap (Li/Bieling 2022)
+
+  # ---- Plasma-membrane load (ADDITIVE, DEFAULT-OFF) ----
+  # Mechanism audit 2026-05-30 §5 #6 + §6 #7; H4_FA_INTEGRATION_DESIGN §4.
+  # Supplies the leading-edge membrane reaction load F the Bell-Evans
+  # elongation/capping laws consume (today F=0 → laws inert → KU-5.1 ~10,000×
+  # under, KU-5.2 force-velocity cannot emerge). See aleph/cell/membrane.py.
+  # OFF by default (enabled: false) → builder bit-for-bit unchanged.
+  membrane:
+    enabled: false               # default-off additive module
+    # Membrane tension γ_mem — KU-5.x anchor 10–300 pN/µm (Bieling 2016;
+    # Lieber 2013 resting HeLa ≈30–40 pN/µm; Sens 2015 review). Default =
+    # mid-band 50 pN/µm. F_per = γ_mem · sqrt(A_mem/n_contact) (tented-
+    # membrane / Brownian-ratchet load, Mogilner-Oster 1996; Peskin 1993).
+    gamma_mem: 5.0e-5            # N/m = 50 pN/µm (mid 10–300 pN/µm band)
+    gamma_mem_min: 1.0e-5       # N/m = 10 pN/µm  (band lower bound, range guard)
+    gamma_mem_max: 3.0e-4       # N/m = 300 pN/µm (band upper bound, range guard)
+    # Contact range: barbed-end tip reaches the membrane when within
+    # δ_contact of the plane (= one actin-bundle bead radius, 30 nm).
+    contact_range: 30.0e-9      # m   δ_contact (= bead_radius, ×40 bundle)
+    # Bending modulus (Helfrich) — cross-check only (tension dominates the
+    # per-filament load at lamellipodial density; λ=sqrt(κ_m/γ_mem)≈41 nm).
+    kappa_m_kT: 20.0            # κ_m / kT (Helfrich 1973; Bieling 2016)
+    # y_plane / A_mem default to the lamellipodium Y_max / wave_area (the
+    # WAVE plane the barbed ends grow toward); override here if needed.
+
+  # ---- D2 batch + numerical ----
+  batch_steps: 100               # BAOAB steps between Updater ticks
+  seed: 45
+
+  # ---- First-principles acceptance bands (H.2 Day 5 lesson) ----
+  acceptance:
+    # KU-5.1 dendritic density: Bieling 2016 reports ~100 barbed ends per μm²
+    # at steady state; first-principles emergent target from k_b · k_cap balance.
+    dendritic_density_target: 1.0e14  # 1/m² = 100 / μm² (literature anchor)
+
+    # Magic-Number Block — KU-5.1 dendritic-density acceptance band (audit A3):
+    #   Band: [141, 341] barbed ends / μm²  (= [1.41e14, 3.41e14] /m²).
+    #   Derivation: Abraham et al. 1999 (Biophys J 77:1721, "The actin-based
+    #     nanomachine at the leading edge of migrating cells") measured the
+    #     leading-edge filament-end areal density. The reported linear density
+    #     is 241 ± 100 ends per µm of leading edge; treated as an areal density
+    #     it gives a central 241/µm² with a ±1σ spread of ±100/µm², i.e. the
+    #     defensible first-principles band [241−100, 241+100] = [141, 341]/µm².
+    #     Bieling 2016 (~100/µm² reconstituted) sits just below this in-cell
+    #     band, consistent with lower reconstituted NPF density — kept as the
+    #     `dendritic_density_target` anchor above; the GATE band is the in-cell
+    #     Abraham ±1σ range.
+    #   Replaces the prior PLACEHOLDER [50,150]/µm² (vis decoration, never
+    #     ratified). NOT chosen to make any current result pass — KU-5.1
+    #     production is not run in this edit.
+    #   Primary citation: Abraham 1999 (areal end density ±1σ); Bieling 2016
+    #     (reconstituted lower-bound cross-check).
+    #   Grid-invariant: areal number density, independent of dt/box.
+    dendritic_density_band_min: 1.41e14   # 1/m² = 141 /µm² (Abraham 241−100)
+    dendritic_density_band_max: 3.41e14   # 1/m² = 341 /µm² (Abraham 241+100)
+
+    # KU-5.2 force-velocity: ±30% on Bieling 2016 Fig 2 reference curve.
+    # First-principles: Bell-Evans slip ⇒ v(F)/v(0) = exp(-F·δ_elong/kT)
+    # which the simulation must recover within ±30% literature spread.
+    force_velocity_rel_tol: 0.30
+
+    # KU-5.3 abortive branching: Funk 2021 Nat Commun — branching rate drops > 50%
+    # above the per-WAVE force threshold ``F > F_abortive`` (= 500 Pa ×
+    # area_per_WAVE = 500 · (wave_area/n_WAVE) ≈ 4.5 pN per WAVE for
+    # defaults).  Modeled as the Bieling (1 - 0.2 F/F_stall) factor
+    # going negative ⇒ k_b clamped to zero, hence rate drop.
+    abortive_drop_min: 0.5

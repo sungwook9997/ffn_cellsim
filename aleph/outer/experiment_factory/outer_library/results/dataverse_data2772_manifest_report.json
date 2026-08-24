@@ -1,0 +1,37 @@
+{
+  "accession": "10.34810/DATA2772",
+  "aleph_authority": "none",
+  "biological_replicates_claimed": 0,
+  "dataset_id": "dataverse-data2772-nih3t3-cellular-nematics",
+  "modalities": [
+    "particle_image_velocimetry_derived",
+    "traction_force_and_monolayer_stress_microscopy_derived"
+  ],
+  "observations": 372,
+  "paper_doi": "10.1126/science.adz9174",
+  "piv": {
+    "frame_count": 63,
+    "sequence_count": 1,
+    "split_contract": "all 63 frames remain one sequence and one split group",
+    "vectors_admitted_flag_0": 191765,
+    "vectors_admitted_interpolated_flag_999": 47385,
+    "vectors_admitted_total": 239150,
+    "vectors_excluded_by_flag": {
+      "-22": 78,
+      "9999": 2944
+    },
+    "vectors_total": 242172
+  },
+  "samples": 2,
+  "schema": "aleph.outer_library.dataverse_data2772_manifest.v1",
+  "tfm_msm": {
+    "after_table_index": 1,
+    "before_table_index": 0,
+    "biological_culture_or_batch_count": 1,
+    "f13_to_f30_withheld_reason": "not members of the complete n=12 paired mask/stress set used in Figure S9",
+    "split_contract": "12 fields are technical replicates nested in one dated culture/batch and must never cross train/test splits",
+    "technical_fields_of_view": 12,
+    "withheld_reason": "t0 and t1 reproduce Figure S9 before/after distributions; t2 does not, and its role is not unambiguously documented",
+    "withheld_table_index": 2
+  }
+}

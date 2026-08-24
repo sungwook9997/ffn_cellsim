@@ -1,0 +1,38 @@
+{
+  "compartment": "membrane_reservoir",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 3000,
+  "dt_s": 6.98e-07,
+  "params": {
+    "W_MCA_Jm2": 1e-05,
+    "k_tether_Npm": 0.1,
+    "max_tether_dist_m": 2e-07,
+    "offset_m": 1e-07,
+    "rupture_force_N": 3.4323421232391343e-09,
+    "r0_median_m": 9.999999999999984e-08,
+    "sigma_crit_bleb": null,
+    "f_excess": null,
+    "gamma_b_Nspm": 6.210928676147021e-05
+  },
+  "topology": {
+    "n_cortex_beads": 120,
+    "n_mem_nodes": 120,
+    "n_tethers": 120,
+    "cross_layer_tethers": 120,
+    "self_pair_tethers": 0
+  },
+  "observables": {
+    "tether_len_mean_m": 1.0000508242782057e-07,
+    "tether_len_vs_r0_rms_dev": 0.002132117394045811,
+    "construction_bond_energy_kT": 1.734004535169695e-22,
+    "max_particle_disp_m": 1.7658364237719258e-09,
+    "all_finite": true
+  },
+  "blocked_paths": {
+    "MembraneTetherUpdater": "NotImplementedError (unconditional: \u03c3_crit_bleb None + act() unimplemented) \u2014 NOT constructed",
+    "reservoir_release": "f_excess None \u2014 blocked"
+  },
+  "constants_smoke_only": [],
+  "note": "PLUMBING smoke: STATIC tether mesh only (W_MCA/k_tether/max_tether_dist are anchored, not pending). Bleb rupture + reservoir release are PI-blocked and intentionally NOT exercised. Confirms own mem_node layer (BLOCKER-1) \u2192 cross-layer tethers, force-free build, BAOAB stepping. NOT the bleb-nucleation / tension-buffering gate."
+}

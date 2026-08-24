@@ -1,0 +1,40 @@
+{
+  "aleph_authority": "none",
+  "cells_are_not_counted_as_biological_replicates": true,
+  "dataset_rows": {
+    "GSE282425": 4,
+    "GSE297406": 8,
+    "GSE63577": 30
+  },
+  "feature_count": 35,
+  "feature_panel_frozen_before_external_test": true,
+  "feature_panel_source": "GSE250041_frozen_RNA_MARKERS",
+  "gene_aliases": {
+    "IL8": "CXCL8"
+  },
+  "gse63577_legacy_xls_visual_verification": "OLE_converted_to_XLSX_and_CSV_then_header_rendered",
+  "gse63577_source_cells": {
+    "gene_symbol_column": "B",
+    "header": "A1:AH1",
+    "sheet": "counts"
+  },
+  "lab_count": 3,
+  "may_select_aleph_parameter": false,
+  "schema": "aleph.outer_library.external_senescence_tensor.v1",
+  "shape": [
+    42,
+    35
+  ],
+  "split_contract": {
+    "calibration_cell_line": "WI38",
+    "external_labels_used_for_model_selection": false,
+    "fit_cell_lines": [
+      "BJ",
+      "HFF",
+      "MRC5"
+    ],
+    "sealed_external_dataset_lab": "GSE297406/Sungkyunkwan_University_Cholab",
+    "selection_cell_line": "IMR90",
+    "single_donor_context_shift_diagnostic": "GSE282425"
+  }
+}

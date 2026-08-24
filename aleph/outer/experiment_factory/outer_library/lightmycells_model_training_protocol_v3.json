@@ -1,0 +1,102 @@
+{
+  "schema": "aleph.outer_library.lightmycells_model_training_protocol.v3",
+  "frozen_before_v3_training": true,
+  "scope": "non_disease_label_free_cell_morphology_and_organelle_spatial_representation",
+  "consumed_confirmation": {
+    "report_path": "results/lightmycells_confirmation_evaluation.json",
+    "report_sha256": "157e5fedd1f278d420d5aae26797311c49bc3463b72650727948a7f7aee8a858",
+    "status_known_before_freeze": "blocked_external_spatial_transfer",
+    "may_be_used_for_gradient_updates": false,
+    "may_be_used_for_epoch_or_hyperparameter_selection": false,
+    "may_be_re_evaluated_by_v3": false,
+    "permitted_use": "qualitative_domain_shift_motivation_only"
+  },
+  "v2_artifacts": {
+    "protocol_sha256": "dcdcddb0f6515b1d34437b28798bfe119bfd542cc92d611ccf51db653ca24a05",
+    "report_sha256": "301fb4a1dba9428bd8209f4078b2a066c975ac6becab9ff47eb107454e7cf83d",
+    "checkpoint_sha256": "150c4a5884b4b4dabc1a412f0bc8b9bd43d3d339f9c4e46d12beb665a04ac383"
+  },
+  "training_tensor": {
+    "path": "results/lightmycells_spatial_tensor.npz",
+    "sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0",
+    "fit_pairs": 3744,
+    "selection_pairs": 61,
+    "calibration_pairs": 569,
+    "confirmation_pairs": 0,
+    "study_count": 24
+  },
+  "model": {
+    "family": "conditional_instance_normalized_residual_UNet_with_study_adversary",
+    "base_channels": 16,
+    "downsampling_levels": 2,
+    "condition_channels": [
+      "target_Nucleus",
+      "target_Mitochondria",
+      "target_Tubulin",
+      "target_Actin",
+      "modality_BF",
+      "modality_PC",
+      "modality_DIC"
+    ],
+    "study_identifier_as_prediction_feature": false,
+    "study_identifier_as_adversarial_training_label": true,
+    "output_activation": "sigmoid",
+    "embedding": "global_average_pooled_instance_normalized_bottleneck"
+  },
+  "domain_generalization": {
+    "deterministic_style_views_per_fit_pair": 2,
+    "input_only_augmentations": {
+      "gamma_range": [0.7, 1.5],
+      "gain_range": [0.75, 1.25],
+      "bias_range": [-0.08, 0.08],
+      "gaussian_noise_standard_deviation_range": [0.0, 0.04]
+    },
+    "joint_geometric_augmentation": "deterministic_horizontal_and_vertical_flips",
+    "gradient_reversal_strength": 0.15,
+    "study_adversary_conditioned_on_target_and_modality": true,
+    "study_adversary_loss_weight": 0.08,
+    "prediction_consistency_loss_weight": 0.10
+  },
+  "optimization": {
+    "seed": 20260808,
+    "device": "CPU_or_MPS_but_report_exact_device",
+    "maximum_epochs": 20,
+    "batch_size": 48,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "fit_sampling": "inverse_sqrt_target_frequency",
+    "supervised_loss_components": {
+      "pixel_L1": 1.0,
+      "one_minus_centered_cosine": 0.25,
+      "one_minus_global_SSIM": 0.25,
+      "first_difference_L1": 0.05
+    },
+    "selection_or_calibration_rows_used_for_gradient_updates": false
+  },
+  "selection": {
+    "inference_unit": "study",
+    "required_targets": ["Nucleus", "Mitochondria"],
+    "endpoint_denominators": {
+      "Pearson": 0.35,
+      "global_SSIM": 0.25,
+      "relative_MAE_improvement": 0.10
+    },
+    "epoch_score": "minimum_of_three_unchanged_v2_endpoint_ratios",
+    "tie_break": "earlier_epoch",
+    "consumed_confirmation_metrics_inaccessible_to_selection": true
+  },
+  "post_selection_diagnostics": {
+    "calibration_studies": "never_used_for_gradient_or_epoch_selection",
+    "uncertainty": "maximum_per_study_90th_pixel_residual_quantile",
+    "OOD": "leave_study_out_shrinkage_whitened_nearest_fit_study_centroid_distance",
+    "OOD_is_authority": false
+  },
+  "authority_contract": {
+    "v3_success_before_new_confirmation": "training_only_checkpoint_candidate",
+    "external_confirmation_authority": false,
+    "general_cell_state_production_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false
+  }
+}

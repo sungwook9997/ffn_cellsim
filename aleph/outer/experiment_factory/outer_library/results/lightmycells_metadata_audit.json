@@ -1,0 +1,579 @@
+{
+  "aleph_authority": "none",
+  "confirmation_pixels_accessed": 0,
+  "image_pixels_accessed": 0,
+  "license": "CC BY 4.0",
+  "listed_file_count": 56984,
+  "listed_total_bytes": 109287061290,
+  "manifest_sha256": "a3578d8b2af4c2d40a868c7e8d93573d9b71683f9e864213fda06fe8a20232b6",
+  "matched_acquisition_set_count": 2574,
+  "matched_channel_file_counts": {
+    "Actin": 27,
+    "BF": 41213,
+    "DIC": 3499,
+    "Mitochondria": 1819,
+    "Nucleus": 2533,
+    "PC": 7670,
+    "Tubulin": 223
+  },
+  "may_emit_numeric_sweep_range": false,
+  "model_predictions_made": 0,
+  "protocol_sha256": "7989bf6004ecee0f9f1a65ae14ea2538099e12d84a34056173be46a90aeffa57",
+  "published_count_comparison": {
+    "listed_image_delta": 0,
+    "matched_acquisition_set_delta": 0,
+    "paper_acquisition_set_count": 2574,
+    "paper_image_count": 56984
+  },
+  "schema": "aleph.outer_library.lightmycells_metadata_audit.v1",
+  "source_study_json_sha256": "445bb88c1b45af18d6041a9cb0c29800a149202907f5875a3c41c45921c2dbea",
+  "split_summary": {
+    "calibration": {
+      "acquisition_set_count": 301,
+      "input_modality_acquisition_set_counts": {
+        "BF": 0,
+        "DIC": 56,
+        "PC": 245
+      },
+      "study_count": 4,
+      "target_acquisition_set_counts": {
+        "Actin": 0,
+        "Mitochondria": 253,
+        "Nucleus": 268,
+        "Tubulin": 48
+      }
+    },
+    "fit": {
+      "acquisition_set_count": 2139,
+      "input_modality_acquisition_set_counts": {
+        "BF": 1924,
+        "DIC": 197,
+        "PC": 18
+      },
+      "study_count": 16,
+      "target_acquisition_set_counts": {
+        "Actin": 10,
+        "Mitochondria": 1444,
+        "Nucleus": 2139,
+        "Tubulin": 152
+      }
+    },
+    "selection": {
+      "acquisition_set_count": 32,
+      "input_modality_acquisition_set_counts": {
+        "BF": 12,
+        "DIC": 0,
+        "PC": 20
+      },
+      "study_count": 4,
+      "target_acquisition_set_counts": {
+        "Actin": 7,
+        "Mitochondria": 31,
+        "Nucleus": 24,
+        "Tubulin": 0
+      }
+    },
+    "single_use_confirmation": {
+      "acquisition_set_count": 102,
+      "input_modality_acquisition_set_counts": {
+        "BF": 51,
+        "DIC": 33,
+        "PC": 18
+      },
+      "study_count": 6,
+      "target_acquisition_set_counts": {
+        "Actin": 10,
+        "Mitochondria": 91,
+        "Nucleus": 102,
+        "Tubulin": 23
+      }
+    }
+  },
+  "studies": {
+    "Study_1": {
+      "channel_file_counts": {
+        "BF": 43,
+        "Mitochondria": 43,
+        "Nucleus": 43
+      },
+      "description": "U2OS cells ",
+      "file_list": "FileList/Study_1.json",
+      "file_list_sha256": "0c9f492c36e6eeb381a12c03d73eadd1dbaf1dbbe5ed735653f42a4f7325fbea",
+      "file_list_size_bytes": 10549,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_1.json",
+      "listed_file_count": 129,
+      "matched_acquisition_set_count": 43,
+      "name": "U2OS",
+      "role": "single_use_confirmation"
+    },
+    "Study_10": {
+      "channel_file_counts": {
+        "BF": 216,
+        "Mitochondria": 8,
+        "Nucleus": 8
+      },
+      "description": "Urinary bladder transitional cell carcinoma",
+      "file_list": "FileList/Study_10.json",
+      "file_list_sha256": "b53da7fd5b5d82f67989251d583373b525c94b64b69770f69848c08e639c38b2",
+      "file_list_size_bytes": 19001,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_10.json",
+      "listed_file_count": 232,
+      "matched_acquisition_set_count": 8,
+      "name": "Urinary bladder transitional cell carcinoma (BF)",
+      "role": "fit"
+    },
+    "Study_11": {
+      "channel_file_counts": {
+        "BF": 108,
+        "Mitochondria": 4,
+        "Nucleus": 4
+      },
+      "description": "C4-2B human prostate cancer",
+      "file_list": "FileList/Study_11.json",
+      "file_list_sha256": "ce3a79c033905aa23a3fe1832a3ba0303d5c71f79dc25abf8d6efed4205cf991",
+      "file_list_size_bytes": 9501,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_11.json",
+      "listed_file_count": 116,
+      "matched_acquisition_set_count": 4,
+      "name": "Human prostate cancer (BF)",
+      "role": "selection"
+    },
+    "Study_12": {
+      "channel_file_counts": {
+        "Mitochondria": 8,
+        "Nucleus": 8,
+        "PC": 216
+      },
+      "description": "High morphology variability in the same plate. Sometimes cells were adherent, or rounded, or rounded but attached by 2 corners.",
+      "file_list": "FileList/Study_12.json",
+      "file_list_sha256": "1d41682692225bc76e79d4ea80c040c10458065214dbf7020d5fed3ad3923caa",
+      "file_list_size_bytes": 19001,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_12.json",
+      "listed_file_count": 232,
+      "matched_acquisition_set_count": 8,
+      "name": "Human Prostate Cancer (PC)",
+      "role": "single_use_confirmation"
+    },
+    "Study_13": {
+      "channel_file_counts": {
+        "Mitochondria": 8,
+        "Nucleus": 8,
+        "PC": 216
+      },
+      "description": "Urinary bladder transitional cell carcinoma",
+      "file_list": "FileList/Study_13.json",
+      "file_list_sha256": "b18324105c12df64da4b718ba80ffd67f2f3b6f0df5e9d9fea4124a9300d6c05",
+      "file_list_size_bytes": 19001,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_13.json",
+      "listed_file_count": 232,
+      "matched_acquisition_set_count": 8,
+      "name": "Urinary bladder transitional cell carcinoma (PC)",
+      "role": "fit"
+    },
+    "Study_14": {
+      "channel_file_counts": {
+        "BF": 168,
+        "Mitochondria": 8,
+        "Nucleus": 8
+      },
+      "description": "HEP3B human liver carcinoma",
+      "file_list": "FileList/Study_14.json",
+      "file_list_sha256": "c7cedf274bd672d239c3aa43a2d286be52d119e9448a76039bf1f5806174b869",
+      "file_list_size_bytes": 15065,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_14.json",
+      "listed_file_count": 184,
+      "matched_acquisition_set_count": 8,
+      "name": "Human Liver Carcinoma (BF)",
+      "role": "fit"
+    },
+    "Study_15": {
+      "channel_file_counts": {
+        "Mitochondria": 4,
+        "Nucleus": 4,
+        "PC": 108
+      },
+      "description": "HEP3B human liver carcinoma",
+      "file_list": "FileList/Study_15.json",
+      "file_list_sha256": "542454ab2238a90c79419179f019367a6a20245a0bbe1ec9ceb9e3571e853be2",
+      "file_list_size_bytes": 9501,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_15.json",
+      "listed_file_count": 116,
+      "matched_acquisition_set_count": 4,
+      "name": "Human Liver Carcinoma (PC)",
+      "role": "selection"
+    },
+    "Study_16": {
+      "channel_file_counts": {
+        "DIC": 660,
+        "Mitochondria": 33
+      },
+      "description": "HeLa cells in culture",
+      "file_list": "FileList/Study_16.json",
+      "file_list_sha256": "c1d6a9b0d1a1e9d3e7d12256e6030b6375457c54119a51d25973f92a70c94298",
+      "file_list_size_bytes": 57355,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_16.json",
+      "listed_file_count": 693,
+      "matched_acquisition_set_count": 33,
+      "name": "HeLa Schaffner",
+      "role": "calibration"
+    },
+    "Study_17": {
+      "channel_file_counts": {
+        "DIC": 820,
+        "Nucleus": 41,
+        "Tubulin": 41
+      },
+      "description": "HeLa Cells GFP-alpha tubuline/mCherry -H2B",
+      "file_list": "FileList/Study_17.json",
+      "file_list_sha256": "3bc21d247dd0c19aa58bf4738b949dae1ac2d0157c6ea80bf4968c52dfc0c639",
+      "file_list_size_bytes": 74457,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_17.json",
+      "listed_file_count": 902,
+      "matched_acquisition_set_count": 41,
+      "name": "HeLa Vienna",
+      "role": "fit"
+    },
+    "Study_18": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Mitochondria": 23,
+        "Nucleus": 23
+      },
+      "description": "Normal, adult, female cocker spaniel",
+      "file_list": "FileList/Study_18.json",
+      "file_list_sha256": "debbf9f66300073fad0275c48485b5de4721d11aa6ac3ddd9f1db6dffeb31f4f",
+      "file_list_size_bytes": 20908,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_18.json",
+      "listed_file_count": 253,
+      "matched_acquisition_set_count": 23,
+      "name": "Cocker",
+      "role": "calibration"
+    },
+    "Study_19": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Mitochondria": 23,
+        "Nucleus": 23
+      },
+      "description": "U2OS stably expressing histone H2B fused to EGFP",
+      "file_list": "FileList/Study_19.json",
+      "file_list_sha256": "b5d449984b6bfe17d0c890e4c11d9915b7917a4ba491477e8116b696b428c542",
+      "file_list_size_bytes": 20908,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_19.json",
+      "listed_file_count": 253,
+      "matched_acquisition_set_count": 23,
+      "name": "U2OS H2BGFP",
+      "role": "fit"
+    },
+    "Study_2": {
+      "channel_file_counts": {
+        "DIC": 125,
+        "Mitochondria": 9,
+        "Nucleus": 10
+      },
+      "description": "Fibroblast cells",
+      "file_list": "FileList/Study_2.json",
+      "file_list_sha256": "6fe49b34d433dd41129db967e88b38c61dcc52c37ee3b92198aac53b95af3cbe",
+      "file_list_size_bytes": 11601,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_2.json",
+      "listed_file_count": 144,
+      "matched_acquisition_set_count": 10,
+      "name": "Fibroblast CRSA",
+      "role": "single_use_confirmation"
+    },
+    "Study_20": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Mitochondria": 23,
+        "Nucleus": 23,
+        "Tubulin": 23
+      },
+      "description": "Normal, adult, female cocker spaniel",
+      "file_list": "FileList/Study_20.json",
+      "file_list_sha256": "4f0fd27fcc43bdb6aadf1198ecf350a8d88404ff0bf7452e49864ee9187a63e7",
+      "file_list_size_bytes": 22817,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_20.json",
+      "listed_file_count": 276,
+      "matched_acquisition_set_count": 23,
+      "name": "Cocker 3",
+      "role": "single_use_confirmation"
+    },
+    "Study_21": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Nucleus": 23,
+        "Tubulin": 23
+      },
+      "description": "U2OS stably expressing histone H2B fused to EGFP",
+      "file_list": "FileList/Study_21.json",
+      "file_list_sha256": "b79920a040b08f421f129e6f371d84bcc9e8c734a23361a9f2c27d19faf1d8d8",
+      "file_list_size_bytes": 20793,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_21.json",
+      "listed_file_count": 253,
+      "matched_acquisition_set_count": 23,
+      "name": "U2OS H2BGFP 2",
+      "role": "fit"
+    },
+    "Study_22": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Mitochondria": 23,
+        "Nucleus": 23
+      },
+      "description": "Normal, adult, female cocker spaniel",
+      "file_list": "FileList/Study_22.json",
+      "file_list_sha256": "a39c0bfb8523dfd98b6395ef22786a7a794a06503d0c43ee89f57c847c97dadc",
+      "file_list_size_bytes": 20908,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_22.json",
+      "listed_file_count": 253,
+      "matched_acquisition_set_count": 23,
+      "name": "Cocker 2",
+      "role": "fit"
+    },
+    "Study_23": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Mitochondria": 23,
+        "Nucleus": 23
+      },
+      "description": "U2OS stably expressing histone H2B fused to EGFP",
+      "file_list": "FileList/Study_23.json",
+      "file_list_sha256": "6862060b7dd644049f2164f2882cd80cf283ac3b6fa03c98aac99cd985f06304",
+      "file_list_size_bytes": 20908,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_23.json",
+      "listed_file_count": 253,
+      "matched_acquisition_set_count": 23,
+      "name": "U2OS H2BGFP 3",
+      "role": "fit"
+    },
+    "Study_24": {
+      "channel_file_counts": {
+        "DIC": 207,
+        "Mitochondria": 23,
+        "Nucleus": 23,
+        "Tubulin": 23
+      },
+      "description": "Normal, adult, female cocker spaniel",
+      "file_list": "FileList/Study_24.json",
+      "file_list_sha256": "8cd202000cb547dba1ba755bd2204fd1be8f7ce78a973b3b1df828d62d1b3eae",
+      "file_list_size_bytes": 22817,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_24.json",
+      "listed_file_count": 276,
+      "matched_acquisition_set_count": 23,
+      "name": "Cocker 4",
+      "role": "fit"
+    },
+    "Study_25": {
+      "channel_file_counts": {
+        "BF": 27069,
+        "Mitochondria": 1289,
+        "Nucleus": 1289
+      },
+      "description": "HeLa stably epxressing RAB6A fused with EGFP",
+      "file_list": "FileList/Study_25.json",
+      "file_list_sha256": "e90c47eb6115a39181cf65b2a31507f18d99af3265ec1f069f2166765a9d74a7",
+      "file_list_size_bytes": 2413687,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_25.json",
+      "listed_file_count": 29647,
+      "matched_acquisition_set_count": 1289,
+      "name": "HeLa IGH",
+      "role": "fit"
+    },
+    "Study_26": {
+      "channel_file_counts": {
+        "BF": 12914,
+        "Nucleus": 587
+      },
+      "description": "HeLa stably epxressing RAB6A fused with EGFP",
+      "file_list": "FileList/Study_26.json",
+      "file_list_sha256": "d80a87d43ffc74d90274d8d018ee4e0b3ccc3acd82dbf9bb0d85d460cd966fe3",
+      "file_list_size_bytes": 1115255,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_26.json",
+      "listed_file_count": 13501,
+      "matched_acquisition_set_count": 587,
+      "name": "HeLa IGH 2",
+      "role": "fit"
+    },
+    "Study_27": {
+      "channel_file_counts": {
+        "Mitochondria": 197,
+        "Nucleus": 197,
+        "PC": 5875
+      },
+      "description": "HeLa cells",
+      "file_list": "FileList/Study_27.json",
+      "file_list_sha256": "a22d91f31d560fb50e71ec542b42ad72372754592eb817e6dbdbf5d441e42cd1",
+      "file_list_size_bytes": 519737,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_27.json",
+      "listed_file_count": 6269,
+      "matched_acquisition_set_count": 197,
+      "name": "HeLa IGH 3",
+      "role": "calibration"
+    },
+    "Study_28": {
+      "channel_file_counts": {
+        "Mitochondria": 16,
+        "Nucleus": 8,
+        "PC": 320
+      },
+      "description": "HeLa cells expressing stably histone H2B fused to EGFP",
+      "file_list": "FileList/Study_28.json",
+      "file_list_sha256": "e2989f75dbc5ce9f511d18e9b1a47f7479deec34c996f95ba21d09b232cea24f",
+      "file_list_size_bytes": 28497,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_28.json",
+      "listed_file_count": 344,
+      "matched_acquisition_set_count": 16,
+      "name": "Scan Hela H2B GFP",
+      "role": "selection"
+    },
+    "Study_29": {
+      "channel_file_counts": {
+        "Nucleus": 48,
+        "PC": 705,
+        "Tubulin": 48
+      },
+      "description": "U2OS stably expressing histone H2B fused to EGFP",
+      "file_list": "FileList/Study_29.json",
+      "file_list_sha256": "30cb8befd26d0083b7377ba033ee3e91e05602ad10d352f14f0bbb0f29892314",
+      "file_list_size_bytes": 66143,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_29.json",
+      "listed_file_count": 801,
+      "matched_acquisition_set_count": 48,
+      "name": "U2OS IGH 2",
+      "role": "calibration"
+    },
+    "Study_3": {
+      "channel_file_counts": {
+        "Actin": 7,
+        "BF": 103,
+        "Mitochondria": 7,
+        "Nucleus": 8
+      },
+      "description": "Myoblast cells",
+      "file_list": "FileList/Study_3.json",
+      "file_list_sha256": "b97c67aa544663b7e047c39ae916de5aa269f1fa7ba4e7be9e7d06fdf652ad7c",
+      "file_list_size_bytes": 9991,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_3.json",
+      "listed_file_count": 125,
+      "matched_acquisition_set_count": 8,
+      "name": "Myoblast Genethon",
+      "role": "selection"
+    },
+    "Study_30": {
+      "channel_file_counts": {
+        "BF": 288,
+        "Nucleus": 24,
+        "Tubulin": 24
+      },
+      "description": "U2OS stably expressing histone H2B fused to EGFP",
+      "file_list": "FileList/Study_30.json",
+      "file_list_sha256": "974683e45da26cfd9ad24420775b48c2ac58225a6b98a605f5da73b5468831c4",
+      "file_list_size_bytes": 27769,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_30.json",
+      "listed_file_count": 336,
+      "matched_acquisition_set_count": 24,
+      "name": "U2OS IGH (BF)",
+      "role": "fit"
+    },
+    "Study_4": {
+      "channel_file_counts": {
+        "DIC": 315,
+        "Mitochondria": 31,
+        "Nucleus": 31,
+        "Tubulin": 31
+      },
+      "description": "HELA cells",
+      "file_list": "FileList/Study_4.json",
+      "file_list_sha256": "23a279bd332abeddf7e71bd301b23e8416af9dba4e145b062fc416b008139439",
+      "file_list_size_bytes": 33007,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_4.json",
+      "listed_file_count": 408,
+      "matched_acquisition_set_count": 31,
+      "name": "HeLa Roussy",
+      "role": "fit"
+    },
+    "Study_5": {
+      "channel_file_counts": {
+        "Actin": 10,
+        "Nucleus": 10,
+        "PC": 120
+      },
+      "description": "Human muscle fiber",
+      "file_list": "FileList/Study_5.json",
+      "file_list_sha256": "0e1e1763122653d0f3eb25711a652f2ca34249d1d5ec745925684a5172685e86",
+      "file_list_size_bytes": 11129,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_5.json",
+      "listed_file_count": 140,
+      "matched_acquisition_set_count": 10,
+      "name": "Human muscle AMU 2",
+      "role": "single_use_confirmation"
+    },
+    "Study_6": {
+      "channel_file_counts": {
+        "Actin": 10,
+        "Nucleus": 10,
+        "PC": 110
+      },
+      "description": "Human muscle fiber",
+      "file_list": "FileList/Study_6.json",
+      "file_list_sha256": "07c705efe18eb07fa5263d2562290256c4ed5f55397ae2dd13961a150be433d7",
+      "file_list_size_bytes": 10431,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_6.json",
+      "listed_file_count": 130,
+      "matched_acquisition_set_count": 10,
+      "name": "Human muscle AMU",
+      "role": "fit"
+    },
+    "Study_7": {
+      "channel_file_counts": {
+        "DIC": 130,
+        "Nucleus": 10,
+        "Tubulin": 10
+      },
+      "description": "Human intestine cells",
+      "file_list": "FileList/Study_7.json",
+      "file_list_sha256": "f30f8fbbcef92c8e631af9b5d910ff390f01e1e24a9372733a784fee092025fc",
+      "file_list_size_bytes": 12201,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_7.json",
+      "listed_file_count": 150,
+      "matched_acquisition_set_count": 10,
+      "name": "Human intestine AMU",
+      "role": "fit"
+    },
+    "Study_8": {
+      "channel_file_counts": {
+        "BF": 152,
+        "Mitochondria": 8,
+        "Nucleus": 8
+      },
+      "description": "HEP3B human liver carcinoma",
+      "file_list": "FileList/Study_8.json",
+      "file_list_sha256": "5c43529f17c4bee237153ce0655d908d2878cf332f72023f076a3809b1fdcd24",
+      "file_list_size_bytes": 13585,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_8.json",
+      "listed_file_count": 168,
+      "matched_acquisition_set_count": 8,
+      "name": "Human Liver Carcinoma ",
+      "role": "fit"
+    },
+    "Study_9": {
+      "channel_file_counts": {
+        "BF": 152,
+        "Mitochondria": 8,
+        "Nucleus": 8
+      },
+      "description": "Urinary bladder transitional cell carcinoma",
+      "file_list": "FileList/Study_9.json",
+      "file_list_sha256": "25cc78a4bf4b2e10b86e04fa85ac401a6f44877f60136fe080d07619c8f2b573",
+      "file_list_size_bytes": 13585,
+      "file_list_url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/047/S-BIAD1047/Files/FileList/Study_9.json",
+      "listed_file_count": 168,
+      "matched_acquisition_set_count": 8,
+      "name": "Urinary bladder transitional cell carcinoma 40x",
+      "role": "single_use_confirmation"
+    }
+  },
+  "study_count": 30,
+  "unmatched_file_count": 0,
+  "unmatched_files": []
+}

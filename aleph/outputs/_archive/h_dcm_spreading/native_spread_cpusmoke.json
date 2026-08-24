@@ -1,0 +1,11 @@
+{
+  "tag": "cpusmoke",
+  "finite": true,
+  "device": "cpu",
+  "subdiv": 2,
+  "A0_um2": 173.17388822652217,
+  "V0_um3": 1707.3469433657738,
+  "AoverA0_final": 1.036,
+  "AoverA0_max": 1.036,
+  "VoverV0_final": 1.036,
+  "height_final_um": 

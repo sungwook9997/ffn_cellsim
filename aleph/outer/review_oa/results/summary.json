@@ -1,0 +1,61 @@
+{
+  "article_types": {
+    "non_research_metadata": 512,
+    "research_article_metadata": 2097,
+    "unknown": 92
+  },
+  "articles": 2701,
+  "articles_with_dataset_accession": 319,
+  "articles_with_observation_locator": 2260,
+  "authority_status": "proposed",
+  "compact_index_sha256": "0bd55f32829196ac65a13268988854aad6436dccdc0d79c8c8500f7b8a90e598",
+  "correction_retraction_status": {
+    "flagged": 1,
+    "flagged_title_metadata": 4,
+    "metadata_unavailable": 2578,
+    "no_correction_or_retraction_link_in_europe_pmc_core": 115,
+    "unknown": 3
+  },
+  "decisions": {
+    "exception_candidate": 74,
+    "hold": 2091,
+    "manual_priority": 536
+  },
+  "duplicate_dataset_groups": 61,
+  "input_manifest_set_sha256": "cf618563667281631b8df4f5453a83c65402e95ae619ba8788c72297607ac069",
+  "leakage_groups_sha256": "167d8e544dbc76e9f9f37084c614f696ac48cd91acdf5a257c4333188bc96c2b",
+  "limitations": [
+    "regex and vocabulary hits indicate recoverability only, not adequacy or truth",
+    "correction/retraction metadata is unavailable for most sources in the local corpus",
+    "independent replication and affiliation-resolved laboratory groups require manual review",
+    "no decision in this lane is Tier A or training authorization"
+  ],
+  "local_record_set_sha256": "6b1ebd5895c29ec17dd321a3446144efdaa2ad6481bcb59d35fca7505bd1017f",
+  "manual_queue_sha256": "dd14dc1456934b77bdf3bb99164e8dc54f385b1203c17f32b99f6da3aa933814",
+  "missing_review_fields": {
+    "affiliation_resolved_lab_group": 2701,
+    "biological_replicates": 2091,
+    "calibration": 2107,
+    "cell_type_state": 205,
+    "correction_retraction_check": 2581,
+    "exact_observation_locator": 441,
+    "exclusions": 1847,
+    "independent_replication_check": 2701,
+    "measurement_modality": 583,
+    "sample_size": 783,
+    "source_data": 1377,
+    "uncertainty": 743,
+    "units": 296
+  },
+  "schema": "aleph.external_training.oa_recoverability_summary.v1",
+  "screen_version": "1",
+  "signal_recoverability_articles": {
+    "biological_replicates": 610,
+    "calibration": 594,
+    "exclusions": 854,
+    "sample_size": 1918,
+    "source_data": 1324,
+    "uncertainty": 1958,
+    "units": 2405
+  }
+}

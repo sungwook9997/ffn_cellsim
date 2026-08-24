@@ -1,0 +1,39 @@
+{
+  "config": {
+    "n_filaments": 70686,
+    "n_steps": 4000,
+    "device": "cuda:0",
+    "membrane": true,
+    "load": {
+      "pressure_setpoint": null,
+      "Lp_um_s_Pa": 1e-07,
+      "K_drained_Pa": 300.0,
+      "load_time_s": 300.0,
+      "xl_koff_per_s": 0.066,
+      "eta_bulk_Pa_s": 65.9,
+      "rigid_plate": true
+    },
+    "seed": 1
+  },
+  "R0_um": 7.499978516787127,
+  "gate": {
+    "E_star_Pa": 5428.446679060848,
+    "E_fit_Pa": 4071.3350092956357,
+    "r_squared": 0.9650184914878196,
+    "flatness": 0.3500076877424237,
+    "forward_max_resid_frac": 0.5287253755853849,
+    "k_shell_pN_per_um": 8635.134988459786,
+    "shell_r_squared": 0.9764545836141003,
+    "shell_resid_frac": 0.10821704727687743,
+    "better_model": "linear-shell",
+    "model_clean": false,
+    "verdict": "LINEAR-SHELL (needs rigor)",
+    "n_points_used": 4,
+    "all_small_strain_valid": true,
+    "E_fit_over_MCF7": 16.35074300921942,
+    "mcf7_band_Pa": [
+      224.0,
+      279.0
+    ]
+  }
+}

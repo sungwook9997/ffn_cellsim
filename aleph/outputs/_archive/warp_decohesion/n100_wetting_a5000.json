@@ -1,0 +1,33 @@
+{
+  "_about": "Phase-C migration M1.5 — de-cohesion wetting-cleanball spread on the Warp DCM engine. gbook RTX A5000, 2026-06-21. Demonstrates the migrated GPU-resident engine at production scale (N=100) + speed. Faithful to DCM_LANDMINE_REGISTER clean re-run: NO body-force proxy; the conservative substrate wetting is the spreading driver; top-down silhouette A/A0 co-tracked with maxZ + V/V0 + COM drift.",
+  "device": "gbook RTX A5000 (cuda:0)",
+  "config": {
+    "n_cells": 100, "N": 16200, "subdiv": 2, "dt": 8.0e-6, "steps": 60000, "warmup": 1000,
+    "gamma_node": 5.75e-5,
+    "gamma_derivation": "6*pi*eta*R_cell/nv, eta=65.9 Pa.s (MCF7 cytoplasm) — physiological-baseline rule, NOT the legacy ResolvedDCM 3.9e-10",
+    "drivers": "turgor + cortex edges + node-node cohesion + node-face contact + substrate z-well + in-plane wetting (all parity-verified Warp kernels), hash-grid accelerated",
+    "NOT_included": "lamellipodium (M2), junction-switch (M3), body-force proxy (deleted), spread_f_act proxy (off)"
+  },
+  "speed": {
+    "steps_per_s": 323.0, "wall_s_60k": 186,
+    "note": "grid-accelerated; ~3 min for 60k steps on the A5000 vs the old per-step cpu_local_snapshot HOOMD DCM path (the orchestration ran the cleanball sweep overnight). The 30x engine win, realized at scale."
+  },
+  "result": {
+    "aa0_peak": 1.4533, "aa0_final": 1.4533, "still_rising": true,
+    "maxZ_final_um": 81.07, "maxZ_held": true,
+    "vv0_final": 1.036, "drift_final_um": 0.007,
+    "stable": true, "truncated_at": null
+  },
+  "reading": "GENUINE lateral spread: A/A0 1.0->1.45 (still rising at 60k) at HELD maxZ (81.1um constant throughout) + conserved volume (V/V0 1.04) + ~0 COM drift. The silhouette growth is basal-footprint spreading, NOT the vertical-flatten settle-confound signature (the retracted PLATEAU's defect) and NOT bulk drift. This is the WETTING-only contribution; the lamellipodium crawl (M2; ctrl_C lamel-only reached ~3.0) is additive toward the de-cohesion verdict.",
+  "trajectory": [
+    {"step": 0, "aa0": 1.000, "maxZ_um": 81.1, "vv0": 1.000},
+    {"step": 11610, "aa0": 1.004, "maxZ_um": 81.1, "vv0": 1.035},
+    {"step": 21285, "aa0": 1.104, "maxZ_um": 81.1, "vv0": 1.035},
+    {"step": 27090, "aa0": 1.220, "maxZ_um": 81.1, "vv0": 1.035},
+    {"step": 32895, "aa0": 1.303, "maxZ_um": 81.1, "vv0": 1.035},
+    {"step": 40635, "aa0": 1.341, "maxZ_um": 81.1, "vv0": 1.035},
+    {"step": 50310, "aa0": 1.363, "maxZ_um": 81.1, "vv0": 1.035},
+    {"step": 56115, "aa0": 1.429, "maxZ_um": 81.1, "vv0": 1.034},
+    {"step": 60000, "aa0": 1.453, "maxZ_um": 81.1, "vv0": 1.036}
+  ]
+}

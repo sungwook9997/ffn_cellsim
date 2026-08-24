@@ -1,0 +1,728 @@
+{
+  "aleph_parameter_authority": "none",
+  "annotation_rows": 6142,
+  "available_class_counts": {
+    "endoplasmic_reticulum": 1123,
+    "golgi": 1156,
+    "mitochondria": 556,
+    "nuclear_interior": 159,
+    "plasma_membrane_or_junction": 207,
+    "vesicular_organelle": 1183
+  },
+  "constraints": {
+    "minimum_landmark_proteins": true,
+    "minimum_primary_classes": true,
+    "minimum_total_images": true
+  },
+  "image_objects_downloaded": 0,
+  "manifest_sha256": "61ff86eec15bbaa90d54a950ab9e55a20fc6ad8f127aec89012cc38e4d8f9e8d",
+  "model_predictions_made": 0,
+  "pristine_holdout_authority": false,
+  "protocol_sha256": "afaacb96d1493dfef5ed4cd4b49544696e34bd049402fa8998d3f7be9c16cd11",
+  "raw_metadata_receipts": [
+    {
+      "bytes": 186870,
+      "kind": "bulk_annotation",
+      "screen_id": 2952,
+      "sha256": "5d479a56c91132c935ddae660488e28224eb073071919a9ccef1c9dcedea7775",
+      "url": "https://idr.openmicroscopy.org/webgateway/table/Screen/2952/query/?query=%2A"
+    },
+    {
+      "bytes": 39232,
+      "kind": "plate_grid",
+      "plate_id": 9451,
+      "sha256": "7d8af55610e1af9171859eb57034beac066abd7df4c05de57e6fc53babf784fb",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9451/0/"
+    },
+    {
+      "bytes": 9690,
+      "kind": "plate_grid",
+      "plate_id": 9452,
+      "sha256": "779f667a5ca280f7d812bff23e6ce5dce3d0844e88b04cd05138d88f7214e55d",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9452/0/"
+    },
+    {
+      "bytes": 15804,
+      "kind": "plate_grid",
+      "plate_id": 9453,
+      "sha256": "c09e276c5e8d6bad2cbb3c58c62de39e590a052a139fe27ec363343a71fe399a",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9453/0/"
+    },
+    {
+      "bytes": 6874,
+      "kind": "plate_grid",
+      "plate_id": 9454,
+      "sha256": "584af82ba54c1fae2e440f72e4544d7ba00b939d93ae156fc25f2d48d2f66d2b",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9454/0/"
+    },
+    {
+      "bytes": 7108,
+      "kind": "plate_grid",
+      "plate_id": 9455,
+      "sha256": "b658f6d179ba47bd496383862947ddf1e7872a7d9b48690e65f90c772394a754",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9455/0/"
+    },
+    {
+      "bytes": 11791,
+      "kind": "plate_grid",
+      "plate_id": 9456,
+      "sha256": "60d856f5f255d128b9141edc78b488b2633d8739e74cc63600b7752f37776c4e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9456/0/"
+    },
+    {
+      "bytes": 27274,
+      "kind": "plate_grid",
+      "plate_id": 9457,
+      "sha256": "738bfe5aff7741a24a35467198074f715dcc2d206e96fc7a57384aadbcb0d14c",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9457/0/"
+    },
+    {
+      "bytes": 17657,
+      "kind": "plate_grid",
+      "plate_id": 9458,
+      "sha256": "551c6141c447786506fe7e50542aa45be827231f954116dc33aedfc320947143",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9458/0/"
+    },
+    {
+      "bytes": 21173,
+      "kind": "plate_grid",
+      "plate_id": 9459,
+      "sha256": "00289f0dad27cc1f6e08beb782ee26f5c9d5402c775b14813fc2f76ed9ad64f4",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9459/0/"
+    },
+    {
+      "bytes": 22110,
+      "kind": "plate_grid",
+      "plate_id": 9460,
+      "sha256": "5d460b6f259dd865cc87b263e51df2a26b222fed1ef573a01f35eb5d23f361fa",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9460/0/"
+    },
+    {
+      "bytes": 1521642,
+      "kind": "bulk_annotation",
+      "screen_id": 2953,
+      "sha256": "732b547ccfb347b315d3bca9ff7f90c7030114aee8753153f29ced81deb75b3d",
+      "url": "https://idr.openmicroscopy.org/webgateway/table/Screen/2953/query/?query=%2A"
+    },
+    {
+      "bytes": 5820,
+      "kind": "plate_grid",
+      "plate_id": 9461,
+      "sha256": "cd9364ccbb744ef4558154fe672e64a6a74e28c837cb06acd30bc72548d18a58",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9461/0/"
+    },
+    {
+      "bytes": 24252,
+      "kind": "plate_grid",
+      "plate_id": 9462,
+      "sha256": "d3e4daf7693d93e4dd49c0bd3db0baf84b2f6d5b62e8dd5d2afed361b2ec8006",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9462/0/"
+    },
+    {
+      "bytes": 20133,
+      "kind": "plate_grid",
+      "plate_id": 9463,
+      "sha256": "cd09dfcac34ef9160a16ccc91bf2ae597b21db175c7eba6d9fff71db7d3ea8f1",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9463/0/"
+    },
+    {
+      "bytes": 16541,
+      "kind": "plate_grid",
+      "plate_id": 9464,
+      "sha256": "b2a9ec5fbb863f8622a2154d8fe562cd0d3ab24745f7310b6cc0a3e0ab040883",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9464/0/"
+    },
+    {
+      "bytes": 18373,
+      "kind": "plate_grid",
+      "plate_id": 9465,
+      "sha256": "37619624aec68e42d2ca7cbf873d81499428f1eeb54a6c68287d62d33545e11a",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9465/0/"
+    },
+    {
+      "bytes": 28040,
+      "kind": "plate_grid",
+      "plate_id": 9466,
+      "sha256": "bf76df5af568ace5ef7643ed4b8901de53e23338a4ee36467229d5fb11f32cfa",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9466/0/"
+    },
+    {
+      "bytes": 3972,
+      "kind": "plate_grid",
+      "plate_id": 9467,
+      "sha256": "eecfc3f0d534113b7d3ddcc1815f089f1a4efd45a546c4aacf7696b59dfe1a7c",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9467/0/"
+    },
+    {
+      "bytes": 3980,
+      "kind": "plate_grid",
+      "plate_id": 9468,
+      "sha256": "2ff9ce69d04c0ce93ce4d461b01b7e8c31ee8fa339018c83618d606aec9f604e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9468/0/"
+    },
+    {
+      "bytes": 7596,
+      "kind": "plate_grid",
+      "plate_id": 9469,
+      "sha256": "10f9934888e3634980bf65cc2389c149ec7299e82e310b241ae5a29089738631",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9469/0/"
+    },
+    {
+      "bytes": 5772,
+      "kind": "plate_grid",
+      "plate_id": 9470,
+      "sha256": "c91b980a1b9a6b41431610e3059eb609f9b992bee099d5add299f2f15fad5692",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9470/0/"
+    },
+    {
+      "bytes": 7740,
+      "kind": "plate_grid",
+      "plate_id": 9471,
+      "sha256": "e6f8817f9e8135d4667ca338125c23de3a2a596e323dbb0ac9e3208861c2851b",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9471/0/"
+    },
+    {
+      "bytes": 9692,
+      "kind": "plate_grid",
+      "plate_id": 9472,
+      "sha256": "dd1376e70c1d1884d3211700251703eb03b74173e0dbcf3d9c697d3a6d13bf94",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9472/0/"
+    },
+    {
+      "bytes": 4052,
+      "kind": "plate_grid",
+      "plate_id": 9473,
+      "sha256": "fadf729e0572b5e26f012de5dc59ce0e104a60de8ce065a8ab8dbf10cf84a3d5",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9473/0/"
+    },
+    {
+      "bytes": 30628,
+      "kind": "plate_grid",
+      "plate_id": 9474,
+      "sha256": "4033ef05d79d483fd073156dc98d3c58b545c4f797419b6c3a218afe99581d26",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9474/0/"
+    },
+    {
+      "bytes": 6240,
+      "kind": "plate_grid",
+      "plate_id": 9475,
+      "sha256": "4d3b7ba107aa9b54a133758f6caf84fdaee3bb1c30741907ad3cdbe285c00b85",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9475/0/"
+    },
+    {
+      "bytes": 7764,
+      "kind": "plate_grid",
+      "plate_id": 9476,
+      "sha256": "768ca8216cf92b43ffdc4325a9f6c8b6b317978a185e11a20d7cbcdf5be709d8",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9476/0/"
+    },
+    {
+      "bytes": 3972,
+      "kind": "plate_grid",
+      "plate_id": 9477,
+      "sha256": "d4957c36e2c1c65ff99e9735ec69ebf3a8eecdfa6a7f13b542d2781ac650706e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9477/0/"
+    },
+    {
+      "bytes": 12972,
+      "kind": "plate_grid",
+      "plate_id": 9478,
+      "sha256": "c13c1ea4932c4d54b7d8a219ebd8ca4e698ff8ccfc944cbabd6f0d20aca4a782",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9478/0/"
+    },
+    {
+      "bytes": 21016,
+      "kind": "plate_grid",
+      "plate_id": 9479,
+      "sha256": "f55f066b772ed7b541c4eae79249e2caacd0819819de6321076e10275800bdd3",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9479/0/"
+    },
+    {
+      "bytes": 7816,
+      "kind": "plate_grid",
+      "plate_id": 9480,
+      "sha256": "65275c6e73d6ff47fab70e165b964f83de44dd655f36060b5ad83059fb6651bf",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9480/0/"
+    },
+    {
+      "bytes": 16508,
+      "kind": "plate_grid",
+      "plate_id": 9481,
+      "sha256": "a0daa47bd97075d7e63fef24902917b6462bd55a12ebd47581066c0e54bcaa0f",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9481/0/"
+    },
+    {
+      "bytes": 9116,
+      "kind": "plate_grid",
+      "plate_id": 9482,
+      "sha256": "87467b6a9fa4ba47226abe5645eb9ede84d469a862be6546a5aec23cdc2da445",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9482/0/"
+    },
+    {
+      "bytes": 5322,
+      "kind": "plate_grid",
+      "plate_id": 9483,
+      "sha256": "7eac8ae4c9f4c037f928442f425145640e93ffc3f899a1a1eac70d4c999dfc2e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9483/0/"
+    },
+    {
+      "bytes": 12028,
+      "kind": "plate_grid",
+      "plate_id": 9484,
+      "sha256": "2966be2950b6d9ae5422ec90dad7a887be06cb5b1e4e92c5a99a8bece455b4eb",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9484/0/"
+    },
+    {
+      "bytes": 19722,
+      "kind": "plate_grid",
+      "plate_id": 9485,
+      "sha256": "7d6c6d5eeb7bca850b452c77ad2939795e62666a039a82bff0b481f951a46b03",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9485/0/"
+    },
+    {
+      "bytes": 21428,
+      "kind": "plate_grid",
+      "plate_id": 9486,
+      "sha256": "6094470324bd1c3bfa99a105805c1ad04501cb2890e7c17eb198bf9fa2c83a69",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9486/0/"
+    },
+    {
+      "bytes": 20172,
+      "kind": "plate_grid",
+      "plate_id": 9487,
+      "sha256": "af0384be3d5e4018b134dfdecf2eef7589e4236f890c3fa3dfbce77abedd5e36",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9487/0/"
+    },
+    {
+      "bytes": 49453,
+      "kind": "plate_grid",
+      "plate_id": 9488,
+      "sha256": "fb02b817d8ac156f3cd8680f406493e4b4326fcac6631271ae9894bbfd2febc5",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9488/0/"
+    },
+    {
+      "bytes": 19940,
+      "kind": "plate_grid",
+      "plate_id": 9489,
+      "sha256": "30a202b4276f6a69113eebfe6cd6287aa939e2f4284ce5547329391a52fc6308",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9489/0/"
+    },
+    {
+      "bytes": 30958,
+      "kind": "plate_grid",
+      "plate_id": 9490,
+      "sha256": "1563f49eab0c8368199c4a2cf8b2e1530832d231f24dd2b028ceaf0faace1b4e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9490/0/"
+    },
+    {
+      "bytes": 26074,
+      "kind": "plate_grid",
+      "plate_id": 9491,
+      "sha256": "b563f2b3d725d14ea74973d90297a026d1a4b6d973606506031fecffb70f7b6f",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9491/0/"
+    },
+    {
+      "bytes": 25596,
+      "kind": "plate_grid",
+      "plate_id": 9492,
+      "sha256": "baf3c7ab13f96e59c799216ce5cd2c8e419748ab88caa6730724e49428154f39",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9492/0/"
+    },
+    {
+      "bytes": 35258,
+      "kind": "plate_grid",
+      "plate_id": 9493,
+      "sha256": "4bed72107336c633ab194c5c1488a6f969ba12c09428a4b21f8b14cd4336aa8e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9493/0/"
+    },
+    {
+      "bytes": 5918,
+      "kind": "plate_grid",
+      "plate_id": 9494,
+      "sha256": "804ae05757404883aa26b30f2d430937396884afab1ce00d5f1edb6d51052ae9",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9494/0/"
+    },
+    {
+      "bytes": 11550,
+      "kind": "plate_grid",
+      "plate_id": 9495,
+      "sha256": "10234561b4d238d1c5f773ad6b5008d365dc1aac5ff4e905d435c117f31b15fe",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9495/0/"
+    },
+    {
+      "bytes": 7814,
+      "kind": "plate_grid",
+      "plate_id": 9496,
+      "sha256": "dcb1a471201a107c49bad0908d6a4bd96c7cc660ca075720baf970683676c66c",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9496/0/"
+    },
+    {
+      "bytes": 10364,
+      "kind": "plate_grid",
+      "plate_id": 9497,
+      "sha256": "dcc6d80d3d50573fd30b373561c2d872edf16a03c5d53982239c9cd30e7f64d2",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9497/0/"
+    },
+    {
+      "bytes": 5934,
+      "kind": "plate_grid",
+      "plate_id": 9498,
+      "sha256": "348782b98a3a170079e9ec7f0c0def853a830dc8d9dd37d115ce263abbc0cafe",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9498/0/"
+    },
+    {
+      "bytes": 18811,
+      "kind": "plate_grid",
+      "plate_id": 9499,
+      "sha256": "c834bb14410acfbaf221f2f597e51f6deb689669cc8f34de6f47177c68db380a",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9499/0/"
+    },
+    {
+      "bytes": 8733,
+      "kind": "plate_grid",
+      "plate_id": 9500,
+      "sha256": "fcff2f06e67e2fa7e2ee0ea1a679acf23d14a857cab5cb740326994603fa5f62",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9500/0/"
+    },
+    {
+      "bytes": 13414,
+      "kind": "plate_grid",
+      "plate_id": 9501,
+      "sha256": "289573c013f24ab070c3a716e884bef465784103f787ef6fb780220869587936",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9501/0/"
+    },
+    {
+      "bytes": 11882,
+      "kind": "plate_grid",
+      "plate_id": 9502,
+      "sha256": "1a7ec1a95432ba0d2054e5b58e05a31308a93f118e04c7bad75fa34d3c54cbb3",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9502/0/"
+    },
+    {
+      "bytes": 5934,
+      "kind": "plate_grid",
+      "plate_id": 9503,
+      "sha256": "df1b51928963f41ccb8b8d101066c7bca039f38073b6658e27ec843416927700",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9503/0/"
+    },
+    {
+      "bytes": 14595,
+      "kind": "plate_grid",
+      "plate_id": 9504,
+      "sha256": "4b029b975647bd671f4cae5b5be0e826de132c36ab5ee586e7efb5622ac1921a",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9504/0/"
+    },
+    {
+      "bytes": 5918,
+      "kind": "plate_grid",
+      "plate_id": 9505,
+      "sha256": "e9492141d1e600d39b39d66281ad2691ba23408832e9fbc4eeb4d4eea39451b3",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9505/0/"
+    },
+    {
+      "bytes": 8989,
+      "kind": "plate_grid",
+      "plate_id": 9506,
+      "sha256": "5f6f21d02d4c7a31d74a7c02ccad79f2260c5b7e780a9c29371747222f18d33d",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9506/0/"
+    },
+    {
+      "bytes": 9670,
+      "kind": "plate_grid",
+      "plate_id": 9507,
+      "sha256": "f839add6f0119ca22bcef3aff0e975b8f72ad774d9e07f092bca76670968a444",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9507/0/"
+    },
+    {
+      "bytes": 10620,
+      "kind": "plate_grid",
+      "plate_id": 9508,
+      "sha256": "36e15c66654fc54645835aa708f80b5fdb8f2ebf65acbd1bba9f40c0380fbe12",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9508/0/"
+    },
+    {
+      "bytes": 11542,
+      "kind": "plate_grid",
+      "plate_id": 9509,
+      "sha256": "01f685be0eaccbce468986219651d49d09580348a84f001c81a750079d4f8ea9",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9509/0/"
+    },
+    {
+      "bytes": 4054,
+      "kind": "plate_grid",
+      "plate_id": 9510,
+      "sha256": "95a52a6f055dfc0e44f7dcba79ec019754316fa02b2c0ce0c18d8ed68fa5e857",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9510/0/"
+    },
+    {
+      "bytes": 5934,
+      "kind": "plate_grid",
+      "plate_id": 9511,
+      "sha256": "63a2d09f65b2d1352ba0561ba5e0a59c5af910325e8e1c1c5f40589758530026",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9511/0/"
+    },
+    {
+      "bytes": 19094,
+      "kind": "plate_grid",
+      "plate_id": 9512,
+      "sha256": "060f873a3ba523d85de63212d122019cb06c4816bb0effac126611e026b71607",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9512/0/"
+    },
+    {
+      "bytes": 5918,
+      "kind": "plate_grid",
+      "plate_id": 9513,
+      "sha256": "13af9a4aec846956609ecc979e345b90e76efa0732a2b3a76b1a37c5c4f9d57e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9513/0/"
+    },
+    {
+      "bytes": 15238,
+      "kind": "plate_grid",
+      "plate_id": 9514,
+      "sha256": "543fa3bfad1d7e23bf796f2632bfffc7f4a3472af11a21f86d2ae2a2b9fb488b",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9514/0/"
+    },
+    {
+      "bytes": 22619,
+      "kind": "plate_grid",
+      "plate_id": 9515,
+      "sha256": "0e5221ac1cef33d2b0b169390923cb7eac2b130ebbdbe97b06e74d2b4df0d80d",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9515/0/"
+    },
+    {
+      "bytes": 39774,
+      "kind": "plate_grid",
+      "plate_id": 9516,
+      "sha256": "452bcb0022ed6b161b796a6caff08429a4d8d4e14a4be10e007048580046c5a6",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9516/0/"
+    },
+    {
+      "bytes": 33899,
+      "kind": "plate_grid",
+      "plate_id": 9517,
+      "sha256": "7c2a47c6abf146418164c10fc5f678437dcd894a67664fc1ff15dfedd05f7f49",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9517/0/"
+    },
+    {
+      "bytes": 20894,
+      "kind": "plate_grid",
+      "plate_id": 9518,
+      "sha256": "a055890226c1d294300056f46807ae2ad5e047bc55248e3fe9d2b5aad9318a6b",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9518/0/"
+    },
+    {
+      "bytes": 82668,
+      "kind": "plate_grid",
+      "plate_id": 9519,
+      "sha256": "1e5a5bd85df4fe0da790b5a303b388d95c3d1bc788bf71339f9a4f70677a8545",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9519/0/"
+    },
+    {
+      "bytes": 83697,
+      "kind": "plate_grid",
+      "plate_id": 9520,
+      "sha256": "6797073e54ad94a271544d9c27e6e5cca514558db9422492736291e76d2881e2",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9520/0/"
+    },
+    {
+      "bytes": 5836,
+      "kind": "plate_grid",
+      "plate_id": 9521,
+      "sha256": "9c53b728c6536e4dd8566c960bb50afa8e1d0efd5547b458dc83214e13acb329",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9521/0/"
+    },
+    {
+      "bytes": 16892,
+      "kind": "plate_grid",
+      "plate_id": 9522,
+      "sha256": "06ee78744da3947d8ebea17df2ca99362cf3b21c2a19821903cbd1fa217c4f4d",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9522/0/"
+    },
+    {
+      "bytes": 9726,
+      "kind": "plate_grid",
+      "plate_id": 9523,
+      "sha256": "38cdb555fea8b9e674e9a2ec6fac60d9567ac3b1b0cc06e88d62a1b17c0ebaa9",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9523/0/"
+    },
+    {
+      "bytes": 9886,
+      "kind": "plate_grid",
+      "plate_id": 9524,
+      "sha256": "aa2d4144af68e6cd530d2c95be9b744ae7e93d2af1539ecbed96e0a8e3489608",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9524/0/"
+    },
+    {
+      "bytes": 20834,
+      "kind": "plate_grid",
+      "plate_id": 9525,
+      "sha256": "d5267af040909eafde644dc3f67c8e25ce46b1ed34a27777d443471165e43ad5",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9525/0/"
+    },
+    {
+      "bytes": 18342,
+      "kind": "plate_grid",
+      "plate_id": 9526,
+      "sha256": "f99125d299cc19c48702868c50666a88ee90c83c4b37f4e5371883e1edd77f70",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9526/0/"
+    },
+    {
+      "bytes": 11784,
+      "kind": "plate_grid",
+      "plate_id": 9527,
+      "sha256": "1c3ab1adae5c337b3abd7ff8495be73700f9facaa70187c48f101bd63d8fa24a",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9527/0/"
+    },
+    {
+      "bytes": 24444,
+      "kind": "plate_grid",
+      "plate_id": 9528,
+      "sha256": "a9c60ac454c901dbc9951e11cc5a7adc1f322fb562173559a7f5e39a3604082b",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9528/0/"
+    },
+    {
+      "bytes": 17020,
+      "kind": "plate_grid",
+      "plate_id": 9529,
+      "sha256": "fc4625083a36e1ed1a2d9b82e79a56bcc8e1d6b6ef2888adb15d474632a5619c",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9529/0/"
+    },
+    {
+      "bytes": 3420,
+      "kind": "plate_grid",
+      "plate_id": 9530,
+      "sha256": "bdc289bbbd2692446d12584c087722efdeeeb9e317f5ad114e59d2e0ef77118e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9530/0/"
+    },
+    {
+      "bytes": 9596,
+      "kind": "plate_grid",
+      "plate_id": 9531,
+      "sha256": "50a431ae8a8ea9ed1f41d2c24bbb1914fdb789352bdf7af0b0109be68101dd01",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9531/0/"
+    },
+    {
+      "bytes": 6325,
+      "kind": "plate_grid",
+      "plate_id": 9532,
+      "sha256": "d628d21b15aeb2b86000a170f8566eaa99528048cd662d9296a836ee22533283",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9532/0/"
+    },
+    {
+      "bytes": 31742,
+      "kind": "plate_grid",
+      "plate_id": 9533,
+      "sha256": "fe87f8f2e38246348024ecb5385b4b4a048aea8c66bb3c45b6a53dfc638a3f82",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9533/0/"
+    },
+    {
+      "bytes": 16806,
+      "kind": "plate_grid",
+      "plate_id": 9534,
+      "sha256": "d8b69694afead46b1b37a4fee9f5abf0326d5a15b11add9a3d9a0b0b0d6cc4be",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9534/0/"
+    },
+    {
+      "bytes": 8411,
+      "kind": "plate_grid",
+      "plate_id": 9535,
+      "sha256": "71a04c195c4d9222416d1073e5f2b8d7b2591a2f116622046d76d939ef8011a4",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9535/0/"
+    },
+    {
+      "bytes": 24278,
+      "kind": "plate_grid",
+      "plate_id": 9536,
+      "sha256": "49afeb4a23c6c2514c212f2bbfa9efe539c2d9b1f1aec91b532cc51a26c9832e",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9536/0/"
+    },
+    {
+      "bytes": 2407,
+      "kind": "plate_grid",
+      "plate_id": 9537,
+      "sha256": "c30d1bcaa7692b4d7fffd21a23d88246b7dcc005bcb9dc4de400888671df1a5f",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9537/0/"
+    },
+    {
+      "bytes": 20548,
+      "kind": "plate_grid",
+      "plate_id": 9538,
+      "sha256": "e06be88c3f0b92debc1fc48d43cc9cd70f8b7e1a3e2e8d746ff40bcf63a0694b",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9538/0/"
+    },
+    {
+      "bytes": 22342,
+      "kind": "plate_grid",
+      "plate_id": 9539,
+      "sha256": "b5a440c3111796dc7b6219ad347855df1b4c66db66c8397e965f5215d781991a",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9539/0/"
+    },
+    {
+      "bytes": 9304,
+      "kind": "plate_grid",
+      "plate_id": 9540,
+      "sha256": "586a29426f018e8124252841f39dde550c130fd830d6ad9888002e3c3067a748",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9540/0/"
+    },
+    {
+      "bytes": 15046,
+      "kind": "plate_grid",
+      "plate_id": 9541,
+      "sha256": "39c57ddb8cb53095f85bd1a85d5041564ca4c0c3c419d962e32be739c7b9ac02",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9541/0/"
+    },
+    {
+      "bytes": 54446,
+      "kind": "plate_grid",
+      "plate_id": 9542,
+      "sha256": "1de94f6c8db949c3af8c993bfc6d12a873c3721bdcc89d84dccef71911720c81",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9542/0/"
+    },
+    {
+      "bytes": 13166,
+      "kind": "plate_grid",
+      "plate_id": 9543,
+      "sha256": "0a473a3fe1cf83092e9e6c2796516b9693a0996db501f7c163f79d0f1a833be9",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9543/0/"
+    },
+    {
+      "bytes": 33446,
+      "kind": "plate_grid",
+      "plate_id": 9544,
+      "sha256": "fcee0bc3fa4737f6edcb052537ae8ba35e3c9b694588084a1d01bd0093a5b115",
+      "url": "https://idr.openmicroscopy.org/webgateway/plate/9544/0/"
+    }
+  ],
+  "refusal_counts": {
+    "ambiguous": 1428,
+    "missing_field0_image": 9,
+    "unmapped": 321
+  },
+  "schema": "aleph.outer_library.idr0072_if_manifest_report.v1",
+  "selected_class_counts": {
+    "endoplasmic_reticulum": 738,
+    "golgi": 693,
+    "mitochondria": 244,
+    "nuclear_interior": 111,
+    "plasma_membrane_or_junction": 175,
+    "vesicular_organelle": 633
+  },
+  "selected_classes": [
+    "endoplasmic_reticulum",
+    "golgi",
+    "mitochondria",
+    "nuclear_interior",
+    "plasma_membrane_or_junction",
+    "vesicular_organelle"
+  ],
+  "selected_images": 2594,
+  "selected_landmark_proteins": 18,
+  "selected_plates": 81,
+  "selected_screens": [
+    2952,
+    2953
+  ],
+  "status": "manifest_frozen_before_image_content",
+  "uncertainty_authority": false,
+  "uniquely_mapped_field0_rows": 4384
+}

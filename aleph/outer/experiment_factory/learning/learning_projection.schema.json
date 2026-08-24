@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aleph.external_training.learning_source_projection.v1",
+  "type": "object",
+  "required": ["schema", "authority_status", "projection_id", "source_family_id", "source_payload_sha256", "source_record_set_sha256", "leakage_group_id", "split", "evaluation_cohort", "views", "missing_modality_mask", "supervision_policy", "projection_sha256"],
+  "properties": {
+    "schema": {"const": "aleph.external_training.learning_source_projection.v1"},
+    "authority_status": {"const": "proposed"},
+    "projection_id": {"pattern": "^aleph:learning-source:[0-9a-f]{16}$"},
+    "source_family_id": {"type": "string"},
+    "source_payload_sha256": {"pattern": "^[0-9a-f]{64}$"},
+    "source_record_set_sha256": {"pattern": "^[0-9a-f]{64}$"},
+    "leakage_group_id": {"pattern": "^lg:[0-9a-f]{16}$"},
+    "split": {"enum": ["train", "validation", "test"]},
+    "evaluation_cohort": {"enum": ["corpus", "frozen_300_gold_candidate_not_ground_truth"]},
+    "views": {"type": "object"},
+    "missing_modality_mask": {"type": "object"},
+    "supervision_policy": {"type": "object"},
+    "projection_sha256": {"pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,1229 @@
+# Layer-2 multicellular spheroid line — REPORT (L2.0 + L2.1)
+
+> ## ✅ LINE CLOSED — 2026-06-05 (PI-ratified)
+> The center-based (CBM) Layer-2 line has delivered everything its 1-particle-per-cell abstraction
+> can meaningfully reach, and is **formally CLOSED**:
+> 1. **PI spreading-law FORM reproduced** — A/A₀ = a + b/R + c/R², r² = 0.998, **zero calibration**,
+>    across the full PI experimental R₀ range (104–394 µm). [§HEADLINE, §B2, production 35/35]
+> 2. **Collective ligand ordering reproduced** — Lam4 > Pre ≳ Bare (= the PI medians 10.0 > 7.5 > 7.2)
+>    from mechanistic integrin-clutch traction + A4′ Lam4 partial-β1-uniformity. [§G / (c)]
+> 3. **Magnitude rigorously BOUNDED** — the ~5–9× under-spread is the **center-based 1-particle
+>    STRUCTURAL LIMIT**, eliminated on six independent axes (scale, observable, cohesion, lateral
+>    coordination, passive wetting, active wetting) and explained by the aggregate-wetting framework
+>    (the PI magnitude is the active complete-wetting precursor-MONOLAYER regime — shape-resolved,
+>    a point-cell cannot host it). [§C, §D, §E, §F + morphology figure/animation]
+>
+> **Handoff:** the spreading MAGNITUDE belongs to the **fine-grained single-cell line (H.5)** — per-cell
+> shape/spread DOF + contact-line lamellipodial traction — coupled to Layer-2 by a **scale-bridge**
+> (the `motility_bridge` pattern), NOT a monolithic CBM upgrade (which would re-invent the fine-grained
+> mechanics at multicellular scale). Paper-ready synthesis: `Layer2_Report.docx`.
+> **Open (carried, non-blocking):** §D2 γ=0.57 vs Nagle breast-epi 21–45 mN/m reconcile (σ-bridge owner);
+> SE-row registration of the collective-migration + aggregate-wetting clusters (candidates written);
+> `ffn/foundation` push pending PI sign-off. Branch `layer2/spheroid-cbm`.
+
+> Status 2026-06-02. Parallel CBM (center-based, 1 particle/cell) spheroid line, isolated
+> from the single-cell main line, on the shared HOOMD + frozen-BAOAB stack. Brief:
+> `docs/LAYER2_MULTICELL_DESIGN.md`. Anchor provenance: `docs/LAYER2_ANCHORS_2026-06-02.md`.
+
+## Milestones
+
+| Phase | What | Status |
+|---|---|---|
+| **L2.0** | measurement + acceptance-oracle + config layer (parameter-free) | ✅ DONE, 21 unit tests green |
+| **L2.1** | CBM physics builder (Morse + reused BAOAB) + **G1 stable-aggregate gate** | ✅ DONE, G1 PASS (200 cells) |
+| **L2.2** | edge-directed active-wetting traction (spreading driver) | ✅ DONE |
+| **L2.3** | ensemble A/A₀(R₀) sweep + fit — **minimal CBM is cohesion-locked** (Δ A/A₀≈0.02) | ✅ DONE (model-limit finding) |
+| **L2.4** | **contact-inhibited proliferation** (the size-dependent driver) + **G4 gate** | ✅ DONE, G4 PASS; A/A₀ signal now Δ≈12 but fit blocked by fragmentation (below) |
+| **L2.4.1** | **connected-core spread-area estimator** (fragmentation-robust A/A₀) | ✅ DONE; de-noises the signal (fit r² 0.27→**0.74**, Δ 23→**1.0**) but G3≥0.95 **still FAILs** — confirms L2.5 is needed, not optional (below) |
+| **L2.4b** | **leak-free pooled growth** (`run_growth_pooled`): ONE Simulation + pre-allocated particle pool, division activates a parked particle via `set_snapshot` | ✅ DONE; fixes the HOOMD per-rebuild memory leak (peak RSS **7 GB→240 MB**, flat), same physics. All growth drivers now use it. |
+| **L2.5** | **E-cadherin catch-bond cohesion** (faithful Rakshit-2012 sliding-rebinding) replaces the static Morse well | ✅ DONE; **resists proliferation fragmentation (catch 0/5 vs morse 1/5 seeds, variance halved) → G3 r² 0.74→0.98 PASS** (below) |
+| **L2.6** | **substrate confinement** (z=0 adhesive Morse wall, quasi-2D wetting) | ✅ DONE; cohesive MCF7 forms a 3D **cap** (not a monolayer) — the correct low-invasion phenotype; D_sub = the Bare/Pre/Lam4 ligand axis |
+| **D2** | **single-cell γ → spheroid surface-tension bridge** (Chugh/Roffay/Fastabend/Okuda oracle + virial-σ observable) | ✅ DONE (demonstration); σ_tissue=γ=0.57 mN/m in-band; Young-Laplace ΔP=2σ/R = the A/A₀ b/R term; Okuda 3D-cap confirms L2.6. Emergent-σ CBM measurement = next run. |
+| **B2** | **GPU-main port of the CBM growth path → native-N scale-up** (device-aware BAOAB, `integrator/baoab_device.py`) | ✅ DONE; closes the A2 **R₀-range gap** — native R₀ 53→**196 µm** (was 40–78, no overlap) now **overlaps the PI 87–419 µm range**; G3 law extracts **r²=0.999**; magnitude gap confirmed **genuine** at matched R₀ (~5–8× under PI, not a scale artifact). |
+
+## ⭐ HEADLINE (L2.5) — the PI spreading law A/A₀ = a + b/R + c/R² EMERGES (G3 PASS, r²=0.98)
+
+With the fully mechanistic model — **contact-inhibited proliferation** (the 1/R proliferating-rim
+driver, L2.4) + **faithful E-cadherin catch-bond cohesion** (Rakshit 2012 sliding-rebinding,
+L2.5) + the **connected-core spread observable** (L2.4a) — the experiment's novel law extracts
+cleanly:
+
+```
+A/A0 = −0.33 + (188.7 µm)/R + (−2655 µm²)/R²       r² = 0.980   (5 R₀, 3 seeds each)
+```
+
+| R₀ (µm) | 31.7 | 40.4 | 53.1 | 67.1 | 78.3 |
+|---|---|---|---|---|---|
+| A/A₀ (core, mean±sd) | 2.95±0.17 | 2.81±0.05 | 2.22±0.11 | 1.82±0.04 | 1.72±0.05 |
+
+**Why catch-bond unlocked G3.** The L2.4 static Morse cohesion let a *growing* spheroid
+fragment (proliferation tension > fixed cohesion), inflating/scattering A/A₀ (morse r²=0.74,
+1/5 seeds fragment). The Rakshit catch bond *strengthens under tension up to f₀≈29 pN* — exactly
+the proliferation regime — so it holds the spheroid together (catch **0/5** fragment, variance
+**halved** ±0.10→±0.05). hull≡core (no fragments). All signs match the PI law: b>0 (traction/
+curvature, the dominant term, 0.67–0.76), c<0 (the documented "Bare" small-size cohesion
+penalty). Gates G3 (r²≥0.95) **PASS**, G4 (rim 0.93, sub-exponential) **PASS**.
+
+**A/B on the IDENTICAL pooled path (decisive):** morse cohesion core fit **r²=0.804 FAIL**
+(one seed fragments → an A/A₀ outlier, sd 0.81) vs catch **r²=0.980 PASS**. Same proliferation,
+same observable, same seeds — only the cohesion differs. The catch bond is *necessary* for G3:
+the static Morse fragments under growth tension and scatters the law; the force-strengthening
+catch holds it. (Figures `_morse.png` vs `_catch.png`.)
+
+**Mechanistic chain (all measured/derived-anchored, no tuned constants):** MCF7 doubling 30 h
+(BNID 100685) → proliferating rim ∝ 1/R; cohesion = N_cad≈223 cadherins/contact (Iturri 6.5 nN
+de-adhesion / Rakshit f₀) each a sliding-rebinding catch bond (Rakshit 2012 SI Table S1) →
+force-strengthening to f₀; spread measured as the connected-core footprint. The PI A/A₀ values
+remain overlay-only (never fit). Figure: `fig_layer2_aa0_growth_law_catch.png`.
+
+## Anchored / derived parameters (MCF7)
+
+| Quantity | Value | Provenance |
+|---|---|---|
+| cell diameter (r₀) | 15.0 µm (R=7.5 µm) | Wagner 2011, MEASURED (Coulter), PMC3147247 |
+| adhesion well depth D_e | 1.20e-17 J (≈2804 kT) | DERIVED `N_cad·⟨F⟩·Δx*` (KU-4.2); MCF7 cohesion is a documented literature absence — **PI ratification pending** |
+| per-cell Stokes drag γ | 9.77e-8 N·s/m | DERIVED `6πηR` (KU-1.26) |
+| Morse α / r_cut | 6.67e5 1/m / 22.5 µm | 1/contact-zone (modeling choice) / r₀+5·range (numerical policy) |
+| CFL timestep dt | 9.16e-4 s | DERIVED `safety·γ/k_spring`, overdamped |
+
+All derivations computed by `ffn_sim.spheroid.params.resolve_layer2` and unit-verified.
+A/A₀ is overlay-only (never a fitting target). D_e magnitude does not affect G1.
+
+## G1 stable-aggregate gate — PASS
+
+A loose blob (200 cells, seeded at 1.1·r₀) settles under adhesion + excluded volume + the
+overdamped BAOAB (30 000 steps, no motility). Gate bands in
+`validation/oracles/configs/layer2_cbm.yaml`:
+
+| Metric | Result | Band | Verdict |
+|---|---|---|---|
+| nearest-neighbour median / r₀ | 0.981 | [0.90, 1.20] | PASS |
+| detached ("gas-like") fraction | 0.0000 | ≤ 0.02 | PASS |
+| Rg growth factor (final/settled) | 1.000 | ≤ 1.50 | PASS |
+
+Physics read: the blob relaxes from the seeded cubic lattice to a liquid-like cohesive
+packing at ≈r₀ (NN slightly < r₀ from many-body inward pull of 2nd/3rd-neighbour tails — a
+correct solid-packing signature), stays fully cohesive (zero stragglers), and is stable
+(no dispersal). The frozen BAOAB integrator + a single `md.pair.Morse` reproduce a stable
+multicellular aggregate — the Layer-2 line now simulates.
+
+## L2.4 — contact-inhibited proliferation (the size-dependent driver) — G4 PASS
+
+L2.3 established that the minimal CBM is **cohesion-locked** (Δ A/A₀ ≈ 0.02, no smooth law) —
+a model-limit finding, *not* a tuning miss: the law needs an **added mechanism**. The
+experiment runs over **days** and MCF7 spheroid spreading is partly **proliferation-driven**,
+so L2.4 adds proliferation as a fine-grained mechanism (no fitted terms):
+
+- **Cell-cycle timer** per cell, mean = MCF7 uncrowded doubling **30 h** (BNID 100685;
+  MCF7 30–40 h standard culture, density-dependent — and that density dependence is itself
+  the contact-inhibition arm we model), per-cell CV 0.15 (desynchronisation; flagged).
+- **Division gate = Drasdo-Höhme FREE-SPACE rule** (`spheroid/proliferation.py`): a
+  timer-elapsed cell divides only if it can bud a daughter ≥ one repulsive-core radius
+  (`r₀ − contact_zone_width ≈ 0.9·r₀`, **derived** from the Morse shape, not tuned) from every
+  other cell — i.e. there is room. A buried bulk cell has no free face → quiescent; a rim cell
+  buds outward at the rest separation. *Diagnostic that drove the design:* the settled liquid-
+  like packing has bulk first-shell coordination only ≈11 (not the FCC 12), so a neighbour-
+  **count** threshold mis-classifies — but bulk free-gap ≈ 0.7·r₀ vs rim ≈ 1.3·r₀ separates
+  cleanly. The free-space rule (not a count) is the operative discriminator.
+- Because dividing cells form a **rim of ~constant thickness**, the proliferating fraction
+  ∝ surface/volume ∝ **1/R** — the EMERGENT geometric origin of the law's 1/R, 1/R² terms.
+
+**G4 gate (oracle config `layer2_cbm.yaml` g4) — PASS:**
+
+| Metric | Result | Band | Verdict |
+|---|---|---|---|
+| rim-localised division fraction (large spheroid) | 0.86 | ≥ 0.70 | PASS |
+| sub-exponential growth (all R₀ below 2^(t/τ)=4) | 2.06–2.86 | < 4.0 | PASS |
+| dilute-limit doubling (isolated cell, exponential) | ✓ | 2^n | PASS (test) |
+| proliferation-OFF reduces to G1 (count conserved) | ✓ | factor 1.0 | PASS (test) |
+
+**The signal is now real** — proliferation converts the cohesion-locked Δ A/A₀ ≈ 0.02 into
+Δ A/A₀ ≈ **12** with the **correct sign**: a small spheroid (R₀=30 µm) grows 2.86× while a
+large one (R₀=77 µm) grows 2.14× — the surface/volume 1/R effect, mechanistically.
+
+**But the clean a+b/R+c/R² law does NOT yet extract (G3 r²=0.27 — FAIL, reported honestly,
+gate NOT loosened).** Diagnosis (verified, not speculated): the convex-hull A/A₀ is dominated
+by a **proliferation-driven FRAGMENTATION instability**. A connected-component diagnostic
+shows the spheroid splits into compact pieces that drift apart — `core-frac` < 1 and the
+largest-component area stays modest (A/A₀_core 0.8–2.7) while the whole-set convex hull spans
+the inter-fragment gaps and balloons to 5–16 (with ±19 seed variance). The static Morse well
+**cannot hold a *growing* spheroid together**: proliferation pressure exceeds the finite
+cohesion (this is the L2.3 "size-specific fragmentation instability," now driven by growth).
+Per-epoch relaxation is ample (≈2000 s ≫ τ_relax 17 s), so this is real physics, not under-
+relaxation.
+
+**Indicated next step = L2.5 (cadherin catch-bond), not tuning.** A catch bond *strengthens
+under tension* — exactly the tension proliferation generates. The static Morse cohesion is the
+wrong model under active growth pressure; the mechanistic KU-4.2 / Rakshit-2012 catch-bond is
+the physically-correct fix for fragmentation. Secondary refinements (also non-tuning): z=0
+**substrate confinement** (quasi-2D wetting keeps a monolayer, the experiment's actual
+geometry) and an **outlier-robust / connected-core area** estimator (the alpha-shape refinement
+already flagged in `observables.projected_area`). All preserve the literature-first discipline.
+
+## L2.4.1 — connected-core spread-area estimator (fragmentation-robust A/A₀)
+
+The first of the secondary refinements above is now built and measured. `observables.py` gains
+`connected_components` (single-linkage KD-tree + union-find, `link_radius` a caller argument set
+to 1.6·r₀ — between the 1st and 2nd coordination shell, **no baked constant**),
+`largest_connected_component`, and `core_projected_area` (convex hull of the **largest connected
+component** only). `proliferation.run_growth` now reports `area_core_over_a0` alongside the raw
+hull; the growth sweep fits the PI law to the **core** area as the G3 headline (the hull is
+fragmentation-inflated and unphysical — its fit even dips below A/A₀=1). 3 new observable tests
+(two-cluster labelling, drifting-fragment rejection, single-cluster identity) → **39 green**.
+
+**Result (5 R₀ × 3 seeds, memory-safe per-size driver — see Verification):**
+
+| R₀ (µm) | A/A₀ core (mean±sd) | A/A₀ hull (mean±sd) |
+|---|---|---|
+| 29.1 | 2.53 ± 0.16 | 2.73 ± 0.44 |
+| 38.0 | 2.22 ± 0.10 | 2.45 ± 0.22 |
+| 52.2 | 1.78 ± 0.11 | 3.34 ± 2.11 |
+| 63.7 | 2.12 ± 0.62 | 25.48 ± 21.55 |
+| 75.2 | 1.49 ± 0.03 | 20.17 ± 20.24 |
+
+- **fit CORE:** A/A₀ = 0.953 + (58.99 µm)/R + (−394.2 µm²)/R²  **r²=0.737**
+- **fit HULL:** A/A₀ = 80.67 + (−5551.8 µm)/R + (95714 µm²)/R²  r²=0.750 (large `a`, sub-1 dip — unphysical)
+
+**Honest verdict — the core estimator helps but does NOT rescue G3.** It collapses the
+fragmentation inflation (signal Δ 23→**1.0**, error bars from ±21 down to ±0.03–0.16) and recovers
+a near-monotone 1/R decrease (the correct sign) — fit r² rises **0.27→0.74**. But r²=0.74 is still
+below the **G3 ≥0.95 band → G3 remains FAIL (gate NOT loosened)**. The residual scatter is real
+physics, not estimator noise: at R₀=63.7 µm one of three seeds fragments so hard that even the
+*core* inflates (core 2.12±0.62, the visible outlier), so a static Morse well cannot hold a
+growing spheroid together even when measured robustly. **This confirms L2.5 (catch-bond) is
+required, not optional** — the robust estimator was necessary to *see* the residual instability
+cleanly, but the cohesion model itself is the remaining blocker.
+
+## L2.6 — ligand-condition axis (Bare / Pre / Lam4) — mild passive effect (honest)
+
+Sweeping the cell-substrate adhesion (the coarse ligand knob; Bare/Pre/Lam4 = ×0.5/×1.0/×2.0
+the cohesion D_e) over R₀ gives three emergent A/A₀(R₀) curves that **nearly overlap** (e.g.
+R₀≈40 µm: Bare 2.57, Pre 2.55, Lam4 2.78 — Lam4 highest, the correct direction, but small;
+they converge at larger R₀). **Finding:** passive substrate adhesion alone does *not* reproduce
+a strong ligand-condition separation — cohesive MCF7 forms a 3D cap regardless (L2.6). The
+experiment's Bare/Pre/Lam4 differences therefore likely require the **active** ligand mechanism
+(per-species integrin catch-slip kinetics in `bridge/ligand_species.py` driving edge traction),
+the documented faithful upgrade — not the passive adhesion depth. (The per-condition r²=1.000 is
+degenerate: 3 R₀ vs 3 coefficients; a trend comparison only.) Figure
+`fig_layer2_ligand_conditions.png`. PI A/A₀ overlay-only.
+
+**Active traction = the actual ligand driver (validated direction).** Adding edge-directed
+active-wetting traction (L2.2 `spreading.edge_outward_forces`, now composed into the pooled
+catch+substrate growth via `run_growth_pooled(f_traction=…)`) increases the spread monotonically
+(core A/A₀ 1.53→1.56→1.81 at 0/3/6 nN) — the correct mechanism, where passive substrate adhesion
+gave almost none. So the faithful Bare/Pre/Lam4 separation is **ligand-modulated active traction**
+(per-species integrin catch-slip, `bridge/ligand_species.py`), the next anchoring step — not
+substrate-adhesion depth.
+
+**Traction axis (mechanism → law coefficient).** Sweeping active traction (0 vs 3 nN) over R₀
+raises A/A₀ at *every* size (0 nN: 2.55/2.25/1.82 → 3 nN: 2.80/2.35/1.92), i.e. the law's
+**b-coefficient (the 1/R traction term) grows with traction** — the platform doing its stated
+job: mapping the a/b/c terms to mechanism. Figure `fig_layer2_traction_axis.png`. ⚠️ The 6 nN
+level hit a numerical box/substrate-wall limit (a cell ejected past the box under
+traction+growth+wall) — a known fix (size the pool box for the grown+spread footprint + soften
+the Morse wall repulsive branch), not a physics error.
+
+## B1 — box-sizing + ejection guard (numerics robustness, 2026-06-03)
+
+The L2.6 traction-axis run crashed at high traction with a HOOMD C++ `RuntimeError: Particle …
+is out of bounds`. Diagnosed (reproduced at f_traction=6–10 nN, Lam4 substrate, N₀=450, 2
+doublings) as **two compounding causes**:
+
+1. **Box too small for the wetting footprint (the real bug).** The pre-allocated pool box
+   (L2.4b) was sized ONCE from `r_cluster_max = r0·N_max^(1/3)·1.3` — a *free-3D-ball* radius.
+   But a substrate-confined spheroid (L2.6) **wets into a quasi-2D disk** whose in-plane radius
+   scales as `√N_max`, far larger than `N_max^(1/3)`. The cluster spread past the box edge and
+   a cell wrapped across the periodic boundary → out-of-bounds. **Fix:** `cbm.pool_cluster_radius`
+   sizes the box for `max(3D-pack, 2D-wetting disk) × spread-safety` (derived close-packing
+   geometry + a containment margin — numerical policy, never enters a force or a measurement),
+   used by both pool builders (`build_pool_simulation`, `build_cbm_catch`).
+2. **Genuine edge-cell detachment beyond regime (a model limit, now surfaced not hidden).**
+   Once box-sizing was fixed, f_traction ≳ cohesion (~6.5 nN) still ejects a *boundary* cell:
+   in the overdamped large-dt CBM a cell whose net outward traction exceeds its local cohesion
+   detaches and, at terminal velocity F/γ over the ~2000 s epoch dt, leaves instantly (the
+   adiabatic CBM cannot represent a slowly-peeling cell). The earlier 6 nN "success" was a
+   **PBC self-interaction artifact** of the too-small box (the wrapped image artificially
+   re-confined the cluster). **Fix:** a graceful **ejection guard** in `run_growth_pooled`
+   (`try/except` the HOOMD out-of-bounds + a post-epoch finiteness/0.45·L containment check)
+   stops cleanly on the last good state and returns `ejected=True` instead of crashing the
+   whole sweep; the sweep/ligand scripts surface `⚠EJECTED k/n_seeds` (no silent truncation).
+
+**Verified:** in-regime production (f_traction ≤ 3 nN, the REPORT's validated levels) runs clean
+(`ejected=False`, traction direction preserved: 0→3 nN gives A/A₀ 1.88→1.95 at Lam4); 6–10 nN
+no longer crashes (stops cleanly, flagged); the **G3 headline path is unchanged** (no substrate/
+traction: N₀=120→A/A₀ 2.63, N₀=400→1.86, consistent with the §HEADLINE table). +4 tests
+(`pool_cluster_radius` 2D-dominance/monotonicity/guards, box-contains-worst-case-spread,
+`ejected=False` on a bounded run) → layer-2 suite **88 green** (1 unrelated cupy skip).
+
+**Operating-regime conclusion (for A1).** Active edge-traction must stay **below the
+detachment threshold** (≤ ~3 nN at the measured 6.5 nN cohesion); the ligand→traction anchor
+(A1) should map the Bare/Pre/Lam4 conditions into that stable band. Higher traction is a genuine
+detachment regime the overdamped CBM cannot resolve (a GPU sub-stepped-bond option, roadmap D3),
+not a numerical bug to patch.
+
+## A1 — ligand → ACTIVE edge-traction (the faithful Bare/Pre/Lam4 driver, 2026-06-03)
+
+L2.6 mapped the ligand condition onto the *passive* substrate-adhesion depth and the three
+A/A₀(R₀) curves barely separated (Δ≈0.03 — a cohesive MCF7 caps regardless). A1 is the faithful
+upgrade: each PI condition maps onto the cell's **active edge-traction** through the per-species
+integrin-clutch kinetics (`spheroid/ligand_traction.py`, anchored to `bridge/ligand_species.py`,
+the literature SoT), the validated spreading knob. The passive wall is held COMMON so the *only*
+thing differing is the ligand-set active traction — isolating the A1 mechanism.
+
+**Mechanism (anchored, no fit to PI):** `f_traction = T_ref · density · clutch_strength`.
+`clutch_strength(ligand) = φ·F_s` relative to col-I, with `φ = k_on/(k_on+k_off0)` (k_on =
+KU-2.4 0.3 s⁻¹) and `F_s = k_BT/x_β` — both from the registry kinetics. With col-I (k_off0
+1.3 s⁻¹, x_β 0.23 nm) and laminin-111 (k_off0 1.85 s⁻¹, x_β 0.28 nm, α7β1-invasin slip proxy):
+
+| Condition | ligand | φ | F_s | clutch strength | density | **f_traction** |
+|---|---|---|---|---|---|---|
+| Bare | col-I (α2β1) | 0.187 | 18.6 pN | 1.000 | 0.60 | **1.50 nN** |
+| Pre | col-I (α2β1) | 0.187 | 18.6 pN | 1.000 | 1.00 | **2.50 nN** |
+| Lam4 | laminin-111 (α6β1) | 0.140 | 15.3 pN | **0.611** | 1.00 | **1.53 nN** (proxy) |
+
+The col-I-vs-laminin ordering (laminin = 0.61× the col-I clutch — weaker occupancy AND smaller
+per-bond force) is **the measured direction** (breast-epithelial traction lower on LN-111,
+P=0.016–0.028), not guessed. All three sit in the B1 stable ≤3 nN band.
+
+**Emergent result (5 R₀×… → here 4 R₀ × 2 seeds, catch cohesion, common substrate):**
+
+| R₀ (µm) | 40.4 | 53.5 | 67.3 | 78.3 |
+|---|---|---|---|---|
+| Bare (1.50 nN) | 2.71 | 2.18 | 1.89 | 1.79 |
+| Pre  (2.50 nN) | 2.90 | 2.38 | 1.95 | 1.77 |
+| Lam4 (1.53 nN) | 2.68 | 2.26 | 1.92 | 1.75 |
+
+**The active mechanism SEPARATES the conditions** — Δ(A/A₀) ≈ **0.139** at R₀≈60 µm (and ≈0.22
+at R₀≈40 µm, above the ±0.05–0.09 seed sd), **~4.6× the L2.6 passive-adhesion separation
+(~0.03)**. The ordering **Pre > Lam4 ≳ Bare tracks the resolved traction monotonically**
+(2.50 > 1.53 > 1.50 nN) — the platform doing its job: ligand identity → clutch kinetics →
+traction → spread, end-to-end mechanistic. Figure `fig_layer2_ligand_traction_conditions.png`.
+
+**Honest caveats (reported, not smoothed over):**
+- **Per-condition a/b/c are UNDER-DETERMINED.** 4 R₀ vs 3 coefficients = 1 dof; the fits are
+  near-perfect r²≈1.00 by interpolation, and the *individual* a/b/c swing wildly (Bare a=1.41,
+  b=5.3 µm, c=+1911 µm² with an unphysical c>0; Pre a=0.10, b=147 µm, c=−1369 µm²) — an artifact
+  of the degeneracy (same caveat the REPORT flagged for L2.6's 3-point fit), NOT physics. **The
+  A/A₀(R₀) CURVES and their SEPARATION are the robust A1 result; robust per-condition a/b/c with
+  error bars need A3** (more R₀ / seeds / biological time, on GPU = B2).
+- **Absolute traction scale is unanchored** (no MCF7 single-cell traction in the literature; the
+  15–25 nN micropillar value was REFUTED). `T_ref` is set in the B1 stable band — the **relative**
+  ordering is the anchored science, not the magnitude.
+- **Density axis (Bare<Pre) is a flagged modeling knob** pending the collaborator's pV4D4 col-I
+  adsorption-density data (PI-exp map: literature gap, route to Im Sung Gap / KAIST). The
+  ligand-IDENTITY axis (col-I vs laminin) is the fully-anchored part.
+- **Single-cell ↔ collective laminin split (expected).** Lam4's *single-cell* traction (1.53 nN,
+  the weak laminin clutch) sits just above Bare, so via single-cell active traction Lam4 does
+  **not** dramatically out-spread (it lands between Bare and Pre). The PI poster's *collective*
+  Lam4 enhancement, if present, is the documented single-cell↔collective split (PI-exp map) —
+  the A2 overlay question. A1 reports what the measured single-cell clutch kinetics produce and
+  deliberately does NOT engineer the collective ordering (overlay-only hard rule).
+
+8 new tests (`test_ligand_traction.py`: anchored col-I/laminin ordering, ≤3 nN band, Bare/Pre
+density-only difference, sign-sense, input guards) → layer-2 suite **96 green**.
+
+## A2 — PI poster overlay (OVERLAY-ONLY, never fit; 2026-06-03)
+
+The PI provided the poster A/A₀ exports (`references/260313_{Bare,Pre,Lam4}.csv`, per-spheroid
+time series of segmented area / effective radius; kept LOCAL/gitignored per the hard rule —
+only this overlay figure + the extracted summary are committed). Each spheroid (`Series`)
+gives one law point: R₀ = its effective radius at t=0, A/A₀ = its spread ratio at a common
+observation time (sampled at t≈60 h to match the platform's 2-doubling biological time; 82 h
+secondary). `scripts/layer2_pi_overlay.py` overlays these on the A1 emergent curves and reports
+the agreements/gaps — **no model parameter is tuned to the PI data** (overlay-only).
+
+**PI dataset (extracted):** Bare 8 spheroids R₀ 140–419 µm; Pre 25, R₀ 103–386 µm; Lam4 26,
+R₀ 87–255 µm; all run ~82 h.
+
+**⭐ The headline — the novel law's SHAPE is mechanistically reproduced.** In all three
+conditions the PI A/A₀ **decreases with R₀** (corr(R₀,A/A₀) = −0.86 / −0.81 / −0.91; fitted
+b > 0 dominant) — i.e. the experiment's own data carries the **1/R size dependence** that the
+platform's fully-mechanistic model produces *emergently* (proliferating-rim surface/volume,
+L2.4 → L2.5). The PI's genuinely novel A/A₀ = a + b/R + c/R² law (no published analog) and the
+mechanistic CBM **agree on the fundamental sign/shape** — the platform reproduces *why* small
+spheroids spread relatively more. This is the qualitative validation A2 set out to test.
+
+**The three honest gaps (each points to a concrete next step):**
+
+| Axis | PI (experiment) | Platform (A1) | Verdict |
+|---|---|---|---|
+| law shape / sign | A/A₀↓ with R₀ (corr ≈ −0.85, b>0) | A/A₀↓ with R₀ (b>0) | **MATCH ✓** |
+| condition ordering | **Lam4 > Pre > Bare** (collective) | **Pre > Lam4 ≳ Bare** (single-cell) | **SPLIT** |
+| magnitude (med A/A₀) | ≈ 7.5 (60 h) / 10 (82 h) | ≈ 2.1 | platform under-spreads **~4–5×** |
+| R₀ range | 87–419 µm | 40–78 µm | **no overlap** → native-N (GPU) |
+
+1. **Ordering = the single-cell↔collective laminin split, now CONFIRMED with data.** The
+   experiment's *collective* ranking puts **Lam4 highest**; the platform's *single-cell*
+   active-traction (A1) puts Lam4 ≈ Bare (laminin is the weaker single-cell clutch, 0.61×).
+   This is exactly the split the PI-exp map flagged. **Implication:** the Lam4 collective
+   enhancement is NOT single-cell traction — it must be a *collective* mechanism (the "uniform
+   β1" → more uniform proliferation / a cohesion-modulation that lifts the small-size c-penalty,
+   the documented Lam4 "c→0" phenotype). That is the next mechanistic hypothesis to test — and
+   the platform predicting Lam4 ≠ single-cell-traction-driven is itself a useful, falsifiable
+   result, not a failure.
+2. **Magnitude ~4–5×.** The platform's connected-CORE area (deliberately conservative, L2.4a)
+   + cohesion-locked catch bond vs the experiment's RAW segmented area (which includes spread
+   protrusions / scattering the cohesive model resists) + the platform's 60 h vs 82 h. Expected;
+   the core/raw and time axes are recoverable (a raw-area readout + longer biological time).
+3. **R₀ range — no overlap.** The PI spheroids (R₀ 87–419 µm ≈ 10³–10⁴ cells) dwarf the
+   platform's CPU first-pass (R₀ 40–78 µm). Matching the experiment's sizes needs native-N on
+   GPU (B2) — the platform fit is shown EXTRAPOLATED (dotted) into the PI range and flagged.
+
+**Net:** the platform reproduces the experiment's novel-law SHAPE (the science win); the
+ordering, magnitude, and size-range gaps are characterized honestly and each maps to a defined
+next step (collective-Lam4 mechanism; raw-area + longer time; native-N GPU). PI A/A₀ stays
+overlay-only throughout. Figure `fig_layer2_pi_overlay.png`; summary
+`outputs/layer2/pi_overlay_summary.json`.
+
+## A4 — the collective-Lam4 mechanism: uniform β1 → traction localization (2026-06-03)
+
+A2 confirmed the single-cell↔collective laminin SPLIT (PI collective Lam4 > Pre > Bare; A1
+single-cell Pre > Lam4 ≳ Bare) and implicated a *collective* mechanism rooted in laminin's
+measured **"uniform β1"** IF pattern (vs Bare "diffuse" / Pre "peripheral";
+LIGAND_PRESENTATION_MECHANISM.md). A4 tests it with ONE faithful change: the β1 distribution
+sets the traction SCREENING LENGTH `Lp` (`ligand_traction.py`, new A4 axis). Bare/Pre stay
+edge-localised (Lp = 11 µm, peripheral β1 = the A1 baseline); **Lam4 = uniform** (Lp ≫ spheroid,
+"uniform β1") so *every basal cell* — not just the rim — transmits traction. The MAGNITUDE is
+unchanged (Lam4 1.53 nN from A1 clutch kinetics); cohesion / substrate / proliferation are
+identical to A1. Only the distribution differs — isolating the mechanism.
+
+**Result (Lam4 uniform vs A1 edge, 4 R₀ × 2 seeds, connected-core):**
+
+| R₀ (µm) | 40.4 | 53.5 | 67.3 | 78.3 | corr(R₀,A/A₀) |
+|---|---|---|---|---|---|
+| Lam4 EDGE β1 (A1) | 2.68 | 2.26 | 1.92 | 1.75 | **−0.99** (1/R, penalty present) |
+| Lam4 UNIFORM β1 (A4) | 1.87 | 1.90 | 2.40 | 2.86 | **+0.95** (penalty reversed) |
+
+**The mechanism is the right knob (direction CONFIRMED).** Uniform β1 engages the interior
+(traction ∝ N ∝ volume, not rim ∝ surface), so it lifts LARGE spheroids relatively more and
+**flips the size-dependence sign (corr −0.99 → +0.95)** — i.e. the small-size penalty is
+removed/reversed, the documented Lam4 "scale-independent / c→0" phenotype emerging *from the
+mechanism*. At large R₀ Lam4-uniform overtakes Pre (R₀=78 µm: Lam4 2.86 ≫ Pre 1.77; crossover
+≈67 µm), so the ordering DOES flip to Lam4-highest **at large size** — the collective resolution
+of the split that single-cell traction (A1) could not produce.
+
+**Honest limits (full-uniform OVERSHOOTS → partial uniformity is the physical Lam4):**
+- **Sign overshoot.** The PI Lam4 still DECREASES with R₀ (corr −0.91, §A2); full-uniform
+  *reverses* the slope (+0.95). The real Lam4 is between edge and fully-uniform → a **partial
+  β1 uniformity (intermediate Lp)** that lifts magnitude / flattens the penalty *without*
+  flipping the sign. (Not tuned here — flagged as the indicated refinement; an Lp sweep is the
+  A4′ next step, overlay-only.)
+- **No mid-R₀ flip.** At R₀≈60 µm the ordering is still Pre (2.16) ≳ Lam4 (2.13) > Bare (2.02);
+  the flip is large-R₀-only at full uniformity.
+- **Large stochastic variance.** Uniform per-cell outward traction pushes the cluster toward the
+  cohesion-destabilisation limit → seed sd ±0.6–1.2 (vs A1 edge ±0.05–0.09). No ejection (B1
+  guard clean), but robust Lam4-uniform statistics need more seeds (B2/GPU, A3).
+
+**Net (A4 verdict):** the collective **uniform-β1 mechanism is validated in direction** — it
+removes/reverses Lam4's small-size penalty and lifts Lam4 above Pre at large R₀, the
+mechanistic resolution of the A2 single-cell↔collective split (Lam4's enhancement is uniform-β1
+collective engagement, NOT single-cell clutch traction). Full uniformity overshoots (sign flip
++ variance); **partial β1 uniformity (intermediate Lp) is the physical Lam4** — the next
+refinement, alongside native-N/GPU (B2) for the magnitude and R₀-range gaps (§A2). 2 new tests
+(β1-distribution → Lp mapping; uniform override leaves magnitude unchanged) → layer-2 suite
+**98 green**. Figure `fig_layer2_a4_uniform_beta1.png`.
+
+## A4′ — partial β1 uniformity: the physical Lam4 (2026-06-03)
+
+A4 showed full-uniform β1 is the right knob but OVERSHOOTS (flips the size-dependence sign vs
+the PI Lam4's still-decreasing law; + large variance). A4′ sweeps the traction localization Lp
+between edge (11 µm, A1) and uniform (1000 µm) for Lam4 (magnitude held at 1.53 nN; 3 R₀, 3
+seeds) to locate the PARTIAL uniformity that lifts the magnitude *without* reversing the slope —
+the physical Lam4. (`scripts/layer2_a4prime_partial_uniformity.py`.)
+
+| Lp (µm) | corr(R₀,A/A₀) | med A/A₀ | regime |
+|---|---|---|---|
+| 11 (edge, A1) | −0.99 | 1.92 | 1/R, small-size penalty present |
+| **40 (partial)** | **−1.00** | **2.22** | **slope still <0 (like PI −0.91) AND magnitude lifted +15%, low variance** ✅ |
+| 120 | +0.73 | 3.34 | overshoot begins (slope flips, variance ↑) |
+| 1000 (~uniform, A4) | +0.42 | 1.98 | slope reversed + destabilised (sd ±0.5–1.3) |
+
+**Finding: the partial-uniformity regime EXISTS and is identified — Lp ≈ 40 µm** (≈3.6× the edge
+length). There a MODEST β1 uniformity keeps the emergent size-dependence NEGATIVE (corr −1.00,
+matching the PI Lam4's decreasing law, corr −0.91) while lifting the magnitude (med 1.92 → 2.22,
++15%) and staying low-variance — and it nudges Lam4 to/above Pre (the PI collective direction)
+*without* the full-uniform sign-flip and instability. So the physical Lam4 is a **moderate, not
+full, β1 uniformity**: the mechanism is a continuous Lp knob and the PI-consistent window
+(decreasing + elevated) is the partial regime. The magnitude lift is still modest at CPU R₀
+(the full magnitude gap is scale/statistics → B2); A4′ pins the *mechanism's operating point*,
+not the absolute magnitude. Overlay-only (the PI shape is a qualitative target, never fit).
+Figure `fig_layer2_a4prime_partial_uniformity.png`.
+
+## Magnitude gap — decomposed honestly (A2 follow-up, 2026-06-03)
+
+A2's ~4–5× platform↔PI A/A₀ under-spread, split into its known recoverable parts (re-ran the
+three conditions to ≈82 h at R₀≈67 µm, recording raw-hull AND connected-core A/A₀;
+`scripts/layer2_magnitude_gap.py`). Both contributors are SMALL:
+
+| | core→raw | 60 h→82 h | platform raw 82 h | PI raw 82 h | residual |
+|---|---|---|---|---|---|
+| Bare | ×1.00 | ×1.18 | 2.24 | 9.3 | ×4.1 |
+| Pre | ×1.00 | ×1.19 | 2.29 | 10.0 | ×4.4 |
+| Lam4 | ×1.00 | ×1.22 | 2.35 | 13.5 | ×5.7 |
+
+**The gap is NOT a measurement artifact (core ≡ raw, ×1.00) — the catch-bond keeps the spheroid
+connected so the hull equals the core (no fragmentation to inflate the raw area; confirms the
+L2.5 hull≡core claim). Time (60→82 h) recovers only ~20%.** The residual ~4–6× is a genuine
+under-spread: the cohesion-locked, contact-inhibited CBM grows a compact cap (A/A₀ ≈ 2.3) while
+the PI MCF7 spread 9–14×. ⚠️ Caveat: the platform point is R₀≈67 µm vs the PI *median* at
+R₀≈170–210 µm — and since A/A₀ decreases with R₀, the PI value AT R₀=67 µm would be even higher,
+so this is an order-of-magnitude (not matched-R₀) comparison. Honest read: the magnitude gap is
+real and is the **scale/statistics axis** (native-N at the PI R₀ range + more seeds/mechanism =
+B2, the GPU port) — not a measurement or time bookkeeping fix. Figure `fig_layer2_magnitude_gap.png`.
+
+## D2 — single-cell cortical tension → spheroid surface-tension BRIDGE (2026-06-03)
+
+The PI thesis (2026-06-03): **single-cell cortical tension γ is the root of the spheroid's
+aggregate surface tension.** Triaged 11 PI-supplied cell-tension papers
+(`docs/CORTICAL_TENSION_TRIAGE_2026-06-03.md`) and built the published bridge as a
+runtime-forbidden acceptance oracle + a runtime measurement observable — NOT a fit, NOT a
+runtime mechanism (inversion rule).
+
+**The chain (all literature-anchored):**
+```
+γ (single-cell cortical tension, KU-3.5; g_rigid native 0.57 mN/m — IN band [0.35,0.65])
+  − β (E-cadherin adhesion energy density)              [DITH; Okuda 2026]
+  = Γ_cc (interior cell-cell tension)
+σ_tissue (aggregate FREE-surface tension) = γ           [Roffay 2021: outer = free cortex]
+Young-Laplace  ΔP = σ(1/R + 1/R')                       [Roffay 2021, 3D mean curvature]
+  ⇒ the 1/R curvature scaling encoded by the A/A₀ b/R term.
+```
+
+**Result (`scripts/layer2_surface_tension_bridge.py`, demonstration from anchors):**
+- **σ_tissue = γ = 0.57 mN/m — IN the KU-3.5 band.** The aggregate surface tension is the
+  single-cell cortical tension (the surface cells' free cortex). Chugh 2017 independently
+  validates the band (model peak ~0.37 mN/m = band floor; T₀=230 pN/µm).
+- **Young-Laplace ΔP(R) = 36.0 → 14.6 Pa** over the L2.5 radii R₀=31.7→78.3 µm — the clean 1/R
+  interior overpressure that the A/A₀ **b/R** term encodes (b>0).
+- **Okuda 3D-cap criterion = True** (free-surface tension > 0.2·cell-cell) — independently
+  underwrites the L2.6 "MCF7 = 3D cap, not monolayer" finding.
+- **Honest finding (not tuned):** the anchored MCF7 adhesion β/γ ≈ 0.68–4.8 (from de-adhesion
+  work over plausible contact areas) sits **above** the Roffay mouse-embryo outer/interior
+  window (β/γ 0.375–0.5 → ratio 1.6–2.0). MCF7 (epithelial, strongly cohesive) is in a
+  **higher-adhesion regime** than the early embryo — consistent with tight 3D aggregation and
+  the L2.5 catch-bond holding the spheroid together. The MCF7-specific β/γ should come from the
+  **emergent** cell-cell contact area in a CBM run, not the geometric estimate.
+- **Magnitude band is a PROXY** (MCF10DCIS ~21 mN/m, Nagle 2022 — no MCF7 tissue-tensiometry
+  datum). The single-cell anchors are MCF7-specific.
+
+**Artifacts:** oracle `validation/oracles/spheroid/surface_tension_bridge.py` (Young-Laplace,
+DITH Γ=cortical−adhesion, Fastabend R=λ/σ, Okuda 3D-cap, Roffay ratio); observable
+`spheroid/observables.py::virial_pressure` + `convex_hull_volume` (emergent-σ measurement route:
+virial ΔP → `surface_tension_from_pressure`); 22 tests (`tests/test_surface_tension_bridge.py`,
+all green; layer-2 suite **120 green**); figure `fig_layer2_surface_tension_bridge.png`.
+
+**Emergent measurement — the bridge closed with a measurement (2026-06-03, honest correction).**
+`scripts/layer2_emergent_sigma.py` measures σ *emergently* from a stable G1 CBM spheroid. Two
+findings refine the anchor-level claim above:
+1. **Method:** the naive interior/exterior virial split does NOT work for a self-bound drop
+   (no confining wall → P_whole ≈ +8e-4 Pa ≈ 0; cells settle at nn/r₀≈0.98, the repulsive
+   branch, so a radial split reads positive). The faithful estimator is the **Irving-Kirkwood
+   spherical mechanical surface tension** σ = −(1/16πR²)Σ(r_ij·f_ij)[1−3(ŝ·r̂)²], which isolates
+   the surface tangential-vs-normal pressure anisotropy → a positive σ. **Sign control validated:**
+   a repulsive-only config flips σ negative (no cohesion → no surface).
+2. **Result:** σ_emergent = **0.012 ± 0.017 mN/m** (3 seeds × 3 sizes), i.e. **σ/γ ≈ 0.02–0.05** —
+   same sign and order ~1/20 of γ, directionally consistent with the bridge but **NOT the σ=γ
+   anchor identity** (which was an idealization). The gap is understood: the **center-particle
+   Morse CBM does not explicitly resolve the cortex**, and the static Morse D_e is anchored to the
+   full-nN MCF7-MCF7 de-adhesion (Iturri 2020), which over-weights cohesion relative to the
+   cortical-tension scale → emergent **β/γ ≈ 5–6** (strong-adhesion/wetting; confirms the demo's
+   "MCF7 above the Roffay window" direction). The IK signal is **noisy** at N≤300 (range −0.03 to
+   +0.08 mN/m) — magnitude not robustly resolved.
+
+   **Honest status:** the bridge holds *structurally and directionally* (cohesion → positive
+   emergent surface tension, same order as γ/20, sign-validated); the anchor-level σ=γ identity is
+   an idealization the center-particle CBM cannot be expected to reproduce exactly. Artifacts:
+   `scripts/layer2_emergent_sigma.py`, `outputs/layer2/emergent_sigma.{json,png}` (settled
+   aggregate, radial profile, sign control, σ vs γ band).
+
+**Emergent σ under the L2.5 CATCH-BOND cohesion (2026-06-04, the D2 next-step).**
+`scripts/layer2_emergent_sigma.py --catch-bond` re-measures the emergent IK σ with the faithful
+Rakshit-2012 sliding-rebinding catch-bond cohesion (the tabulated WCA + catch force the L2.5 run
+integrates) in place of the static Morse, time-averaged over snapshots. The result is a **decisive
+mechanistic refinement of the bridge:**
+
+1. **Static (rest) emergent σ ≈ 0** — robustly: **+0.0024 ± 0.0078 mN/m** (3 seeds × 3 sizes;
+   time-average per run std ≈ 0 — the settled aggregate is a static overdamped fixed point). The
+   cause is **mechanistic, not noise**: the catch-bond cohesion is **stretch-activated** (F_coh = 0
+   for d ≤ r₀), and the settled aggregate sits at **d/r₀ ≈ 0.998 for every contact** (0/470 pairs in
+   the cohesive band (r₀, r_cut)) → cohesion is **entirely dormant at rest**. The catch bond is a
+   **tension-latch, not a static surface pre-stress** — unlike the Morse well, whose finite-width
+   attraction straddles r₀ and pre-stresses the drop (the σ ≈ 0.012 mN/m above). (The rest
+   configuration even retains its seeded lattice order — no rearrangement drive, confirming inactivity.)
+2. **Under tensile strain σ engages and rises monotonically** — an affine radial-strain probe
+   (scale the drop about its COM by 1+ε, recompute the restoring IK σ) gives **σ_eff(ε): 0.0 →
+   +0.0011 → +0.0022 → +0.0042 → +0.0163 mN/m at ε = 0/1/2/5/10 %** (sense-validated: σ_eff
+   non-decreasing, positive, engaged above rest). At ε ≈ 10 % the per-contact force reaches the
+   ~29 pN/cadherin **catch peak** (n_cad ≈ 223, F ≈ 6.5 nN = the Iturri de-adhesion anchor), yet the
+   *surface* σ is still only ~γ/35 — because most of the stretched cohesive energy is in the
+   **isotropic interior** (the IK [1−3(ŝ·r̂)²] weighting keeps only the surface anisotropy).
+
+**Honest status (refined):** under the catch bond the emergent aggregate surface tension is
+**tension-state-dependent, not a fixed σ = γ** — ≈ 0 at the packed rest state (cohesion latent) and
+rising under stretch but staying ≪ γ (σ/γ ≈ 0.004 rest → 0.03 at 10 % strain). This is fully
+consistent with **L2.5** (the catch bond manifests as resistance-to-separation that prevents
+proliferation fragmentation — a *tension* response, not a rest pre-stress) and with the Morse
+finding's direction. The bridge holds **structurally and directionally** for both cohesion models;
+the anchor-level σ = γ identity remains a **single-cell-line** question (where the cortex is
+explicit), **not** a center-particle-CBM one — now confirmed for the faithful catch-bond too.
+Artifacts: `scripts/layer2_emergent_sigma.py` (`--catch-bond`),
+`outputs/layer2/emergent_sigma_catch.{json,png}`.
+
+**Next:** (1) C1 cross-line consistency seam (single-cell γ ↔ Layer-2 σ share one MCF7 anchor);
+(2) the cortex is only emergent in the single-cell line, so an exact σ=γ match is a single-cell-line
+question, not a CBM one; (3) ⚠️ PI-gate: is the affine-strain σ_eff(ε) probe the right operational
+definition of the catch-bond aggregate's surface tension (vs an energetic work-of-deadhesion route)?
+
+## B2 — GPU-main port → native-N scale-up: the law extends into the PI R₀ range (2026-06-04)
+
+A2 left three honest gaps; two of them (**magnitude ~4–6×** and **R₀ range no-overlap**) were
+diagnosed as the *scale/statistics* axis — the platform's CPU first pass reached only R₀=40–78 µm
+while the PI MCF7 spheroids span R₀=87–419 µm, so the law was only EXTRAPOLATED (dotted) into the
+experiment's sizes. The blocker was hardware: a native-N CBM pool (N~10³–10⁴ cells, ×4 under
+proliferation) is infeasible on the 16 GB CPU box. B2 is the GPU-main port that removes it.
+
+**The port (mechanism-faithful, additive, freeze-safe).** Mapping the CBM growth path showed the
+cohesion (`md.pair.Morse` / the L2.5 `md.pair.Table` catch bond) and the neighbour list are
+*already* HOOMD C++ — GPU-accelerated for free. The ONLY per-step Python is the simple overdamped
+BAOAB Action, whose `cpu_local_snapshot` forced a device→host sync every step and throttled the
+GPU. Because the L2.4b pool pre-allocates `max_cells` at t=0 (division flips `void`→`cell` in place
+via `set_snapshot`), the **tag space is FIXED** — the simplest possible port (no Path-A tag
+extension). `integrator/baoab_device.py` (NEW, additive) is a device-aware sibling: the **CPU path
+is bit-identical to the frozen `baoab.LeimkuhlerMatthewsBAOAB`** (same RNG stream / step /
+`_wrap_into_box`; `tests/test_baoab_device.py` asserts trajectory parity, 8 green) and the **GPU
+path uses `gpu_local_snapshot` + cupy** (reusing the constrained-port helpers
+`array_backend`/`_wrap_into_box_xp`). The frozen single-cell `baoab.py` is UNTOUCHED. The CBM
+builders (`cbm`, `cadherin_bonds`, `proliferation` pool) select frozen-numpy on CPU (byte-stable
+provenance) vs device-cupy on GPU via `make_baoab_updater_for_device`. Full layer-2 + baoab suite
+green on CPU, byte-unchanged.
+
+**⚠️ Correction (2026-06-04, caught by the pre-production audit).** The first pass of this
+section claimed the native-N sweep ran on the GPU with "16-digit GPU↔CPU parity." That was
+**wrong**: `layer2_gpu_scaleup.run_one` built a GPU device but never passed it to
+`run_growth_pooled`, so **every "GPU" sweep run actually executed on CPU** — and the "bit-identical"
+agreement was the *trivial* consequence of running the same CPU code with the same seed, not a GPU
+validation. The bug is fixed (the device is now passed; a requested-vs-actual device assert + a
+provenance stamp prevent recurrence). **The science is unaffected**: the native-N sweep below is a
+faithful **CPU pooled-growth** result — the L2.4b leak-free pool is what made native N feasible on
+CPU (just slower), and it reached R₀=196 µm / 11 878 cells / r²=0.999 honestly.
+
+**GPU path — now validated on the REAL A5000 (device actually used).** Re-running with the fix:
+GPU↔CPU A/A₀ parity at N₀=1000 is **|ΔA/A₀| = 0.039** (statistical — the cupy RNG is a different
+stream from numpy, so agreement is within seed noise, *not* bit-exact; the earlier "16 digits" was
+the bug). The gbook-gated `layer2_gpu_baoab_smoke.py` independently confirms the device BAOAB GPU
+branch is finite and CPU-consistent (**|ΔA/A₀| = 0.001**, PASS). And the port **pays off**: real
+GPU throughput is **787 st/s at 6 175 cells → 703 st/s at 11 878 cells** (≈N-flat) — vs the CPU
+cliff — so N₀=8000 (R₀=196 µm) runs in **178 s on GPU vs ~810 s on CPU (~4.6×)**. The full PI-range
+production run is therefore **feasible on GPU** (~3–10 min/run); the epoch-loop port (D3) is an
+optimisation, not a pre-production blocker.
+
+**Native-N sweep — the G3 catch-bond law, extended (CPU pooled growth, 3 seeds; GPU re-validated):**
+
+| N₀ | 200 | 1000 | 2000 | 4000 | 8000 |
+|---|---|---|---|---|---|
+| R₀ (µm) | 52.9 | 93.0 | 120.0 | 153.6 | **195.9** |
+| A/A₀ core (mean±sd) | 2.01 | 1.58±0.04 | 1.42±0.02 | 1.35±0.01 | **1.26±0.01** |
+| N final (cells) | 454 | 1767 | 3259 | 6196 | **11878** |
+| ejected | — | no | no | no | **no** |
+
+```
+A/A0 = 0.978 + (55.24 µm)/R + (−22.44 µm²)/R²       r² = 0.999   (R₀ 53–196 µm, G3 PASS)
+```
+
+1. **R₀-range gap CLOSED.** The platform now spans R₀ 53→**196 µm** (was 40–78), so R₀ 93–196 µm
+   **overlaps the PI 87–419 µm range** for the first time — the PI median (~170 µm) sits *inside*
+   the swept range. The novel law no longer needs extrapolation to meet the experiment's sizes.
+2. **G3 r²=0.999** across the native range (even tighter than the L2.5 CPU headline's 0.98 — more
+   points + tighter native stats). Signs all match the PI law: **b>0** (1/R curvature/traction),
+   **c<0** (small-size cohesion penalty). hull≡core at every size (catch holds — **0/15 runs
+   fragment** even at 11 878 cells), confirming the L2.5 fragmentation-resistance at native scale.
+3. **Magnitude gap is GENUINE, now proven at MATCHED R₀.** At R₀≈170–196 µm the platform gives
+   A/A₀≈1.26–1.3 vs the PI medians 7.2 (Bare) / 7.5 (Pre) / 10 (Lam4) — **~5–8× under-spread at the
+   *same* R₀**. A2 could only say "PI is higher at larger R₀"; B2 converts that to a same-size
+   comparison: the gap is **not** a scale artifact but the **cohesion-locked compact-cap physics**
+   (the strongly-cohesive MCF7 catch bond grows a dense cap; the PI raw segmented area includes
+   spread protrusions/scattering the cohesive model resists). This re-points the magnitude question
+   away from scale (B2, now done) toward the **cohesion/observable axis** (e.g. a raw-area readout, a
+   weaker-cohesion or active-protrusion mechanism) — a model-physics question, not a hardware one.
+
+**Performance — measured on the REAL GPU (corrected).** The first-pass "throughput collapses with N
+(925→154 st/s)" claim was the **CPU misattribution** (those were CPU numbers). On the real A5000 the
+per-step BAOAB host sync is gone and throughput is **≈N-flat: 787 st/s at 6 175 cells → 703 at
+11 878** (vs CPU's cliff), a **~4.6× wall-time win at N₀=8000** (178 s vs ~810 s). At small N the GPU
+is latency-bound (0.74× at N₀=1000) — CPU is the right device there. The host-side proliferation
+epoch loop (`scipy.cKDTree` + per-epoch `get/set_snapshot`) is *not* the dominant cost at this scale
+on GPU; it would only matter much deeper into native N — porting it (cupy KD-tree / device-resident
+division) is the **optional** D3 follow-on, not required for the PI-range production run. (The epoch
+loop was hardened defensively anyway: one cKDTree/epoch, single snapshot gather/epoch, pool-depletion
++ empty-set guards, a derived CFL force-overflow heads-up.)
+
+**Artifacts:** `integrator/baoab_device.py` (GPU VRAM/cupy-device guards + provenance print),
+`tests/test_baoab_device.py` (8 green), `scripts/layer2_gpu_scaleup.py` (device-passed +
+requested-vs-actual assert + commit/cfg-hash provenance), `scripts/layer2_gpu_baoab_smoke.py`
+(gbook-gated GPU↔CPU device-BAOAB smoke, PASS), `scripts/sync_to_gbook.sh` (one-command code sync —
+gbook is NOT Syncthing-synced), `scripts/layer2_b2_vis.py`,
+`outputs/layer2/b2_gpu/{cpu,gpu}_sweep.jsonl` (CPU sweep) + `real_{parity_N1000.log,gpu_native.jsonl}`
+(real-GPU validation), figure `fig_layer2_b2_native_law.png`. The b2_gpu `*.jsonl` are gitignored
+run-artifacts (Syncthing/outputs, provenance-stamped). PI A/A₀ overlay-only throughout.
+
+## Production run — PI-ratified DOE (2026-06-04)
+
+After the pre-production audit (51 findings; the device-bug blocker fixed, 4-file hardening,
+real-GPU validation) and the raw-area observable add (below), PI ratified the first production
+DOE:
+
+- **Axis = R₀-law only, Bare (catch cohesion, NO substrate, NO active traction)** — the §HEADLINE
+  G3 physics, swept across the full PI R₀ range. *Deferred but explicitly tracked (PI "don't
+  forget the rest"):* (1) the **3 ligand conditions** Bare/Pre/Lam4 via the A1 active-traction +
+  A4′ partial-uniformity (Lp≈40 µm) machinery; (2) **substrate confinement** (L2.6 quasi-2D). Both
+  are ready (A1/A4′/L2.6 landed) and are the next production axes after the R₀-law lands.
+- **R₀ grid:** 100–400 µm × 7 (N₀ ≈ {1250, 4000, 8500, 16000, 26000, 40000, 60000}) — matches the
+  PI experimental range (87–419 µm), no extrapolation.
+- **Replicates:** 5 seeds / R₀ (resolves the A1/A3 under-determination). **Biological time:** 60 h
+  (2 doublings). **Anchors:** the audit-flagged defaults adopted — D_e = Iturri-2020 6.5 nN
+  de-adhesion, cell diameter 15 µm (Wagner 2011), A4′ Lam4 Lp = 40 µm (ligand axis only).
+- **Device:** gbook RTX A5000 (real GPU; ~3–10 min/run, worst-case R₀=400 µm probed first). Each
+  result stamps git commit + cfg hash + actual device (provenance). PI A/A₀ overlay-only.
+- **Magnitude-gap diagnostic (PI "add raw-area first"):** every run now records the **raw
+  union-of-disks footprint** A/A₀ (`raw_footprint_area`, image-segmentation analog) ALONGSIDE the
+  connected-core, so the matched-R₀ gap can be decomposed into observable-definition vs genuine
+  physics at production scale.
+
+### ✅ Production result (35/35 runs, real A5000, 2026-06-04)
+
+```
+A/A0 = 1.000 + (47.39 µm)/R + (97.46 µm²)/R²      r² = 0.998   (R₀ 104–394 µm, FULL PI range)
+```
+
+| R₀ (µm) | 104 | 154 | 200 | 251 | 296 | 343 | 394 |
+|---|---|---|---|---|---|---|---|
+| A/A₀ core (mean±sd) | 1.47±.02 | 1.31±.03 | 1.25±.02 | 1.19±.01 | 1.15±.00 | 1.14±.01 | 1.13±.00 |
+| A/A₀ raw | 1.43 | 1.28 | 1.22 | 1.17 | 1.13 | 1.12 | 1.11 |
+
+1. **Law FORM reproduced across the entire PI experimental R₀ range** (104–394 µm, no
+   extrapolation), r²=0.998, from the fully mechanistic model with **zero calibration** — the
+   asymptote a=1.000 is the cohesion-locked no-spread limit. Tight stats (sd 0.00–0.03, 5 seeds),
+   0 ejections / 0 caps.
+2. **Magnitude gap is GENUINE — the raw-area diagnostic settles it.** `raw/core = 0.97–0.99` at
+   *every* R₀ (raw is, if anything, slightly *smaller* than the convex core). So the experiment's
+   own area definition (raw segmented footprint) does **not** close the ~5–9× gap to the PI medians
+   (7.2/7.5/10) — it is not an observable-definition artifact but the cohesion-locked compact-cap
+   physics. Figure `fig_layer2_prod_rlaw.png` (panel B).
+3. **Why the magnitude under-spreads — the literature places this precisely (KB sweep 2026-06-04).**
+   Across the spheroid-modeling corpus, *strict center-based (1 particle/cell) models cannot resolve
+   lamellipodial contact-line traction* — they reduce active spreading to a **self-propulsion v₀** or
+   an **adhesion-overlap** balance (Chen&Zou 2018 = our motility recipe; Audoin 2022 OU walk;
+   Odenthal 2013 passive). Active-wetting / contact-line traction are intrinsically **shape-resolved
+   or subcellular** (Fastabend/Warmt active wetting; Fang 2016, Xiong 2007 explicit actin). And —
+   decisively — *almost every reference that MATCHES experimental spreading magnitude **calibrates**
+   v₀/adhesion/J_CS to the data*; ffn_cellsim deliberately does not (overlay-only / literature-first).
+   So our under-spread is the expected consequence of (a) the center-based proxy limit and (b) the
+   no-calibration discipline. The principled close is the **single-cell H.5 lamellipodium → CBM
+   self-propulsion scale-bridge** (anchor v₀ mechanistically, the way cohesion was anchored to Iturri
+   de-adhesion) — exactly the `spreading.py` "scale-bridge traction pending" flag. Filopodium (H.6,
+   deferred) is correctly irrelevant for cohesive-MCF7 sheet spreading (Mattila & Lappalainen 2008).
+4. **Next production axes (deferred, tracked):** turn on substrate + the lamellipodium-anchored
+   active traction (the 3 ligand conditions) and re-test whether the magnitude closes — the decisive
+   experiment separating "missing active mechanism" from "over-strong cohesion."
+
+Artifacts: `scripts/layer2_prod_rlaw.sh` (resumable launcher), `scripts/layer2_prod_vis.py`,
+`outputs/layer2/prod_rlaw/rlaw_sweep.clean.jsonl`, figure `fig_layer2_prod_rlaw.png`.
+
+## C — magnitude-gap resolution: the lamellipodium → CBM motility bridge (2026-06-04)
+
+The production run proved the magnitude gap is genuine (raw≈core) and the literature placed it on the
+**active** side (center-based models lump spreading into a self-propulsion v₀; magnitude is
+otherwise calibrated, which we refuse). C builds the principled **scale-bridge**: anchor the CBM
+per-cell active force from a measured single-cell speed via the overdamped map
+``f_active = v0·γ_cell`` (the EXISTING `ActiveMotility`/edge-traction knob — no new mechanism, no
+integrator change; γ_cell = the clutch-ensemble migration drag 0.30 N·s/m, KU-2.18, the same anchor
+the cohesion bridge used). `spheroid/motility_bridge.py` (`resolve_active_traction`, pure arithmetic,
+6 tests) reads the Bieling-2016 protrusion constants from the H.5 single-cell config (the SoT) and
+computes both candidate anchors. **This single no-sim step already discriminates the question:**
+
+```
+f_wholecell 1.6 nN  <  B1 ceiling 3.0 nN  <  cohesion F_detach 6.5 nN  <  f_protrusion 9.4 nN
+```
+
+- **The two single-cell anchors differ by ×5.9** — protrusion (Bieling barbed-end v₀ = k_elong⁰·δ =
+  1.88 µm/min → 9.4 nN) vs whole-cell (MCF7 19 µm/h, DeepBIT 2026 → 1.6 nN). That ×5.9 ≈ the observed
+  ~5–9× A/A₀ magnitude gap. **The gap is localised to the ACTIVE side** — cohesion is anchored TWO
+  independent ways (Iturri de-adhesion + D2 γ=0.57 mN/m in-band), so it is *not* the cause.
+- **⭐ The protrusion-anchored traction (9.4 nN) EXCEEDS the cohesion (6.5 nN).** In a center-based
+  1-particle model the active force is transmitted as **cell–cell** force, so driving cells at the
+  lamellipodial-protrusion scale **tears the aggregate apart (detachment) rather than spreading it** —
+  the overdamped CBM literally cannot host it (B1 detachment regime). This **quantitatively confirms
+  the center-based 1-particle structural limit**: real MCF7 spread by lamellipodial **crawling on the
+  substrate** (contact-line traction reacted by the SUBSTRATE, not by neighbours), which a point-cell
+  CBM cannot represent — exactly the limit the literature (Fang 2016, Mattila 2008) and the §B2/§C
+  analysis flagged. The whole-cell anchor (1.6 nN ≈ the A1 Bare 1.5 nN already run) stays compact and
+  does NOT close the gap, as the magnitude-gap decomposition already showed.
+
+**Verdict (honest):** the ~5–9× magnitude under-spread is **the Layer-2 center-based abstraction
+limit on the active side, not a parameter to tune and not over-strong cohesion.** Reproducing the
+experiment's spreading magnitude faithfully requires a mechanism a 1-particle CBM cannot host —
+either (a) the **fine-grained single-cell line** (explicit lamellipodium + substrate traction, H.5→),
+or (b) a **CBM extension with explicit in-plane SUBSTRATE traction** (force reacted by the substrate,
+decoupled from cell–cell cohesion) — a contact-line-traction add-on, the natural Layer-2 D-axis. The
+form (the PI law) is reproduced; the magnitude is a scope boundary, now precisely located. PI A/A₀
+overlay-only; the MCF7 19 µm/h speed is an overlay-validation anchor, never fitted. Figure
+`fig_layer2_motility_bridge.png`; artifacts `spheroid/motility_bridge.py`,
+`tests/test_motility_bridge.py`, `scripts/layer2_motility_bridge_vis.py`.
+
+**⭐ Decisive experiment — RUN, the analytical verdict CONFIRMED at native N (2026-06-04).** The
+analytic argument above (9.4 nN > 6.5 nN cohesion ⇒ detachment) was put to the actual simulation:
+a 3-arm bracket on the substrate-confined catch-cohesion CBM at the PI-overlapping R₀≈153 µm
+(N₀=4000, 2 seeds), with the PI-ratified decisions applied (bracket BOTH anchors; the protrusion
+arm gets the PI-authorized **dt/5 sub-step** — implemented WITHOUT touching the frozen integrator:
+a `dataclasses.replace`d resolved with `dt_cfl/5` + `epoch_steps×5`, identical biological time, the
+single-cell BAOAB freeze intact). `scripts/layer2_decisive_traction.py`:
+
+| arm | f_active | A/A₀ core | A/A₀ raw | ejected |
+|---|---|---|---|---|
+| baseline (substrate, no traction) | 0 | 1.33 | 1.28 | no |
+| armA — whole-cell anchor | 1.6 nN | 1.36 | 1.31 | no |
+| **armB — protrusion anchor** | **9.4 nN (dt/5)** | 1.50 | 1.49 | **YES (both seeds)** |
+
+The result is unambiguous and matches the analytic prediction: the **whole-cell anchor barely moves
+A/A₀** (1.33→1.36; the ≤3 nN regime is cohesion-locked, as the magnitude decomposition already showed)
+and the **protrusion anchor EJECTS boundary cells in both seeds** — the PI-authorized finer dt did
+**not** prevent it, because the ejection is **force-limited, not a timestep artifact** (a low-coordination
+rim cell's single catch contact peaks at N_cad·f₀≈6.5 nN, below the 9.4 nN protrusion pull, so it
+genuinely detaches; smaller dt cannot change the overdamped terminal velocity). So at the platform's
+OWN literature-first protrusion force the overdamped 1-particle CBM **tears off rim cells rather than
+spreading the sheet** — it cannot represent *crawl-while-attached* (contact-line traction reacted by the
+SUBSTRATE). This **empirically closes the fork on the STRUCTURAL-LIMIT side**: the ~5–9× magnitude gap
+is the center-based 1-particle abstraction, not a missing parameter and not over-strong cohesion. The
+fix is structural (the fine-grained line, or an explicit-substrate-traction CBM D-axis), exactly the
+two routes the verdict names. Figure `fig_layer2_decisive_traction.png`; data
+`outputs/layer2/decisive/decisive.jsonl`. *(The PI "open decisions" below were ANSWERED for this run:
+bracket both anchors ✓; authorize dt/5 for the protrusion arm ✓; parameterise v₀ from the H.5 config,
+verify KU-5.2 emergent v₀ later ✓.)*
+
+**Open PI decisions (the bridge surfaces, does not pre-empt):** (1) **anchor choice** — protrusion
+(9.4 nN, the fine-grained mechanism) vs whole-cell (1.6 nN, MCF7-measured); they bracket the gap.
+(2) **the protrusion arm needs the detachment regime** (>cohesion) → a sub-stepped-bond / explicit
+substrate-traction CBM extension (roadmap D3) — this brushes the integrator freeze and is a PI call,
+not a silent tweak. (3) H.5 KU-5.2 force-velocity is still un-run on hardware (PI sign-off + Mac
+smoke), so the protrusion v₀ is parameterised from the H.5 config, not yet emergently confirmed.
+
+## D — substrate-reacted crawl + turnover-remodeled cohesion: the gap is DRIVING, not cohesion (2026-06-04)
+
+PI ratified the **A: CBM substrate-reacted traction D-axis** (after the §C decisive bracket). Two
+mechanistic units landed, and together they **eliminate cohesion as the magnitude-gap suspect**:
+
+**D-1 — substrate-reacted collective basal crawl (`spheroid/substrate_crawl.py`).** The §C decisive
+bracket applied the protrusion force as the EXISTING edge-localized, 3D-radial, cell-cell-transmitted
+traction and a rim cell EJECTED (force-routing artifact). D-1 applies the SAME anchored force the
+faithful way — **substrate-reacted** (drag = clutch γ, not competing with cohesion), **in-plane**
+(z-force = 0, the cell migrates across the dish), **collective over all basal cells** (not rim-only),
+so the sheet expands coherently (Pérez-González 2019; Mattila 2008). `run_growth_pooled` gains
+`crawl_mode='edge'|'basal'`; +5 tests. **Result (N₀=4000, R₀≈153 µm, 2 seeds, brittle catch bond):**
+collective basal-crawl @9.4 nN STILL **ejects both seeds** (core 1.13/1.15) — so the ejection is NOT
+a force-routing artifact; it is force-limited (a 1-contact rim cell's catch peak ≈3.9 nN < the 9.4 nN
+pull, so it genuinely detaches regardless of how the force is applied).
+
+**D-2 — turnover-remodeled (viscoplastic) cohesion (`resolve_cadherin(yield_remodel=True)`).** The
+friend's 2026-06-04 architecture lit batch (now KC-joined into the Contract-Graph) supplied the fix:
+*Kadzik & Munro 2026* — **balanced actin turnover maintains cortical CONNECTIVITY and lets the network
+FLOW rather than fracture**; *Trepat 2009* — collective traction is borne by **distributed
+intercellular stress**, not one bond; *Cavey 2008 / Yap 2015* — adherens junctions **remodel under
+tension while holding**. Diagnosis: the L2.5 catch bond is **brittle** — past the catch peak the
+ensemble holding slip-decays (3.86 → 0.49 nN within r_cut), so a crawling rim cell loses cohesion and
+detaches. D-2 makes it **ductile**: beyond the catch peak the ensemble **PLATEAUS at the (same
+anchored) catch peak** (cadherins slip AND re-form — turnover remodels the contact), so cells
+SLIDE/FLOW instead of one bond snapping. **No new magnitude constant** (plateau = the existing anchored
+peak; only the slip-decay tail is replaced); default `False` = unchanged brittle bond (regression green).
+
+**⭐ Result — the steering WORKS mechanistically but isolates the real cause (N₀=4000, 2 seeds):**
+
+| basal-crawl f | brittle core / raw / eject | **YIELD core / raw / eject** |
+|---|---|---|
+| 0 | 1.33 / 1.28 / no | 1.32 / **1.45** / no |
+| 1.6 nN (whole-cell) | 1.35 / 1.29 / no | 1.32 / 1.45 / no |
+| **9.4 nN (protrusion)** | 1.14 / 1.16 / **EJECTS** | **1.31 / 1.46 / NO EJECT** |
+
+1. **The Kadzik-grounded fix WORKS:** turnover-remodeled cohesion **removes the protrusion-force
+   ejection in both seeds** — the spheroid now **flows, not fractures**, at the lamellipodial crawl
+   force. The literature insight transferred directly to a working mechanism (+13% raw footprint from
+   the ductile sliding, too).
+2. **But A/A₀ does NOT rise** — it stays **~1.3 core / ~1.45 raw**, still ~5–7× under the PI medians
+   (7–10). The cohesion that now holds the sheet together also resists its spreading: the tissue flows
+   *coherently but compactly*.
+3. **⇒ Cohesion is ELIMINATED as the magnitude-gap suspect.** The gap survives every cohesion fix
+   (catch vs morse, brittle vs turnover-ductile) and every observable (core ≈ raw). Combined with §B2
+   (not scale) and the raw-area diagnostic (not measurement), the residual ~5–9× is a **DRIVING /
+   COORDINATION** gap: the anchored net per-cell traction (whole-cell 1.6 nN) is too weak, and the raw
+   protrusion force (9.4 nN) — even with cohesion now holding — only flows the cap compactly. The next
+   mechanism is **coherent collective traction** (Trepat-style plithotaxis / a tissue-scale polarized
+   traction field where the whole front pulls together, building distributed stress), or the
+   fine-grained single-cell line — NOT a cohesion parameter.
+
+**Knowledge-base note (the friend's lit batch directly improved the model).** The 2026-06-04
+architecture SourceEvidence batch (Kadzik/Merino/Flormann/… ) is now BM25-ingested AND relationally
+joined to KnowledgeClaims (incl. Layer-2 KB-5.13/5.16/PIV-9/4.18); `tag_query` can join the new papers
+to Layer-2 claims. Kadzik & Munro 2026 supplied the turnover→flow mechanism that became D-2.
+*(Open KB item for the corpus owner: the σ-bridge SE rows — Winklbauer/Roffay/Okuda/Fastabend/Chugh —
+still lack the Layer-2 KB-5.13 link; and the Kadzik PDF is ingested 3× (v1/full/media) — dedup.)*
+Artifacts: `spheroid/substrate_crawl.py`, `spheroid/cadherin_bonds.py` (`yield_remodel`),
+`scripts/layer2_daxis{,_yield_vis}.py`, `outputs/layer2/{daxis,daxis_yield}/*.jsonl`,
+figure `fig_layer2_daxis_yield.png`.
+
+## E — coherent collective traction (SPP plithotaxis): the COORDINATION mechanism, tested (2026-06-04)
+
+§D localised the residual ~5–9× gap to **DRIVING/COORDINATION** (a radially-symmetric basal crawl
+does net ~0 — isotropic pressure ⇒ static equilibrium). §E builds and tests the literature-faithful
+coordination fix: an **SPP-plithotaxis polarity field** (`spheroid/plithotaxis.py`,
+`crawl_mode='plithotaxis'`). Each cell carries an in-plane polarity `p_i`, self-propelled along it and
+**substrate-reacted** (drag = clutch γ, the `substrate_crawl` lineage), evolving by the **Smeets-2016
+CIL-SPP rule** (`PNAS 113:14621`, the closest breast-epithelial-anchored model — MCF10A):
+persistent reorientation (rotational diffusion **D_r=0.05 min⁻¹ ⇒ τ=20 min**) + **free-edge CIL**
+repolarisation toward open space (**f_cil=0.1 min⁻¹**, gated by a geometric edge-ness weight) + the
+velocity correlations **emergent from the catch+turnover cohesion** (Garcia 2015 PNAS / Henkes 2020 Nat
+Commun: the ~200 µm coherence arises from persistence + elastic coupling with **no explicit Vicsek
+alignment** — so the Vicsek term is implemented but default-OFF; imposing it would be an unanchored
+tunable fit to ξ). ψ=f_cil/(2D_r)=1.0 reproduces Smeets' MCF10A estimate. **Every input is a measured
+value; ξ≈200 µm and intercellular stress >300 Pa are emergent overlay targets; nothing is fitted to PI
+A/A₀.** Anchors + citation-integrity flags: `outputs/tag_kb/SE_REGISTRATION_CANDIDATES_2026-06-04_
+collective-migration.md`; design: `outputs/layer2/DESIGN_plithotaxis.md`. (Anchors sourced by an
+adversarially-verified deep-research pass: 106 agents, 25 claims, 20 confirmed / 5 refuted. No MCF7-
+specific data exists for these observables — MCF10A/MDCK/HBEC are the proxies, flagged per-row.)
+
+**Result — the bracket (R₀≈153 µm, N₀=4000, substrate + catch/yield cohesion, GPU, 2 seeds):**
+
+| arm | f_active | A/A₀ core (2-seed mean) | A/A₀ raw | ejected |
+|---|---|---|---|---|
+| f0 (baseline) | 0 | 1.278 | 1.433 | no |
+| whole-cell | 1.6 nN | 1.316 | 1.456 | no |
+| **MCF10A v_m** | **5.0 nN** | **1.312** | **1.455** | no |
+| protrusion | 9.4 nN | 1.300 | 1.454 | **no** |
+
+*(N₀=4000, R₀≈151 µm, substrate + catch/yield cohesion, GPU, 2 seeds — seed-0/seed-1 agree to ≤0.01;
+core flat at 1.28–1.32 across the full 0→9.4 nN range, raw 1.43–1.46, zero ejections.)*
+
+1. **Plithotaxis does NOT close the magnitude gap at native N.** A/A₀ is **flat across the entire
+   anchored force range** (0→9.4 nN: core ~1.28–1.32, raw ~1.43–1.47) — indistinguishable from the §D
+   radial-crawl baseline and ~5–8× under the PI medians (7.2/7.5/10). The persistent + free-edge-CIL
+   coordination produces no net macroscopic spread beyond §D at native scale.
+2. **The steering "works" mechanically — flow not fracture — but does not spread.** Even the 9.4 nN
+   protrusion arm **does not eject** (vs the §C rim-only and §D brittle ejections): the substrate-reacted
+   + yield-cohesion + persistent-CIL machinery holds the sheet. So the mechanism is faithfully realised;
+   it simply does not raise A/A₀.
+3. **Why — the N-dependence is diagnostic.** A small-N smoke (N=60) DID rise (core 1.7) because nearly
+   every cell is a free-edge cell (w_edge>0) and the whole cluster is CIL-driven; at native N the dense
+   disk is mostly **bulk** (w_edge≈0), so CIL drives only the thin perimeter ring and the ductile
+   cohesion holds the bulk compact — the **rim-only / cohesion-balanced** regime again. This is exactly
+   the center-based 1-particle limit: a point cell cannot generate distributed substrate traction *while*
+   staying cohesively bound (the Trepat tug-of-war has traction many rows back, not just the edge); the
+   only CBM-expressible alternatives are an isotropic radial drive (§D: does nothing) or an edge-only
+   drive (§E: rim-limited) — neither spreads.
+4. **⇒ The suspect elimination is now COMPLETE.** scale (§B2) ✗ · observable-definition (raw≈core) ✗ ·
+   cohesion (catch/morse, brittle/yield — §D) ✗ · **driving/coordination (plithotaxis — §E) ✗**. The
+   residual ~5–9× is the **center-based 1-particle structural limit**, not any mechanism the CBM can host.
+5. **⭐ Reframing for the next axis — the gap is likely 3D→2D WETTING/FLATTENING, not lateral migration.**
+   A spheroid of radius R (volume ∝R³) that *flattens* onto the dish into a film of thickness h gives a
+   purely geometric **A/A₀ ≈ 4R/(3h)** — for R≈150 µm and h≈15–30 µm (1–2 cell layers) that is **≈7–13**,
+   matching the PI 7–10. So the PI magnitude is plausibly the spheroid **melting into a quasi-2D film**
+   (a cell-substrate-adhesion / active-wetting transition), which the present CBM does not undergo (it
+   keeps a ~3D cap, A/A₀~1.3). Tellingly, the PI ligand axis IS a wetting-strength axis — **Lam4 (laminin,
+   strongest adhesion) gives the highest A/A₀=10**. This points the next production axis at **cell-
+   substrate adhesion / wetting** (the deferred-but-tracked Bare/Pre/Lam4 conditions), distinct from the
+   lateral collective-traction mechanism §E just tested. *(Hypothesis grounded in the geometric estimate +
+   the ligand-A/A₀ trend; to be tested, not yet a claim.)*
+
+**Verdict (honest).** The literature-faithful coordination mechanism, with measured MCF10A anchors and
+zero calibration, **does not close the ~5–9× magnitude gap** — completing the suspect elimination and
+confirming the gap is the **center-based 1-particle structural limit** (§C/§B2). The two principled
+routes both stand: **(a)** the **fine-grained single-cell line** (shape-resolved lamellipodium +
+explicit substrate traction — a cell that grips new substrate at its front while its rear stays bound);
+**(b)** the **3D→2D wetting/flattening axis** (cell-substrate adhesion strength; the PI ligand
+conditions), which the geometric A/A₀≈4R/3h argument newly suggests is where the *magnitude* actually
+lives. The PI law FORM remains reproduced (§HEADLINE, r²=0.998); the magnitude is a scope boundary, now
+mapped on all four CBM-hostable axes. PI A/A₀ overlay-only throughout. Artifacts:
+`spheroid/plithotaxis.py`, `tests/test_plithotaxis.py` (12 green), `scripts/layer2_plithotaxis.py`
+(+auto-viz `scripts/layer2_plithotaxis_vis.py`), `outputs/layer2/plithotaxis/*.jsonl`, figure
+`fig_layer2_plithotaxis.png`.
+
+## F — the wetting axis: passive AND active spreading both fall short → structural limit confirmed (2026-06-04)
+
+§E reframed the magnitude as a 3D→2D **wetting/flattening** question. §F tests it against the
+**aggregate-wetting framework** (deep-research `wf_d670c6b0-568`, 97 agents → SE candidates
+`outputs/tag_kb/SE_REGISTRATION_CANDIDATES_2026-06-04_aggregate-wetting.md`). The framework
+(Douezan & Brochard-Wyart 2011 PNAS; Beaune 2014; Gonzalez-Rodriguez 2012): a spheroid on an adhesive
+substrate wets per the spreading coefficient **S = W_cs − 2γ** (W_cs = cell-substrate adhesion energy,
+2γ = cell-cell cohesion). **S<0 → partial wetting (3D cap)**; **S>0 → complete wetting → a motility-driven
+precursor MONOLAYER film** (~1-cell-layer height, A/A₀ large). Crucially the spreading is **ACTIVE**:
+breast-carcinoma MCF7 spheroids increase footprint **3–4× in 24 h on collagen-I** and EpCAM-knockdown
+drives complete wetting to a flat coherent monolayer (Aslemarz/Gupta 2024 EMBO J) — a three-tension
+(γ_m free-edge / γ_c contact / γ_x matrix) balance whose dominant physiological lever is **reduced
+cell-contact contractility (γ)**; the film is pulled by motile edge cells (Beaune 2014; Pérez-González
+2019), not by passive surface energy. γ anchor: breast-epithelial **21–45 mN/m** (Nagle 2022). [Found
+during this: the §D2 surface-tension bridge γ≈0.57 mN/m is ~40–80× below Nagle — flagged for the
+σ-bridge owner.] **It was a placeholder in the model**: `resolve_substrate` set D_sub = adhesion_ratio·D_e
+with adhesion_ratio=1.0 (= cohesion), i.e. S≈−γ<0 by construction → 3D cap (the L2.6 finding).
+
+**Test (R₀≈92 µm, N₀=1000, catch/yield cohesion, GPU) — sweep the adhesion ratio D_sub/D_e to push S>0,
+PASSIVE (no motility) vs ACTIVE (plithotaxis 5 nN):**
+
+| D_sub/D_e | passive core / raw | active core / raw |
+|---|---|---|
+| 1 | 1.61 / 1.77 | 1.49 / 1.72 |
+| 4–8 | 1.54 / 1.74 | 1.52 / 1.85 |
+| 16 | 1.58 / 1.75 | 1.59 / **1.94** |
+
+1. **PASSIVE adhesion cannot flatten the cap.** Raising W_cs 16× leaves A/A₀ flat (~1.5–1.6) — the
+   cohesive cap is **kinetically trapped** (the short-range wall reaches only basal cells; cohesion
+   holds the pile) and, per the framework, passive energy balance sets the *equilibrium* but **motility
+   drives the kinetics** — exactly why passive alone does nothing (and consistent with L2.6).
+2. **ACTIVE motility + adhesion lifts the RAW footprint only modestly** (raw 1.72→1.94, +13%, as rim
+   cells crawl out and adhesion holds them = a *partial* precursor-film signal) while the **connected
+   core stays ~1.5** — the bulk does **not** unpile into a monolayer. Far short of the PI 7–10.
+3. **⇒ Structural limit CONFIRMED on every CBM-expressible axis:** scale ✗ · observable ✗ · cohesion ✗ ·
+   lateral coordination/plithotaxis ✗ · passive wetting ✗ · **active wetting ✗**. The center-based
+   point-cell CBM cannot host the **active complete-wetting precursor MONOLAYER** that produces the PI
+   magnitude — that transition (a 3D cohesive pile → a spread single layer, edge cells crawling thin
+   while the bulk feeds them) is intrinsically **shape-resolved / subcellular**.
+
+**Verdict (final for the Layer-2 magnitude).** The PI law FORM is reproduced with zero calibration
+(§HEADLINE, r²=0.998, full R₀ range) — a complete positive result. The MAGNITUDE (~5–9× under) is the
+**center-based 1-particle structural limit**, now bounded on six independent axes and explained by the
+aggregate-wetting framework: the PI A/A₀~7–10 is the *active complete-wetting precursor-monolayer*
+regime, which a point-cell model cannot represent. **The magnitude belongs to the fine-grained
+single-cell line** (shape-resolved lamellipodium + substrate traction) — route (a) of §E; the CBM
+"wetting extension" (route b) would require a lumped 3D→2D state-switch, which the fine-grained-
+mechanistic hard rule disfavours. PI A/A₀ overlay-only throughout. Artifacts: `scripts/layer2_wetting.py`
+(passive+active modes, `+layer2_wetting_vis.py`), `outputs/layer2/wetting/*.jsonl`, figure
+`fig_layer2_wetting.png`, SE candidates `SE_REGISTRATION_CANDIDATES_2026-06-04_aggregate-wetting.md`.
+
+## G — ligand-condition production (c): the FORM-level Bare/Pre/Lam4 separation + ordering (2026-06-05)
+
+The deferred-but-tracked production axis. With the magnitude established as the structural-limit scope
+boundary (§C–§F, overlay-only), §G delivers the FORM-level result the CBM CAN make: the three PI ligand
+conditions driven mechanistically — A1 active edge-traction from per-species integrin-clutch kinetics
+(col-I clutch Bare/Pre > laminin Lam4 0.61×; Bare<Pre = the flagged pV4D4 col-I density axis → Bare
+1.50 / Pre 2.50 / Lam4 1.53 nN) with the **A4′ Lam4 partial-β1-uniformity** (Lp≈40 µm vs the edge 11 µm),
+cohesion/substrate/proliferation held common. Native-N GPU sweep (N₀ {1250, 4000, 8500, 13000} → R₀
+102–231 µm, 2 seeds, 0/24 ejections):
+
+| R₀ (µm) | Bare core | Pre core | **Lam4 core** |
+|---|---|---|---|
+| 102 | 1.50 | 1.62 | **1.70** |
+| 151 | 1.34 | 1.36 | **1.47** |
+| 197 | 1.28 | 1.28 | **1.38** |
+| 231 | 1.19 | 1.21 | **1.28** |
+
+```
+emergent per-condition fits (A/A0 = a + b/R + c/R²):
+  Bare: a=0.86  b=91.3 µm  c=−2768 µm²   r²=0.980
+  Pre : a=1.01  b=37.7 µm  c=+2453 µm²   r²=0.996
+  Lam4: a=0.88  b=105.8 µm c=−2247 µm²   r²=0.994   (b>0 the 1/R term in every condition)
+```
+
+1. **Ordering reproduced: Lam4 > Pre ≳ Bare at every R₀** — matching the PI *collective* ordering
+   (medians Lam4 10.0 > Pre 7.5 > Bare 7.2). The A4′ Lam4 partial-uniformity (interior β1 engagement)
+   lifts Lam4 highest; Pre>Bare at small R₀ (stronger col-I traction 2.5 vs 1.5 nN), converging at large.
+2. **Each condition reproduces the law FORM** (A/A₀ decreasing with R₀, b>0). Separation Δ≈0.1–0.2 (the
+   active clutch mechanism separates the conditions, ~the A1 CPU magnitude). Magnitude overlay-only (all
+   ~1.2–1.7 vs the PI 7–10 — the known structural limit; PI medians overlaid, never fitted).
+3. ⇒ The CBM reproduces the PI ligand axis **at the FORM level it can express** (separation + correct
+   ordering), completing the deferred production axis. The absolute magnitude is the §C–§F structural
+   limit (the fine-grained line). Artifacts: `scripts/layer2_ligand_production{,_vis}.py`,
+   `outputs/layer2/ligand_prod/ligand_prod.jsonl`, figure `fig_layer2_ligand_production.png`. A paper-ready
+   synthesis of the whole Layer-2 line is exported to `outputs/layer2/Layer2_Report.docx`
+   (`scripts/layer2_report_docx.py`).
+
+## Figures
+
+Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
+each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
+
+- `figs/fig_layer2_morphology.png` (+ `fig_layer2_morphology_anim.gif`) — **⭐ MORPHOLOGY: the spreading
+  process rendered** (Lam4, R₀≈151 µm, t=0→61 h, native-N GPU): the actual cell configuration behind A/A₀.
+  TOP-DOWN footprint grows only ~1.0→1.5×; SIDE view shows the aggregate stays a 3D CAP on the dish (does
+  NOT melt to a flat monolayer) — the §C–§F structural limit made visible. Cells coloured by height above
+  the dish; the .gif animates the 60 h. Uses `run_growth_pooled(capture_every=…)` snapshot capture;
+  `scripts/layer2_morphology_{vis,anim}.py`. (npz frames gitignored — regenerable.)
+- `figs/fig_layer2_ligand_production.png` — **⭐ G ligand production (c)** (R₀ 102–231 µm, native-N GPU):
+  emergent A/A₀(R₀) for Bare/Pre/Lam4 from mechanistic clutch traction + A4′ Lam4 partial-uniformity, with
+  per-condition a+b/R+c/R² fits (r²≥0.98) and PI medians overlaid. Model ordering **Lam4 > Pre ≳ Bare** =
+  the PI collective ordering; magnitude overlay-only (structural limit). SI.
+- `figs/fig_layer2_wetting.png` — **⭐ F wetting axis** (R₀≈92 µm, N₀=1000): A/A₀ core+raw vs substrate
+  adhesion ratio D_sub/D_e (log x), PASSIVE (no motility) vs ACTIVE (plithotaxis 5 nN), PI band (7–10) +
+  A/A₀=1 overlaid. Passive flat (~1.5, kinetic trap); active raw creeps 1.72→1.94 (partial precursor-film)
+  but core stays ~1.5 ≪ PI — the aggregate-wetting test (Douezan S=W_cs−2γ) confirms the magnitude is the
+  center-based structural limit, not a wetting parameter. SI, overlay-only.
+- `figs/fig_layer2_plithotaxis.png` — **⭐ E SPP-plithotaxis bracket** (R₀≈151 µm, N₀=4000, 2 seeds):
+  plithotaxis core+raw A/A₀ bars across f_active = {0, 1.6, 5.0 (MCF10A), 9.4} nN, with the §D radial-
+  crawl core overlaid (red dashed, null) and the PI median band (7–10) far above. The persistent +
+  free-edge-CIL coordination mechanism (Smeets-2016 MCF10A anchors; correlations emergent, no Vicsek) is
+  **flat at ~1.3 core / ~1.45 raw across the whole force range, zero ejections** — does NOT close the
+  ~5–9× gap at native N. Completes the suspect elimination (scale/measurement/cohesion/coordination all
+  ✗) → the gap is the center-based 1-particle structural limit. SI, A/A₀=1 + PI overlay-only.
+- `figs/fig_layer2_motility_bridge.png` — **⭐ C lamellipodium→CBM motility bridge** (2 panels):
+  **A** the active-traction force ladder (whole-cell 1.6 nN < ceiling 3 nN < cohesion 6.5 nN <
+  protrusion 9.4 nN) with the detachment regime marked — the protrusion anchor exceeds cohesion, so
+  the CBM tears rather than spreads (1-particle structural limit); **B** the ×5.9 protrusion/whole-cell
+  ratio = the observed magnitude gap, localised to the active side (cohesion 2-way-anchored, not the
+  cause). Pure-arithmetic, no sim. SI units.
+- `figs/fig_layer2_daxis_yield.png` — **⭐ D-2 steering: turnover-remodeled vs brittle cohesion** under
+  the substrate basal crawl (R₀≈153 µm, 2 seeds). Grouped brittle/YIELD core+raw bars vs f_active, with
+  the **brittle EJECTS** (red) and **YIELD holds — flows** (green) annotations on the 9.4 nN protrusion
+  arm and the PI median band (7–10) far above. Shows the Kadzik-grounded yield cohesion removes the
+  fracture (flow not fracture) yet A/A₀ stays ~1.3–1.5 — cohesion eliminated as the gap suspect. SI,
+  A/A₀=1 + PI overlay.
+- `figs/fig_layer2_decisive_traction.png` — **⭐ Decisive bracket (the analytic verdict RUN)**: grouped
+  core/raw A/A₀ for the 3 arms (baseline / whole-cell 1.6 nN / protrusion 9.4 nN dt/5) at R₀≈153 µm,
+  2 seeds, with the **EJECTED** annotation on the protrusion arm (9.4 nN > 6.5 nN single-contact
+  cohesion → boundary cells detach in both seeds, finer dt notwithstanding) and the PI-median band
+  (7–10) overlaid. Empirically closes the magnitude-gap fork on the STRUCTURAL-LIMIT side. SI units,
+  A/A₀=1 + PI overlay shown.
+- `figs/fig_layer2_prod_rlaw.png` — **⭐ Production R₀-law (full PI range)** (2 panels): **A**
+  A/A₀(R₀) connected-core + raw-footprint ensemble (104–394 µm, 5 seeds) with the a+b/R+c/R² fit
+  (**r²=0.998**) and the PI median markers (7.2/7.5/10, overlay-only) far above — the law's FORM
+  reproduced across the whole experimental range, magnitude ~5–9× under; **B** the raw/core
+  diagnostic (0.97–0.99 at every R₀) proving the gap is GENUINE physics, not an observable-definition
+  artifact. No truncation, SI units, A/A₀=1 reference, per-realisation + mean, PI overlay-only.
+- `figs/fig_layer2_surface_tension_bridge.png` — **D2 bridge** (3 panels): **A** aggregate
+  surface tension σ_tissue = γ = 0.57 mN/m inside the KU-3.5 band (tissue proxy 21 mN/m above);
+  **B** Young-Laplace ΔP = 2σ/R over R₀=31.7→78.3 µm (the 1/R curvature behind the A/A₀ b/R
+  term); **C** Roffay outer/interior ratio 1/(1−β/γ) with the [1.6,2.0] band reproduced at
+  β/γ∈[0.375,0.5] and the anchored MCF7 β/γ (higher-adhesion regime) marked.
+- `figs/fig_layer2_b2_native_law.png` — **⭐ B2 native-N GPU A/A₀(R₀) law.** Platform catch-bond
+  points (per-realisation + ensemble mean±sd, R₀ 53→196 µm) with the a+b/R+c/R² fit (**r²=0.999**),
+  the prior CPU ceiling (78 µm, dotted) and the A/A₀=1 reference; the **PI R₀ range (87–419 µm) is
+  shaded** and the PI median A/A₀ markers (Bare 7.2 / Pre 7.5 / Lam4 10, overlay-only) sit far above
+  the platform curve — the law now overlaps the PI sizes while the matched-R₀ magnitude stays ~5–8×
+  under. No axis truncation; SI units; reference + PI overlay shown.
+- `emergent_sigma_catch.png` — **D2 emergent σ under the catch-bond** (3 panels): **A** settled
+  catch-bond aggregate (N=200, R_edge≈54 µm); **B** restoring σ_eff(ε) vs imposed radial strain —
+  ≈0 at rest (catch cohesion dormant), engaging positive and rising to ~0.016 mN/m at ε=10 % (KU-3.5
+  γ band overlaid); **C** ensemble σ (+0.002±0.008 mN/m) vs single-cell γ=0.57 mN/m band (σ/γ≈0.004).
+  No axis truncation; SI units; γ band + zero line shown.
+- `figs/fig_layer2_g1_stable_aggregate.png` — G1 result. **Left**: initial loose blob
+  (1.1·r₀ jittered cubic lattice). **Middle**: settled aggregate (lattice → disordered
+  cohesive packing, slightly compacted). **Right**: nearest-neighbour-distance histogram
+  with the r₀=15 µm rest separation overlaid (median/r₀ = 0.981). No axis truncation; SI
+  (µm) units; reference line shown.
+- `figs/fig_layer2_l2_2_motility_mechanism.png` — L2.2 motility mechanism. **Top**: settled
+  aggregate (f_active=0) vs under active traction (6 nN). **Bottom**: A/A₀ and detached
+  fraction vs active traction, with the measured cohesion/detachment force (6.5 nN, Iturri
+  2020) overlaid. Honest: isotropic self-propulsion does NOT spread a cohesive cluster — the
+  spreading driver is edge-directed traction (active wetting), built in L2.3.
+- `figs/fig_layer2_aa0_law.png` — **L2.3 emergent A/A₀(R₀), ensemble-averaged (8 seeds/R₀).**
+  Edge-directed active-wetting traction (5 nN, Lp=11 µm) vs measured cohesion (6.5 nN), swept
+  over R₀=29–76 µm. **Honest finding:** at the measured MCF7 scales the minimal CBM
+  (cohesion + edge-traction) is **cohesion-locked** — A/A₀ ≈ 1.0 ± 0.02 at most sizes (MCF7 is
+  low-invasion, barely spreads), with a size-specific fragmentation instability near R₀≈40 µm
+  (high variance). The smooth PI law a + b/R + c/R² does **NOT** cleanly emerge from the
+  minimal model (fit r²≈0.5). Regime sweeps (traction 5–6 nN, 3–8 seeds) do not change this —
+  it is a model-limit finding, not a tuning miss: reproducing the experiment's spreading law
+  needs ADDITIONAL mechanism (proliferation / longer biological timescale / the ligand
+  conditions the experiment varies), the next research direction. The full L2.3 machinery
+  (ensemble R₀-sweep → fit → error-bar figure) is in place for that. PI A/A₀ is overlay-only.
+- `figs/fig_layer2_l2_4_proliferation.png` — **L2.4 mechanism.** **Left**: a grown spheroid
+  mid-slice (N: 250→527), each cell coloured by first-shell coordination — the low-coordination
+  **rim** (proliferation-competent, free space) vs the high-coordination, contact-inhibited
+  **bulk**. **Right**: N(t) and A/A₀(t) over 2 doublings of biological time; rim-localised
+  fraction 0.86, growth 2.06 (sub-exponential). SI units, no truncation.
+- `figs/fig_layer2_aa0_growth_law.png` — **L2.4 proliferation-driven A/A₀(R₀), ensemble
+  (3 seeds/R₀, 5 sizes R₀=30–77 µm).** **Left**: A/A₀ vs R₀ with the a+b/R+c/R² fit and the
+  A/A₀=1 (no-spread) reference. **Honest finding:** the signal is now strong and measurable
+  (Δ A/A₀≈12, correct 1/R sign) — proliferation is the right driver — but the fit is poor
+  (r²=0.27) because the convex-hull A/A₀ is inflated by a **proliferation-driven fragmentation
+  instability** (huge ±sd error bars). **Right**: the mechanism — growth factor falls with R₀
+  (∝ surface/volume ∝ 1/R) and rim-localised fraction (≥0.70 G4) vs the 2^(t/τ) exponential
+  ceiling. The clean law extraction needs L2.5 catch-bond cohesion + substrate confinement
+  (REPORT §L2.4). PI A/A₀ overlay-only.
+- `figs/fig_layer2_aa0_core_vs_hull.png` — **L2.4.1 connected-core vs raw-hull A/A₀(R₀)**
+  (5 R₀ × 3 seeds, per-size driver). **Left (CORE, G3 headline)**: fragmentation-robust A/A₀
+  with per-realisation points + ensemble mean±sd + a+b/R+c/R² fit (r²=0.74) and the A/A₀=1
+  reference — tight error bars, near-monotone 1/R decrease, with the R₀=63.7 µm outlier (one
+  seed fragments even the core) visible. **Right (HULL)**: the raw convex hull for contrast —
+  ±20 error bars and a fit that dips below A/A₀=1 (unphysical), inflated by drifting fragments.
+  Same axes, no truncation, SI units. The figure is the visual proof that the core estimator
+  de-noises the signal but the residual scatter (→ L2.5) is real.
+- `figs/fig_layer2_l2_5_cadherin_catch_bond.png` — **L2.5 catch-bond oracle.** **Left**: the
+  faithful Rakshit-2012 sliding-rebinding lifetime τ(f) (catch peak F*≈28.5 pN ≈ f₀=29.2 pN,
+  then slip) vs a pure Bell slip; **right**: the new-interaction probability Pₙ(f) ramp and the
+  effective k_off(f) (dips at the catch peak, rises in the slip regime). SI units.
+- `figs/fig_layer2_l2_5_fragmentation_resistance.png` — **L2.5 catch resists fragmentation.**
+  **Left**: per-seed core A/A₀ (N₀=400, 5 seeds) for morse vs catch — morse 1/5 seeds fragment
+  (annotated) with ±0.10 scatter, catch 0/5 with ±0.05. **Right**: why — the effective cohesion
+  force law F_coh(ext) strengthens to a peak at per-cadherin f₀≈29 pN (overlaid: measured 6.5 nN
+  de-adhesion) then slip-ruptures. The force-strengthening is the fragmentation fix.
+- `figs/fig_layer2_a4prime_partial_uniformity.png` — **A4′ partial β1 uniformity.** **Left**:
+  emergent corr(R₀,A/A₀) vs Lp (log x) — stays ≈−1 (near the PI Lam4 −0.91 dashed line) through
+  Lp≈40 µm, then flips positive (overshoot) at Lp≥120 µm. **Right**: median A/A₀ vs Lp — lifted
+  above the edge value (dotted) in the partial regime. Together they pin the partial-uniformity
+  window (slope still <0 AND magnitude lifted) at Lp≈40 µm. SI units, log-x noted.
+- `figs/fig_layer2_magnitude_gap.png` — **magnitude gap decomposed.** Platform A/A₀ at R₀≈67 µm:
+  core 60 h / raw 60 h / raw 82 h bars (core≡raw, ×1.00) per condition vs the PI raw-82 h
+  diamonds (overlay-only, 9.3/10/13.5) — the ~4–6× residual is genuine under-spread (not
+  measurement or time). A/A₀ axis from 0, no truncation, SI units.
+- `figs/fig_layer2_a4_uniform_beta1.png` — **A4 collective-Lam4 (uniform β1).** **Left**: the
+  three emergent curves with Bare/Pre edge-β1 (A1) + Lam4 UNIFORM-β1 (solid green) and the Lam4
+  EDGE-β1 A/B reference (dashed green); uniform β1 flips Lam4's slope (decreasing→increasing),
+  overtaking Pre at large R₀ (crossover ≈67 µm). **Right**: mid-R₀ A/A₀, A1-edge (hatched) vs A4
+  (solid) per condition, annotated with the A1/A4/PI orderings (A4 = Pre>Lam4>Bare at mid-R₀; PI
+  collective = Lam4>Pre>Bare). A/A₀=1 ref, SI units, no truncation.
+- `figs/fig_layer2_pi_overlay.png` — **A2 PI poster overlay (overlay-only).** **Left**: PI
+  per-spheroid points (○) + their a+b/R+c/R² fit (solid) for Bare/Pre/Lam4, with the platform's
+  A1 emergent points (◇) + fit (dashed) and its extrapolation into the PI R₀ range (dotted,
+  flagged) — both families DECREASE with R₀ (the shared 1/R law); the platform sits ~4–5× lower
+  and at smaller R₀. **Right**: median A/A₀ per condition, PI (solid) vs platform (hatched) —
+  the ordering split (PI Lam4>Pre>Bare collective vs model Pre>Lam4≳Bare single-cell) and the
+  magnitude gap. A/A₀=1 reference shown, SI units, no truncation.
+- `figs/fig_layer2_ligand_traction_conditions.png` — **A1 ligand→active-traction.** **Left**:
+  the three emergent A/A₀(R₀) curves (Bare/Pre/Lam4) with per-realisation points + a+b/R+c/R²
+  fit and the A/A₀=1 reference — Pre (highest traction) above, Lam4≈Bare, separation Δ≈0.14 at
+  mid-R₀ (4.6× the L2.6 passive). **Right**: the mechanism — resolved `f_traction` per condition
+  (= T_ref·density·φ·F_s) with the col-I/laminin clutch strength (0.61×) + density annotated and
+  the B1 stable 3 nN ceiling overlaid. SI units, no truncation.
+- `figs/fig_layer2_aa0_growth_law_catch.png` — **⭐ L2.5 G3-PASS A/A₀(R₀) law.** The catch-bond
+  ensemble (5 R₀ × 3 seeds): A/A₀ vs R₀ with tight error bars + the a+b/R+c/R² fit (**r²=0.980**)
+  + the A/A₀=1 reference; right panel shows growth-factor∝1/R + rim fraction (G4). The clean
+  emergence of the PI's novel law from the fully mechanistic model. PI A/A₀ overlay-only.
+
+## Verification
+
+- `tests/test_spheroid_observables.py` (16) + `tests/test_layer2_params.py` (8) +
+  `tests/test_spheroid_proliferation.py` (15) = **39 green** (synthetic clouds vs closed-form
+  oracle; resolve derivations vs Magic-Number-Block; free-space gate / rim-localisation /
+  contact-inhibition / dilute-doubling / G1-reduction; **+ connected-component labelling /
+  drifting-fragment rejection / single-cluster identity** for the L2.4.1 core estimator).
+- `scripts/layer2_g1_smoke.py` — reproducible G1 run; `scripts/layer2_growth_smoke.py` —
+  reproducible single-spheroid growth + G4 verdict; `scripts/layer2_aa0_growth_sweep.py` —
+  proliferation-driven A/A₀(R₀) sweep + fit + figure (`layer2_aa0_sweep.py` kept as the
+  cohesion-locked baseline). Re-running the baseline confirms it is unchanged (still
+  cohesion-locked); the growth sweep is the L2.4 headline.
+- **L2.4.1 reproducible result:** `scripts/layer2_aa0_growth_persize.py` — memory-safe per-size
+  driver (one `(N0,seed)` per process; the all-in-one sweep OOM/SIGKILLs around N0≈250–400 on a
+  16 GB CPU box because the HOOMD epoch-rebuild loop accumulates resident memory across sizes).
+  Canonical numbers + the core-vs-hull fit are in `outputs/layer2/growth_sweep_core_results.jsonl`
+  + `growth_sweep_core.log` (run `… --fit growth_sweep_core_results.jsonl`).
+- Isolation: runtime imports NO oracle (hard rule); **additive new files only**
+  (`spheroid/proliferation.py`, growth scripts, `test_spheroid_proliferation.py`);
+  `build_cbm_simulation` gained a backward-compatible optional `positions=` arg; single-cell
+  main line (`cell/ cortex/ bridge/`) + `integrator/` freeze untouched.
+
+## Open (PI ratification)
+
+1. D_e: measured Iturri-2020 nN force-anchor adopted (was the retired pN seed) — FYI only.
+2. Surface-tension validation target: emergent-only vs non-MCF7 proxy (MCF10DCIS ~21 mN/m).
+3. Cell-size band position: 15 µm (low end) vs 17–18 µm.
+4. **L2.4 / L2.4.1 result for PI direction:** proliferation is the correct size-dependent
+   driver (G4 PASS, strong signal). The robust connected-core spread-area estimator (L2.4.1) is
+   now built and de-noises the signal (fit r² 0.27→0.74, Δ 23→1.0) — but **G3 still FAILs
+   (r²=0.74 < 0.95)** because a static Morse well cannot hold a *growing* spheroid together even
+   when measured robustly (one R₀=63.7 µm seed fragments the core). So **L2.5 catch-bond is
+   confirmed necessary, not optional**; substrate confinement remains the secondary refinement.
+   Confirm this direction (and the L2.5 entry point).
+
+## Next (L2.5)
+
+Replace the static Morse well with the mechanistic KU-4.2 cadherin **catch-bond** (Rakshit
+2012 PNAS, force-strengthening) so cohesion resists the proliferation-driven tension that
+currently fragments the growing spheroid; add z=0 **substrate confinement** (`ecm/substrate.py`,
+quasi-2D wetting = the experiment geometry). The outlier-robust connected-core spread area is
+**done (L2.4.1)** — it is the area observable L2.5 will be scored on; then re-run the growth
+sweep → fit A/A₀ = a + b/R + c/R² (G3) and overlay the PI poster.

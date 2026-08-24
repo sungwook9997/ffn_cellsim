@@ -1,0 +1,182 @@
+{
+  "aleph_authority": "none",
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "limitations": [
+    "only 55 labelled compounds exist and the sealed test contains one compound per mechanism class",
+    "selection and calibration omit rare mechanism classes, so class-conditional uncertainty is impossible",
+    "all profiles share one Cell Painting study and provider pipeline",
+    "mechanism-of-action labels are not interchangeable with the S-BIAD2515 Annexin-V endpoint"
+  ],
+  "may_select_aleph_parameter": false,
+  "model": {
+    "family": "train_compound_PCA_32_softmax",
+    "selected_l2": 0.01,
+    "selection_metrics": {
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "compound_count": 4,
+      "confusion_matrix_true_by_predicted": [
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1": 1.0,
+      "per_class_f1": {
+        "apoptosis": 1.0,
+        "autophagy inducer": 1.0,
+        "ferroptosis inducer": 1.0,
+        "immunogenic cell death": 1.0,
+        "necroptosis inducer": null,
+        "pyroptosis inducer": null
+      }
+    },
+    "temperature_selected_on_calibration_compounds": 4.425
+  },
+  "observable_evidence_eligible": false,
+  "production_eligible": false,
+  "same_endpoint_as_biad2515_annexin_v": false,
+  "schema": "aleph.outer_library.figshare_cell_death_model.v1",
+  "sealed_unseen_compound_test": {
+    "compound_ids": [
+      "CISPLATIN",
+      "ERASTIN",
+      "G5",
+      "HS-173",
+      "NIGERICIN",
+      "VU0359595"
+    ],
+    "conformal_90": {
+      "calibration_compound_count": 5,
+      "class_conditional_authority": false,
+      "coverage": 0.6666666666666666,
+      "mean_set_size": 2.6666666666666665,
+      "test_compound_count": 6,
+      "threshold": 0.904722078172408
+    },
+    "metrics": {
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "compound_count": 6,
+      "confusion_matrix_true_by_predicted": [
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "macro_f1": 0.38888888888888884,
+      "per_class_f1": {
+        "apoptosis": 0.0,
+        "autophagy inducer": 0.6666666666666666,
+        "ferroptosis inducer": 0.0,
+        "immunogenic cell death": 0.6666666666666666,
+        "necroptosis inducer": 0.0,
+        "pyroptosis inducer": 1.0
+      }
+    },
+    "ood_rejection_fraction": 0.3333333333333333
+  },
+  "split": {
+    "compound_counts": {
+      "calibration": 5,
+      "sealed_test": 6,
+      "selection": 4,
+      "train": 40
+    },
+    "cross_split_compound_overlap_count": 0,
+    "test_compounds_used_for_fit_selection_or_calibration": false,
+    "unit": "compound_identity",
+    "well_rows_are_not_independent_training_units": true
+  },
+  "status": "training_only_unseen_compound_same_provider",
+  "task": "programmed_cell_death_mechanism_from_DeepProfiler_well_profiles"
+}

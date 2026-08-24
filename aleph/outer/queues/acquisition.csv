@@ -1,0 +1,19 @@
+priority,source_id,action,reason
+1,EXT-0001,extract_protocol_and_observables,KAIST full access verified; flagship cortex-tension source
+1,EXT-0002,archive_open_and_extract,bleb pressure-tension dynamics with open full text
+1,EXT-0003,archive_open_and_extract,mitotic cell tension and pressure calibration
+1,EXT-0004,archive_open_and_extract,membrane-to-cortex attachment and migration
+1,EXT-0005,archive_open_and_extract,substrate-stiffness control for membrane tension
+1,EXT-0006,archive_open_and_extract,nuclear two-regime mechanics
+1,EXT-0007,archive_open_and_extract,cell pressure and volume review-to-primary map
+1,EXT-0008,archive_open_and_extract,mechano-osmotic feedback dynamics
+2,EXT-0009,archive_open_and_extract,open TFM computation and validation
+2,EXT-0010,verify_full_text_route,simulation-based parameter inference
+2,EXT-0011,verify_full_text_route,complex-environment cell migration SBI
+2,EXT-0012,verify_full_text_route,patient-derived network mechanism inference
+2,EXT-0013,acquire_metadata_and_code,mesh surrogate baseline
+2,EXT-0014,acquire_metadata_and_code,multiscale mesh GNN baseline
+2,EXT-0015,verify_full_text_route,mechanism-constrained neural baseline
+2,EXT-0016,verify_full_text_route,machine-learning TFM baseline
+3,EXT-0017,verify_full_text_route,self-supervised Cell Painting representation
+3,EXT-0018,verify_full_text_route,multimodal cellular phenotype representation

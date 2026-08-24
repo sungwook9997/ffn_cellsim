@@ -1,0 +1,38 @@
+{
+  "utc": "2026-08-11T15:00:49.462894+00:00",
+  "device": "cuda:0",
+  "G1_bound_is_a_bound": {
+    "n_nodes": 100,
+    "n_links": 80,
+    "n_arc_joints": 2,
+    "gamma_pn_s_per_um": 82.11404318669683,
+    "lambda_max_with_arc_k": 1842000.6865223509,
+    "lambda_max_omitting_arc_k": 4009.250416728768,
+    "dt_max_s": 8.91574512295389e-05,
+    "dt_max_s_omitting_arc_k": 0.04096229202549808,
+    "dt_overshoot_before_fix": 459.43767414390595,
+    "PASS": true
+  },
+  "G2_refuses_unstable_dt": {
+    "raised": true,
+    "message": "dt_phys=0.00013373617684430834 s is at or above the derived explicit-stability bound 8.91574512295389e-05 s (gamma=82.11404318669683 pN\u00b7s/\u00b5m, lambda_max=1842000.6865223509 pN/\u00b5m). Subcycle 2 times, or use an implicit step \u2014 this will not integrate an unstable configuration quietly.",
+    "PASS": true
+  },
+  "G3_step_descends": {
+    "extension_before_um": 0.3999999999999999,
+    "extension_after_um": 3.8146972669572676e-07,
+    "ratio": 9.536743167393171e-07,
+    "PASS": true
+  },
+  "G4_rebind_rest_is_at_bind": {
+    "rest_at_build_um": 1.0,
+    "rest_after_engaged_step_um": 1.0,
+    "rest_after_rejected_step_um": 1.0,
+    "rest_after_accepted_rebind_um": 1.6763054614240211,
+    "separation_at_rebind_um": 1.6763054614240211,
+    "force_after_rebind_pn": 0.0,
+    "artifact_a_stale_rest_would_have_injected_pn": 6.763054614240211,
+    "PASS": true
+  },
+  "ALL_PASS": true
+}

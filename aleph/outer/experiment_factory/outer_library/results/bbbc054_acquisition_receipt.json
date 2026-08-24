@@ -1,0 +1,42 @@
+{
+  "accession": "BBBC054v1",
+  "file_count": 4,
+  "files": [
+    {
+      "file": "Replicate_1.zip",
+      "official_url": "https://data.broadinstitute.org/bbbc/BBBC054/Replicate_1.zip",
+      "sha256": "9661739a008117dee26ad1879d68888e4d05a06cc2aa31668869f2c241208085",
+      "size_bytes": 157736365,
+      "status": "downloaded_and_verified_zip_crc_clean",
+      "zip_member_count": 60
+    },
+    {
+      "file": "Replicate_2.zip",
+      "official_url": "https://data.broadinstitute.org/bbbc/BBBC054/Replicate_2.zip",
+      "sha256": "353043731f4a1b09eef614c6d43a327467f352300981ca72cb614212b5d97a7d",
+      "size_bytes": 158003623,
+      "status": "downloaded_and_verified_zip_crc_clean",
+      "zip_member_count": 60
+    },
+    {
+      "file": "Replicate_3.zip",
+      "official_url": "https://data.broadinstitute.org/bbbc/BBBC054/Replicate_3.zip",
+      "sha256": "83c4b4e66064877c283b41edf5a041f2c1be7a5d98d93a1e59584eab83d11636",
+      "size_bytes": 173445539,
+      "status": "downloaded_and_verified_zip_crc_clean",
+      "zip_member_count": 66
+    },
+    {
+      "file": "Replicate1annotation.csv",
+      "official_url": "https://data.broadinstitute.org/bbbc/BBBC054/Replicate1annotation.csv",
+      "sha256": "1f4acdd04c7b6854e7de76816e0dd4fa1e5ec06f562c6a81aa5c98549022f59c",
+      "size_bytes": 3195702,
+      "status": "downloaded_and_verified",
+      "zip_member_count": null
+    }
+  ],
+  "license_id": "cc-by-3.0",
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.bbbc054_acquisition_receipt.v1",
+  "total_bytes": 492381229
+}

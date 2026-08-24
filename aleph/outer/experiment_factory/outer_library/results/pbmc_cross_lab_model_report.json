@@ -1,0 +1,1269 @@
+{
+  "IFN_state": {
+    "cross_lab_direction_confirmation": "reported_separately_from_single_cell_classifier",
+    "internal_donor_holdout": {
+      "calibration": {
+        "cells": 4103,
+        "class_conditional_nonconformity_thresholds": {
+          "IFN_stimulated": 0.008165660785563689,
+          "control": 0.028007857238161682
+        },
+        "negative_log_likelihood": 0.03877294061680358,
+        "success": true,
+        "temperature": 0.7964988741803555
+      },
+      "final_fit_optimization": {
+        "final_objective": 0.03850146462744091,
+        "iterations": 80,
+        "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+        "status": 1,
+        "success": false
+      },
+      "sealed_internal_donor": {
+        "accuracy": 0.9947054930509597,
+        "cells": 4533,
+        "conformal": {
+          "empty_set_fraction": 0.07213765718067505,
+          "marginal_coverage": 0.9267593205382749,
+          "mean_set_size": 0.927862342819325
+        },
+        "ece_15_bin": 0.0013654374860513974,
+        "macro_f1": 0.9946421184100105,
+        "per_class": {
+          "IFN_stimulated": {
+            "f1": 0.9952248308794269,
+            "support": 2520
+          },
+          "control": {
+            "f1": 0.994059405940594,
+            "support": 2013
+          }
+        }
+      },
+      "selection": {
+        "candidates": {
+          "0.01": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.03852892421200088,
+                  "iterations": 69,
+                  "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.03709195202704817,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.033366689734938046,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.03594700974233699,
+                  "iterations": 76,
+                  "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.039046517686584244,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.04007786399617259,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.9863091842555619,
+              "cells": 15777,
+              "macro_f1": 0.9862981854815364,
+              "per_class": {
+                "IFN_stimulated": {
+                  "f1": 0.9859099804305284,
+                  "support": 7691
+                },
+                "control": {
+                  "f1": 0.9866863905325444,
+                  "support": 8086
+                }
+              }
+            }
+          },
+          "0.1": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.08722959189065008,
+                  "iterations": 37,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.08883777182806447,
+                  "iterations": 53,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.0807050238808158,
+                  "iterations": 46,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.08388764586244177,
+                  "iterations": 45,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.08775687800978013,
+                  "iterations": 36,
+                  "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.08910981184403911,
+                  "iterations": 53,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.9844710654750586,
+              "cells": 15777,
+              "macro_f1": 0.9844578531935286,
+              "per_class": {
+                "IFN_stimulated": {
+                  "f1": 0.984004700659398,
+                  "support": 7691
+                },
+                "control": {
+                  "f1": 0.9849110057276591,
+                  "support": 8086
+                }
+              }
+            }
+          },
+          "1.0": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.21975367843196517,
+                  "iterations": 25,
+                  "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.22530429170021243,
+                  "iterations": 30,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.21144005397234533,
+                  "iterations": 29,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.2164407677491988,
+                  "iterations": 33,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.22076742160465568,
+                  "iterations": 29,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.22037063413064728,
+                  "iterations": 35,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.980287760664258,
+              "cells": 15777,
+              "macro_f1": 0.9802648120234916,
+              "per_class": {
+                "IFN_stimulated": {
+                  "f1": 0.9795918367346939,
+                  "support": 7691
+                },
+                "control": {
+                  "f1": 0.9809377873122893,
+                  "support": 8086
+                }
+              }
+            }
+          },
+          "10.0": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.4705168574064324,
+                  "iterations": 22,
+                  "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.47758918759508506,
+                  "iterations": 22,
+                  "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.4630106433496089,
+                  "iterations": 20,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.46892070344255166,
+                  "iterations": 20,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.472164311862995,
+                  "iterations": 20,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.4698569049375695,
+                  "iterations": 22,
+                  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+                  "status": 0,
+                  "success": true
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.971414083792863,
+              "cells": 15777,
+              "macro_f1": 0.9713621284240301,
+              "per_class": {
+                "IFN_stimulated": {
+                  "f1": 0.9701423369745118,
+                  "support": 7691
+                },
+                "control": {
+                  "f1": 0.9725819198735486,
+                  "support": 8086
+                }
+              }
+            }
+          }
+        },
+        "selected_l2_coefficient": 0.01,
+        "selection_metric": "grouped_leave_one_donor_out_macro_f1"
+      }
+    }
+  },
+  "aleph_authority": "none",
+  "authority": {
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "role": "pre_sweep_context_compression_and_candidate_ranking",
+    "why_no_numeric_range": "requires a validated Aleph observation operator, identifiability, and monotonic forward sensitivity"
+  },
+  "cell_type": {
+    "frozen_endpoint_passes": {
+      "external_conformal_coverage": false,
+      "external_ece": true,
+      "external_macro_f1": true,
+      "sealed_internal_macro_f1": true,
+      "semantic_ood_auroc": true
+    },
+    "internal": {
+      "calibration": {
+        "cells": 4103,
+        "class_conditional_nonconformity_thresholds": {
+          "B_cell": 0.1112767868803134,
+          "CD4_T_cell": 0.020536333703306653,
+          "CD8_T_cell": 0.6451660325634583,
+          "NK_cell": 0.5412993740374545,
+          "dendritic_cell": 0.9563914110474584,
+          "monocyte": 0.007047050859265935
+        },
+        "negative_log_likelihood": 0.09992396297564499,
+        "success": true,
+        "temperature": 0.9116212362548399
+      },
+      "final_fit_optimization": {
+        "final_objective": 0.11531776177351957,
+        "iterations": 80,
+        "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+        "status": 1,
+        "success": false
+      },
+      "sealed_internal_donor": {
+        "accuracy": 0.9801455989410987,
+        "cells": 4533,
+        "conformal": {
+          "empty_set_fraction": 0.08382969335980586,
+          "marginal_coverage": 0.8974189278623428,
+          "mean_set_size": 0.9214648135892345
+        },
+        "ece_15_bin": 0.005045916580588603,
+        "macro_f1": 0.9236101045470826,
+        "per_class": {
+          "B_cell": {
+            "f1": 0.9797979797979798,
+            "support": 497
+          },
+          "CD4_T_cell": {
+            "f1": 0.9930905695611578,
+            "support": 2666
+          },
+          "CD8_T_cell": {
+            "f1": 0.7564766839378239,
+            "support": 101
+          },
+          "NK_cell": {
+            "f1": 0.9507042253521126,
+            "support": 284
+          },
+          "dendritic_cell": {
+            "f1": 0.8756756756756757,
+            "support": 97
+          },
+          "monocyte": {
+            "f1": 0.9859154929577465,
+            "support": 888
+          }
+        }
+      },
+      "selection": {
+        "candidates": {
+          "0.01": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.11033701209636172,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.11321381311079981,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.09851800709812562,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.11116683758412536,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.11593383020702044,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.1179865520041416,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.9484692907396843,
+              "cells": 15777,
+              "macro_f1": 0.9000011371900802,
+              "per_class": {
+                "B_cell": {
+                  "f1": 0.9727952167414051,
+                  "support": 1652
+                },
+                "CD4_T_cell": {
+                  "f1": 0.9680075478171369,
+                  "support": 5768
+                },
+                "CD8_T_cell": {
+                  "f1": 0.8165859564164649,
+                  "support": 1698
+                },
+                "NK_cell": {
+                  "f1": 0.8643092105263158,
+                  "support": 1217
+                },
+                "dendritic_cell": {
+                  "f1": 0.790224032586558,
+                  "support": 277
+                },
+                "monocyte": {
+                  "f1": 0.988084859052601,
+                  "support": 5165
+                }
+              }
+            }
+          },
+          "0.1": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.23666911364155108,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.2473113040900518,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.2219454577970934,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.23769743685050845,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.2443072205911558,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.2508370318912233,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.939025163212271,
+              "cells": 15777,
+              "macro_f1": 0.8577361214803143,
+              "per_class": {
+                "B_cell": {
+                  "f1": 0.9655581947743468,
+                  "support": 1652
+                },
+                "CD4_T_cell": {
+                  "f1": 0.9623487604704289,
+                  "support": 5768
+                },
+                "CD8_T_cell": {
+                  "f1": 0.7895408163265306,
+                  "support": 1698
+                },
+                "NK_cell": {
+                  "f1": 0.8540322580645161,
+                  "support": 1217
+                },
+                "dendritic_cell": {
+                  "f1": 0.5920398009950248,
+                  "support": 277
+                },
+                "monocyte": {
+                  "f1": 0.9828968982510388,
+                  "support": 5165
+                }
+              }
+            }
+          },
+          "1.0": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 0.5298914617357275,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 0.5516779181753646,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.4996587394799966,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 0.5340710620964193,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 0.5414900566219676,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 0.5502504558111323,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.8816631805793244,
+              "cells": 15777,
+              "macro_f1": 0.667145055011754,
+              "per_class": {
+                "B_cell": {
+                  "f1": 0.9506833036244801,
+                  "support": 1652
+                },
+                "CD4_T_cell": {
+                  "f1": 0.92115184085987,
+                  "support": 5768
+                },
+                "CD8_T_cell": {
+                  "f1": 0.4091894234937148,
+                  "support": 1698
+                },
+                "NK_cell": {
+                  "f1": 0.7472118959107806,
+                  "support": 1217
+                },
+                "dendritic_cell": {
+                  "f1": 0.0,
+                  "support": 277
+                },
+                "monocyte": {
+                  "f1": 0.9746338661816789,
+                  "support": 5165
+                }
+              }
+            }
+          },
+          "10.0": {
+            "folds": [
+              {
+                "cells": 2004,
+                "held_out_group": "101",
+                "optimization": {
+                  "final_objective": 1.0008834219095553,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 5050,
+                "held_out_group": "1015",
+                "optimization": {
+                  "final_objective": 1.0163528784083662,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3340,
+                "held_out_group": "1016",
+                "optimization": {
+                  "final_objective": 0.9340576614473233,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1035,
+                "held_out_group": "1039",
+                "optimization": {
+                  "final_objective": 1.0099419772683993,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 1032,
+                "held_out_group": "107",
+                "optimization": {
+                  "final_objective": 1.0144320534282092,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              },
+              {
+                "cells": 3316,
+                "held_out_group": "1244",
+                "optimization": {
+                  "final_objective": 1.0311505949373334,
+                  "iterations": 80,
+                  "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+                  "status": 1,
+                  "success": false
+                }
+              }
+            ],
+            "metrics": {
+              "accuracy": 0.6903086771883121,
+              "cells": 15777,
+              "macro_f1": 0.287772316605351,
+              "per_class": {
+                "B_cell": {
+                  "f1": 0.03560830860534125,
+                  "support": 1652
+                },
+                "CD4_T_cell": {
+                  "f1": 0.7180923919810733,
+                  "support": 5768
+                },
+                "CD8_T_cell": {
+                  "f1": 0.0033112582781456954,
+                  "support": 1698
+                },
+                "NK_cell": {
+                  "f1": 0.0,
+                  "support": 1217
+                },
+                "dendritic_cell": {
+                  "f1": 0.0,
+                  "support": 277
+                },
+                "monocyte": {
+                  "f1": 0.9696219407675459,
+                  "support": 5165
+                }
+              }
+            }
+          }
+        },
+        "selected_l2_coefficient": 0.01,
+        "selection_metric": "grouped_leave_one_donor_out_macro_f1"
+      }
+    },
+    "pristine_external_lab": {
+      "accuracy": 0.7901307966706302,
+      "by_experiment_method": {
+        "PBMC1::10x-Chromium-v2-A": {
+          "accuracy": 0.8805264934188323,
+          "cells": 2963,
+          "conformal": {
+            "empty_set_fraction": 0.28147148160647995,
+            "marginal_coverage": 0.5912926088423894,
+            "mean_set_size": 0.7408032399595005
+          },
+          "ece_15_bin": 0.02330841027605536,
+          "macro_f1": 0.8055118349456057,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.9311475409836065,
+              "support": 288
+            },
+            "CD4_T_cell": {
+              "f1": 0.8470111448834853,
+              "support": 549
+            },
+            "CD8_T_cell": {
+              "f1": 0.8744106300900129,
+              "support": 1171
+            },
+            "NK_cell": {
+              "f1": 0.6842105263157895,
+              "support": 166
+            },
+            "dendritic_cell": {
+              "f1": 0.5137614678899083,
+              "support": 81
+            },
+            "monocyte": {
+              "f1": 0.9825296995108316,
+              "support": 708
+            }
+          }
+        },
+        "PBMC1::10x-Chromium-v2-B": {
+          "accuracy": 0.7894208235687982,
+          "cells": 2987,
+          "conformal": {
+            "empty_set_fraction": 0.2607967860729829,
+            "marginal_coverage": 0.5005021760964178,
+            "mean_set_size": 0.7666555071978574
+          },
+          "ece_15_bin": 0.07398638717750021,
+          "macro_f1": 0.805913933487112,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.9676584734799483,
+              "support": 386
+            },
+            "CD4_T_cell": {
+              "f1": 0.7134831460674157,
+              "support": 904
+            },
+            "CD8_T_cell": {
+              "f1": 0.7350813743218807,
+              "support": 952
+            },
+            "NK_cell": {
+              "f1": 0.6826923076923077,
+              "support": 263
+            },
+            "dendritic_cell": {
+              "f1": 0.7631578947368421,
+              "support": 45
+            },
+            "monocyte": {
+              "f1": 0.9734104046242774,
+              "support": 437
+            }
+          }
+        },
+        "PBMC1::10x-Chromium-v3": {
+          "accuracy": 0.8589830508474576,
+          "cells": 2950,
+          "conformal": {
+            "empty_set_fraction": 0.2359322033898305,
+            "marginal_coverage": 0.5959322033898306,
+            "mean_set_size": 0.7722033898305085
+          },
+          "ece_15_bin": 0.06394216150211855,
+          "macro_f1": 0.8404424571092131,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.9659090909090909,
+              "support": 346
+            },
+            "CD4_T_cell": {
+              "f1": 0.8064118372379778,
+              "support": 960
+            },
+            "CD8_T_cell": {
+              "f1": 0.8276497695852535,
+              "support": 962
+            },
+            "NK_cell": {
+              "f1": 0.7964601769911505,
+              "support": 194
+            },
+            "dendritic_cell": {
+              "f1": 0.6551724137931034,
+              "support": 38
+            },
+            "monocyte": {
+              "f1": 0.9910514541387024,
+              "support": 450
+            }
+          }
+        },
+        "PBMC1::CEL-Seq2": {
+          "accuracy": 0.6781115879828327,
+          "cells": 233,
+          "conformal": {
+            "empty_set_fraction": 0.15450643776824036,
+            "marginal_coverage": 0.4291845493562232,
+            "mean_set_size": 0.9184549356223176
+          },
+          "ece_15_bin": 0.11388744192697448,
+          "macro_f1": 0.5801719437055896,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.9655172413793104,
+              "support": 14
+            },
+            "CD4_T_cell": {
+              "f1": 0.7115384615384616,
+              "support": 67
+            },
+            "CD8_T_cell": {
+              "f1": 0.7087378640776699,
+              "support": 103
+            },
+            "NK_cell": {
+              "f1": 0.3333333333333333,
+              "support": 10
+            },
+            "dendritic_cell": {
+              "f1": 0.0,
+              "support": 0
+            },
+            "monocyte": {
+              "f1": 0.7619047619047619,
+              "support": 39
+            }
+          }
+        },
+        "PBMC1::Drop-seq": {
+          "accuracy": 0.7877723120168658,
+          "cells": 2846,
+          "conformal": {
+            "empty_set_fraction": 0.1932536893886156,
+            "marginal_coverage": 0.5804638088545326,
+            "mean_set_size": 0.8531271960646521
+          },
+          "ece_15_bin": 0.03481744271126765,
+          "macro_f1": 0.6971019570176028,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.8954314720812183,
+              "support": 476
+            },
+            "CD4_T_cell": {
+              "f1": 0.8505957836846929,
+              "support": 563
+            },
+            "CD8_T_cell": {
+              "f1": 0.8095028596568412,
+              "support": 1171
+            },
+            "NK_cell": {
+              "f1": 0.5414710485133021,
+              "support": 184
+            },
+            "dendritic_cell": {
+              "f1": 0.3368421052631579,
+              "support": 74
+            },
+            "monocyte": {
+              "f1": 0.7487684729064039,
+              "support": 378
+            }
+          }
+        },
+        "PBMC1::Seq-Well": {
+          "accuracy": 0.6475462077756533,
+          "cells": 3138,
+          "conformal": {
+            "empty_set_fraction": 0.2836201402166985,
+            "marginal_coverage": 0.32122370936902483,
+            "mean_set_size": 0.7702358189929892
+          },
+          "ece_15_bin": 0.09778859980349297,
+          "macro_f1": 0.5171958138428793,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.7865921787709497,
+              "support": 387
+            },
+            "CD4_T_cell": {
+              "f1": 0.5540417801998183,
+              "support": 435
+            },
+            "CD8_T_cell": {
+              "f1": 0.6303901437371663,
+              "support": 1121
+            },
+            "NK_cell": {
+              "f1": 0.0,
+              "support": 0
+            },
+            "dendritic_cell": {
+              "f1": 0.3486238532110092,
+              "support": 63
+            },
+            "monocyte": {
+              "f1": 0.7835269271383316,
+              "support": 1132
+            }
+          }
+        },
+        "PBMC1::inDrops": {
+          "accuracy": 0.6866581141757537,
+          "cells": 3118,
+          "conformal": {
+            "empty_set_fraction": 0.24599101988454136,
+            "marginal_coverage": 0.25978191148171903,
+            "mean_set_size": 0.8508659397049391
+          },
+          "ece_15_bin": 0.06426716633628228,
+          "macro_f1": 0.5215356312629692,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.8193939393939393,
+              "support": 374
+            },
+            "CD4_T_cell": {
+              "f1": 0.6651933701657459,
+              "support": 512
+            },
+            "CD8_T_cell": {
+              "f1": 0.5958866036687048,
+              "support": 1108
+            },
+            "NK_cell": {
+              "f1": 0.0,
+              "support": 0
+            },
+            "dendritic_cell": {
+              "f1": 0.13559322033898305,
+              "support": 10
+            },
+            "monocyte": {
+              "f1": 0.9131466540104414,
+              "support": 1114
+            }
+          }
+        },
+        "PBMC2::CEL-Seq2": {
+          "accuracy": 0.8278388278388278,
+          "cells": 273,
+          "conformal": {
+            "empty_set_fraction": 0.22344322344322345,
+            "marginal_coverage": 0.575091575091575,
+            "mean_set_size": 0.8058608058608059
+          },
+          "ece_15_bin": 0.049493928181474175,
+          "macro_f1": 0.6677655137631785,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.9361702127659575,
+              "support": 66
+            },
+            "CD4_T_cell": {
+              "f1": 0.7792207792207793,
+              "support": 93
+            },
+            "CD8_T_cell": {
+              "f1": 0.7804878048780488,
+              "support": 71
+            },
+            "NK_cell": {
+              "f1": 0.8857142857142857,
+              "support": 32
+            },
+            "dendritic_cell": {
+              "f1": 0.0,
+              "support": 0
+            },
+            "monocyte": {
+              "f1": 0.625,
+              "support": 11
+            }
+          }
+        },
+        "PBMC2::Drop-seq": {
+          "accuracy": 0.8865396069088743,
+          "cells": 3358,
+          "conformal": {
+            "empty_set_fraction": 0.2328767123287671,
+            "marginal_coverage": 0.6715306730196545,
+            "mean_set_size": 0.7849910661107802
+          },
+          "ece_15_bin": 0.015105534916475618,
+          "macro_f1": 0.6930516462451352,
+          "per_class": {
+            "B_cell": {
+              "f1": 0.9382978723404255,
+              "support": 926
+            },
+            "CD4_T_cell": {
+              "f1": 0.9192953707496927,
+              "support": 1171
+            },
+            "CD8_T_cell": {
+              "f1": 0.8293998651382333,
+              "support": 788
+            },
+            "NK_cell": {
+              "f1": 0.8940809968847352,
+              "support": 299
+            },
+            "dendritic_cell": {
+              "f1": 0.0,
+              "support": 0
+            },
+            "monocyte": {
+              "f1": 0.5772357723577236,
+              "support": 174
+            }
+          }
+        }
+      },
+      "cells": 21866,
+      "conformal": {
+        "empty_set_fraction": 0.24673008323424495,
+        "marginal_coverage": 0.5024695874874234,
+        "mean_set_size": 0.7926003841580536
+      },
+      "ece_15_bin": 0.04618730893845158,
+      "macro_f1": 0.7197785840750212,
+      "per_class": {
+        "B_cell": {
+          "f1": 0.9035369774919614,
+          "support": 3263
+        },
+        "CD4_T_cell": {
+          "f1": 0.787262183335029,
+          "support": 5254
+        },
+        "CD8_T_cell": {
+          "f1": 0.7613106663010694,
+          "support": 7447
+        },
+        "NK_cell": {
+          "f1": 0.5507474429583006,
+          "support": 1148
+        },
+        "dendritic_cell": {
+          "f1": 0.42990654205607476,
+          "support": 311
+        },
+        "monocyte": {
+          "f1": 0.8859076923076923,
+          "support": 4443
+        }
+      }
+    },
+    "semantic_ood": {
+      "auroc": 0.8567338976764569,
+      "negative_cells": 21866,
+      "positive_author_labels": {
+        "Megakaryocyte": 728
+      },
+      "positive_cells": 728,
+      "score": "one_minus_maximum_calibrated_probability"
+    }
+  },
+  "implementation": {
+    "biological_replication_warning": "cell rows are not independent biological replicates",
+    "calibration": "single scalar temperature on calibration donor",
+    "classifier": "reference-class multinomial logistic regression",
+    "objective": "mean cross-entropy plus 0.5*l2*sum(nonreference_weight_squared)"
+  },
+  "model_sha256": "d2776f69f0306139fafd21813135c054364645de9acc2406630e50b143bc6e09",
+  "overall_external_context_gate_pass": false,
+  "protocol_sha256": "796809ce20c81c00186adcd9b94f0d72cf41238d400ed0e2e5677fa51744b73e",
+  "schema": "aleph.outer_library.pbmc_cross_lab_model.v1",
+  "tensor_sha256": "1b35358983a5042afa8ab85e30195367a9bfff13761cecbb2875a9a5b938e814"
+}

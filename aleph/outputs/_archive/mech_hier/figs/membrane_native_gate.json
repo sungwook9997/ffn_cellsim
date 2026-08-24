@@ -1,0 +1,77 @@
+{
+ "nf": 70686,
+ "strain": 0.3,
+ "R0_um": 7.499978516787127,
+ "R_eq_rest_um": 7.6954232970647585,
+ "R_eq_load_um": 7.695722456279387,
+ "Nc": 494802,
+ "Ne": 495403,
+ "n_nuc": 3000,
+ "n_mt": 40,
+ "F_plate_pN": 88906.8411428025,
+ "com_drift_um": 0.0011435350644839503,
+ "per_compartment": [
+  {
+   "compartment": "cortex_shell",
+   "n": 494802,
+   "mean_um": 0.350008738455646,
+   "p50_um": 0.0011727347600946647,
+   "max_um": 2.251864655064135,
+   "raw_mean_um": 0.34941560746992834,
+   "raw_std_um": 0.6278636377895614
+  },
+  {
+   "compartment": "MT_aster+MTOC",
+   "n": 601,
+   "mean_um": 0.08592792375171954,
+   "p50_um": 0.003964931827967995,
+   "max_um": 2.262465881065431,
+   "raw_mean_um": 0.08551206089446522,
+   "raw_std_um": 0.27519612867521176
+  },
+  {
+   "compartment": "nucleus",
+   "n": 3000,
+   "mean_um": 0.0011412023402776101,
+   "p50_um": 0.001141790462555451,
+   "max_um": 0.0011435528311281693,
+   "raw_mean_um": 3.5034602251132128e-06,
+   "raw_std_um": 2.0226763387289723e-06
+  }
+ ],
+ "mtoc_disp_um": 0.006827248390387749,
+ "nucleus_centroid_shift_um": 0.0011411994704610788,
+ "interior_over_shell_mean_ratio": 0.003260496710204926,
+ "axial_mean_um": 0.3401286150469153,
+ "radial_mean_um": 0.02475421728764349,
+ "nucleus_shape": {
+  "rest": {
+   "z_half_um": 5.105524526841349,
+   "xy_rad_um": 5.108945667440945
+  },
+  "load": {
+   "z_half_um": 5.105529194061892,
+   "xy_rad_um": 5.108945817942774
+  },
+  "z_flatten_frac": -9.141510373615618e-07,
+  "xy_bulge_frac": 2.9458490941607225e-08
+ },
+ "mt_tip_cortex_gap_um": 0.00502423263730202,
+ "interior_frozen": false,
+ "membrane": {
+  "n_mem": 2562,
+  "R_mem_um": 7.649978516787128,
+  "mem_area_um2": 696.3912082126141,
+  "mem_A0_um2": 735.4112938046059,
+  "mem_areal_strain": -0.05305886096761412,
+  "mem_bend_energy_pN_um": 8.591384663082415,
+  "mem_bend_over_8pikappa": 4.128506452697658,
+  "kappa_tilde_pN_um": 0.27703816425025146,
+  "erm_bound": 2562,
+  "erm_ruptured_bleb": 0,
+  "erm_f_rupt_pN": 11.43470677829702,
+  "k_erm_pN_um": 50.0
+ },
+ "wall_s": 114.76567935943604,
+ "verdict": "interior deforms with load"
+}

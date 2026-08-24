@@ -1,0 +1,14 @@
+{
+  "question": "Is the previous full-cell validation wrong? (bare cortex 4 kPa vs whole-cell ~182-249 Pa)",
+  "answer": "No. The bare-cortex modulus is a POINT on the loading/relaxation spectrum, not a compartment effect. Even the previously-validated harness (ff_hertz_validation) gives ~1.5 kPa in its GENERIC drained mode; the IN-BAND ~249 Pa needed a SPECIFIC fully-relaxed (slowest-rate + membrane + turnover) config. My S1 (drained, rigid, native) is consistent with the validated harness (drained, soft).",
+  "note": "E_fit [Pa] at NF=2000 CPU unless '(native)'. rigid vs soft plate = ~1.6x. MCF7 whole-cell band 224-279 Pa.",
+  "points": [
+    {"label": "undrained\n(naive, native)", "E_fit": 888072, "regime": "undrained"},
+    {"label": "drained rigid\n(native, NF=70686)", "E_fit": 4141, "regime": "drained-mine"},
+    {"label": "drained rigid\n(NF=2000)", "E_fit": 2005, "regime": "drained-mine"},
+    {"label": "drained soft\n(NF=2000)", "E_fit": 1239, "regime": "drained-mine"},
+    {"label": "ff_hertz setpoint\n(validated, NF=2000)", "E_fit": 1548, "regime": "validated-harness"},
+    {"label": "ff_hertz drained\n(validated, NF=2000)", "E_fit": 1603, "regime": "validated-harness"}
+  ],
+  "mcf7_band": [224.0, 279.0]
+}

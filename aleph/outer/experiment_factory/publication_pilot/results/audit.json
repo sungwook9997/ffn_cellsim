@@ -1,0 +1,20 @@
+{
+  "adjudicated_submissions": 0,
+  "assignment_forms": 100,
+  "authority_status": "proposed",
+  "benchmark_metrics_available": false,
+  "failures": [],
+  "forbidden_packet_keys": [],
+  "forms_contain_machine_predictions": false,
+  "human_A_submissions": 0,
+  "human_B_submissions": 0,
+  "machine_experiment_records": 996,
+  "machine_packets": 50,
+  "machine_preannotation_is_ground_truth": false,
+  "manifest_files": 8,
+  "manifest_mismatches": [],
+  "schema": "aleph.external_training.publication_pilot_audit.v1",
+  "selected_sources": 50,
+  "split_leakage_components": [],
+  "status": "pass"
+}

@@ -1,0 +1,14 @@
+{
+  "accession": "GSM4150378",
+  "aleph_authority": "none",
+  "decompressed_bytes": 14312578348,
+  "decompressed_line_count": 1007419688,
+  "file": "GSM4150378_sciPlex3_A549_MCF7_K562_screen_UMI.count.matrix.gz",
+  "gzip_stream_verified": true,
+  "license_status": "no_explicit_reuse_license_on_GEO_record",
+  "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4150nnn/GSM4150378/suppl/GSM4150378_sciPlex3_A549_MCF7_K562_screen_UMI.count.matrix.gz",
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.sciplex3_matrix_receipt.v1",
+  "sha256": "7d632716aa6ed0fc1780996003d0abc440ff78340609bceaaa4c8ade9345d00a",
+  "size_bytes": 3096224606
+}

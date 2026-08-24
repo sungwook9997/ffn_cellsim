@@ -1,0 +1,54 @@
+{
+  "gate": "H.junctional_actin activation (cadherin\u2194cortex catch clutch)",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "k_couple_Npm": 1e-06,
+    "k_anchor_Npm": 1e-05,
+    "anchor_r0_m": 5e-09,
+    "max_couple_dist_m": 6e-08,
+    "k_catch0_s": 1.0,
+    "x_catch_m": 4e-09,
+    "k_slip0_s": 0.02,
+    "x_slip_m": 4e-10,
+    "n_bins": 10
+  },
+  "controls": {
+    "belt_assembled": true,
+    "n_junc_actin_heads": 46,
+    "n_coupling_bonds": 46,
+    "n_interface_cadherins": 120,
+    "same_cell_coupling": {
+      "ok": true,
+      "cross_cell": 0
+    },
+    "force_free_construction": {
+      "ok": true,
+      "anchor_max_strain": 6.617444900424221e-14,
+      "couple_max_strain": 0.9647897407721677
+    },
+    "no_contamination": {
+      "ok": true,
+      "mask_excludes_all_junc_actin": true,
+      "junc_actin_bond_types": [
+        "junc_actin_anchor",
+        "junc_actin_couple_b0",
+        "junc_actin_couple_b1",
+        "junc_actin_couple_b2",
+        "junc_actin_couple_b3",
+        "junc_actin_couple_b4"
+      ]
+    },
+    "catch_signature": {
+      "ok": true,
+      "F_star_pN": 6.030150753768845,
+      "koff0_per_s": 1.02,
+      "koff_min_per_s": 0.03870685249630737
+    }
+  },
+  "deferred": {
+    "dynamic_catch_slip_maintenance": "JunctionalActinCouplingUpdater as a live hoomd Action (engaged-fraction \u03c6 equilibrium, break/rebind) \u2014 needs an equilibrated run (BAOAB guard).",
+    "dense_belt_fidelity": "single-particle cadherin = ectodomain tip at the interface (~0.5 \u00b5m from cortex) \u2192 only tips within the \u03b1-catenin reach couple (sparse belt). A faithful dense belt needs a cadherin-tail particle near the cortex (follow-on; PI queue)."
+  },
+  "note": "REAL build-time activation gate on the two-cell doublet with the junctional-actin belt. The reserved STUB build path is now IMPLEMENTED (heads + anchor + per-r0-bin coupling). Catch-set constants are PI-candidates (module default None \u2192 un-anchored build raises). KEY controls: same-cell coupling (no cross-cell), force-free, junc_actin_ excluded from cortical \u03b3, and the \u03b1-catenin catch signature (biphasic k_off with F*). Dynamic maintenance deferred."
+}

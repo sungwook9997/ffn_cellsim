@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/external-training-extraction-summary-v1.json",
+  "title": "Proposed digest-only OA JATS extraction summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "authority_status", "extractor_version", "receipt_successes", "xml_parsed", "failures", "failure_classes", "resumed_articles", "payload_bytes", "chunks", "sections", "figures", "tables", "tagged_articles", "tag_counts", "article_manifest_set_sha256", "failed_source_family_sha256"],
+  "properties": {
+    "schema": {"const": "aleph.external_training.jats_extraction_summary.v1"},
+    "authority_status": {"const": "proposed"},
+    "extractor_version": {"type": "string"},
+    "receipt_successes": {"type": "integer", "minimum": 0},
+    "xml_parsed": {"type": "integer", "minimum": 0},
+    "failures": {"type": "integer", "minimum": 0},
+    "failure_classes": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "resumed_articles": {"type": "integer", "minimum": 0},
+    "payload_bytes": {"type": "integer", "minimum": 0},
+    "chunks": {"type": "integer", "minimum": 0},
+    "sections": {"type": "integer", "minimum": 0},
+    "figures": {"type": "integer", "minimum": 0},
+    "tables": {"type": "integer", "minimum": 0},
+    "tagged_articles": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "tag_counts": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}},
+    "article_manifest_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "failed_source_family_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

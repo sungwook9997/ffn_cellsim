@@ -1,0 +1,25 @@
+{
+  "accession": "BBBC048v1",
+  "file_count": 2,
+  "files": [
+    {
+      "file": "BBBC048v1.zip",
+      "official_url": "https://data.broadinstitute.org/bbbc/BBBC048/BBBC048v1.zip",
+      "sha256": "5582e6653e3b74587153444c143c29e47fa095b2cd6a0f8a7594386c754ee615",
+      "size_bytes": 1611429608,
+      "status": "downloaded_and_verified_zip_crc_clean",
+      "zip_member_count": 8
+    },
+    {
+      "file": "Ground_truth.lst",
+      "official_url": "https://data.broadinstitute.org/bbbc/BBBC048/Ground_truth.lst",
+      "sha256": "739dc26417ff94f9a511bafb7b2692d02b429120f08e96446d3afb12219f35c5",
+      "size_bytes": 2955854,
+      "status": "downloaded_and_verified"
+    }
+  ],
+  "license_id": "cc-by-nc-sa-3.0",
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.bbbc048_acquisition_receipt.v1",
+  "total_bytes": 1614385462
+}

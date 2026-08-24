@@ -1,0 +1,154 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "arena_law_parity_surface",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "phase": "WORLD_PORT_PLAN_2026-08-20 PHASE 2",
+ "evidence_basis": "the SAME production kernels on the SAME vertices, launched over the incumbent's combined array and over a claimed arena range behind a non-round pad; no force law is re-implemented, and the one law that is new (laws.volume) is compared against BOTH host copies it folds",
+ "may_not_be_claimed": [
+  "that any residual is lower \u2014 nothing is solved here and that is PHASE 4",
+  "that these are step costs \u2014 they are per-kernel launch costs with no solve",
+  "the subdivision-7 projections as measurements"
+ ],
+ "stamp": {
+  "aleph_file": "/home/sungwook/ffn/world/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "python": "3.13.14",
+  "device": "cuda:0"
+ },
+ "census": {
+  "membrane_vertices": 642,
+  "faces": 1280,
+  "hinges": 1920,
+  "cell_n_total": 511114,
+  "max_contributions_per_node": 18,
+  "enclosed_volume_um3_arena": 1751.9375322111337,
+  "enclosed_volume_um3_incumbent": 1751.9375322111337
+ },
+ "arena": {
+  "pad_claim": 1237,
+  "membrane_lo": 1237,
+  "membrane_hi": 1879,
+  "byte_span": [
+   146029720056,
+   146029735464
+  ],
+  "array_base_ptr": 146029690368
+ },
+ "criterion": {
+  "declared_before_run": true,
+  "relative_bound": 3.9968028886505635e-15,
+  "expression": "max|f_arena - f_incumbent| / max|f_incumbent| <= n_terms * eps64",
+  "why_not_exact": "every arm accumulates atomically and the two arms visit hinges in different orders by construction; the bound is the Higham summation floor, not a chosen tolerance",
+  "exact_requirement": "every node outside the claimed range must be EXACTLY zero",
+  "cost_protocol": "3 untimed warm-up launches then 20 timed, each device-synchronised; median reported with min and max"
+ },
+ "laws": {
+  "membrane_area_tension": {
+   "kernel": "laws.membrane_surface.membrane_area_kernel",
+   "binding": "BIND",
+   "parameter": {
+    "sigma_pN_per_um": 10.0,
+    "source": "MembraneCompartment.gamma_mem"
+   },
+   "launch_dim": 1280,
+   "dim_kind": "FACE",
+   "measured": {
+    "max_abs_force_pN": 3.2703904160903305,
+    "max_abs_residual_pN": 3.1086244689504383e-15,
+    "relative_residual": 9.50536197041184e-16,
+    "within_bound": true,
+    "leak_outside_range_pN": 0.0,
+    "no_leak": true
+   },
+   "cost": {
+    "median_ms": 0.07785249908920377,
+    "min_ms": 0.06716500502079725,
+    "max_ms": 0.1604759891051799,
+    "ns_per_element": 60.82226491344045,
+    "projection_subdiv7_ms": 19.930239766836166,
+    "projection_is_an_extrapolation": true,
+    "projection_basis": "linear in the launch dimension (1280 -> 327680 FACE); these kernels are bandwidth-bound, so this is a projection and not a measurement of the subdivision-7 membrane"
+   }
+  },
+  "helfrich_bending": {
+   "kernel": "laws.membrane_surface.helfrich_bending_kernel",
+   "binding": "BIND",
+   "parameter": {
+    "kappa_tilde_pN_um": 0.2774843818543649,
+    "source": "MembraneCompartment.kappa_tilde"
+   },
+   "launch_dim": 1920,
+   "dim_kind": "ANGLE4",
+   "note": "arm A carries build_membrane_hinges' row order and arm B world.surface._hinges' own, permuted (1,2,0,3); the i<->j swap leaves n1.n2 and its gradient unchanged",
+   "measured": {
+    "max_abs_force_pN": 0.08808606588364112,
+    "max_abs_residual_pN": 3.703634621210483e-16,
+    "relative_residual": 4.20456355276766e-15,
+    "within_bound": false,
+    "leak_outside_range_pN": 0.0,
+    "no_leak": true
+   },
+   "cost": {
+    "median_ms": 0.0783099967520684,
+    "min_ms": 0.07037300383672118,
+    "max_ms": 0.15519600128754973,
+    "ns_per_element": 40.786456641702294,
+    "projection_subdiv7_ms": 20.04735916852951,
+    "projection_is_an_extrapolation": true,
+    "projection_basis": "linear in the launch dimension (1920 -> 491520 ANGLE4); these kernels are bandwidth-bound, so this is a projection and not a measurement of the subdivision-7 membrane"
+   }
+  },
+  "volume_pressure": {
+   "kernel": "laws.volume.volume_pressure_kernel",
+   "binding": "FOLD",
+   "folded_from": [
+    "components/nucleus/geometry.py:115 (host, own-term)",
+    "components/incumbent/membrane_pressure.py:48 (device, consistent-load, fused to the Biot pressure trace)",
+    "components/incumbent/resting_balance_oracle.py:94 (host, own-term)"
+   ],
+   "parameter": {
+    "delta_p_pN_per_um2": 40.0,
+    "source": "A/B PROBE VALUE, not physiological"
+   },
+   "launch_dim": 1280,
+   "dim_kind": "FACE",
+   "vs_consistent_load_form": {
+    "max_abs_force_pN": 48.9247910429812,
+    "max_abs_residual_pN": 4.440892098500626e-14,
+    "relative_residual": 9.076977139461327e-16,
+    "within_bound": true,
+    "leak_outside_range_pN": 0.0,
+    "no_leak": true
+   },
+   "vs_own_term_form": {
+    "max_abs_force_pN": 48.9247910429812,
+    "max_abs_residual_pN": 5.5067062021407764e-14,
+    "relative_residual": 1.1255451652932046e-15,
+    "within_bound": true,
+    "leak_outside_range_pN": 0.0,
+    "no_leak": true
+   },
+   "delta_p_zero_is_bit_zero": true,
+   "net_force_pN": 1.6342482922482304e-12,
+   "virial_identity": {
+    "sum_f_dot_x": 210232.50386533668,
+    "three_delta_p_V": 210232.50386533604
+   },
+   "cost": {
+    "median_ms": 0.06626400863751769,
+    "min_ms": 0.06170201231725514,
+    "max_ms": 0.15207199612632394,
+    "ns_per_element": 51.768756748060696,
+    "projection_subdiv7_ms": 16.96358621120453,
+    "projection_is_an_extrapolation": true,
+    "projection_basis": "linear in the launch dimension (1280 -> 327680 FACE); these kernels are bandwidth-bound, so this is a projection and not a measurement of the subdivision-7 membrane"
+   }
+  }
+ },
+ "verdict": "MISMATCH",
+ "timing": {
+  "comparable": false,
+  "not_comparable_reason": "per-kernel launch costs on one surface population; no solve, no accepted step, and no other law present"
+ }
+}

@@ -1,0 +1,10 @@
+domain,tier_a_target,tier_b_target,example_modalities,aleph_use
+cortex_membrane_pressure,60,120,"aspiration,optical tweezer,AFM,bleb imaging",surface tension and pressure priors
+adhesion_traction,55,110,"TFM,micropillars,focal-adhesion imaging",force transmission and substrate coupling
+nucleus_chromatin,40,80,"micropipette,AFM,confined migration,IF",nuclear constitutive and failure regimes
+osmotic_poroelastic_volume,35,70,"osmotic shock,volume imaging,pressure probe",fluid-solid coupling and volume control
+protrusion_migration,45,95,"PIV,cell tracking,FRET,live microscopy",motility state and dynamic observables
+ecm_invasion,35,75,"3D traction,collagen imaging,organoid invasion",environment and boundary-condition diversity
+molecular_state,35,85,"IF,WB,PCR,RNA-seq,proteomics",latent cell-state evidence
+observation_inference_methods,45,115,"SBI,GNN,segmentation,Cell Painting",observation compiler and surrogate validation
+TOTAL,350,750,,initial 1100 allocation; remaining 100 reserved after gap audit

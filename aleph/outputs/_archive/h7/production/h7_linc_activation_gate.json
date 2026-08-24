@@ -1,0 +1,41 @@
+{
+  "gate": "H.LINC linc activation",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "k_linc_Npm": 0.01,
+    "r0_default_m": 5e-08,
+    "capture_radius_m": 5e-07,
+    "n_bridges_max": 60,
+    "f_rest_oracle_pN": 8.0
+  },
+  "controls": {
+    "bridges_formed": true,
+    "n_linc_bridges": 40,
+    "n_linc_bond_types": 40,
+    "n_particle_delta": 0,
+    "n_bond_delta": 40,
+    "force_free_construction": {
+      "ok": true,
+      "max_strain": 0.0
+    },
+    "no_contamination": {
+      "mask_excludes_all_linc": true,
+      "gamma_soft_off_N_per_m": 5.141050220221626e-10,
+      "gamma_soft_on_N_per_m": 5.141050220221626e-10,
+      "gamma_identical": true
+    },
+    "off_identity": true,
+    "cfl_headroom": {
+      "ok": true,
+      "dt_prod_s": 1.3030698008559743e-08,
+      "dt_cfl_max_s": 6.210928676147021e-05,
+      "gamma_bead_Nspm": 6.210928676147022e-06
+    }
+  },
+  "deferred": {
+    "resting_tension_oracle_pN": "[2,10] pN (D\u00e9jardin 2020) \u2014 needs an equilibrated actomyosin run; full-cell raw run trips the BAOAB guard (equilibration prelude required), same as the other compartments.",
+    "k_linc_ratification": "route-A 1e-2 N/m (Rief 1999) ORDER \u2014 PI-pending."
+  },
+  "note": "REAL build-time activation gate on the full physiological baseline with the IF cage ON. Option A: nucleus_bead \u2192 nearest if_bead, per-bond EXACT-r0 (force-free at construction). KEY control is no-contamination: cortical \u03b3_soft identical OFF vs ON (linc_ registry-denylisted). LINC adds ZERO particles (bonds only). The [2,10] pN resting-tension oracle is deferred (needs equilibration). \u26a0 mesoscale r0 ~0.5-1.5 \u00b5m \u2260 50 nm real span (PI queue)."
+}

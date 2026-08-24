@@ -1,0 +1,84 @@
+{
+  "FAKi_descriptive_contrasts": {
+    "cell_number_density": {
+      "FAKi_minus_control_timepoint_mean": -160.62780739507724,
+      "FAKi_timepoint_mean": 221.77269655135137,
+      "control_timepoint_mean": 382.4005039464286,
+      "inferential_ci95": null
+    },
+    "cell_substrate_order_parameter": {
+      "FAKi_minus_control_timepoint_mean": -0.2126533586435811,
+      "FAKi_timepoint_mean": 0.2596824609189189,
+      "control_timepoint_mean": 0.4723358195625,
+      "inferential_ci95": null
+    },
+    "ensemble_mean_absolute_velocity_x": {
+      "FAKi_minus_control_timepoint_mean": -1.377711380314496,
+      "FAKi_timepoint_mean": 8.10234176509091,
+      "control_timepoint_mean": 9.480053145405407,
+      "inferential_ci95": null
+    },
+    "ensemble_mean_absolute_velocity_y": {
+      "FAKi_minus_control_timepoint_mean": 0.5185693116904178,
+      "FAKi_timepoint_mean": 6.505817497636364,
+      "control_timepoint_mean": 5.987248185945946,
+      "inferential_ci95": null
+    },
+    "ensemble_mean_speed": {
+      "FAKi_minus_control_timepoint_mean": -0.7531711882653553,
+      "FAKi_timepoint_mean": 11.491878162545454,
+      "control_timepoint_mean": 12.24504935081081,
+      "inferential_ci95": null
+    }
+  },
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "field_descriptions": {
+    "isotropic": {
+      "mean_speed_source_unit_unspecified": 0.0023364440889080173,
+      "technical_vector_count": 2944,
+      "velocity_nematic_order": 0.05484784427575472,
+      "velocity_polar_order": 0.034778484558616644
+    },
+    "nematic": {
+      "mean_speed_source_unit_unspecified": 0.002015009022275126,
+      "technical_vector_count": 4701,
+      "velocity_nematic_order": 0.4899350534522558,
+      "velocity_polar_order": 0.029032071427561864
+    }
+  },
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "inferential_status": "descriptive_only_independent_culture_ids_not_reported",
+  "limitations": [
+    "the release does not identify independent cultures or experimental repeats",
+    "spatial vectors, frames, and longitudinal time points are correlated technical observations",
+    "the released velocity columns do not state their unit in the data README",
+    "the FAKi and control trajectories differ strongly in density, so their difference is not a causal FAK effect estimate",
+    "no confidence interval, parameter calibration, or external-holdout claim is emitted"
+  ],
+  "manifest": {
+    "observations": 3154,
+    "samples": 832
+  },
+  "observable_constraint_eligible": false,
+  "raw_velocity_tensor": {
+    "biological_replicate_count": 1,
+    "features": 5,
+    "mandatory_split_group": "valentine-lab-ucsb",
+    "technical_vectors": 7645
+  },
+  "representation_training_eligible": true,
+  "representation_use_constraints": [
+    "group every source row by the full dataset/lab split group",
+    "do not split spatial vectors or longitudinal time points across folds",
+    "do not use this single study as its own external holdout"
+  ],
+  "source": {
+    "accession": "10.25349/D96W58",
+    "license": "cc0-1.0",
+    "paper_doi": "10.1098/rsif.2023.0160"
+  },
+  "task": "hdF_collective_velocity_representation_and_descriptive_FAKi_audit",
+  "uncertainty_holdout_passed": false
+}

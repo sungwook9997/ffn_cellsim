@@ -1,0 +1,119 @@
+{
+  "box_um": 40.0,
+  "materials": [
+    {
+      "material": "collagen_I",
+      "kind": "G",
+      "measured_Pa": 15.189911308953494,
+      "band_Pa": [
+        5.0,
+        100.0
+      ],
+      "in_band": true,
+      "is_fibrillar": true,
+      "box_um": 40.0,
+      "meta": {
+        "n_nodes": 33600,
+        "n_fibers": 1600,
+        "z": 3.2,
+        "mesh": 1.5,
+        "G_energy": 15.053985436441838,
+        "G_virial": 15.189911308953494
+      },
+      "wall_s": 0.5728335380554199
+    },
+    {
+      "material": "fibrin",
+      "kind": "G",
+      "measured_Pa": 78.69043782751758,
+      "band_Pa": [
+        10.0,
+        1000.0
+      ],
+      "in_band": true,
+      "is_fibrillar": true,
+      "box_um": 40.0,
+      "meta": {
+        "n_nodes": 74676,
+        "n_fibers": 3556,
+        "z": 3.2002249718785154,
+        "mesh": 1.2000000000000002,
+        "G_energy": 78.0501407118974,
+        "G_virial": 78.69043782751758
+      },
+      "wall_s": 0.7535350322723389
+    },
+    {
+      "material": "pa_gel",
+      "kind": "E",
+      "measured_Pa": 3654.171208843401,
+      "band_Pa": [
+        100.0,
+        40000.0
+      ],
+      "in_band": true,
+      "is_fibrillar": false,
+      "box_um": 40.0,
+      "meta": {
+        "n_nodes": 9196,
+        "E_input": 5000.0,
+        "E_indent": 3654.171208843401
+      },
+      "wall_s": 3.0071566104888916
+    },
+    {
+      "material": "hyaluronic_acid",
+      "kind": "E",
+      "measured_Pa": 330.6940423394011,
+      "band_Pa": [
+        10.0,
+        3000.0
+      ],
+      "in_band": true,
+      "is_fibrillar": false,
+      "box_um": 40.0,
+      "meta": {
+        "n_nodes": 9196,
+        "E_input": 300.0,
+        "E_indent": 330.6940423394011
+      },
+      "wall_s": 3.0305800437927246
+    },
+    {
+      "material": "matrigel",
+      "kind": "E",
+      "measured_Pa": 439.1894785031111,
+      "band_Pa": [
+        30.0,
+        900.0
+      ],
+      "in_band": true,
+      "is_fibrillar": false,
+      "box_um": 40.0,
+      "meta": {
+        "n_nodes": 9196,
+        "E_input": 450.0,
+        "E_indent": 439.1894785031111
+      },
+      "wall_s": 3.052171230316162
+    },
+    {
+      "material": "agarose",
+      "kind": "E",
+      "measured_Pa": 16117.379790412284,
+      "band_Pa": [
+        1000.0,
+        100000.0
+      ],
+      "in_band": true,
+      "is_fibrillar": false,
+      "box_um": 40.0,
+      "meta": {
+        "n_nodes": 9196,
+        "E_input": 30000.0,
+        "E_indent": 16117.379790412284
+      },
+      "wall_s": 3.0670037269592285
+    }
+  ]
+}

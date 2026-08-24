@@ -1,0 +1,139 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "conformal_uncertainty": {
+    "alpha": 0.1,
+    "calibration_count": 54,
+    "class_coverage": {
+      "0": 1.0,
+      "1": 1.0
+    },
+    "coverage": 1.0,
+    "empty_set_fraction": 0.0,
+    "mean_set_size": 1.3518518518518519,
+    "method": "class_conditional_Mondrian_split_conformal",
+    "singleton_accuracy": 1.0,
+    "singleton_fraction": 0.6481481481481481,
+    "test_count": 54,
+    "uncertainty_holdout_passed": true
+  },
+  "dataset_shift": {
+    "paired_centered_lab3_vs_lab1_auroc": 0.34705075445816186,
+    "raw_lab3_vs_lab1_auroc": 0.9708504801097394
+  },
+  "experiment_counts": {
+    "lab_1": 9,
+    "lab_2": 9,
+    "lab_3": 9
+  },
+  "experiment_effect_projection": {
+    "lab_1": {
+      "count": 9,
+      "mean": 3.9250116852572896,
+      "positive_fraction": 1.0
+    },
+    "lab_2": {
+      "count": 9,
+      "mean": 2.005182924083129,
+      "positive_fraction": 0.8888888888888888
+    },
+    "lab_3": {
+      "count": 9,
+      "mean": 2.255912717665704,
+      "positive_fraction": 1.0
+    }
+  },
+  "external_lab3_effect_bootstrap_95ci": [
+    1.7801097034618312,
+    2.5999908747127187
+  ],
+  "external_lab3_metrics": {
+    "auroc": 0.9849108367626886,
+    "balanced_accuracy": 0.7407407407407407,
+    "class_counts": {
+      "0": 27,
+      "1": 27
+    },
+    "macro_f1": 0.7220588235294118,
+    "sample_count": 54,
+    "threshold": 0.0
+  },
+  "external_lab_holdout_passed": true,
+  "limitations": [
+    "the model requires a matched control arm in every experiment",
+    "technical replicates are used for prediction metrics but independent experiments are the inference unit",
+    "ROCK inhibition is a pathway perturbation and does not identify one Aleph parameter",
+    "lab 3 was opened under the earlier threshold-selected revision, so the current fixed-origin conformal revision requires a new confirmation lab"
+  ],
+  "observable_count": 18,
+  "observables": [
+    "Cells_Area",
+    "Cells_Compactness",
+    "Cells_Eccentricity",
+    "Cells_ICS",
+    "Cells_MajorAxisLength",
+    "Cells_MaxFeretDiameter",
+    "Cells_MaximumRadius",
+    "Cells_MeanRadius",
+    "Cells_MinFeretDiameter",
+    "Cells_MinorAxisLength",
+    "Cells_Perimeter",
+    "Cells_Protrusions",
+    "Cells_Retractions",
+    "Cells_ShortLivedRegions",
+    "Cells_Solidity",
+    "Nuc_Area",
+    "Nuc_INS",
+    "Nuc_Perimeter"
+  ],
+  "person_cluster_effect_projection": {
+    "lab_1": {
+      "count": 3,
+      "mean": 3.925011685257289,
+      "positive_fraction": 1.0
+    },
+    "lab_2": {
+      "count": 3,
+      "mean": 2.005182924083129,
+      "positive_fraction": 1.0
+    },
+    "lab_3": {
+      "count": 3,
+      "mean": 2.255912717665704,
+      "positive_fraction": 1.0
+    }
+  },
+  "person_counts": {
+    "lab_1": 3,
+    "lab_2": 3,
+    "lab_3": 3
+  },
+  "pristine_sealed_confirmation": false,
+  "protocol": {
+    "bootstrap_resampling_unit": "person_cluster_mean_of_independent_experiments",
+    "confirmation_status": "retrospective_external_lab_evaluation_requires_new_lab",
+    "decision_threshold": 0.0,
+    "decision_threshold_rule": "fixed_no_effect_origin_not_label_selected",
+    "external_test_lab": "lab_3",
+    "inference_unit": "independent_experiment_nested_within_person",
+    "paired_control_centering": true,
+    "selection_unit": "technical_replicate",
+    "test_lab_labels_used_for_numeric_fitting": false,
+    "test_lab_was_opened_before_current_revision": true,
+    "train_lab": "lab_1",
+    "validation_and_conformal_calibration_lab": "lab_2"
+  },
+  "publication_confirmatory_holdout_passed": false,
+  "task": "paired_ROCK_inhibition_live_cell_state_transfer",
+  "validation_metrics": {
+    "auroc": 0.8422496570644719,
+    "balanced_accuracy": 0.7222222222222222,
+    "class_counts": {
+      "0": 27,
+      "1": 27
+    },
+    "macro_f1": 0.7101967799642219,
+    "sample_count": 54,
+    "threshold": 0.0
+  }
+}

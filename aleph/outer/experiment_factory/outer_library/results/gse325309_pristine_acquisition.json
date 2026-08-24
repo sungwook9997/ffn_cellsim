@@ -1,0 +1,17 @@
+{
+  "accession": "GSE325309",
+  "aleph_authority": "none",
+  "file": {
+    "name": "GSE325309_processed_data.xlsx",
+    "sha256": "0d9d636dff0fba25794c41150bbe56be3e57079cdf5bf924548c160faa64d71e",
+    "size": 6266161,
+    "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE325nnn/GSE325309/suppl/GSE325309_processed_data.xlsx"
+  },
+  "freeze_proof": {
+    "expression_downloaded_after_protocol_commit": true,
+    "protocol_commit_before_download": "7984e5b",
+    "protocol_sha256": "9eb83ce6f04bf9db7d1b63a0744a9021689de522fe28067778116414d99027e3"
+  },
+  "retrieved_at": "2026-08-07",
+  "schema": "aleph.outer_library.gse325309_pristine_acquisition.v1"
+}

@@ -1,0 +1,454 @@
+{
+ "schema": "ffn-world-phase4-native@1",
+ "kind": "diagnostic",
+ "provenance": {
+  "build_commit": "5696af4c (COMMIT_STAMP, hand-deployed)",
+  "closure_digest": "sha256:3c681a9bff46865a0572f97f1a25d48d932012130a550c82b01025cf8e6c6689",
+  "closure_files": "47",
+  "session": "unnamed@pid3212433",
+  "argv": "aleph/scripts/world_phase4_native.py --steps 12 --cortex-k-axial 88000 --cortex-kappa 0.07 --mobility 1e-06 --temperature-k 310 --emit-gamma --seed 7 --gamma-device --out aleph/outputs/ac/world_phase4/ctl_device.json",
+  "python": "3.13.14",
+  "env_prefix": "/home/sungwook/miniforge3/envs/ffn_sim",
+  "warp": "1.14.0"
+ },
+ "quantitative_claim_status": "BLOCKED",
+ "device": "cuda:0",
+ "build_s": 1.328,
+ "steps_s": 3.531,
+ "s_per_step": 0.2943,
+ "n_nodes": 4558554,
+ "cell": "FULL: cortex, membrane, nuclear_envelope + 8 more, from world/populations.py \u2014 the same builder PHASE 1 and the renderer use",
+ "populations": [
+  "chromatin",
+  "cortex",
+  "filopodium",
+  "intermediate_filament",
+  "lamellipodium",
+  "lamina",
+  "membrane",
+  "microtubule",
+  "nuclear_envelope",
+  "sf_arc",
+  "stress_fiber"
+ ],
+ "census": {
+  "capacity": {
+   "node": 12000000,
+   "segment": 12000000,
+   "angle3": 12000000,
+   "angle4": 2000000,
+   "face": 1500000,
+   "strand": 200000,
+   "bond": 1000000,
+   "grid_cell": 4000000
+  },
+  "live": {
+   "node": 4558554,
+   "segment": 4280891,
+   "angle3": 4209526,
+   "angle4": 614400,
+   "face": 409600,
+   "strand": 2001,
+   "bond": 0,
+   "grid_cell": 0
+  },
+  "utilisation": {
+   "node": 0.3798795,
+   "segment": 0.3567409166666667,
+   "angle3": 0.35079383333333336,
+   "angle4": 0.3072,
+   "face": 0.2730666666666667,
+   "strand": 0.010005,
+   "bond": 0.0,
+   "grid_cell": 0.0
+  },
+  "populations": {
+   "cortex": {
+    "node": 4197654,
+    "segment": 4128840,
+    "angle3": 4060026
+   },
+   "membrane": {
+    "node": 163842,
+    "face": 327680,
+    "angle4": 491520
+   },
+   "nuclear_envelope": {
+    "node": 40962,
+    "face": 81920,
+    "angle4": 122880
+   },
+   "microtubule": {
+    "node": 74001,
+    "strand": 500,
+    "segment": 73500,
+    "angle3": 73000
+   },
+   "intermediate_filament": {
+    "node": 2460,
+    "strand": 60,
+    "segment": 2400,
+    "angle3": 2340
+   },
+   "filopodium": {
+    "node": 61000,
+    "strand": 1000,
+    "segment": 60000,
+    "angle3": 59000
+   },
+   "lamellipodium": {
+    "node": 4200,
+    "strand": 200,
+    "segment": 4000,
+    "angle3": 3800
+   },
+   "sf_arc": {
+    "node": 2600,
+    "strand": 100,
+    "segment": 2500,
+    "angle3": 2400
+   },
+   "stress_fiber": {
+    "node": 9240,
+    "strand": 140,
+    "segment": 9100,
+    "angle3": 8960
+   },
+   "lamina": {
+    "node": 2043
+   },
+   "chromatin": {
+    "node": 552,
+    "strand": 1,
+    "segment": 551
+   }
+  },
+  "n_claims": 37,
+  "device": "cuda:0",
+  "node_arrays": [
+   "force",
+   "mobility",
+   "position",
+   "position_snap",
+   "range_id",
+   "strand_id"
+  ],
+  "node_bytes_arithmetic": 1056000000
+ },
+ "placement_check": {
+  "cortex": {
+   "n_nodes": 4197654,
+   "r_max_um": 7.499998009204866,
+   "n_outside": 0
+  },
+  "membrane": {
+   "n_nodes": 163842,
+   "r_max_um": 7.500000000000002,
+   "n_outside": 0
+  },
+  "nuclear_envelope": {
+   "n_nodes": 40962,
+   "r_max_um": 5.100000000000002,
+   "n_outside": 0
+  },
+  "microtubule": {
+   "n_nodes": 74001,
+   "r_max_um": 7.400000000000002,
+   "n_outside": 0
+  },
+  "intermediate_filament": {
+   "n_nodes": 2460,
+   "r_max_um": 7.250000000000002,
+   "n_outside": 0
+  },
+  "filopodium": {
+   "n_nodes": 61000,
+   "r_max_um": 7.250035034398111,
+   "n_outside": 0
+  },
+  "lamellipodium": {
+   "n_nodes": 4200,
+   "r_max_um": 7.290693333709313,
+   "n_outside": 0
+  },
+  "sf_arc": {
+   "n_nodes": 2600,
+   "r_max_um": 7.2731173611562765,
+   "n_outside": 0
+  },
+  "stress_fiber": {
+   "n_nodes": 9240,
+   "r_max_um": 7.359355943406575,
+   "n_outside": 0
+  },
+  "lamina": {
+   "n_nodes": 2043,
+   "r_max_um": 5.1000000000000005,
+   "n_outside": 0
+  },
+  "chromatin": {
+   "n_nodes": 552,
+   "r_max_um": 4.799031703261257,
+   "n_outside": 0
+  }
+ },
+ "placement_envelope": {
+  "r_cell_um": 7.5,
+  "z_basal_um": -7.0,
+  "r_footprint_um": 2.6926,
+  "footprint_basis": "sqrt(R_cell^2 - z_basal^2) \u2014 the basal contact disc, DERIVED from the built membrane radius, not a call-site constant",
+  "sf_pitch_um": 0.5,
+  "n_stress_fibres": 7,
+  "sf_pitch_source_class": "PI_GAP",
+  "n_stress_fibres_source_class": "PI_GAP",
+  "n_stress_fibres_inheritance": "the count INHERITS the pitch's source class \u2014 a derivation must not launder its input. Register a sourced pitch and this reports DERIVED with no edit here.",
+  "n_stress_fibres_basis": "floor(2 half_side / pitch) + 1. The pitch is held and the count yields, so the sourced quantity stays sourced.",
+  "sf_length_um": 3.2367,
+  "lamellipodium_width_um": 1.2367,
+  "lamellipodium_depth_um": 0.6184,
+  "filopodium_root_r_um": 4.25,
+  "nmii_radius_um": 6.95,
+  "sf_origin_um": [
+   -1.6184,
+   0.0,
+   -7.0
+  ],
+  "lamellipodium_origin_um": [
+   -0.3092,
+   0.0,
+   -7.0
+  ],
+  "origin_note": "`origin` is where a builder STARTS its rectangle, not where it centres it; passing the disc centre pushed both sheets into +x and their far corners outside the membrane",
+  "inscribed_square_clearance": 0.85,
+  "inscribed_square_note": "the contact region is a DISC and every builder lays down a RECTANGLE; sizing it to the disc diameter puts the corners outside the sphere while every edge midpoint is inside",
+  "filopodium_note": "rooted so the tip REACHES the membrane and stops. A real filopodium protrudes and the membrane follows it; this membrane is a rigid icosphere, so protrusion and 'inside the membrane' cannot both hold. PHASE 2 property, recorded rather than silently traded away."
+ },
+ "sign_gate": {
+  "mean_radial_force_pn": -0.0011504499137865297,
+  "asserted": "a POSITIVE surface tension pulls a closed surface INWARD",
+  "verdict": "PASS"
+ },
+ "extra_bindings": [],
+ "cortex_binding": {
+  "population": "cortex",
+  "n_segments": 4128840,
+  "n_angles": 4060026,
+  "topology_source": "READ from the builder's device arrays",
+  "device": "cuda:0",
+  "claims_no_coefficient": "this binding supplies topology only; k_axial, kappa and every rest length come from the caller and there is no default for any of them",
+  "k_axial_pn_per_um": 88000.0,
+  "kappa_pn_um2": 0.07,
+  "coefficient_basis": "TEST POINTS stated by the caller. NOT sourced values for this cell \u2014 see CROSSLINK_STIFFNESS_AXIS_2026-08-16.md, where the production k_xl of 8.2e5 pN/um is a Bell-Evans binding-barrier curvature read as a structural spring constant against a field band of 0.1-100.",
+  "rest_length_basis": "the BUILT chord from cortex.py, not the requested arc step"
+ },
+ "coefficients": {
+  "sigma_pn_per_um": 1.0,
+  "kappa_tilde_pn_um": 20.0,
+  "basis": "TEST POINTS, not sourced values for this cell. They set the force scale, so no residual from this run is a physical residual.",
+  "relax_um_per_pn": 0.0,
+  "relax_basis": "a DECLARED numerical relaxation, not a drag law. The builders leave the arena's per-node mobility at zero deliberately (membrane.py:49-50).",
+  "dt_phys_s": 0.05,
+  "dt_phys_basis": "this driver's clock, not a physiological quantity"
+ },
+ "thermostat": {
+  "n_nodes": 4558554,
+  "mobility_um_per_pn_s": 1e-06,
+  "mobility_basis": "\u26a0 UNSOURCED. The arena's per-node mobility is zero because a mobility is a drag law's parameter and the builders decline to invent one (build/membrane.py:49-50). The one drag law this repo has is on FORBIDDEN_DRAG_SYMBOLS as PI framework trap #4. So the TIMESCALE of any series produced here is unsourced: it is stationary in STEPS, and calling those seconds needs the drag law.",
+  "temperature_k": 310.0,
+  "temperature_basis": "310 K, physiological; the one sourced quantity in this step",
+  "kbt_pn_um": 0.0042800119,
+  "dt_s": 0.05,
+  "rms_kick_um": 2.068818962596776e-05,
+  "noise_basis": "sqrt(2 kB T mobility dt) \u2014 fixed by the fluctuation-dissipation theorem, NOT a parameter. A free noise amplitude would make this a heater with an arbitrary stationary distribution.",
+  "rng": {
+   "base_seed": 7,
+   "step_index": 11,
+   "note": "seeded per step from (base_seed, step_index); the run reproduces from those two integers"
+  },
+  "claims": "NOTHING physical. This moves nodes; it accepts no step and asserts no state.",
+  "n_steps": 12,
+  "stability_bound_s": 11.363636363636365,
+  "stability_note": "REPORTED, never enforced. dt < 1/(mobility * k_max) is what the stiffest bond implies; a module that clamped the caller's dt would be choosing a timestep, and a timestep chosen so a run behaves is what the charter forbids."
+ },
+ "gamma": {
+  "trace_pn_per_um": [
+   0.1886791743188697,
+   3.734593495986477,
+   5.19923627126375,
+   6.864224292118666,
+   7.590928899342641,
+   8.190816548824753,
+   9.193319829506661,
+   9.897385637987679,
+   10.388074924347128,
+   11.480279677293497,
+   11.717454571177647,
+   12.171919355156199
+  ],
+  "NO_MAGNITUDE_CLAIMED": true,
+  "why_emitted": "STATE.md (e) 1 is undecidable because a stationarity gate cannot be written against an observable the run does not produce, and cortical tension is that observable. Emitting it does not decide the amendment \u2014 it makes the amendment decidable.",
+  "why_not_quotable": "(c) 3 and (c) 17 retire every gamma this engine has produced; the coefficients here are declared test points; and one run cannot supply the SEED SCATTER (e) 1's D-2 requires \u2014 within-run variance is called 'the single most likely way to write the amendment and still be measuring nothing'.",
+  "seed": 7,
+  "is_an_independent_replicate": true,
+  "replicate_note": "build_all forwards the seed, so runs at different --seed are independent replicates",
+  "next": "three seeds through observe_gamma.observe_gamma_seed_scatter, then the PI fixes the statistic, the window and the variance it is judged against"
+ },
+ "step": {
+  "schema": "ffn-world-step@1",
+  "predicate": "undefined",
+  "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+  "n_steps": 12,
+  "n_judged": 0,
+  "n_accepted": 0,
+  "n_unjudged": 12,
+  "steps": [
+   {
+    "step_index": 0,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.5590693432052416e-13,
+    "tol_pn": 0.00024007191497400914,
+    "n_events": 0,
+    "wall_s": 0.777141,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 1,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.289052859457727e-12,
+    "tol_pn": 0.06958120911473534,
+    "n_events": 0,
+    "wall_s": 0.198067,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 2,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.8167643525333126e-12,
+    "tol_pn": 0.09769476063245663,
+    "n_events": 0,
+    "wall_s": 0.192271,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 3,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.7700474812768784e-12,
+    "tol_pn": 0.11881364466745813,
+    "n_events": 0,
+    "wall_s": 0.199045,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 4,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 5.019729099768684e-12,
+    "tol_pn": 0.13614372153150742,
+    "n_events": 0,
+    "wall_s": 0.183209,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 5,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 7.0489574648911906e-12,
+    "tol_pn": 0.15114035104569049,
+    "n_events": 0,
+    "wall_s": 0.185287,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 6,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.2569664004241034e-11,
+    "tol_pn": 0.16442576593469418,
+    "n_events": 0,
+    "wall_s": 0.188872,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 7,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 8.670475885085484e-12,
+    "tol_pn": 0.17626274344555462,
+    "n_events": 0,
+    "wall_s": 0.208877,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 8,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 5.547535804735219e-12,
+    "tol_pn": 0.18702831412954762,
+    "n_events": 0,
+    "wall_s": 0.479267,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 9,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.3785196738586896e-11,
+    "tol_pn": 0.19697361835536845,
+    "n_events": 0,
+    "wall_s": 0.278916,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 10,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.6840485405804652e-11,
+    "tol_pn": 0.2061021108091065,
+    "n_events": 0,
+    "wall_s": 0.301703,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 11,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.3971426334385476e-11,
+    "tol_pn": 0.21458127452696676,
+    "n_events": 0,
+    "wall_s": 0.319423,
+    "quantitative_claim_status": "BLOCKED"
+   }
+  ],
+  "accepted_step_evidence": null,
+  "accepted_step_evidence_note": "None means at least one step carries no criterion. CellStatePosterior.accepted_step_evidence is typed AdmissibilityVerdict | None and stays None until every step in a run has been judged \u2014 an unjudged step may not be counted as admissible evidence, which is the whole reason this field is nullable. A run of ZERO steps is also None: nothing was judged because nothing happened, and 'no unjudged steps' is not the same claim as 'every step was judged'."
+ },
+ "not_a_claim": "NO step in this run was accepted, and none was rejected \u2014 this engine has no acceptance criterion. Both it has shipped are one-sided and both were measured: the balance gate is the Higham summation bound and cannot fail for physics; descent_ratio read a post-rollback residual and cannot succeed. STATE.md (e) 1 is undecidable as written. Every step here therefore records ACCEPTANCE_UNDEFINED, and is_accepted is False for it."
+}

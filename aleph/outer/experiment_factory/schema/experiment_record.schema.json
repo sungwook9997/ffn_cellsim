@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/external-training/experiment-record-v1.json",
+  "title": "Project Aleph proposed external ExperimentRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "authority_status",
+    "review_state",
+    "experiment_record_id",
+    "source",
+    "biological_systems",
+    "conditions",
+    "protocols",
+    "observations",
+    "comparisons",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.external_training.experiment_record.v1"},
+    "authority_status": {"const": "proposed"},
+    "review_state": {"enum": ["gold_candidate", "annotation_in_progress", "double_adjudication_pending", "adjudicated", "rejected"]},
+    "experiment_record_id": {"type": "string", "pattern": "^aleph:experiment:[0-9a-f]{16}$"},
+    "source": {"$ref": "#/$defs/source"},
+    "biological_systems": {"type": "array", "items": {"$ref": "#/$defs/biologicalSystem"}, "minItems": 1},
+    "conditions": {"type": "array", "items": {"$ref": "#/$defs/condition"}, "minItems": 1},
+    "protocols": {"type": "array", "items": {"$ref": "#/$defs/protocol"}, "minItems": 1},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
+    "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableString": {"type": ["string", "null"]},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_family_id", "pmcid", "acquisition_pass", "publication_year", "primary_domain"],
+      "properties": {
+        "source_family_id": {"type": "string", "minLength": 4},
+        "pmcid": {"type": ["string", "null"], "pattern": "^PMC[0-9]+$"},
+        "acquisition_pass": {"enum": ["first", "second"]},
+        "publication_year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
+        "primary_domain": {"type": "string"}
+      }
+    },
+    "ontologyTerm": {
+      "type": "object", "additionalProperties": false,
+      "required": ["label", "identifier", "normalization_status"],
+      "properties": {
+        "label": {"type": ["string", "null"]},
+        "identifier": {"type": ["string", "null"]},
+        "normalization_status": {"enum": ["exact", "mapped", "candidate", "unmapped", "missing", "ambiguous"]},
+        "candidates": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "biologicalSystem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["biological_system_id", "organism", "tissue", "cell_type", "cell_line", "cell_states", "genotype", "donor_attributes"],
+      "properties": {
+        "biological_system_id": {"type": "string", "minLength": 1},
+        "organism": {"$ref": "#/$defs/ontologyTerm"},
+        "tissue": {"$ref": "#/$defs/ontologyTerm"},
+        "cell_type": {"$ref": "#/$defs/ontologyTerm"},
+        "cell_line": {"$ref": "#/$defs/ontologyTerm"},
+        "cell_states": {"type": "array", "items": {"$ref": "#/$defs/ontologyTerm"}},
+        "genotype": {"type": ["string", "null"]},
+        "donor_attributes": {
+          "type": "object", "additionalProperties": false,
+          "required": ["sex", "age", "disease", "passage"],
+          "properties": {
+            "sex": {"$ref": "#/$defs/nullableString"},
+            "age": {"$ref": "#/$defs/nullableString"},
+            "disease": {"$ref": "#/$defs/nullableString"},
+            "passage": {"$ref": "#/$defs/nullableString"}
+          }
+        }
+      }
+    },
+    "conditionFactor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["factor_type", "name", "value", "unit", "duration", "status"],
+      "properties": {
+        "factor_type": {"enum": ["control", "genetic", "pharmacological", "mechanical", "substrate_ecm", "osmotic", "flow", "temperature", "time_course", "disease_state", "other", "unknown"]},
+        "name": {"type": ["string", "null"]},
+        "value": {"type": ["number", "string", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "duration": {"type": ["string", "null"]},
+        "status": {"enum": ["reported", "extracted", "missing", "ambiguous"]}
+      }
+    },
+    "condition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["condition_id", "biological_system_id", "role", "factors", "environment"],
+      "properties": {
+        "condition_id": {"type": "string", "minLength": 1},
+        "biological_system_id": {"type": "string", "minLength": 1},
+        "role": {"enum": ["control", "treatment", "baseline", "timepoint", "unknown"]},
+        "factors": {"type": "array", "items": {"$ref": "#/$defs/conditionFactor"}},
+        "environment": {
+          "type": "object", "additionalProperties": false,
+          "required": ["media", "temperature", "substrate", "geometry"],
+          "properties": {
+            "media": {"$ref": "#/$defs/nullableString"},
+            "temperature": {"$ref": "#/$defs/nullableString"},
+            "substrate": {"$ref": "#/$defs/nullableString"},
+            "geometry": {"$ref": "#/$defs/nullableString"}
+          }
+        }
+      }
+    },
+    "protocol": {
+      "type": "object", "additionalProperties": false,
+      "required": ["protocol_id", "modality", "instrument", "calibration", "analysis_pipeline", "evidence"],
+      "properties": {
+        "protocol_id": {"type": "string", "minLength": 1},
+        "modality": {"type": "string", "minLength": 1},
+        "instrument": {"type": ["string", "null"]},
+        "calibration": {"type": ["string", "null"]},
+        "analysis_pipeline": {"type": ["string", "null"]},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceLocator"}, "minItems": 1}
+      }
+    },
+    "evidenceLocator": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_sha256", "section_path", "locator_type", "locator_id", "text_or_asset_sha256", "char_start", "char_end"],
+      "properties": {
+        "document_sha256": {"$ref": "#/$defs/sha256"},
+        "section_path": {"type": "array", "items": {"type": "string"}},
+        "locator_type": {"enum": ["paragraph", "figure", "figure_panel", "table", "table_cell", "supplement", "asset"]},
+        "locator_id": {"type": ["string", "null"]},
+        "text_or_asset_sha256": {"$ref": "#/$defs/sha256"},
+        "char_start": {"type": ["integer", "null"], "minimum": 0},
+        "char_end": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "unit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reported", "normalized", "normalization_status", "conversion_formula", "conversion_evidence"],
+      "properties": {
+        "reported": {"type": ["string", "null"]},
+        "normalized": {"type": ["string", "null"]},
+        "normalization_status": {"enum": ["exact", "converted", "dimensionless", "unknown", "not_applicable"]},
+        "conversion_formula": {"type": ["string", "null"]},
+        "conversion_evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceLocator"}}
+      }
+    },
+    "uncertainty": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "lower", "upper", "value", "unit", "level"],
+      "properties": {
+        "type": {"enum": ["sd", "se", "confidence_interval", "credible_interval", "iqr", "range", "coefficient_of_variation", "unknown"]},
+        "lower": {"type": ["number", "null"]},
+        "upper": {"type": ["number", "null"]},
+        "value": {"type": ["number", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "level": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "replicateSummary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["biological_n", "technical_n", "unit_of_replication", "aggregation", "independence_status"],
+      "properties": {
+        "biological_n": {"type": ["integer", "null"], "minimum": 1},
+        "technical_n": {"type": ["integer", "null"], "minimum": 1},
+        "unit_of_replication": {"type": ["string", "null"]},
+        "aggregation": {"enum": ["none", "mean", "median", "pooled", "model_estimate", "other", "unknown"]},
+        "independence_status": {"enum": ["reported", "verified", "unverified", "not_applicable", "ambiguous"]}
+      }
+    },
+    "extractionAssessment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "confidence", "method", "ambiguity_reason", "candidates"],
+      "properties": {
+        "status": {"enum": ["machine_candidate", "single_annotator", "double_annotated", "adjudicated", "missing", "ambiguous"]},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "method": {"type": "string", "minLength": 1},
+        "ambiguity_reason": {"type": ["string", "null"]},
+        "candidates": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "visualPayload": {
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": ["asset_sha256", "panel_id", "channels", "axes", "calibration_status"],
+      "properties": {
+        "asset_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "panel_id": {"type": ["string", "null"]},
+        "channels": {"type": "array", "items": {"type": "string"}},
+        "axes": {"type": "array", "items": {"enum": ["x", "y", "z", "time", "channel", "row", "column", "vector_component"]}},
+        "calibration_status": {"enum": ["reported", "recovered", "missing", "ambiguous", "not_applicable"]}
+      }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["observation_id", "observation_type", "protocol_id", "condition_ids", "measured_entity", "value_state", "value", "unit", "uncertainty", "replicates", "visual_payload", "evidence", "extraction"],
+      "properties": {
+        "observation_id": {"type": "string", "pattern": "^aleph:observation:[0-9a-f]{16}$"},
+        "observation_type": {"enum": ["scalar", "table", "curve", "image", "vector_field", "mask", "sequence", "categorical"]},
+        "protocol_id": {"type": "string", "minLength": 1},
+        "condition_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "measured_entity": {"type": "string", "minLength": 1},
+        "value_state": {"enum": ["reported", "extracted", "derived", "missing", "ambiguous"]},
+        "value": {"type": ["number", "string", "array", "object", "null"]},
+        "unit": {"$ref": "#/$defs/unit"},
+        "uncertainty": {"type": "array", "items": {"$ref": "#/$defs/uncertainty"}},
+        "replicates": {"$ref": "#/$defs/replicateSummary"},
+        "visual_payload": {"$ref": "#/$defs/visualPayload"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceLocator"}, "minItems": 1},
+        "extraction": {"$ref": "#/$defs/extractionAssessment"}
+      }
+    },
+    "comparison": {
+      "type": "object", "additionalProperties": false,
+      "required": ["comparison_id", "left_condition_ids", "right_condition_ids", "observation_ids", "relation", "effect_direction", "status", "ambiguity_reason", "evidence"],
+      "properties": {
+        "comparison_id": {"type": "string", "minLength": 1},
+        "left_condition_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "right_condition_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "observation_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "relation": {"enum": ["control_vs_treatment", "before_vs_after", "dose_response", "time_course", "state_contrast", "genotype_contrast", "assay_concordance", "other"]},
+        "effect_direction": {"enum": ["increase", "decrease", "no_change", "mixed", "not_reported", "ambiguous"]},
+        "status": {"enum": ["reported", "extracted", "missing", "ambiguous"]},
+        "ambiguity_reason": {"type": ["string", "null"]},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceLocator"}, "minItems": 1}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_receipt_sha256", "candidate_record_sha256", "annotation_template_version", "annotator_ids", "adjudicator_id", "created_at", "updated_at", "record_sha256"],
+      "properties": {
+        "source_receipt_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_record_sha256": {"$ref": "#/$defs/sha256"},
+        "annotation_template_version": {"const": "1.0.0"},
+        "annotator_ids": {"type": "array", "items": {"type": "string"}},
+        "adjudicator_id": {"type": ["string", "null"]},
+        "created_at": {"type": "string"},
+        "updated_at": {"type": "string"},
+        "record_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

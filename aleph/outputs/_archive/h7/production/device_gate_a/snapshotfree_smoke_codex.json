@@ -1,0 +1,71 @@
+{
+ "rows": [
+  {
+   "tick": 1,
+   "phys_t_s": 0.00026061396017119487,
+   "bound_frac": 0.0065,
+   "F_over_stall": NaN,
+   "n_bound": 13,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 5.2122792034238976e-11,
+   "s_grip_over_l0": 0.00010424558406847795,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 2,
+   "phys_t_s": 0.0005212279203423897,
+   "bound_frac": 0.0065,
+   "F_over_stall": NaN,
+   "n_bound": 13,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 1.0424558406847795e-10,
+   "s_grip_over_l0": 0.0002084911681369559,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 3,
+   "phys_t_s": 0.0007818418805135846,
+   "bound_frac": 0.0065,
+   "F_over_stall": NaN,
+   "n_bound": 13,
+   "gamma_soft": NaN,
+   "gamma_soft_ik": NaN,
+   "s_grip_m": 1.5636837610271685e-10,
+   "s_grip_over_l0": 0.0003127367522054337,
+   "backbone_r_over_r0": NaN
+  },
+  {
+   "tick": 4,
+   "phys_t_s": 0.0010424558406847795,
+   "bound_frac": 0.0065,
+   "F_over_stall": 0.04180443576183993,
+   "n_bound": 13,
+   "gamma_soft": 0.00016290215939233246,
+   "gamma_soft_ik": 3.448959176290365e-05,
+   "s_grip_m": 2.084911681369559e-10,
+   "s_grip_over_l0": 0.0004169823362739118,
+   "backbone_r_over_r0": 1.0000607046152021
+  }
+ ],
+ "wall_s": 38.18297505378723,
+ "verdict": "DIAGNOSTIC ONLY: snapshot-free myosin fast path completed after warm-bind; long-run GPU speed is meaningful, but Gate-A physics correctness is not because dynamic bind/unbind/walk topology is frozen.",
+ "n_fil": 150,
+ "batch_dt": 0.00026061396017119487,
+ "ell0": 5e-07,
+ "R_cell": 1e-05,
+ "F_stall_per_head": 1.8849555921538762e-11,
+ "connected_mesh": true,
+ "measure_mode": "final",
+ "freeze_xlinks": true,
+ "snapshot_free_myosin": true,
+ "snapshot_free_grip_clock": true,
+ "myosin_warm_bind_ticks": 1,
+ "warm_bind_wall_s": 9.677448272705078,
+ "grip_clock_steps_run": 3,
+ "simulated_ticks": 4,
+ "simulated_baoab_steps": 80000,
+ "steps_per_s": 2095.1746134843174,
+ "physics_mode": "snapshot_free_grip_clock_static_topology"
+}

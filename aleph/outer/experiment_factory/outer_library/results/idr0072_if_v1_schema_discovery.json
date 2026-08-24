@@ -1,0 +1,23 @@
+{
+  "aleph_parameter_authority": "none",
+  "external_labels_used_for_model_selection": false,
+  "image_objects_downloaded": 0,
+  "independent_provider_domain_shift_validated": false,
+  "metadata_rows_seen": 1,
+  "model_predictions_made": 0,
+  "observed_channel_value": "EGFP (protein of interest), DRAQ5 (DNA)",
+  "observed_localization_value": "outer mitochondria membrane",
+  "observed_required_headers": [
+    "Characteristics [Cell Line]",
+    "Comment [Gene Symbol]",
+    "Comment [Protein Name]",
+    "Experimental Condition [Subcellular Localization]",
+    "Channels"
+  ],
+  "original_protocol_commit": "0f72288",
+  "reason": "The generic v1 exact normalized-key resolver expected subcellularlocalization, while the official IDR ISA-Tab bulk table wraps that semantic key as Experimental Condition [Subcellular Localization].",
+  "schema": "aleph.outer_library.idr0072_if_schema_discovery.v1",
+  "screen_id": 2952,
+  "status": "v1_refused_before_image_download_and_prediction",
+  "well_id": 2104073
+}

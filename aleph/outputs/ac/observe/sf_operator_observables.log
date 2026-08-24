@@ -1,0 +1,61 @@
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "CPU"
+     "cuda:0"   : "NVIDIA RTX A5000 Laptop GPU" (16 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+[observe] device=cuda:0
+[observe] concatenated space: 360 SF nodes + 544 NMII particles = 904 nodes (2712 DOF); 20 pinned
+[observe] bond-graph structure at t0: {'n_components': 52, 'n_unanchored_components': 32, 'n_isolated_nodes': 0, 'expected_zero_modes': 192}
+Module ffn_sim.ac.engine.composed_native 85f2456 load on device 'cuda:0' took 0.45 ms  (cached)
+Module ffn_sim.ff.network_warp 25d681b load on device 'cuda:0' took 2.42 ms  (cached)
+Module ffn_sim.ff.forces_warp f7f4cb5 load on device 'cuda:0' took 0.32 ms  (cached)
+Module ffn_sim.ac.motor.minifilament_warp 86a280f load on device 'cuda:0' took 0.51 ms  (cached)
+Module ffn_sim.ac.motor.backbone_warp 384dda9 load on device 'cuda:0' took 0.39 ms  (cached)
+Module ffn_sim.ac.motor.segment_motor 92975e8 load on device 'cuda:0' took 1.83 ms  (cached)
+[observe] (t0) assembling the tangent by column probing: 2712 applications
+Module ffn_sim.ac.cell.implicit_mechanics 4364704 load on device 'cuda:0' took 8.65 ms  (cached)
+[observe] (t0) lambda_max=1.85683e+06 pN/um  zero modes=596 (rigid-body lower bound 192)  cond=1.857e+08  asym_rel=3.958e-17
+[observe] (t0) loop work 4.186843e-12 pN·µm  ratio=1.094e-10  amplitude exponent=3.9757285988222484  segment exponent=1.9980302897297095  -> quadrature
+Module ffn_sim.ac.motor.segment_query d406265 load on device 'cuda:0' took 0.78 ms  (cached)
+Module ffn_sim.ac.engine.sf_implicit 141fb75 load on device 'cuda:0' took 0.54 ms  (cached)
+Module ffn_sim.ac.engine.cortex_motor_slice 97b638b load on device 'cuda:0' took 0.50 ms  (cached)
+Module ffn_sim.ac.engine.events edf5d3b load on device 'cuda:0' took 0.35 ms  (cached)
+[observe] bind step 1/10: bound=113/320
+[observe] bind step 2/10: bound=185/320
+[observe] bind step 3/10: bound=239/320
+[observe] bind step 4/10: bound=266/320
+[observe] bind step 5/10: bound=288/320
+[observe] bind step 6/10: bound=301/320
+[observe] bind step 7/10: bound=309/320
+[observe] bind step 8/10: bound=313/320
+[observe] bind step 9/10: bound=314/320
+[observe] bind step 10/10: bound=318/320
+[observe] bond-graph structure with 318 heads bound: {'n_components': 20, 'n_unanchored_components': 11, 'n_isolated_nodes': 0, 'expected_zero_modes': 66}
+[observe] (bound) assembling the tangent by column probing: 2712 applications
+[observe] (bound) lambda_max=1.863e+06 pN/um  zero modes=505 (rigid-body lower bound 66)  cond=2.033e+11  asym_rel=6.644e-17
+[observe] (bound) isolating family 'sf_axial'
+[observe] (bound) isolating family 'sf_bending'
+[observe] (bound) isolating family 'alpha_actinin_arc'
+[observe] (bound) isolating family 'nmii_backbone'
+[observe] (bound) isolating family 'nmii_head_arm'
+[observe] (bound) isolating family 'nmii_angle_backbone'
+[observe] (bound) isolating family 'nmii_angle_arm'
+[observe] (bound) isolating family 'crossbridge'
+[observe] (bound) multilinearity check ||K - sum K_j||/||K|| = 9.353e-17
+[observe] Fisher: effective dimension = 5.422 of 8 parameters; sloppiness = 2.7190884686805172 decades; FD-vs-analytic rel. difference = 0.0648857294610719
+[observe] (bound) loop work 3.424738e-08 pN·µm  ratio=8.536e-07  amplitude exponent=1.9548221780529091  segment exponent=0.0001324613036311885  -> circulation
+[observe] (bound/heads-detached-control) loop work 4.192080e-12 pN·µm  ratio=1.096e-10  amplitude exponent=3.973511983116163  segment exponent=2.0008725386590824  -> quadrature
+[observe] control: same configuration, heads detached -> quadrature; with heads bound -> circulation
+[observe] wrote /home/sungwook/ffn_ac_native/ffn_sim/outputs/ac/observe/sf_operator_observables.json
+[observe] wrote /home/sungwook/ffn_ac_native/ffn_sim/outputs/ac/observe/sf_operator_observables.npz (full spectra + Jacobians: fields, not summaries)
+{
+  "verdict": "PASS",
+  "criterion_met": true,
+  "residual": 1.0186340659856796e-10,
+  "signal": 1392663.8350912752,
+  "residual_over_signal": 7.314285330881148e-17,
+  "void_ceiling_ratio": 0.01,
+  "void_ceiling_rationale": "an antisymmetric part above 1% of the tangent's own largest entry leaves no separable conservative structure: at that level the operator is not a Hessian of anything, so a PASS would be a statement about round-off and a FAIL a statement about nothing"
+}

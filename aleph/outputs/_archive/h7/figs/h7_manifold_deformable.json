@@ -1,0 +1,21 @@
+{
+  "R_cell_m": 7.5e-06,
+  "subdivisions": 3,
+  "n_tri": 1280,
+  "cloud_extent_um": {
+    "x": 14.997962303044009,
+    "y": 14.996208904608347,
+    "z": 7.62756383346732
+  },
+  "sphere": {
+    "total_area_m2": 7.034902162858085e-10,
+    "basal_ring_area_frac": 0.08025848536939263,
+    "polarized_patch_area_frac": 0.09694232760202826
+  },
+  "deformed": {
+    "total_area_m2": 5.039878248399889e-10,
+    "basal_ring_area_frac": 0.03327349588306319,
+    "polarized_patch_area_frac": 0.061184641378171284
+  },
+  "figure": "/Users/sw1/ffn_cellsim/ffn_sim/outputs/h7/figs/h7_manifold_deformable.png"
+}

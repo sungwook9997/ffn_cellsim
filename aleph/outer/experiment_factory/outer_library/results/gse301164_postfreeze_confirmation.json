@@ -1,0 +1,122 @@
+{
+  "absolute_state_classifier_promoted": false,
+  "aleph_authority": "none",
+  "checkpoint_frozen_before_dataset_acquisition": true,
+  "combined": {
+    "directional_effect_evidence_eligible": true,
+    "exact_one_sided_sign_test_p": 0.015625,
+    "pair_count": 6,
+    "positive_pair_count": 6
+  },
+  "dataset": "GSE301164",
+  "eventual_sweep_role": "directional_transcriptomic_observable_evidence_pending_exact_Aleph_observation_operator_and_forward_sensitivity",
+  "lab": "Northwest_University_Yan_lab",
+  "limitations": [
+    "both contrasts use the BJ fibroblast line in one confirmation laboratory",
+    "directional replication does not calibrate absolute senescence probabilities across laboratories",
+    "OOD rejection remains a hard refusal for sample-level state use",
+    "no Aleph parameter or numeric sweep range may be emitted before operator and sensitivity validation"
+  ],
+  "may_select_aleph_parameter": false,
+  "model_fit_selection_calibration_or_retraining_on_GSE301164": false,
+  "ood": {
+    "rejection_fraction": 1.0,
+    "sample_distance": {
+      "BJ_P11_DMSO_rep1": 3.028526404210466,
+      "BJ_P11_DMSO_rep2": 2.9870940694420427,
+      "BJ_P11_DMSO_rep3": 2.962468779597376,
+      "BJ_P11_DOX_50ngml_rep1": 2.736480473927345,
+      "BJ_P11_DOX_50ngml_rep2": 2.7868432824594542,
+      "BJ_P11_DOX_50ngml_rep3": 2.8894950427892225,
+      "BJ_P11_rep1": 2.314102797905225,
+      "BJ_P11_rep2": 2.313556377393026,
+      "BJ_P11_rep3": 2.2868886936111745,
+      "BJ_P24_rep1": 2.1955279727012,
+      "BJ_P24_rep2": 2.2834366790517437,
+      "BJ_P24_rep3": 2.1745850244019382,
+      "BJ_P30_rep1": 2.3960696626639577,
+      "BJ_P30_rep2": 2.421560631410753,
+      "BJ_P30_rep3": 2.3369933647604397,
+      "BJ_P33_rep1": 2.691400130328879,
+      "BJ_P33_rep2": 2.8587462033997513,
+      "BJ_P33_rep3": 2.858935753854681,
+      "BJ_P3_rep1": 2.2750647012993364,
+      "BJ_P3_rep2": 2.2179390645819503,
+      "BJ_P3_rep3": 2.3106477117661197
+    },
+    "threshold_from_preexisting_GSE63577_calibration": 1.3701304087028239
+  },
+  "predeclared_contrasts": {
+    "doxorubicin_induced_senescence_DOX_vs_DMSO_at_P11": {
+      "control_probability": [
+        7.334576993245152e-08,
+        3.866072997306091e-08,
+        2.1787633570678256e-07
+      ],
+      "exact_one_sided_sign_test_p": 0.125,
+      "mean_difference": 0.9999998791987076,
+      "pair_count": 3,
+      "positive_pair_count": 3,
+      "sample_pairs": [
+        [
+          "BJ_P11_DOX_50ngml_rep1",
+          "BJ_P11_DMSO_rep1"
+        ],
+        [
+          "BJ_P11_DOX_50ngml_rep2",
+          "BJ_P11_DMSO_rep2"
+        ],
+        [
+          "BJ_P11_DOX_50ngml_rep3",
+          "BJ_P11_DMSO_rep3"
+        ]
+      ],
+      "treated_minus_control_probability": [
+        0.9999999231854824,
+        0.9999999329630288,
+        0.9999997814476119
+      ],
+      "treated_probability": [
+        0.9999999965312523,
+        0.9999999716237588,
+        0.9999999993239477
+      ]
+    },
+    "replicative_senescence_P33_vs_P3": {
+      "control_probability": [
+        1.551028240066124e-06,
+        2.043744698447536e-06,
+        2.4326105161161e-07
+      ],
+      "exact_one_sided_sign_test_p": 0.125,
+      "mean_difference": 0.999998720648375,
+      "pair_count": 3,
+      "positive_pair_count": 3,
+      "sample_pairs": [
+        [
+          "BJ_P33_rep1",
+          "BJ_P3_rep1"
+        ],
+        [
+          "BJ_P33_rep2",
+          "BJ_P3_rep2"
+        ],
+        [
+          "BJ_P33_rep3",
+          "BJ_P3_rep3"
+        ]
+      ],
+      "treated_minus_control_probability": [
+        0.9999984489551783,
+        0.999997956255208,
+        0.9999997567347388
+      ],
+      "treated_probability": [
+        0.9999999999834184,
+        0.9999999999999065,
+        0.9999999999957905
+      ]
+    }
+  },
+  "schema": "aleph.outer_library.gse301164_postfreeze_confirmation.v1"
+}

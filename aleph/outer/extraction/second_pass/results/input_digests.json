@@ -1,0 +1,14 @@
+{
+  "schema": "aleph.external_training.second_pass_extraction_inputs.v1",
+  "authority_status": "proposed",
+  "inputs": {
+    "corpus/external_training/acquisition/second_pass/acquisition_2026-08-05.summary.json": "4e1770eda8f0e752c0e8e8f777bff3fd9392da90fea00efc3ec1422e8d1766f3",
+    "corpus/external_training/acquisition/second_pass/candidates_2026-08-05.jsonl": "e430cbe0cfbb53cba1eedb72fa569d459b8de648cc3238b9043874cdd4692323",
+    "corpus/external_training/acquisition/second_pass/receipts_2026-08-05.jsonl": "399e1db43925f0c6cab7a007c884b228de0abf5823f79ffd9c320f0aadfc9b7a"
+  },
+  "local_run_receipts": {
+    "first_summary_sha256": "f3288b38234667af426fe44c9a39dd8715d34d0d919164686f97cdd9874300f6",
+    "repeat_summary_sha256": "3fa64c59657b7e0bf7f367414ae8e1abe3d0177753f8fd5e300a56266d42797c",
+    "audit_sha256": "0e40e8684951dfbc785833e1bdd75617804cad2e2edecc4995788e52eaa62492"
+  }
+}

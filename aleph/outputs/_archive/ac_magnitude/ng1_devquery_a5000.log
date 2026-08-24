@@ -1,0 +1,27 @@
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "CPU"
+     "cuda:0"   : "NVIDIA RTX A5000 Laptop GPU" (16 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+Module __main__ a23d0ea load on device 'cuda:0' took 438.90 ms  (compiled)
+Module ffn_sim.ac.motor.minifilament_warp 86a280f load on device 'cuda:0' took 0.60 ms  (cached)
+Module ffn_sim.ac.motor.backbone_warp 384dda9 load on device 'cuda:0' took 0.41 ms  (cached)
+Module ffn_sim.ac.motor.hand 050b832 load on device 'cuda:0' took 0.46 ms  (cached)
+NG-1 two-filament sarcomere isometric-stall gate | device=cuda:0 | warp=1.14.0 | actin_nodes=452 heads=20 ticks=600 seed=20260717
+  production topology: n_bb=14 N_side=10 L_bb=0.301µm offset=0.2µm | k_xb=1000.0 k_arm=100.0 k_bb=1000.0 pN/µm | f_stall=0.5pN
+  antiparallel barbed ends: A=[-1.0, 0.0, 0.0]  B=[1.0, 0.0, 0.0]  (outward)
+  MEASURED clamp reactions:  A=+4.1633 pN   B=-4.1867 pN   (mag 4.1750 pN)
+  ANALYTIC  F_side = N_side·φ_b·f_stall = 4.9627 pN  (φ_b=0.9925)
+  TRANSMISSION ratio |B|/|A| = 1.0056   (ideal collinear = 1.0; k_eff = 90.91 pN/µm)
+  per-head load = 0.4072 pN (→ f_stall 0.5)   bound fraction = 1.0000
+    [PASS] transmission≈1
+    [PASS] reaction_A≈F_side
+    [PASS] reaction_B≈F_side
+    [PASS] reactions_opposite
+    [PASS] load≈f_stall
+    [PASS] φ_b_emergent
+  DECISION: transmission ≈ 1 and per-side ≈ analytic ⇒ motor faithful → carry the low per-minifilament force to the full-cell DENSITY question (sweep_gap_claims / Nie-2015 floor).
+NG-1 OVERALL: PASS (6/6 checks)
+exit=0

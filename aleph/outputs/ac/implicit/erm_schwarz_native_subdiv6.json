@@ -1,0 +1,92 @@
+{
+  "nf": 70686,
+  "subdiv": 6,
+  "n_total": 551434,
+  "residual_after_preload": 0.8001627251216203,
+  "regularizer_a": 1000.0,
+  "gate": 0.21,
+  "descent_dot_PF": 8.858239482173389,
+  "dx_finite": true,
+  "dx_max_nm": 0.44701258808238237,
+  "dx_max_membrane_nm": 0.44701258808238237,
+  "dx_max_cortex_nm": 0.44477577356715403,
+  "dx_argmax_is_membrane": true,
+  "erm_line_search_scan": [
+    {
+      "t": 0.0,
+      "PF_max": 0.8000254546479028,
+      "PF_max_membrane": 0.3776140441725427,
+      "PF_max_cortex": 0.8000254546479028
+    },
+    {
+      "t": 1.0,
+      "PF_max": 172.3362285828069,
+      "PF_max_membrane": 0.5557289019289071,
+      "PF_max_cortex": 172.3362285828069
+    },
+    {
+      "t": 0.5,
+      "PF_max": 85.55962219162451,
+      "PF_max_membrane": 0.41771632974590495,
+      "PF_max_cortex": 85.55962219162451
+    },
+    {
+      "t": 0.25,
+      "PF_max": 42.43959613519905,
+      "PF_max_membrane": 0.38632274738897027,
+      "PF_max_cortex": 42.43959613519905
+    },
+    {
+      "t": 0.125,
+      "PF_max": 20.94845868817461,
+      "PF_max_membrane": 0.3789284223990598,
+      "PF_max_cortex": 20.94845868817461
+    },
+    {
+      "t": 0.0625,
+      "PF_max": 10.223750057725656,
+      "PF_max_membrane": 0.3774989822309043,
+      "PF_max_cortex": 10.223750057725656
+    }
+  ],
+  "erm_schwarz_descent": {
+    "reached_gate": false,
+    "final_res": 0.8000254546479028,
+    "n_steps": 1,
+    "trajectory": [
+      {
+        "step": 0,
+        "res": 0.8000254546479028,
+        "t": 0.0,
+        "converged": false,
+        "stalled": true
+      }
+    ]
+  },
+  "newton_descent": {
+    "reached_gate": false,
+    "final_res": 0.7759167323274648,
+    "n_steps": 3,
+    "trajectory": [
+      {
+        "step": 0,
+        "res": 0.8000254546479028,
+        "t": 0.0625,
+        "converged": false
+      },
+      {
+        "step": 1,
+        "res": 0.7776743200246283,
+        "t": 0.03125,
+        "converged": false
+      },
+      {
+        "step": 2,
+        "res": 0.7759167323274648,
+        "t": 0.0,
+        "converged": false,
+        "stalled": true
+      }
+    ]
+  }
+}

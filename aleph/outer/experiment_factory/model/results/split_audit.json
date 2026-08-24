@@ -1,0 +1,18 @@
+{
+  "error_classes": {
+    "leakage_split": 0
+  },
+  "errors": 0,
+  "leakage_groups": 5560,
+  "leakage_split_violations": 0,
+  "projection_file_sha256": "929adbbbd5b5ee7c59cabd5612c3961bd8e4a93edcdaafeb3e3eb654a7f42421",
+  "schema": "aleph.external_training.model_split_audit.v1",
+  "sources": 5675,
+  "split_assignment_sha256": "386f8208e393c09cf8ad7d8070f572036fa3b49e23a0ba876d65c6ab526d792f",
+  "split_source_counts": {
+    "test": 831,
+    "train": 4004,
+    "validation": 840
+  },
+  "unique_sources": 5675
+}

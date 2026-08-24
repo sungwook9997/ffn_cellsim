@@ -1,0 +1,126 @@
+{
+  "GSE282425_single_donor_context_shift_diagnostic": {
+    "authority": "diagnostic_only_one_donor_no_biological_replicates",
+    "geometry_results": {
+      "2D": {
+        "deeply_senescent_probability": 0.9999999999999065,
+        "difference": 0.0,
+        "early_proliferative_probability": 0.9999999999999065,
+        "sample_ids": [
+          "DS2D",
+          "EP2D"
+        ]
+      },
+      "3D": {
+        "deeply_senescent_probability": 0.9999999999999065,
+        "difference": 0.0,
+        "early_proliferative_probability": 0.9999999999999065,
+        "sample_ids": [
+          "DS3D",
+          "EP3D"
+        ]
+      }
+    },
+    "ood_rejection_fraction": 1.0
+  },
+  "aleph_authority": "none",
+  "eventual_sweep_role": "transcriptomic_senescence_observable_candidate_pending_confirmatory_external_replication_and_Aleph_operator",
+  "external_confirmatory_threshold_passed": false,
+  "independent_dataset_holdout": true,
+  "independent_lab_direction_reproduced": true,
+  "independent_lab_holdout": true,
+  "limitations": [
+    "GSE297406 has four biological pairs, so even four concordant directions give a one-sided sign-test p value of 0.0625",
+    "passage-15 aging is not identical to irradiation-induced, deep, or replicative endpoint senescence",
+    "the 35-gene panel validates a transcriptomic observable and does not externally validate the SenSCOUT morphology encoder",
+    "GSE282425 contains one donor and supplies 2D/3D context-shift diagnostics only"
+  ],
+  "may_select_aleph_parameter": false,
+  "model": {
+    "family": "frozen_35_marker_logistic_regression",
+    "representation_selected_on_GSE63577_IMR90_only": "logCPM_fit_standardized",
+    "selected_l2": 0.0001,
+    "selection_metrics": {
+      "accuracy": 0.8333333333333334,
+      "balanced_accuracy": 0.8333333333333333,
+      "brier": 0.16666681073713055,
+      "confusion_matrix_true_by_predicted": [
+        [
+          3,
+          0
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "f1": 0.8,
+      "sample_count": 6
+    },
+    "temperature_selected_on_GSE63577_WI38_only": 0.35
+  },
+  "observable_evidence_eligible": false,
+  "ood": {
+    "distance": "RMS_fit_standardized_feature_distance",
+    "fit_median": 0.9743812681329743,
+    "threshold_calibrated_on_GSE63577_WI38": 1.3701304087028239
+  },
+  "production_eligible": false,
+  "schema": "aleph.outer_library.external_senescence_model.v1",
+  "sealed_external_dataset_lab_test": {
+    "conformal_90": {
+      "calibration_sample_count": 6,
+      "coverage": 0.125,
+      "mean_set_size": 0.125,
+      "small_sample_authority": false,
+      "test_sample_count": 8,
+      "threshold": 7.924194633801562e-11
+    },
+    "metrics": {
+      "accuracy": 0.75,
+      "balanced_accuracy": 0.75,
+      "brier": 0.1800353933406329,
+      "confusion_matrix_true_by_predicted": [
+        [
+          2,
+          2
+        ],
+        [
+          0,
+          4
+        ]
+      ],
+      "f1": 0.8,
+      "sample_count": 8
+    },
+    "ood_rejection_fraction": 1.0,
+    "paired_effect": {
+      "bootstrap_95_interval": [
+        0.1639751332985493,
+        0.8563269034168608
+      ],
+      "confirmatory_p_below_0_05": false,
+      "exact_one_sided_sign_test_p": 0.0625,
+      "mean_difference": 0.521461596984873,
+      "pair_count": 4,
+      "positive_pair_count": 4,
+      "senescent_minus_proliferating_probability": [
+        0.432667373398534,
+        0.997546746756303,
+        0.6554981350798844,
+        0.00013413270477091732
+      ]
+    }
+  },
+  "split": {
+    "calibration": "GSE63577_WI38",
+    "dataset_overlap_count": 0,
+    "external_test_labels_used_for_fit_selection_or_calibration": false,
+    "fit": "GSE63577_BJ_HFF_MRC5",
+    "lab_overlap_count": 0,
+    "sealed_external_test": "GSE297406_hDF_four_biological_pairs",
+    "selection": "GSE63577_IMR90"
+  },
+  "status": "external_lab_direction_test_small_n_pending_confirmation",
+  "task": "fibroblast_senescence_marker_state_cross_lab"
+}

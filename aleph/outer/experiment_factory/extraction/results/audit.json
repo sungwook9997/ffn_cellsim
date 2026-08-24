@@ -1,0 +1,21 @@
+{
+  "article_index_sha256": "bbc4bc81ee18a7b8d8fecdeed1f11dfb683131ac5bd6f6e6fb7c93a90ae9dc02",
+  "articles_audited": 5675,
+  "authority_status": "proposed",
+  "error_classes": {
+    "schema_or_semantic": 0
+  },
+  "errors": 0,
+  "figure_join_index_sha256": "906f1c9e10ea1489104fb3600fca4616833a69d8f060010518d61205be16a65f",
+  "figure_join_rows": 14302,
+  "input_payload_sha256_verification": "performed_for_all_5675_during_final_rebuild",
+  "local_evidence_rows_audited": 52725,
+  "manifest_set_sha256": "05219037aa0fa3674ddffd44080b8bd10b706029997e488af6c6e2cdfdfb6e04",
+  "observations_audited": 238489,
+  "records_audited": 52725,
+  "schema": "aleph.external_training.experiment_extraction_audit.v1",
+  "schema_validation_errors": 0,
+  "schema_validation_records": 52725,
+  "unique_experiment_ids": 52725,
+  "unique_observation_ids": 238489
+}

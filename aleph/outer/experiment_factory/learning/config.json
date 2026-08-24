@@ -1,0 +1,10 @@
+{
+  "authority_status": "proposed",
+  "group_edges": ["identical_source_payload_sha256", "shared_public_accession_component"],
+  "split_buckets": {"train": [0, 69], "validation": [70, 84], "test": [85, 99]},
+  "frozen_300_policy": "evaluation cohort marker only; not ground truth",
+  "ambiguous_observation_policy": "target_mask_false",
+  "missing_modality_policy": "explicit mask; never imputed by projection",
+  "raw_data_policy": "no evidence text, captions, pixels, hrefs, or publisher payloads",
+  "version": "1"
+}

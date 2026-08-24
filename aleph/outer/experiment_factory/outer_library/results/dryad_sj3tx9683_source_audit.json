@@ -1,0 +1,46 @@
+{
+  "accession": "10.5061/dryad.sj3tx9683",
+  "aleph_authority": "none",
+  "csv_contract": {
+    "baseline_rows": 68,
+    "fullstim_repeats_baseline_columns_exactly": true,
+    "fullstim_rows": 68,
+    "raw_fullstim_group_counts": {
+      "AR1to1d": 22,
+      "AR1to2d": 30,
+      "AR2to1d": 16
+    },
+    "resolution": "use raw fullstim_data.csv rows and withhold stats_fullstim.csv; the latter summarizes different AR1to1d/AR1to1s objects not present in that raw table",
+    "stats_fullstim_group_counts": {
+      "AR1to1d": 35,
+      "AR1to1s": 15
+    },
+    "stats_fullstim_matches_raw_fullstim": false
+  },
+  "license": "cc0-1.0",
+  "paper_doi": "10.7554/eLife.83588",
+  "provider": "Dryad Digital Repository",
+  "sample_hierarchy": "object rows are released without sample/date identifiers and remain one indivisible split group",
+  "schema": "aleph.outer_library.dryad_sj3tx9683_source_audit.v1",
+  "sources": {
+    "README.md": {
+      "sha256": "19a8b12320d05cf0b0d5df7e0b667de91e5e1fe121e9d02dccd20664167b1108",
+      "size_bytes": 8789
+    },
+    "analysed_data.zip": {
+      "sha256": "824cbe9904a906d8538c87765560a9bf5f14fc264b7b646976f025d41aa5d6e9",
+      "size_bytes": 6485721
+    }
+  },
+  "untrusted_pickle_members_not_executed": [
+    "analysed_data/AR1to1d_fullstim_long_CM.dat",
+    "analysed_data/AR1to1d_fullstim_short_CM.dat",
+    "analysed_data/AR1to1d_halfstim_CM.dat",
+    "analysed_data/AR1to1s_fullstim_long_CM.dat",
+    "analysed_data/AR1to1s_fullstim_short_CM.dat",
+    "analysed_data/AR1to1s_halfstim_CM.dat",
+    "analysed_data/AR1to2d_halfstim_CM.dat",
+    "analysed_data/AR2to1d_halfstim_CM.dat",
+    "analysed_data/mean_stress_and_Es.dat"
+  ]
+}

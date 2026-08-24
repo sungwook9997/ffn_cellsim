@@ -1,0 +1,32 @@
+{
+  "device": "GPU",
+  "on_gpu": true,
+  "n_cells": 200,
+  "nodes": 8400,
+  "active": false,
+  "steps": 400,
+  "warmup": 100,
+  "total_wall_s": 6.655427140882239,
+  "total_ms_per_step": 16.638567852205597,
+  "per_step_ms": {
+    "baoab_act": 1.0977221524808556,
+    "set_forces_turgor": 1.010144188471917,
+    "set_forces_tent": 13.996544221661688,
+    "set_forces_substrate": 0.3519802254657099,
+    "empty_ctx_per_force": 0.2177365031093359
+  },
+  "per_step_cnt": {
+    "baoab_act": 400,
+    "set_forces_turgor": 402,
+    "set_forces_tent": 402,
+    "set_forces_substrate": 402,
+    "empty_ctx_per_force": 200
+  },
+  "sum_custom_ms": 15.358668635599315,
+  "baoab_ms": 1.0977221524808556,
+  "hoomd_internal_ms": 0.18217706412542692,
+  "empty_ctx_floor_ms": 0.2177365031093359,
+  "n_custom_forces": 3,
+  "py_overhead_separate_ms": 0.6532095093280077,
+  "kernel_compute_ms": 14.705459126271307
+}

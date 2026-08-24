@@ -1,0 +1,44 @@
+{
+  "all_passed": true,
+  "allowed": {
+    "cross_pass_cortex": {
+      "passed": true,
+      "passes": ["first", "second"],
+      "result_sha256": "79a5ed457291fac884d10c2e9de49ce549623e1395e763d777093c88c3b8b508",
+      "sources": 3
+    },
+    "multimodal_state": {
+      "passed": true,
+      "passes": ["second"],
+      "result_sha256": "2618c5ec808ed399a26e9e9c1068b8d3fb29d648952527037aabb864270aed0f",
+      "sources": 3
+    },
+    "piv_migration": {
+      "passed": true,
+      "passes": ["first", "second"],
+      "result_sha256": "54af9164bdf4a0e77496fd236b889cb03536ed96263af430f5d6d8b5766d642d",
+      "sources": 3
+    },
+    "traction_methods": {
+      "passed": true,
+      "passes": ["first", "second"],
+      "result_sha256": "b322ce379f3d3cb346bcf80b44ee6d5f11046f182b7e987d2e049605e79885fe",
+      "sources": 3
+    }
+  },
+  "allowed_cases": 4,
+  "allowed_passed": 4,
+  "authority_status": "proposed",
+  "both_passes_retrieved": true,
+  "index_sha256": "ede8d2aff2a8786efa8e01bba6fbb398f46bdfdcc34eda0ef2662bdefe7a5887",
+  "observed_refusal_codes": {
+    "authority_claim_refused": 1,
+    "physical_parameter_estimation_refused": 3,
+    "training_refused": 1,
+    "unknown_query": 1
+  },
+  "passes_retrieved": ["first", "second"],
+  "refused_cases": 6,
+  "refused_passed": 6,
+  "schema": "aleph.external_training.combined_retrieval_boundary_smoke.v1"
+}

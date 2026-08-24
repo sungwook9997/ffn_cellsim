@@ -1,0 +1,48 @@
+{
+  "aleph_parameter_authority": "none",
+  "ambiguous_required_fields": [],
+  "archive_csv": "aics_cfe_cell-features_v1.8.csv",
+  "column_count": 7,
+  "external_labels_used_for_model_selection": false,
+  "feature_index_sha256": "5712631530cd3c016371b313b982667fdedbe757c4d24fb27aa8df5354c2c880",
+  "headers": [
+    "CellId",
+    "Nuclear Volume [fL]",
+    "Cellular Volume [fL]",
+    "Nuclear Surface Area [um^2]",
+    "Cellular Surface Area [um^2]",
+    "Radial Proximity [unitless]",
+    "Apical Proximity [unitless]"
+  ],
+  "image_objects_downloaded": 0,
+  "independent_provider_domain_shift_validated": false,
+  "may_emit_numeric_sweep_range": false,
+  "missing_required_fields": [
+    "cell_line_identifier",
+    "tagged_structure"
+  ],
+  "model_predictions_made": 0,
+  "next_action": "preregister a different independent-provider raw-IF source whose released index carries explicit labels",
+  "normalized_headers": [
+    "cellid",
+    "nuclearvolumefl",
+    "cellularvolumefl",
+    "nuclearsurfaceareaum2",
+    "cellularsurfaceareaum2",
+    "radialproximityunitless",
+    "apicalproximityunitless"
+  ],
+  "protocol_sha256": "d781b40c44b5f83d5ef82576af5eb12225911de08b80c36d8e12b66dc81818fa",
+  "reason": "The frozen exact-alias resolver cannot identify the Allen cell-line and tagged-structure fields; manual post-access column selection or label joins are forbidden by the preregistration.",
+  "resolved_columns": {
+    "cell_identifier": [
+      "CellId"
+    ],
+    "cell_line_identifier": [],
+    "tagged_structure": []
+  },
+  "row_count": 39200,
+  "schema": "aleph.outer_library.allencell_if_schema_refusal.v1",
+  "status": "refused_before_image_download_and_prediction",
+  "uncertainty_authority": false
+}

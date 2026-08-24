@@ -1,0 +1,60 @@
+{
+  "schema": "afm-c2-accepted-ensemble@1",
+  "status": "ACCEPTED_3_SEEDS",
+  "declared_build_commit": "4babe084",
+  "device": "NVIDIA GeForce RTX 3090 via Slurm",
+  "configuration": {
+    "n_filaments": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 1150806,
+    "membrane_subdivisions": 8,
+    "membrane_vertices": 655362,
+    "nucleus_subdivisions": 3,
+    "full_native_population": true,
+    "full_compartments": true,
+    "solver": "explicit",
+    "iterations_per_chunk": 40,
+    "iteration_budget": 400,
+    "dt_phys_s": 0.01,
+    "preload_enabled": true
+  },
+  "accepted_seeds": [0, 1, 2],
+  "records": [
+    {
+      "seed": 0,
+      "reported_iterations": 280,
+      "max_projected_force_pn": 0.20926850127767316,
+      "projected_force_tolerance_pn": 0.21066859316597425,
+      "max_displacement_um": 7.405186206800851e-9,
+      "displacement_tolerance_um": 7.449122950141183e-9,
+      "source": "raw/c2_subdiv8_explicit400_seed0.json"
+    },
+    {
+      "seed": 1,
+      "reported_iterations": 300,
+      "max_projected_force_pn": 0.20555489284010847,
+      "projected_force_tolerance_pn": 0.21066867005153503,
+      "max_displacement_um": 7.273701767948685e-9,
+      "displacement_tolerance_um": 7.449125668771363e-9,
+      "source": "raw/c2_subdiv8_explicit400_seed1.json"
+    },
+    {
+      "seed": 2,
+      "reported_iterations": 360,
+      "max_projected_force_pn": 0.20865114826980793,
+      "projected_force_tolerance_pn": 0.21066865768784013,
+      "max_displacement_um": 7.386429403321574e-9,
+      "displacement_tolerance_um": 7.449125231598066e-9,
+      "source": "raw/c2_subdiv8_explicit400_seed2.json"
+    }
+  ],
+  "projected_force_ensemble_pn": {
+    "mean": 0.20782484746252985,
+    "sample_standard_deviation": 0.0019899250425504003,
+    "minimum": 0.20555489284010847,
+    "maximum": 0.20926850127767316
+  },
+  "accepted_physical_steps_per_seed": 1,
+  "committed_time_s_per_seed": 0.01,
+  "scope": "C-2 numerical/transaction readiness only. Pi_0, contact and exterior-viscosity provenance still gate an AFM material claim."
+}

@@ -1,0 +1,35 @@
+{
+  "aleph_authority": "none",
+  "antibody_count": 15700,
+  "archive_bytes": 632515574,
+  "archive_member": "subcell_image_umap_features.tsv",
+  "archive_sha256": "c23170d2fc1107d66c87c5a181a10b97f19cb4c2b2c5e2f2bc369ba7d547f92d",
+  "author_location_label_count": 35,
+  "cell_line_count": 39,
+  "component_counts": {
+    "calibration": 1245,
+    "test": 1335,
+    "train": 8065,
+    "validation": 1895
+  },
+  "dataset_id": "hpa-v25.1-subcellular-image-embeddings",
+  "feature_selection": "fixed every eighth provider feature, starting at feature 1",
+  "gene_count": 13366,
+  "gene_or_antibody_cross_split_overlap_count": 0,
+  "image_count": 81007,
+  "independent_lab_holdout": false,
+  "lab_group": "human-protein-atlas-subcellular-resource",
+  "license": "CC BY 4.0",
+  "may_select_aleph_parameter": false,
+  "official_source": "https://www.proteinatlas.org/about/download",
+  "provider_version": "HPA v25.1",
+  "retained_embedding_dimensions": 128,
+  "schema": "aleph.outer_library.hpa_if_embedding_tensor.v1",
+  "split_counts": {
+    "calibration": 8026,
+    "test": 8776,
+    "train": 51976,
+    "validation": 12229
+  },
+  "split_unit": "connected_component_of_gene_antibody_bipartite_graph"
+}

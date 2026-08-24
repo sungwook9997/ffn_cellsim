@@ -1,0 +1,11 @@
+{
+  "adjudicated_submissions": 0,
+  "authority_status": "proposed",
+  "benchmark_metrics_available": false,
+  "human_A_submissions": 0,
+  "human_B_submissions": 0,
+  "next_valid_transition": "two distinct human submissions per source followed by human adjudication",
+  "reason": "No human annotation or adjudication has been completed; emitting precision, recall, agreement, or gold labels would be fabricated.",
+  "required_sources": 50,
+  "schema": "aleph.external_training.publication_benchmark_readiness.v1"
+}

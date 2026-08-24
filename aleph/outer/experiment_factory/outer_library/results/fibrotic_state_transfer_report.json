@@ -1,0 +1,81 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "cell_state_classifier_holdout_passed": false,
+  "discovery": {
+    "TGF_beta_1_minus_control": {
+      "bootstrap_ci95": [
+        1.1622262847083333,
+        3.384909971687499
+      ],
+      "control_mean": 0.5617357366666667,
+      "control_n": 6,
+      "direction_probability": 0.99995,
+      "evidence_eligible": true,
+      "inferential_unit_known": true,
+      "mean_difference": 2.2814324258333336,
+      "treated_mean": 2.8431681625,
+      "treated_n": 8
+    },
+    "dataset": "nature-2026-tendon-mechanoculture",
+    "lab_group": "hussien-snedeker-2026",
+    "modality": "immunofluorescence_derived",
+    "observable": "alpha_SMA_relative_fluorescence",
+    "species_cell_type": "rat tail tendon stromal cells"
+  },
+  "external_confirmatory": {
+    "TGF_beta_1_minus_control": {
+      "bootstrap_ci95": [
+        0.7698662429941832,
+        0.9740879865801384
+      ],
+      "bootstrap_probability_positive": 1.0,
+      "control_n": 2,
+      "mean_difference": 0.8719771147871609,
+      "treated_n": 2
+    },
+    "celastrol_reversal_TGF_minus_TGF_plus_celastrol": {
+      "bootstrap_ci95": [
+        1.0074997913033594,
+        1.1183919625489214
+      ],
+      "bootstrap_probability_positive": 1.0,
+      "control_n": 2,
+      "mean_difference": 1.0629458769261404,
+      "treated_n": 2
+    },
+    "dataset": "GSE226374",
+    "lab_group": "leask-lab-gse226374",
+    "modality": "bulk_RNA_seq_derived",
+    "predeclared_marker_panel": [
+      "ACTA2",
+      "CCN2",
+      "COL1A1",
+      "FN1",
+      "THBS1"
+    ],
+    "representation": "mean log1p expression relative to external-study vehicle controls",
+    "sample_scores": {
+      "GSE226374:TGFBneg_Celastrol_500nM_2_S6": -0.13586898545373954,
+      "GSE226374:TGFBneg_Celastrol_500nM_S2": -0.1479680973049801,
+      "GSE226374:TGFBneg_Celastrolneg_2_S5": -0.09877128799284662,
+      "GSE226374:TGFBneg_Celastrolneg_S1": 0.09877128799284715,
+      "GSE226374:TGFBplus_Celastrol_500nM_2_S8": -0.2430752639616296,
+      "GSE226374:TGFBplus_Celastrol_500nM_S4": -0.13886226031632898,
+      "GSE226374:TGFBplus_Celastrolneg_2_S7": 0.8753166985872918,
+      "GSE226374:TGFBplus_Celastrolneg_S3": 0.8686375309870303
+    },
+    "species_cell_type": "CCD-1077Sk human dermal fibroblasts"
+  },
+  "independent_dataset_holdout": true,
+  "independent_lab_holdout": true,
+  "independent_lab_mechanism_holdout_passed": true,
+  "limitations": [
+    "the confirmatory endpoint is a four-condition, two-replicate bulk-RNA contrast",
+    "species, fibroblast source, and modality differ across discovery and confirmation",
+    "the marker panel validates a fibrotic state direction, not a per-cell classifier",
+    "celastrol reversal supports pathway specificity but does not identify one Aleph parameter"
+  ],
+  "observable_constraint_eligible": true,
+  "task": "cross_lab_TGF_beta_1_fibrotic_state_contrast"
+}

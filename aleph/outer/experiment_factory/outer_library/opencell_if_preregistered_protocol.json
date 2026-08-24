@@ -1,0 +1,183 @@
+{
+  "schema": "aleph.outer_library.opencell_if_external_holdout_protocol.v1",
+  "frozen_before_opencell_annotation_or_image_content_access": true,
+  "objective": "train a raw two-channel HPA localization model and evaluate it once on an independent-provider OpenCell localization holdout at the target-protein unit",
+  "source_contract": {
+    "development_dataset": "hpa-v25.1-subcellular-raw-if-subset",
+    "development_lab_group": "human-protein-atlas-subcellular-resource",
+    "development_manifest": "results/hpa_raw_if_subset_manifest.json",
+    "development_receipt": "results/hpa_raw_if_download_receipt.json",
+    "external_dataset": "opencell-2022-final-raw-confocal-projections",
+    "external_lab_group": "cz-biohub-opencell-leonetti",
+    "paper": "Cho et al., Science 2022, DOI 10.1126/science.abi6983",
+    "annotation_csv_url": "https://opencell.sf.czbiohub.org/data/datasets/opencell-localization-annotations.csv",
+    "annotation_readme_url": "https://opencell.sf.czbiohub.org/data/datasets/opencell-localization-annotations-readme.csv",
+    "annotation_csv_expected_size_bytes": 61612,
+    "annotation_csv_expected_etag": "765336ce4025b71f162576abdd3cfa72",
+    "aws_bucket": "czb-opencell",
+    "aws_region": "us-west-2",
+    "raw_projection_prefix": "microscopy/raw/",
+    "raw_projection_suffix": "_proj.tif",
+    "license": "CC BY-SA 4.0",
+    "external_labels_may_affect_model_or_thresholds": false
+  },
+  "HPA_raw_development_expansion": {
+    "frozen_before_opencell_annotation_or_image_content_access": true,
+    "reason": "the finite-input HPA-only v1 CNN reached 0.4278 sealed-test macro average precision against the unchanged 0.50 screen; expand source data instead of lowering the endpoint or opening OpenCell",
+    "source_tensor": "results/hpa_if_embedding_rows.npz",
+    "expanded_manifest": "results/hpa_raw_if_expanded_manifest.json",
+    "expanded_receipt": "results/hpa_raw_if_expanded_receipt.json",
+    "selection_salt": "aleph-hpa-raw-if-expansion-v1-20260807",
+    "split_image_quotas": {"train": 2048, "validation": 384, "calibration": 384, "test": 56},
+    "selection": "retain every existing 512-subset row in its original split, add at most one image per previously unused gene-antibody component by frozen coarse-class round-robin and salted SHA-256 order, and add no sealed-test row",
+    "download_channels": ["blue_nucleus", "green_target_protein"],
+    "existing_test_was_opened_during_development": true,
+    "HPA_test_role_after_expansion": "internal_quality_screen_only_not_external_authority",
+    "architecture_optimizer_external_endpoints_changed": false,
+    "OpenCell_accessed_before_freeze": false
+  },
+  "leakage_contract": {
+    "development_split": "use the pre-existing HPA connected-component train, validation, calibration, and test labels without moving any row",
+    "external_protein_exclusion": "exclude every OpenCell target whose exact case-sensitive gene symbol occurs anywhere in the 512-image HPA raw subset",
+    "external_selection_uses_predictions": false,
+    "external_selection_may_use_author_labels_only_through_the_frozen_mapping_and_hash_rule": true,
+    "external_unit": "tagged target protein, not field of view",
+    "fov_aggregation": "arithmetic mean of pre-sigmoid logits across selected projections for each target protein",
+    "external_labels_may_select_or_change_nothing_after_first_prediction": true
+  },
+  "coarse_ontology_in_order": [
+    {
+      "canonical": "nuclear_interior",
+      "casefolded_substrings": ["nucleoplasm", "nuclear body", "nuclear bodies", "nuclear speckle", "nucleolus", "nucleoli", "chromatin", "chromosome"]
+    },
+    {
+      "canonical": "nuclear_envelope",
+      "casefolded_substrings": ["nuclear envelope", "nuclear membrane"]
+    },
+    {
+      "canonical": "cytosol",
+      "casefolded_substrings": ["cytosol", "cytoplasm"]
+    },
+    {
+      "canonical": "endoplasmic_reticulum",
+      "casefolded_substrings": ["endoplasmic reticulum"]
+    },
+    {
+      "canonical": "golgi",
+      "casefolded_substrings": ["golgi"]
+    },
+    {
+      "canonical": "mitochondria",
+      "casefolded_substrings": ["mitochondria", "mitochondrion"]
+    },
+    {
+      "canonical": "plasma_membrane_or_junction",
+      "casefolded_substrings": ["plasma membrane", "cell junction", "tight junction", "adherens", "desmosome"]
+    },
+    {
+      "canonical": "cytoskeleton_or_adhesion",
+      "casefolded_substrings": ["actin", "microtubule", "intermediate filament", "focal adhesion", "centrosome", "spindle", "cytokinetic", "midbody"]
+    },
+    {
+      "canonical": "vesicular_organelle",
+      "casefolded_substrings": ["vesicle", "endosome", "lysosome", "peroxisome", "lipid droplet", "secretory"]
+    }
+  ],
+  "label_contract": {
+    "OpenCell_positive_grades": [2, 3],
+    "OpenCell_grade_1": "ambiguous_excluded_from_primary_and_OOD_metrics",
+    "HPA_labels": "map every released author location through the same ordered substring mapping",
+    "multi_label": true,
+    "primary_external_target": "at least one grade-2-or-3 label and every such label maps to the frozen ontology",
+    "semantic_OOD_target": "at least one grade-2-or-3 label and none of those labels maps to the frozen ontology",
+    "mixed_mapped_and_unmapped_grade_2_or_3": "exclude_as_ambiguous",
+    "manual_relabeling": "forbidden",
+    "model_prediction_as_truth": "forbidden",
+    "annotation_column_resolution": "casefold and remove non-alphanumeric characters; required semantic fields are gene symbol, localization category, and integer grade; ambiguous or missing resolution refuses the source"
+  },
+  "external_sampling_contract": {
+    "selection_salt": "aleph-opencell-if-v1-20260807",
+    "in_domain_rule": "iterate canonical classes in protocol order and add hash-sorted eligible unseen proteins until each class has contributed at most 48 newly selected targets; a multi-label target is added only once",
+    "minimum_evaluable_classes": 6,
+    "minimum_targets_per_reported_class": 10,
+    "semantic_OOD_rule": "select the first 128 unseen semantic-OOD targets by salted SHA-256 order",
+    "projection_rule": "for each selected target use at most two projection TIFF objects, selected by salted SHA-256 of the full S3 key",
+    "missing_projection": "exclude target and report; refuse if fewer than 100 in-domain targets remain"
+  },
+  "image_contract": {
+    "shared_channels": ["nucleus", "target_protein"],
+    "HPA_channels": {"nucleus": "blue", "target_protein": "green"},
+    "OpenCell_channels": {"nucleus": "405", "target_protein": "488"},
+    "OpenCell_channel_resolution": "use TIFF/OME channel names or wavelengths; if absent, accept only an exact two-channel projection whose released order is 405 then 488; otherwise refuse",
+    "forbidden_HPA_channels": ["red_microtubules", "yellow_endoplasmic_reticulum"],
+    "per_channel_scaling": "clip to finite p1 and p99 within each field, scale to [0,1], and emit all zeros if p99 is not above p1",
+    "geometry": "center-crop to square then area-resize to 128x128",
+    "input_shape": [2, 128, 128],
+    "absolute_intensity_claim": false
+  },
+  "model_contract": {
+    "architecture": [
+      "Conv2d(2,16,3,padding=1), GroupNorm(4,16), GELU, MaxPool2d(2)",
+      "Conv2d(16,32,3,padding=1), GroupNorm(8,32), GELU, MaxPool2d(2)",
+      "Conv2d(32,64,3,padding=1), GroupNorm(8,64), GELU, MaxPool2d(2)",
+      "Conv2d(64,96,3,padding=1), GroupNorm(8,96), GELU, AdaptiveAvgPool2d(1)",
+      "Linear(96,9)"
+    ],
+    "loss": "BCEWithLogitsLoss with train-only per-class positive weights clipped to [1,20]",
+    "optimizer": "AdamW learning_rate=0.0003 weight_decay=0.0001",
+    "batch_size": 16,
+    "maximum_epochs": 120,
+    "early_stopping": "maximum HPA-validation macro average precision, patience 15, ties choose earlier epoch",
+    "augmentation": "train only; seeded random dihedral transform from rotations 0/90/180/270 and optional horizontal reflection",
+    "seed": 20260807,
+    "device": "CPU unless a separately recorded Slurm GPU grant exists",
+    "thresholds": "per-class F1-maximizing thresholds on HPA validation over grid 0.05..0.95 step 0.025, ties closest to 0.5 then higher threshold",
+    "temperature": "one positive scalar fitted on HPA calibration logits only by multilabel negative log likelihood",
+    "classifier_or_threshold_refit_on_OpenCell": false
+  },
+  "uncertainty_contract": {
+    "method": "HPA-calibration class-conditional positive-label split conformal sets after frozen scalar temperature",
+    "alpha": 0.1,
+    "prediction_set": "include class c when 1-p_c is at most its HPA-calibration positive-label higher quantile",
+    "external_primary_coverage": "fraction of true positive target-label entries included",
+    "class_conditional_support_minimum": 10,
+    "HPA_calibration_positive_minimum_per_class": 3,
+    "insufficient_HPA_calibration_class": "set diagnostic nonconformity threshold to 1.0, mark the class uncertainty-ineligible, and fail the overall external uncertainty gate if OpenCell support reaches the reporting minimum",
+    "rows_are_not_biological_replicates": true,
+    "external_target_protein_is_reporting_unit": true
+  },
+  "semantic_OOD_contract": {
+    "score": "one minus maximum calibrated in-ontology class probability",
+    "minimum_positive_and_negative_targets": 30,
+    "labels_are_never_used_to_fit_the_score": true
+  },
+  "frozen_endpoints": {
+    "HPA_sealed_test_macro_average_precision_minimum": 0.50,
+    "OpenCell_macro_average_precision_minimum": 0.45,
+    "OpenCell_macro_F1_minimum": 0.45,
+    "OpenCell_multilabel_ECE_maximum": 0.15,
+    "OpenCell_positive_label_conformal_coverage_minimum": 0.85,
+    "OpenCell_supported_class_coverage_minimum": 0.75,
+    "OpenCell_mean_prediction_set_size_maximum": 4.0,
+    "semantic_OOD_AUROC_minimum": 0.65,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "failure_policy": {
+    "schema_or_channel_mismatch": "refuse before prediction",
+    "endpoint_failure": "retain as training-only cross-provider diagnostic and permanently consume the selected OpenCell targets",
+    "success": "promote only the coarse raw-IF localization head to externally validated uncertainty-aware observable inference"
+  },
+  "authority": {
+    "current_independent_network_role": "raw_IF_localization_inference_and_domain_shift_measurement",
+    "future_sweep_role": "cell_context_conditioning_only_after_observation_operator_and_forward_sensitivity_validation",
+    "aleph_parameter_authority": "none",
+    "may_delete_sweep_axis": false,
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  },
+  "pre_external_access_addendum": {
+    "frozen_before_opencell_annotation_or_image_content_access": true,
+    "reason": "the first HPA-only training execution stopped before artifact creation because the calibration split had two nuclear-envelope and two ER positives; this rule resolves sparse internal calibration without opening or using OpenCell",
+    "model_architecture_optimizer_selection_and_external_endpoints_changed": false
+  }
+}

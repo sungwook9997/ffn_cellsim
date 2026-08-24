@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/external-training/source-accession-v1.json",
+  "title": "Project Aleph proposed source to public accession binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority_status", "source_family_id", "pmcid", "payload_sha256",
+    "gold_candidate", "provider", "accession", "identifier_type", "canonical_url",
+    "leakage_component_id", "modality_hints", "evidence"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.external_training.source_accession.v1"},
+    "authority_status": {"const": "proposed"},
+    "source_family_id": {"type": "string"},
+    "pmcid": {"type": "string", "pattern": "^PMC[0-9]+$"},
+    "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gold_candidate": {"type": "boolean"},
+    "provider": {"type": "string"},
+    "accession": {"type": "string"},
+    "identifier_type": {"type": "string"},
+    "canonical_url": {"type": ["string", "null"]},
+    "leakage_component_id": {"type": "string", "pattern": "^ds:[0-9a-f]{16}$"},
+    "modality_hints": {"type": "array", "items": {"type": "string"}},
+    "evidence": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["document_sha256", "locator", "text_sha256"],
+        "properties": {
+          "document_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "locator": {"type": "string"},
+          "text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

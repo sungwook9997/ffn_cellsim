@@ -1,0 +1,561 @@
+{
+  "status": "DIAGNOSTIC_NOT_PRODUCTION_RATIFICATION",
+  "device": "cuda:0",
+  "config": {
+    "n_filaments": 70686,
+    "with_steric": true,
+    "erm_density_per_um2": 600.0,
+    "erm_density_source": "DIAGNOSTIC_PROXY_DIZ_MUNOZ_2010_ZEBRAFISH_NOT_MCF7",
+    "inner_iters": 200,
+    "max_inner_retries": 0,
+    "reshape_every": 20,
+    "dt_phys_s": 0.0001,
+    "inner_solver": "rigid_cluster_tournament",
+    "implicit_cg_max_iterations": 32,
+    "implicit_line_search_steps": 16,
+    "implicit_coarse_iterations": 8,
+    "rkc_stages": 8
+  },
+  "solver": {
+    "converged": false,
+    "iterations": 200,
+    "attempts": 1,
+    "residual_candidate_pN": 112.15281789765626,
+    "max_displacement_um": 6.169484474161015e-15,
+    "constraint_residual_um": 1.1657341758564144e-15,
+    "dt_mu": 3.535943748517097e-08,
+    "tolerance_um": 7.449163398500275e-09,
+    "displacement_to_tolerance_ratio": 8.282117258164998e-07,
+    "projected_force_convergence_pN": 48.260041736658835,
+    "projected_force_tolerance_pN": 0.21066973708573,
+    "projected_force_to_tolerance_ratio": 229.07913782139426,
+    "projected_force_candidate": {
+      "max_nodal_force_pN": 48.260041736658835,
+      "rms_nodal_force_pN": 2.2642537717297015,
+      "net_force_pN": [
+        2.3061552667513752e-11,
+        -1.964606255455692e-11,
+        -6.501743587961073e-12
+      ],
+      "top_node_index": 56463,
+      "top_node_family": "actin",
+      "finite": true,
+      "fiber_translation_residual": {
+        "max_fiber_sum_force_pN": 63.72956247873618,
+        "rms_fiber_sum_force_pN": 7.312696964613406,
+        "top_fiber_index": 62575,
+        "top_node_fiber_index": 8066,
+        "top_node_fiber_sum_force_pN": [
+          -35.76532041930565,
+          9.342576790716194,
+          -33.297895014171736
+        ],
+        "top_node_fiber_sum_force_magnitude_pN": 49.7512984570336
+      }
+    },
+    "convergence_history": {
+      "iteration": [
+        20,
+        40,
+        60,
+        80,
+        100,
+        120,
+        140,
+        160,
+        180,
+        200
+      ],
+      "max_displacement_um": [
+        0.00014224447541283462,
+        1.706046221654762e-07,
+        6.952812400603368e-07,
+        2.175583928816829e-15,
+        1.9860273225978185e-15,
+        1.9860273225978185e-15,
+        2.175583928816829e-15,
+        1.9860273225978185e-15,
+        1.6011864169946884e-15,
+        6.169484474161015e-15
+      ],
+      "constraint_residual_um": [
+        1.27675647831893e-15,
+        1.27675647831893e-15,
+        1.3877787807814457e-15,
+        1.5543122344752192e-15,
+        1.27675647831893e-15,
+        1.1657341758564144e-15,
+        1.4432899320127035e-15,
+        1.3322676295501878e-15,
+        1.5543122344752192e-15,
+        1.1657341758564144e-15
+      ],
+      "projected_force_pN": [
+        48.453320745751896,
+        48.324506162504996,
+        48.260041736658835,
+        48.260041736658835,
+        48.260041736658835,
+        48.260041736658835,
+        48.260041736658835,
+        48.260041736658835,
+        48.260041736658835,
+        48.260041736658835
+      ]
+    },
+    "implicit_regularization_pN_per_um": 1000.0,
+    "implicit_last_cg_converged": null,
+    "implicit_last_cg_iterations": null,
+    "implicit_last_cg_relative_residual_norm": null,
+    "implicit_guard_accept_count": 22,
+    "implicit_last_candidate_residual_pN": 48.26013529579758,
+    "explicit_last_candidate_residual_pN": 48.284619585132276,
+    "implicit_best_candidate_residual_pN": 48.260041736658835,
+    "accelerator_guard_accept_count": 22,
+    "explicit_candidate_accept_count": 1,
+    "stationary_candidate_accept_count": 177,
+    "accelerator_last_trial_residual_pN": 48.26013529579758,
+    "accelerator_best_residual_pN": 48.260041736658835,
+    "anderson_last_coefficient": -10287292824.405197,
+    "implicit_line_search_scales": [
+      1.0,
+      0.5,
+      0.25,
+      0.125,
+      0.0625,
+      0.03125,
+      0.015625,
+      0.0078125,
+      0.00390625,
+      0.001953125,
+      0.0009765625,
+      0.00048828125,
+      0.000244140625,
+      0.0001220703125,
+      6.103515625e-05,
+      3.0517578125e-05
+    ],
+    "implicit_scale_accept_counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      11,
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accelerator_candidate_families": [
+      "block_descent",
+      "anderson",
+      "rigid_contact_schwarz",
+      "rkc1"
+    ]
+  },
+  "timing": {
+    "build_wall_s": 7.899620319716632,
+    "accelerator_setup_wall_s": 0.016119173727929592,
+    "inner_solve_wall_s": 265.45804996974766,
+    "inner_solve_wall_s_per_reported_iteration": 1.3272902498487382
+  },
+  "ledger": {
+    "N_unique_active_fibers": 70686,
+    "N_dormant_fibers": 0,
+    "N_allocated_fibers": 70686,
+    "N_nodes": 494802,
+    "N_crosslinks": 70686,
+    "N_motor_seeds": 442,
+    "N_branch_junctions_active": 0,
+    "N_cross_region_bonds": 0,
+    "N_fa_sites": 0,
+    "N_linc_sites": 0,
+    "per_region": {
+      "cortex": {
+        "active_fibers": 70686,
+        "dormant_fibers": 0,
+        "total_fibers": 70686
+      }
+    },
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 511114,
+    "n_myosin_particles": 15028,
+    "n_actin_segments": 424116,
+    "n_nucleus_nodes": 642,
+    "n_membrane_nodes": 642,
+    "nucleus_faces": 1280,
+    "nucleus_hinges": 1920,
+    "nucleus_linc_tethers": 642,
+    "membrane_faces": 1280,
+    "membrane_erm_tethers": 422094,
+    "n_bending_triples": 353430,
+    "n_crosslink_links": 70686,
+    "myosin_attachment_primitive": "POINT_TO_SEGMENT_BARYCENTRIC",
+    "myosin_query_segment_count": 424116,
+    "myosin_segment_query_grid_dim": 128,
+    "myosin_n_minifilaments": 442,
+    "myosin_n_myosin_particles": 15028,
+    "myosin_n_heads": 8840,
+    "myosin_n_backbone_beads": 6188,
+    "myosin_anchor_mode": "POINT_TO_SEGMENT_DYNAMIC",
+    "nmii_backbone_lp_um": null,
+    "nmii_backbone_lp_source": "ABSENT_FROM_CONTRACT_GRAPH",
+    "nmii_backbone_bending_status": "BLOCKED_UNSOURCED_PHYSICAL_MAGNITUDE",
+    "field_grid_cells": 79507,
+    "resting_pressure_Pa": 40.0,
+    "pressure_control_volume_um3": 1751.9375322111337,
+    "analytic_sphere_volume_um3": 1767.1458676442585,
+    "kmax_pN_per_um": 2828099.2886817832,
+    "mechanical_kmax_pN_per_um": 2828099.2886817832,
+    "pressure_edge_um": 1.1304727889616157,
+    "dt_mu": 3.535943748517097e-08,
+    "preload_pressure_pa": 40.0,
+    "preload_radius_um": 7.5,
+    "preload_membrane_area_um2": 703.4902162858084,
+    "preload_membrane_tension_pn_per_um": 10.0,
+    "preload_membrane_laplace_pressure_pa": 2.6666666666666665,
+    "preload_residual_pressure_for_erm_pa": 37.333333333333336,
+    "preload_erm_tether_count": 422094,
+    "preload_erm_density_per_um2": 599.9998155319263,
+    "preload_erm_rupture_force_pn": 11.43470677829702,
+    "preload_erm_pressure_capacity_upper_bound_pa": 6860.821957639879,
+    "preload_total_pressure_capacity_upper_bound_pa": 6863.488624306546,
+    "preload_pressure_capacity_ratio": 171.58721560766364,
+    "preload_required_erm_density_min_per_um2": 3.2649139201533086,
+    "preload_required_erm_count_min": 2297,
+    "preload_mechanically_feasible_upper_bound": true,
+    "preload_capacity_force_basis": "DIAGNOSTIC_MEMBRANE_TETHER_FORCE_NOT_SINGLE_ERM",
+    "erm_pairing_mode": "EXPLICIT_DENSITY_RESOLVED",
+    "erm_density_target_per_um2": 600.0,
+    "erm_density_source": "DIAGNOSTIC_PROXY_DIZ_MUNOZ_2010_ZEBRAFISH_NOT_MCF7",
+    "erm_density_mcf7_production": false,
+    "erm_kinetics_mode": "DIAGNOSTIC_HARD_THRESHOLD_NOT_PRODUCTION",
+    "erm_kinetics_source": "ABSENT_FROM_CONTRACT_GRAPH",
+    "erm_bell_k_on_s": null,
+    "erm_bell_k_off0_s": null,
+    "erm_bell_force_pn": null,
+    "erm_capture_radius_um": null,
+    "erm_rebind_rest_policy": "UNSPECIFIED",
+    "physiological_preload_status": "BLOCKED_UNSOURCED_SINGLE_ERM_CAPACITY_BASIS",
+    "gpu_bytes_used": 485556224,
+    "gpu_bytes_total": 16760569856,
+    "warp_mempool_used_current_bytes": 248485233,
+    "warp_mempool_used_high_bytes": 248485233,
+    "gpu_memory_accounting_status": "PARTIAL_MEMPOOL_ONLY",
+    "gpu_memory_accounting_reason": "Warp mempool high-water excludes non-mempool CUDA allocations; exact whole-device peak remains open",
+    "warp_mempool_used_current_after_solver_bytes": 867183091,
+    "warp_mempool_used_high_after_solver_bytes": 899894387,
+    "gpu_memory_accounting_backend": "NVML_PROCESS_LIFETIME_ACCOUNTING",
+    "gpu_memory_accounting_probe_status": "ACCOUNTING_DISABLED",
+    "gpu_memory_accounting_device_uuid": "GPU-ede1b117-f5f3-1bfc-f96b-a77f8fa87c2d",
+    "gpu_memory_accounting_pid": 3947848,
+    "gpu_memory_accounting_mode_enabled": false
+  },
+  "force_families": {
+    "actin_bending": {
+      "max_nodal_force_pN": 0.04068249084070392,
+      "rms_nodal_force_pN": 0.017818094832711726,
+      "net_force_pN": [
+        -2.0816681711721685e-16,
+        -2.6020852139652106e-17,
+        6.92154666914746e-16
+      ],
+      "top_node_index": 9133,
+      "top_node_family": "actin"
+    },
+    "actin_crosslinks": {
+      "max_nodal_force_pN": 1081.9780042698274,
+      "rms_nodal_force_pN": 21.19551601922029,
+      "net_force_pN": [
+        -9.736400574666959e-11,
+        2.502620333189043e-11,
+        1.4917622692678378e-11
+      ],
+      "top_node_index": 149395,
+      "top_node_family": "actin"
+    },
+    "myosin": {
+      "max_nodal_force_pN": 2.1846607704272884e-10,
+      "rms_nodal_force_pN": 6.074857001881712e-12,
+      "net_force_pN": [
+        3.196843041190046e-25,
+        -1.0905213153775267e-26,
+        3.8067271842345146e-26
+      ],
+      "top_node_index": 497965,
+      "top_node_family": "myosin"
+    },
+    "nucleus": {
+      "max_nodal_force_pN": 0.1604840011507976,
+      "rms_nodal_force_pN": 0.0009158479029403905,
+      "net_force_pN": [
+        -7.806255641895632e-17,
+        0.0,
+        1.1145598333150986e-16
+      ],
+      "top_node_index": 509841,
+      "top_node_family": "nucleus"
+    },
+    "membrane_bending": {
+      "max_nodal_force_pN": 0.10463503451241325,
+      "rms_nodal_force_pN": 0.0005478635742229239,
+      "net_force_pN": [
+        8.326672684688674e-17,
+        3.660266534311063e-16,
+        2.437286483747414e-16
+      ],
+      "top_node_index": 510481,
+      "top_node_family": "membrane"
+    },
+    "membrane_area_tension": {
+      "max_nodal_force_pN": 3.406725540889196,
+      "rms_nodal_force_pN": 0.10379332396862315,
+      "net_force_pN": [
+        -1.3500311979441904e-13,
+        8.260059303211165e-14,
+        5.551115123125783e-17
+      ],
+      "top_node_index": 510866,
+      "top_node_family": "membrane"
+    },
+    "erm_tethers": {
+      "max_nodal_force_pN": 59.459014163560475,
+      "rms_nodal_force_pN": 1.7726801482618137,
+      "net_force_pN": [
+        3.446132268436486e-12,
+        8.171241461241152e-14,
+        1.8487433806058107e-12
+      ],
+      "top_node_index": 510533,
+      "top_node_family": "membrane"
+    },
+    "membrane_pressure": {
+      "max_nodal_force_pN": 50.80999726597551,
+      "rms_nodal_force_pN": 1.5513573149070379,
+      "net_force_pN": [
+        1.8260948309034575e-12,
+        -1.815436689867056e-12,
+        -3.0819791163594346e-13
+      ],
+      "top_node_index": 511058,
+      "top_node_family": "membrane"
+    },
+    "steric": {
+      "max_nodal_force_pN": 1073.5270802491234,
+      "rms_nodal_force_pN": 21.316213546774897,
+      "net_force_pN": [
+        -1.8262835688176438e-11,
+        -2.0883406115501657e-11,
+        -5.847411443937744e-11
+      ],
+      "top_node_index": 149395,
+      "top_node_family": "actin"
+    },
+    "bulk_pressure": {
+      "max_nodal_force_pN": 2.0594638064272954e-16,
+      "rms_nodal_force_pN": 1.572909742600672e-17,
+      "net_force_pN": [
+        5.278368317194029e-13,
+        1.620686064585834e-13,
+        2.2340757208810416e-13
+      ],
+      "top_node_index": 317357,
+      "top_node_family": "actin"
+    },
+    "total": {
+      "max_nodal_force_pN": 112.15281789765628,
+      "rms_nodal_force_pN": 3.822158313026499,
+      "net_force_pN": [
+        -1.305622276959184e-13,
+        -1.4416468019362583e-11,
+        1.2256584636105572e-11
+      ],
+      "top_node_index": 250941,
+      "top_node_family": "actin"
+    }
+  },
+  "contact_graph_candidate": {
+    "undirected_contact_count": 31473,
+    "undirected_capped_contact_count": 74,
+    "contact_node_count": 59120,
+    "degree_quantiles": [
+      1.0,
+      1.0,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "capped_degree_quantiles": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "nearest_distance_over_sigma_quantiles": [
+      0.1986835511249278,
+      0.9609656516618291,
+      1.080269681208672,
+      1.1184940550690838,
+      1.1224606999790545
+    ],
+    "max_pair_force_pN_quantiles": [
+      9.43843127352418e-06,
+      5.981385790364954,
+      16.577624897109647,
+      50.58507696125736,
+      1000.0
+    ],
+    "radial_curvature_sum_pN_per_um_quantiles": [
+      0.0,
+      15132.84245725954,
+      41976.72076478015,
+      119018.23274018368,
+      2823608.880923367
+    ],
+    "projected_residual_top_node": {
+      "index": 56463,
+      "contact_degree": 1,
+      "capped_contact_degree": 0,
+      "nearest_distance_over_sigma": 0.7628513109520026,
+      "max_pair_force_pN": 178.8867857455579,
+      "radial_curvature_sum_pN_per_um": 457466.7232895913,
+      "nearest_neighbor": 463125,
+      "strongest_neighbor": 463125,
+      "crosslink_degree": 1,
+      "crosslink_neighbors": [
+        225610
+      ],
+      "strongest_contact_is_crosslinked": false
+    }
+  },
+  "last_projection": {
+    "max_node_displacement_um": 4.189529226675416e-15,
+    "rms_node_displacement_um": 3.4678035628558644e-17,
+    "top_node_index": 125489,
+    "top_node_family": "actin",
+    "force_families_before_projection": {
+      "actin_crosslinks": {
+        "max_nodal_force_pN": 1081.9780042698274,
+        "rms_nodal_force_pN": 21.195516019220353,
+        "net_force_pN": [
+          -9.576350823436997e-11,
+          -5.577760475716786e-13,
+          3.060551811984169e-11
+        ],
+        "top_node_index": 149395,
+        "top_node_family": "actin"
+      },
+      "erm_tethers": {
+        "max_nodal_force_pN": 59.459014163560546,
+        "rms_nodal_force_pN": 1.7726801482618126,
+        "net_force_pN": [
+          -4.902744876744691e-13,
+          -1.5987211554602254e-13,
+          -8.260059303211165e-14
+        ],
+        "top_node_index": 510533,
+        "top_node_family": "membrane"
+      },
+      "total": {
+        "max_nodal_force_pN": 112.15281789765628,
+        "rms_nodal_force_pN": 3.8221583130265198,
+        "net_force_pN": [
+          2.4238389073616418e-12,
+          -1.3842704760236302e-11,
+          9.329814698588734e-12
+        ],
+        "top_node_index": 250941,
+        "top_node_family": "actin"
+      }
+    }
+  },
+  "erm_candidate": {
+    "explicit_count": 422094,
+    "bound_count": 422094,
+    "extension_um_quantiles": [
+      -0.008958792931173964,
+      -5.906969175212273e-05,
+      0.00013516031994593726,
+      0.001272141893734397,
+      0.007606989534359343
+    ],
+    "compressed_count": 303148,
+    "tensile_count": 118946,
+    "tension_pN_quantiles": [
+      0.0,
+      0.0,
+      0.6217374717513113,
+      5.851852711178227,
+      34.99215185805298
+    ],
+    "at_or_above_rupture_count": 1900
+  },
+  "geometry": {
+    "membrane_radius_um": {
+      "min": 7.499250470594338,
+      "mean": 7.499783692313095,
+      "max": 7.500031733377669
+    },
+    "cortex_node_radius_um": {
+      "min": 7.396057805746723,
+      "mean": 7.400007414533856,
+      "max": 7.4039263200199965
+    }
+  }
+}

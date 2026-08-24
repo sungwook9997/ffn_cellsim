@@ -1,0 +1,190 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "b_force_parity_arena_vs_private",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "evidence_basis": "the SAME production kernels on the SAME geometry, launched over a private zero-based array and over a claimed range of one arena; no force law is re-implemented here",
+ "stamp": {
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "python": "3.13.14",
+  "device": "cuda:0"
+ },
+ "census": {
+  "n_nodes": 511114,
+  "n_crosslinks": 1413720,
+  "n_bend_triples": 353430,
+  "max_contributions_per_node": 24,
+  "n_nodes_zero_contribution": 16312
+ },
+ "channels": [
+  "actin_crosslink_link_spring",
+  "actin_bending_cytosim"
+ ],
+ "channels_excluded": {
+  "axial_inextensibility": "an NF2007 solver constraint, not an accumulated force (cortex_state.CORTEX_CHANNELS_NOT_BOUND)"
+ },
+ "arena": {
+  "pad_claim": 1237,
+  "cortex_lo": 1237,
+  "cortex_hi": 512351,
+  "byte_span": [
+   146367264760,
+   146379531496
+  ],
+  "array_base_ptr": 146367235072,
+  "claim_offset_bytes": 29688
+ },
+ "criterion": {
+  "declared_before_run": true,
+  "relative_bound": 5.329070518200751e-15,
+  "expression": "max|f_arena - f_incumbent| / max|f_incumbent| <= n_terms * eps64",
+  "why_not_exact": "both arms accumulate atomically, so summation order is non-deterministic within a launch; the bound is the Higham summation floor, not a chosen tolerance",
+  "exact_requirement": "every node outside the claimed range must be EXACTLY zero"
+ },
+ "measured": {
+  "max_abs_force_pN": 0.031322789982912,
+  "max_abs_residual_pN": 3.469446951953614e-18,
+  "relative_residual": 1.1076430145099957e-16,
+  "within_bound": true,
+  "leak_outside_range_pN": 0.0,
+  "no_leak": true
+ },
+ "residual_by_contribution_count": {
+  "1": {
+   "n_nodes": 793,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "2": {
+   "n_nodes": 4705,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "3": {
+   "n_nodes": 14641,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "4": {
+   "n_nodes": 30173,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 1.7966429796266602e-22
+  },
+  "5": {
+   "n_nodes": 49312,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 2.220644456137166e-22
+  },
+  "6": {
+   "n_nodes": 64393,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 4.040944223697002e-22
+  },
+  "7": {
+   "n_nodes": 71836,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 7.063402983507101e-22
+  },
+  "8": {
+   "n_nodes": 69466,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 5.134922332475326e-22
+  },
+  "9": {
+   "n_nodes": 60070,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 2.8517386924040235e-22
+  },
+  "10": {
+   "n_nodes": 47051,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 5.392091737935603e-22
+  },
+  "11": {
+   "n_nodes": 33043,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 8.432647106157875e-22
+  },
+  "12": {
+   "n_nodes": 21787,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 5.573536664909189e-22
+  },
+  "13": {
+   "n_nodes": 13007,
+   "max_resid_pN": 4.336808689942018e-19,
+   "mean_resid_pN": 3.334211340003089e-23
+  },
+  "14": {
+   "n_nodes": 7372,
+   "max_resid_pN": 3.469446951953614e-18,
+   "mean_resid_pN": 4.70624925658385e-22
+  },
+  "15": {
+   "n_nodes": 3795,
+   "max_resid_pN": 1.734723475976807e-18,
+   "mean_resid_pN": 5.713845441293831e-22
+  },
+  "16": {
+   "n_nodes": 1940,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "17": {
+   "n_nodes": 824,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "18": {
+   "n_nodes": 355,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "19": {
+   "n_nodes": 147,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "20": {
+   "n_nodes": 53,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "21": {
+   "n_nodes": 24,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "22": {
+   "n_nodes": 10,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "23": {
+   "n_nodes": 2,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  },
+  "24": {
+   "n_nodes": 3,
+   "max_resid_pN": 0.0,
+   "mean_resid_pN": 0.0
+  }
+ },
+ "verdict": "PARITY",
+ "timing": {
+  "comparable": false,
+  "not_comparable_reason": "two force assemblies; no solve and no accepted step"
+ },
+ "figures": [
+  "arena_force_parity.png"
+ ],
+ "figure_reading": "Residual is EXACTLY zero on every node receiving 1, 2 or 3 contributions (20,139 nodes) and appears only at degree >= 4, at 1-2 ULP of the largest force. That is the signature of non-deterministic atomic summation order, which both arms have and neither controls. A wrong index would not respect the node's degree, so the staircase is itself evidence the addressing is right rather than merely close.",
+ "observation_not_under_test": "16312 of 511114 cortex nodes (3.19%) receive no contribution from either bound channel. This is a property of the INCUMBENT geometry, visible here only because the parity census counted contributions per node; it is neither caused by nor tested by the arena substitution. It is recorded because it is the full-cell counterpart of the unconstrained-DOF count seen on the slice, and it is NOT interpreted here.",
+ "observation_not_under_test_SUPERSEDED": {
+  "superseded_by": "aleph/outputs/ac/population_coupling_census/",
+  "verdict": "WITHDRAWN \u2014 the 16,312 is not a physics observation",
+  "why": "16,312 = n_total - n_actin EXACTLY: myosin 15,028 + nucleus 642 + membrane 642. The parity census counted the two ACTIN channels it bound, so every non-actin node had a zero count by construction. Over every channel the built cell exposes, the number of nodes reached by nothing is 0. Found independently and simultaneously by ffn-cellsim-45 (against w1_stiffness_spread.json) and by this session's partition invariant."
+ }
+}

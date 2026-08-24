@@ -1,0 +1,18 @@
+{
+  "n_fil": 300,
+  "n_xl": 450,
+  "beads_per_filament": 7,
+  "n_dimers": 450,
+  "n_both_bound": 445,
+  "n_bridges": 195,
+  "n_same_filament": 250,
+  "n_one_head_bound": 4,
+  "n_unbound": 1,
+  "z_bridge": 1.3,
+  "giant_component_filaments": 22,
+  "giant_component_fraction": 0.07333333333333333,
+  "connected_filaments": 206,
+  "connected_fraction": 0.6866666666666666,
+  "n_components_among_connected": 52,
+  "verdict": "FRAGMENTED / NOT a spanning mesh"
+}

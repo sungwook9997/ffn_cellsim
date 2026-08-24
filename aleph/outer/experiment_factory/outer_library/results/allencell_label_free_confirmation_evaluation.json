@@ -1,0 +1,803 @@
+{
+  "acquisition_sha256": "1bc83be37a4e2ca346f682691246136a220776639dcbc81c3104ad967baa8b3d",
+  "aleph_authority": "none",
+  "candidate_count": 32,
+  "figure_sha256": "e1132aca1197204ac304addf3693b2aaba6c48e8dc4468d3a2adcbcbf44671e8",
+  "geometry": {
+    "all_DNA_exact_array_equal": false,
+    "mean_DNA_uint16_MAE": 15.509760420523552,
+    "rows": [
+      {
+        "CellId": "276958",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.05512024176321773,
+        "DNA_uint16_MAE": 6.0871023448777,
+        "FOVId": "1502",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 3199.317003785385,
+        "target_plane_raw_standard_deviation": 23.61277355521236
+      },
+      {
+        "CellId": "231122",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.02876095780025911,
+        "DNA_uint16_MAE": 19.120910127460345,
+        "FOVId": "4",
+        "PlateId": "3500001004",
+        "input_plane_raw_standard_deviation": 2486.511505496131,
+        "target_plane_raw_standard_deviation": 47.08972304004399
+      },
+      {
+        "CellId": "265598",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.048867263870188374,
+        "DNA_uint16_MAE": 7.272593798287628,
+        "FOVId": "1156",
+        "PlateId": "3500000815",
+        "input_plane_raw_standard_deviation": 2577.8652377657086,
+        "target_plane_raw_standard_deviation": 52.16641550735563
+      },
+      {
+        "CellId": "276100",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.05528789780182993,
+        "DNA_uint16_MAE": 6.059211651071158,
+        "FOVId": "1476",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 3927.074236373508,
+        "target_plane_raw_standard_deviation": 33.85441164729014
+      },
+      {
+        "CellId": "347919",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.014684057812861586,
+        "DNA_uint16_MAE": 18.907146499656314,
+        "FOVId": "3845",
+        "PlateId": "3500001022",
+        "input_plane_raw_standard_deviation": 2474.717618898627,
+        "target_plane_raw_standard_deviation": 34.58396682170295
+      },
+      {
+        "CellId": "327216",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.023553467727221333,
+        "DNA_uint16_MAE": 23.831399935720704,
+        "FOVId": "3208",
+        "PlateId": "3500000981",
+        "input_plane_raw_standard_deviation": 1860.4910271891706,
+        "target_plane_raw_standard_deviation": 51.808871773325684
+      },
+      {
+        "CellId": "254818",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.059602995507250824,
+        "DNA_uint16_MAE": 5.911060708401134,
+        "FOVId": "844",
+        "PlateId": "3500000790",
+        "input_plane_raw_standard_deviation": 2472.566037876148,
+        "target_plane_raw_standard_deviation": 36.40203543485296
+      },
+      {
+        "CellId": "972114",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.01860756323566241,
+        "DNA_uint16_MAE": 18.771933778849828,
+        "FOVId": "16766",
+        "PlateId": "3500002099",
+        "input_plane_raw_standard_deviation": 1229.8141293510064,
+        "target_plane_raw_standard_deviation": 33.30465511699686
+      },
+      {
+        "CellId": "931970",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.02039831011769787,
+        "DNA_uint16_MAE": 41.90473079311089,
+        "FOVId": "14313",
+        "PlateId": "3500002098",
+        "input_plane_raw_standard_deviation": 2256.3608825147676,
+        "target_plane_raw_standard_deviation": 31.556981102100085
+      },
+      {
+        "CellId": "960997",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.015878930572851807,
+        "DNA_uint16_MAE": 23.86087591453923,
+        "FOVId": "15773",
+        "PlateId": "3500002099",
+        "input_plane_raw_standard_deviation": 1180.0184837146985,
+        "target_plane_raw_standard_deviation": 34.03746559755941
+      },
+      {
+        "CellId": "276755",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.050625608938381916,
+        "DNA_uint16_MAE": 6.772388742558449,
+        "FOVId": "1495",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 3696.1012082385855,
+        "target_plane_raw_standard_deviation": 37.21284192163681
+      },
+      {
+        "CellId": "266258",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.021271380882109135,
+        "DNA_uint16_MAE": 33.34888523657382,
+        "FOVId": "1176",
+        "PlateId": "3500000807",
+        "input_plane_raw_standard_deviation": 3388.5634510424984,
+        "target_plane_raw_standard_deviation": 39.24999446311032
+      },
+      {
+        "CellId": "327780",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.032935678907604446,
+        "DNA_uint16_MAE": 12.873846187379907,
+        "FOVId": "3224",
+        "PlateId": "3500000982",
+        "input_plane_raw_standard_deviation": 1567.312586531167,
+        "target_plane_raw_standard_deviation": 49.55576726234916
+      },
+      {
+        "CellId": "337503",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.026651968914120475,
+        "DNA_uint16_MAE": 12.256815761589873,
+        "FOVId": "3520",
+        "PlateId": "3500000997",
+        "input_plane_raw_standard_deviation": 1599.067477841558,
+        "target_plane_raw_standard_deviation": 44.9268191849554
+      },
+      {
+        "CellId": "338017",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.04084372280464259,
+        "DNA_uint16_MAE": 12.111396862727974,
+        "FOVId": "3534",
+        "PlateId": "3500000997",
+        "input_plane_raw_standard_deviation": 1944.0959647591744,
+        "target_plane_raw_standard_deviation": 53.360502488144554
+      },
+      {
+        "CellId": "348079",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.019532438098290528,
+        "DNA_uint16_MAE": 21.629700883352356,
+        "FOVId": "3849",
+        "PlateId": "3500001022",
+        "input_plane_raw_standard_deviation": 1818.0587185778572,
+        "target_plane_raw_standard_deviation": 52.30652625715931
+      },
+      {
+        "CellId": "401601",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.03287874327211239,
+        "DNA_uint16_MAE": 15.424730846751364,
+        "FOVId": "15900",
+        "PlateId": "3500000968",
+        "input_plane_raw_standard_deviation": 1123.9692081899639,
+        "target_plane_raw_standard_deviation": 50.144675792824664
+      },
+      {
+        "CellId": "276119",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.04809783547572515,
+        "DNA_uint16_MAE": 7.12710760330024,
+        "FOVId": "1477",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 4153.527543507598,
+        "target_plane_raw_standard_deviation": 41.0198916406467
+      },
+      {
+        "CellId": "276817",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.056244943827831205,
+        "DNA_uint16_MAE": 6.053686816887869,
+        "FOVId": "1497",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 2977.5821128908306,
+        "target_plane_raw_standard_deviation": 60.02849243426723
+      },
+      {
+        "CellId": "337341",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.013041144560612655,
+        "DNA_uint16_MAE": 18.381413698612306,
+        "FOVId": "3515",
+        "PlateId": "3500000980",
+        "input_plane_raw_standard_deviation": 2894.328042326944,
+        "target_plane_raw_standard_deviation": 29.831972575146207
+      },
+      {
+        "CellId": "327722",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.026055885419505258,
+        "DNA_uint16_MAE": 19.143478939714488,
+        "FOVId": "3222",
+        "PlateId": "3500000982",
+        "input_plane_raw_standard_deviation": 1168.3945740188433,
+        "target_plane_raw_standard_deviation": 35.42320717178956
+      },
+      {
+        "CellId": "254749",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.048629257949840306,
+        "DNA_uint16_MAE": 7.530811563226636,
+        "FOVId": "842",
+        "PlateId": "3500000790",
+        "input_plane_raw_standard_deviation": 2222.592007085981,
+        "target_plane_raw_standard_deviation": 58.77017652643575
+      },
+      {
+        "CellId": "337455",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.008690802251058246,
+        "DNA_uint16_MAE": 22.55175694143972,
+        "FOVId": "3519",
+        "PlateId": "3500000987",
+        "input_plane_raw_standard_deviation": 3287.839510083574,
+        "target_plane_raw_standard_deviation": 36.90838748642763
+      },
+      {
+        "CellId": "276447",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.05536171726755218,
+        "DNA_uint16_MAE": 6.158065702087287,
+        "FOVId": "1486",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 3324.980286317117,
+        "target_plane_raw_standard_deviation": 29.513600154887186
+      },
+      {
+        "CellId": "317209",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.0083071525270535,
+        "DNA_uint16_MAE": 29.707814884146842,
+        "FOVId": "2883",
+        "PlateId": "3500000971",
+        "input_plane_raw_standard_deviation": 2099.314773844964,
+        "target_plane_raw_standard_deviation": 36.79469050071655
+      },
+      {
+        "CellId": "265977",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.04945483744666167,
+        "DNA_uint16_MAE": 7.210043865179276,
+        "FOVId": "1168",
+        "PlateId": "3500000815",
+        "input_plane_raw_standard_deviation": 5624.5914893263225,
+        "target_plane_raw_standard_deviation": 32.728030195901184
+      },
+      {
+        "CellId": "265708",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.04917901608426992,
+        "DNA_uint16_MAE": 7.214884977281671,
+        "FOVId": "1159",
+        "PlateId": "3500000815",
+        "input_plane_raw_standard_deviation": 2979.3831140470684,
+        "target_plane_raw_standard_deviation": 37.888135473979716
+      },
+      {
+        "CellId": "327603",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.03142054725636351,
+        "DNA_uint16_MAE": 12.762055597935218,
+        "FOVId": "3219",
+        "PlateId": "3500000981",
+        "input_plane_raw_standard_deviation": 1681.7801740341313,
+        "target_plane_raw_standard_deviation": 45.04447415327433
+      },
+      {
+        "CellId": "231409",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.007725458246827393,
+        "DNA_uint16_MAE": 37.15228830043284,
+        "FOVId": "8",
+        "PlateId": "3500001004",
+        "input_plane_raw_standard_deviation": 4034.581093488538,
+        "target_plane_raw_standard_deviation": 40.3539390818911
+      },
+      {
+        "CellId": "932463",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.029789641785892957,
+        "DNA_uint16_MAE": 11.303319610723547,
+        "FOVId": "14321",
+        "PlateId": "3500002098",
+        "input_plane_raw_standard_deviation": 1790.179757576573,
+        "target_plane_raw_standard_deviation": 41.94225824724311
+      },
+      {
+        "CellId": "265626",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.044731270434595245,
+        "DNA_uint16_MAE": 11.11991315589781,
+        "FOVId": "1157",
+        "PlateId": "3500000815",
+        "input_plane_raw_standard_deviation": 5699.703933041058,
+        "target_plane_raw_standard_deviation": 36.449657233588624
+      },
+      {
+        "CellId": "276159",
+        "DNA_exact_array_equal": false,
+        "DNA_exact_pixel_fraction": 0.051451268233502476,
+        "DNA_uint16_MAE": 6.750961726979241,
+        "FOVId": "1478",
+        "PlateId": "3500000845",
+        "input_plane_raw_standard_deviation": 3308.193636413962,
+        "target_plane_raw_standard_deviation": 31.244592655891896
+      }
+    ]
+  },
+  "may_emit_numeric_sweep_range": false,
+  "observable_evidence_eligible": false,
+  "plate_count": 15,
+  "post_refusal_non_authoritative_diagnostic": {
+    "all_diagnostic_endpoints_passed": false,
+    "passes": {
+      "v3_embedding_OOD_AUROC": false,
+      "v3_minimum_ratio_improvement_over_v2": true,
+      "v3_pixel_interval_coverage": false,
+      "v3_spatial_endpoints": false
+    },
+    "v2": {
+      "all_spatial_endpoints_passed": false,
+      "baseline": {
+        "Mitochondria": {
+          "fit_mean_map_macro_study_MAE": 0.10291581948598226,
+          "model_macro_study_MAE": 0.16496832420428595,
+          "per_study_fit_mean_map_MAE": {
+            "3500000790": 0.10693314671516418,
+            "3500000807": 0.1187213659286499,
+            "3500000815": 0.1041390597820282,
+            "3500000845": 0.1012619212269783,
+            "3500000968": 0.1120118722319603,
+            "3500000971": 0.09427224099636078,
+            "3500000980": 0.08157864212989807,
+            "3500000981": 0.10095515847206116,
+            "3500000982": 0.11155660450458527,
+            "3500000987": 0.0912410318851471,
+            "3500000997": 0.11326508224010468,
+            "3500001004": 0.11390392482280731,
+            "3500001022": 0.10277919471263885,
+            "3500002098": 0.09914801269769669,
+            "3500002099": 0.0919700339436531
+          },
+          "per_study_model_MAE": {
+            "3500000790": 0.17578943073749542,
+            "3500000807": 0.11951339989900589,
+            "3500000815": 0.16317957639694214,
+            "3500000845": 0.1845782846212387,
+            "3500000968": 0.18198317289352417,
+            "3500000971": 0.19946697354316711,
+            "3500000980": 0.13405874371528625,
+            "3500000981": 0.18301881849765778,
+            "3500000982": 0.20963603258132935,
+            "3500000987": 0.11727029085159302,
+            "3500000997": 0.18822166323661804,
+            "3500001004": 0.14300145208835602,
+            "3500001022": 0.181173175573349,
+            "3500002098": 0.13919350504875183,
+            "3500002099": 0.15444034337997437
+          },
+          "relative_MAE_improvement": -0.6029442803664952
+        }
+      },
+      "endpoint_ratios": {
+        "Pearson": 0.37319489889927,
+        "global_SSIM": 0.4088717965790215,
+        "relative_MAE_improvement": -6.029442803664951
+      },
+      "metrics": {
+        "per_study_target": [
+          {
+            "MAE": 0.17578943073749542,
+            "MSE": 0.04059895873069763,
+            "mean_global_SSIM": 0.09250404940455358,
+            "mean_image_Pearson": 0.12354195713347198,
+            "pair_count": 2,
+            "study_id": "3500000790",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.11951339989900589,
+            "MSE": 0.03182327747344971,
+            "mean_global_SSIM": 0.03289326447543818,
+            "mean_image_Pearson": 0.006934414949579799,
+            "pair_count": 1,
+            "study_id": "3500000807",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.16317957639694214,
+            "MSE": 0.03954324126243591,
+            "mean_global_SSIM": 0.0762966019538111,
+            "mean_image_Pearson": 0.09261646732621891,
+            "pair_count": 4,
+            "study_id": "3500000815",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.1845782846212387,
+            "MSE": 0.04611234739422798,
+            "mean_global_SSIM": 0.09252437188189315,
+            "mean_image_Pearson": 0.10955083381481863,
+            "pair_count": 7,
+            "study_id": "3500000845",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.18198317289352417,
+            "MSE": 0.04109328240156174,
+            "mean_global_SSIM": 0.18559774178407049,
+            "mean_image_Pearson": 0.28953082200622493,
+            "pair_count": 1,
+            "study_id": "3500000968",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.19946697354316711,
+            "MSE": 0.04757220298051834,
+            "mean_global_SSIM": 0.0892704816312993,
+            "mean_image_Pearson": 0.12805359241847994,
+            "pair_count": 1,
+            "study_id": "3500000971",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.13405874371528625,
+            "MSE": 0.026876283809542656,
+            "mean_global_SSIM": 0.11145591524175362,
+            "mean_image_Pearson": 0.11766823373314027,
+            "pair_count": 1,
+            "study_id": "3500000980",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.18301881849765778,
+            "MSE": 0.041449420154094696,
+            "mean_global_SSIM": 0.07872223262091824,
+            "mean_image_Pearson": 0.11815975743207316,
+            "pair_count": 2,
+            "study_id": "3500000981",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.20963603258132935,
+            "MSE": 0.05378030240535736,
+            "mean_global_SSIM": 0.07511273084628176,
+            "mean_image_Pearson": 0.1041376289692823,
+            "pair_count": 2,
+            "study_id": "3500000982",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.11727029085159302,
+            "MSE": 0.02311883307993412,
+            "mean_global_SSIM": 0.15536081379002922,
+            "mean_image_Pearson": 0.21081618228674737,
+            "pair_count": 1,
+            "study_id": "3500000987",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.18822166323661804,
+            "MSE": 0.04624247923493385,
+            "mean_global_SSIM": 0.060741037526152675,
+            "mean_image_Pearson": 0.06584683950364299,
+            "pair_count": 2,
+            "study_id": "3500000997",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.14300145208835602,
+            "MSE": 0.033022355288267136,
+            "mean_global_SSIM": 0.15651259817143467,
+            "mean_image_Pearson": 0.20367146278779497,
+            "pair_count": 2,
+            "study_id": "3500001004",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.181173175573349,
+            "MSE": 0.0431830957531929,
+            "mean_global_SSIM": 0.04057503548755944,
+            "mean_image_Pearson": 0.025985900916257187,
+            "pair_count": 2,
+            "study_id": "3500001022",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.13919350504875183,
+            "MSE": 0.035616684705019,
+            "mean_global_SSIM": 0.11747707674286552,
+            "mean_image_Pearson": 0.14282491115235926,
+            "pair_count": 2,
+            "study_id": "3500002098",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.15444034337997437,
+            "MSE": 0.03137058764696121,
+            "mean_global_SSIM": 0.16822528561326983,
+            "mean_image_Pearson": 0.219934214791076,
+            "pair_count": 2,
+            "study_id": "3500002099",
+            "target_channel": "Mitochondria"
+          }
+        ],
+        "per_target": {
+          "Mitochondria": {
+            "macro_study_MAE": 0.16496832420428595,
+            "macro_study_Pearson": 0.1306182146147445,
+            "macro_study_global_SSIM": 0.10221794914475538,
+            "pair_count": 32,
+            "study_count": 15
+          }
+        }
+      },
+      "minimum_endpoint_ratio": -6.029442803664951,
+      "values": {
+        "Pearson": 0.1306182146147445,
+        "global_SSIM": 0.10221794914475538,
+        "relative_MAE_improvement": -0.6029442803664952
+      }
+    },
+    "v3": {
+      "all_spatial_endpoints_passed": false,
+      "baseline": {
+        "Mitochondria": {
+          "fit_mean_map_macro_study_MAE": 0.10291581948598226,
+          "model_macro_study_MAE": 0.10055189728736877,
+          "per_study_fit_mean_map_MAE": {
+            "3500000790": 0.10693314671516418,
+            "3500000807": 0.1187213659286499,
+            "3500000815": 0.1041390597820282,
+            "3500000845": 0.1012619212269783,
+            "3500000968": 0.1120118722319603,
+            "3500000971": 0.09427224099636078,
+            "3500000980": 0.08157864212989807,
+            "3500000981": 0.10095515847206116,
+            "3500000982": 0.11155660450458527,
+            "3500000987": 0.0912410318851471,
+            "3500000997": 0.11326508224010468,
+            "3500001004": 0.11390392482280731,
+            "3500001022": 0.10277919471263885,
+            "3500002098": 0.09914801269769669,
+            "3500002099": 0.0919700339436531
+          },
+          "per_study_model_MAE": {
+            "3500000790": 0.10364659130573273,
+            "3500000807": 0.09840859472751617,
+            "3500000815": 0.0990753322839737,
+            "3500000845": 0.09928826242685318,
+            "3500000968": 0.10499535501003265,
+            "3500000971": 0.10487231612205505,
+            "3500000980": 0.08080035448074341,
+            "3500000981": 0.0948701873421669,
+            "3500000982": 0.10382647812366486,
+            "3500000987": 0.11794018745422363,
+            "3500000997": 0.09556130319833755,
+            "3500001004": 0.11299458891153336,
+            "3500001022": 0.0916946679353714,
+            "3500002098": 0.1091134250164032,
+            "3500002099": 0.09119081497192383
+          },
+          "relative_MAE_improvement": 0.022969473599104666
+        }
+      },
+      "endpoint_ratios": {
+        "Pearson": 1.0511017903457769,
+        "global_SSIM": 1.4360963156143502,
+        "relative_MAE_improvement": 0.22969473599104664
+      },
+      "metrics": {
+        "per_study_target": [
+          {
+            "MAE": 0.10364659130573273,
+            "MSE": 0.02633226476609707,
+            "mean_global_SSIM": 0.3410407844812248,
+            "mean_image_Pearson": 0.34142020132221906,
+            "pair_count": 2,
+            "study_id": "3500000790",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.09840859472751617,
+            "MSE": 0.022584008052945137,
+            "mean_global_SSIM": 0.473686480993793,
+            "mean_image_Pearson": 0.4831752474766373,
+            "pair_count": 1,
+            "study_id": "3500000807",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.0990753322839737,
+            "MSE": 0.024740854278206825,
+            "mean_global_SSIM": 0.3291404258321039,
+            "mean_image_Pearson": 0.3395492240193494,
+            "pair_count": 4,
+            "study_id": "3500000815",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.09928826242685318,
+            "MSE": 0.025023644790053368,
+            "mean_global_SSIM": 0.2954485464033905,
+            "mean_image_Pearson": 0.31622859748111376,
+            "pair_count": 7,
+            "study_id": "3500000845",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.10499535501003265,
+            "MSE": 0.027484264224767685,
+            "mean_global_SSIM": 0.34444884083767,
+            "mean_image_Pearson": 0.3400994742229219,
+            "pair_count": 1,
+            "study_id": "3500000968",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.10487231612205505,
+            "MSE": 0.025641676038503647,
+            "mean_global_SSIM": 0.33196464377400847,
+            "mean_image_Pearson": 0.32987489830259226,
+            "pair_count": 1,
+            "study_id": "3500000971",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.08080035448074341,
+            "MSE": 0.01897650584578514,
+            "mean_global_SSIM": 0.3314894853646343,
+            "mean_image_Pearson": 0.34928895003948607,
+            "pair_count": 1,
+            "study_id": "3500000980",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.0948701873421669,
+            "MSE": 0.02239268645644188,
+            "mean_global_SSIM": 0.4003967931882415,
+            "mean_image_Pearson": 0.4069306535026656,
+            "pair_count": 2,
+            "study_id": "3500000981",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.10382647812366486,
+            "MSE": 0.026555586606264114,
+            "mean_global_SSIM": 0.3680986092856199,
+            "mean_image_Pearson": 0.3781138114699826,
+            "pair_count": 2,
+            "study_id": "3500000982",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.11794018745422363,
+            "MSE": 0.023840133100748062,
+            "mean_global_SSIM": 0.3612748569978925,
+            "mean_image_Pearson": 0.3975430035059634,
+            "pair_count": 1,
+            "study_id": "3500000987",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.09556130319833755,
+            "MSE": 0.024722034111618996,
+            "mean_global_SSIM": 0.3652903444068678,
+            "mean_image_Pearson": 0.3762889490205784,
+            "pair_count": 2,
+            "study_id": "3500000997",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.11299458891153336,
+            "MSE": 0.028752071782946587,
+            "mean_global_SSIM": 0.3189255953284156,
+            "mean_image_Pearson": 0.32546455386051504,
+            "pair_count": 2,
+            "study_id": "3500001004",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.0916946679353714,
+            "MSE": 0.020420856773853302,
+            "mean_global_SSIM": 0.48533383926452767,
+            "mean_image_Pearson": 0.49816380908395785,
+            "pair_count": 2,
+            "study_id": "3500001022",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.1091134250164032,
+            "MSE": 0.026157820597290993,
+            "mean_global_SSIM": 0.30841847725458493,
+            "mean_image_Pearson": 0.3129524521899387,
+            "pair_count": 2,
+            "study_id": "3500002098",
+            "target_channel": "Mitochondria"
+          },
+          {
+            "MAE": 0.09119081497192383,
+            "MSE": 0.022703975439071655,
+            "mean_global_SSIM": 0.33040346014083777,
+            "mean_image_Pearson": 0.32319057381740735,
+            "pair_count": 2,
+            "study_id": "3500002099",
+            "target_channel": "Mitochondria"
+          }
+        ],
+        "per_target": {
+          "Mitochondria": {
+            "macro_study_MAE": 0.10055189728736877,
+            "macro_study_Pearson": 0.3678856266210219,
+            "macro_study_global_SSIM": 0.35902407890358756,
+            "pair_count": 32,
+            "study_count": 15
+          }
+        }
+      },
+      "minimum_endpoint_ratio": 0.22969473599104664,
+      "values": {
+        "Pearson": 0.3678856266210219,
+        "global_SSIM": 0.35902407890358756,
+        "relative_MAE_improvement": 0.022969473599104666
+      }
+    },
+    "v3_embedding_OOD": {
+      "authority": "post_selection_internal_shift_diagnostic_only",
+      "calibration_study_scores": {
+        "3500000790": 0.9509589076042175,
+        "3500000807": 1.1073280572891235,
+        "3500000815": 0.8903615772724152,
+        "3500000845": 1.4069792798587255,
+        "3500000968": 0.8425699472427368,
+        "3500000971": 0.964460015296936,
+        "3500000980": 1.0483089685440063,
+        "3500000981": 0.9778122305870056,
+        "3500000982": 1.0083964467048645,
+        "3500000987": 0.9650540351867676,
+        "3500000997": 1.032727301120758,
+        "3500001004": 1.1446210145950317,
+        "3500001022": 0.8018516004085541,
+        "3500002098": 0.9116142392158508,
+        "3500002099": 0.9304425418376923
+      },
+      "fit_scoring": "own_study_centroid_excluded",
+      "fit_study_scores": {
+        "Study_10": 0.9518482536077499,
+        "Study_13": 1.2948132194578648,
+        "Study_14": 1.0024901442229748,
+        "Study_17": 1.0226121217739292,
+        "Study_19": 0.931149290955585,
+        "Study_21": 0.8734933364650478,
+        "Study_22": 0.5706162368473799,
+        "Study_23": 0.9728959669237551,
+        "Study_24": 0.6217843389165574,
+        "Study_25": 1.1369560641584628,
+        "Study_26": 1.1667161232568133,
+        "Study_30": 1.5803188582261403,
+        "Study_4": 1.8885174130880704,
+        "Study_6": 1.3246931374073028,
+        "Study_7": 0.7398861065506935,
+        "Study_8": 1.0530011430382729
+      },
+      "score": "shrinkage_whitened_nearest_fit_study_centroid_distance",
+      "study_macro_AUROC": 0.42916666666666664
+    },
+    "v3_minimum_endpoint_ratio_improvement_over_v2": 6.259137539655998,
+    "v3_pixel_interval_coverage": 0.9584344773065477
+  },
+  "preregistered_confirmation": {
+    "all_endpoints_passed": false,
+    "status": "refused_geometry_exact_match"
+  },
+  "production_eligible": false,
+  "protocol_sha256": "4ade6051e400268bf78439de83a7fc28bf4008c04f2f90cca35415a2324f5b72",
+  "schema": "aleph.outer_library.allencell_label_free_confirmation_result.v1",
+  "single_use_confirmation_consumed": true,
+  "tensor_sha256": "1398eb3b57e63a9c792314c1702b18cbf3bac6e5675fe1d97e1ee76e933195d2",
+  "uncertainty_authority": false
+}

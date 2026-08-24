@@ -1,0 +1,36 @@
+{
+  "schema": "aleph.outer_library.senscout_morphology_feature_panel.v1",
+  "source_archive_sha256": "1a4a70bbab2fc93d444bf062cc8df7619ea6b1c57344b411764be1fae88adb50",
+  "source_workbook_member": "SenSCOUT-main/Cell Profiler/Filtered Morphological Parameters.xlsx",
+  "source_workbook_sha256": "1841a23b0962e56a6f873de84eb3344760ef3625b151644b72384fcc4c11f234",
+  "source_sheet": "Base_parameters_Curated",
+  "source_range": "A2:A88",
+  "feature_count": 87,
+  "features": [
+    "NBASIC-3", "NBASIC-4", "NBASIC-5", "NBASIC-6", "NBASIC-8", "NBASIC-9",
+    "NBASIC-10", "NBASIC-11", "NBASIC-12", "CBASIC-3", "CBASIC-4", "CBASIC-5",
+    "CBASIC-6", "CBASIC-8", "CBASIC-9", "CBASIC-10", "CBASIC-11", "CBASIC-12",
+    "NCrph-1", "NCrph-2", "NCrph-3", "NCrph-5", "NCrph-7", "NCrph-9",
+    "NCrph-10", "NCrph-14", "NCrph-16", "NCrph-22", "NCrph-23", "NCrph-25",
+    "NCrph-27", "NCrph-31", "NCrph-33", "Nrph_Ncva-1", "Nrph_Ncva-2",
+    "Nrph_Ncva-3", "Nrph_Ncva-4", "Nrph_Ncva-5", "Nrph_Ncva-6", "Nrph_Ncva-7",
+    "Nrph_Ncva-8", "Nrph_Ncva-9", "Nrph_Ncva-10", "Nrph_Ncva-11", "Nrph_Ncva-14",
+    "Nrph_Ncva-16", "Nrph_Ncva-22", "Nrph_Ncva-23", "Nrph_Ncva-24", "Nrph_Ncva-25",
+    "Nrph_Ncva-27", "Nrph_Ncva-33", "Nrph_Ncva-39", "Nrph_Ncva-40", "Nrph_Ncva-44",
+    "Nrph_Ncva-52", "Nrph_Ncva-75", "Crph_Ccva-1", "Crph_Ccva-2", "Crph_Ccva-4",
+    "Crph_Ccva-6", "Crph_Ccva-7", "Crph_Ccva-8", "Crph_Ccva-9", "Crph_Ccva-10",
+    "Crph_Ccva-11", "Crph_Ccva-14", "Crph_Ccva-16", "Crph_Ccva-22", "Crph_Ccva-23",
+    "Crph_Ccva-24", "Crph_Ccva-25", "Crph_Ccva-27", "Crph_Ccva-31", "Crph_Ccva-33",
+    "Crph_Ccva-37", "Crph_Ccva-52", "Crph_Ccva-75", "skeletonFeature-2",
+    "skeletonFeature-3", "skeletonFeature-4", "skeletonFeature-5", "skeletonFeature-6",
+    "skeletonFeature-9", "skeletonFeature-10", "skeletonFeature-12", "skeletonFeature-13"
+  ],
+  "excluded_target_or_leakage_families": [
+    "author_condition_labels",
+    "biomarker_intensity_and_batch_corrected_biomarker_columns",
+    "UMAP_coordinates",
+    "KMEANS_and_cluster_distance",
+    "raw_file_and_location_identifiers"
+  ],
+  "aleph_authority": "none"
+}

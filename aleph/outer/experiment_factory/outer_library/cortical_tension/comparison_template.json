@@ -1,0 +1,27 @@
+{
+  "build": {"commit": "REPLACE_WITH_SELF_STAMPED_BUILD"},
+  "census": {"fraction_of_native": 1.0},
+  "comparison_context": {
+    "cell_cycle_state": "interphase",
+    "cell_line": "MCF-7",
+    "full_native_compartments": true,
+    "measurement_operator": "gamma_total_method_of_planes",
+    "physical_acceptance_gate_passed": true,
+    "surface_state": "suspended_rounded",
+    "target_reference_id": "hosseini2020_mcf7_suspended_interphase_afm",
+    "temperature_c": 37.0,
+    "time_step_independence_passed": true
+  },
+  "config": {"seed": 0},
+  "device": "cuda:0",
+  "measurements": {
+    "stationarity": {
+      "gamma_total_pn_per_um": {
+        "mean": "REPLACE_WITH_STATIONARY_MEAN",
+        "verdict": "STATIONARY"
+      }
+    }
+  },
+  "quantitative_claim_status": "PERMITTED_BY_RUN_RECORD",
+  "schema": "ac.engine.observe/run-record@2"
+}

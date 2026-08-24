@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aleph.outer_library.mechanics_protocol_catalog.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "catalog_id", "aleph_authority", "sources", "records", "non_pooling_contract"],
+  "properties": {
+    "schema": {"const": "aleph.outer_library.mechanics_protocol_catalog.v1"},
+    "catalog_id": {"type": "string", "minLength": 1},
+    "aleph_authority": {"const": "none"},
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repo_source_audit", "verification"],
+        "properties": {
+          "repo_source_audit": {"enum": ["OK", "CHECK", "NOT_REGISTERED"]},
+          "verification": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_id", "source_id", "doi", "cell_line", "cell_state",
+          "method_family", "mechanical_scope", "probe_geometry", "probe_size_um",
+          "time_scale_s", "observable", "value", "unit", "n", "source_role"
+        ],
+        "properties": {
+          "record_id": {"type": "string", "minLength": 1},
+          "source_id": {"type": "string", "minLength": 1},
+          "doi": {"type": "string", "pattern": "^10\\."},
+          "cell_line": {"type": "string", "minLength": 1},
+          "cell_state": {"type": "string", "minLength": 1},
+          "method_family": {"type": "string", "minLength": 1},
+          "mechanical_scope": {"type": "string", "minLength": 1},
+          "probe_geometry": {"type": "string", "minLength": 1},
+          "probe_size_um": {"type": "number", "exclusiveMinimum": 0},
+          "time_scale_s": {"type": ["number", "null"], "exclusiveMinimum": 0},
+          "observable": {"type": "string", "minLength": 1},
+          "value": {"type": ["number", "null"]},
+          "value_range": {
+            "type": "array", "minItems": 2, "maxItems": 2,
+            "items": {"type": "number"}
+          },
+          "unit": {"type": "string", "minLength": 1},
+          "n": {"type": ["integer", "null"], "minimum": 1},
+          "source_role": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "non_pooling_contract": {
+      "type": "array", "minItems": 5, "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

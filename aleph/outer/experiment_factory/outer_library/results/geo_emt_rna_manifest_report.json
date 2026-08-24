@@ -1,0 +1,42 @@
+{
+  "aleph_authority": "none",
+  "counts": {
+    "independent_lab_groups": 5,
+    "observations": 144,
+    "samples": 72,
+    "samples_by_study": {
+      "GSE125369": 4,
+      "GSE17708": 26,
+      "GSE42373": 8,
+      "GSE49644": 18,
+      "GSE69667": 16
+    },
+    "studies": 5
+  },
+  "features": [
+    "CDH1_RNA_expression",
+    "VIM_RNA_expression"
+  ],
+  "probe_contract": {
+    "GPL570_default": {
+      "CDH1": "201131_s_at",
+      "VIM": "201426_s_at"
+    },
+    "GSE49644_author_annotated_exact_symbol_unique_rows": {
+      "CDH1": "201131_s_at",
+      "VIM": "1555938_x_at"
+    },
+    "selection": "deterministic canonical _s_at probes except GSE49644, whose author-annotated release omits 201426_s_at and contains one exact-symbol/Entrez VIM row; no replicate or alternate probe was selected by outcome"
+  },
+  "scale_contract": {
+    "RNA_and_protein_absolute_values_may_not_be_equated": true,
+    "cross_platform_absolute_values_may_not_be_combined": true,
+    "within_study_effects_only": true
+  },
+  "schema": "aleph.outer_library.geo_emt_rna_manifest.v1",
+  "split_contract": {
+    "RNA_features_are_not_independent_replicates": true,
+    "study_is_outer_holdout_unit": true,
+    "unit": "biological_sample_nested_within_study"
+  }
+}

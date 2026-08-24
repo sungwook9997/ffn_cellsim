@@ -1,0 +1,39 @@
+{
+  "schema": "aleph.external_training.independent_verification_tests.v1",
+  "authority_status": "proposed",
+  "audited_base_commit": "3dbb3aa",
+  "corpus_suite": {
+    "command": "/Users/sw1/miniconda3/envs/aleph/bin/python -m pytest corpus/external_training -q",
+    "collected": 74,
+    "passed": 74,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "safe_harness_core": {
+    "command": "/Users/sw1/miniconda3/envs/aleph/bin/python -m pytest tests/harness/test_cag.py tests/harness/test_ledger.py tests/harness/test_objects.py tests/harness/test_snapshot.py tests/harness/test_linkgrammar.py tests/harness/test_paths.py -q",
+    "collected": 81,
+    "passed": 81,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "retrieval_boundary_smoke": {
+    "cases": 12,
+    "passed": 12,
+    "failed": 0
+  },
+  "combined_retrieval_boundary_smoke": {
+    "cases": 10,
+    "passed": 10,
+    "failed": 0,
+    "both_passes_retrieved": true
+  },
+  "initial_foreign_collection_failure": {
+    "observed": true,
+    "owner_path": "corpus/external_training/review_oa/**",
+    "cause": "duplicate top-level test_generated_results module names",
+    "fixed_by_owner_commit": "dbc413d",
+    "verification_lane_modified_owner_path": false
+  },
+  "reachable_history_forbidden_path_matches": 0,
+  "all_final_checks_passed": true
+}

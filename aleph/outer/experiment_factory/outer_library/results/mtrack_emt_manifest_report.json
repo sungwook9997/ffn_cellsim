@@ -1,0 +1,46 @@
+{
+  "aleph_authority": "none",
+  "all_frames_form_one_split_group": true,
+  "counts": {
+    "biological_replicates": 0,
+    "timepoints": 10,
+    "trajectory_split_groups": 1
+  },
+  "feature_names": [
+    "mask_area_pixels",
+    "mask_area_fraction",
+    "mask_label_count",
+    "mask_boundary_pixels",
+    "mask_bbox_aspect_ratio",
+    "mask_centroid_x_fraction",
+    "mask_centroid_y_fraction",
+    "VIM_RFP_masked_mean",
+    "VIM_RFP_masked_std",
+    "VIM_RFP_masked_q10",
+    "VIM_RFP_masked_q50",
+    "VIM_RFP_masked_q90",
+    "VIM_RFP_background_mean",
+    "VIM_RFP_foreground_background_difference",
+    "VIM_RFP_foreground_horizontal_gradient",
+    "VIM_RFP_foreground_vertical_gradient"
+  ],
+  "feature_tensor_shape": [
+    10,
+    16
+  ],
+  "manifest_sha256": "b352f1f77e698e3ddd494bf240603219c26985241e9d64c826575be9e82def4a",
+  "may_select_aleph_parameter": false,
+  "schema": "aleph.outer_library.mtrack_emt_temporal_raw_vimentin.v1",
+  "source": {
+    "dataset_id": "github-mtrack-a549-tgfb4ng-xy01",
+    "lab_group": "Xing_Lab_University_of_Pittsburgh_with_ATCC_Cell_Systems",
+    "paper_doi": "10.1126/sciadv.aba9319"
+  },
+  "source_image_shape": [
+    1952,
+    1952
+  ],
+  "tensor_sha256": "2b624f878698ca09f9f3e815208393bb4d436f12e8ee57d3ae887f993733b124",
+  "training_status": "temporal_EMT_representation_diagnostic_only",
+  "untreated_control_released_in_pilot": false
+}

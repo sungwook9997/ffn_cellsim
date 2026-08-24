@@ -1,0 +1,62 @@
+{
+  "authority_status": "proposed",
+  "environment": "local CPU, warm in-process queries; initialization measured separately",
+  "initialization_ms": 4736.139917004039,
+  "queries": {
+    "cortical_tension": {
+      "median_ms": 501.94733300304506,
+      "min_ms": 461.81162500579376,
+      "p95_observed_ms": 550.8584589988459,
+      "query": "cortical tension actomyosin membrane",
+      "result_sha256": "5c565a49e9bba0f9641a364c3b869076080d0213ced9dda6f1636a4bb9f64fe2",
+      "top_domain": "cortex_membrane_pressure",
+      "top_source_families": [
+        "doi:10.1371/journal.pcbi.1012629",
+        "doi:10.1038/srep14700",
+        "doi:10.1093/pnasnexus/pgac299"
+      ]
+    },
+    "if_wb_pcr": {
+      "median_ms": 470.78420799516607,
+      "min_ms": 400.3381250076927,
+      "p95_observed_ms": 521.9430830038618,
+      "query": "immunofluorescence western blot PCR cell state",
+      "result_sha256": "c06ec9e7e6a3a83221d68dbdfcbf6a2316a038da136145d8e2d0c2ee9ddb7f24",
+      "top_domain": "mechanotransduction_signalling",
+      "top_source_families": [
+        "doi:10.1186/s12951-025-03653-y",
+        "doi:10.3390/ijms27114685",
+        "doi:10.1186/s12951-026-04458-3"
+      ]
+    },
+    "piv_cell_state": {
+      "median_ms": 490.3632089990424,
+      "min_ms": 407.8308750031283,
+      "p95_observed_ms": 608.723082987126,
+      "query": "particle image velocimetry PIV cell migration state",
+      "result_sha256": "fcf8d478dbab23119e33ec098e8804f19cf7ad1c84d7e164f1c083d4656347f2",
+      "top_domain": "protrusion_migration",
+      "top_source_families": [
+        "doi:10.1038/s41598-025-31172-1",
+        "doi:10.1038/s41598-026-35900-z",
+        "doi:10.1371/journal.pcbi.1012664"
+      ]
+    },
+    "tfm": {
+      "median_ms": 536.2140000070212,
+      "min_ms": 404.6310419944348,
+      "p95_observed_ms": 631.7116249992978,
+      "query": "traction force microscopy focal adhesion TFM",
+      "result_sha256": "34a2278cff917121651de02351ea9a2506d3181550aee36e516290798ca52675",
+      "top_domain": "adhesion_traction",
+      "top_source_families": [
+        "doi:10.1038/s42003-026-09514-0",
+        "doi:10.3390/bios5010013",
+        "doi:10.1021/acs.nanolett.9b04083"
+      ]
+    }
+  },
+  "runs_per_query": 7,
+  "schema": "aleph.external_training.retrieval_benchmark.v1",
+  "snippets_committed": false
+}

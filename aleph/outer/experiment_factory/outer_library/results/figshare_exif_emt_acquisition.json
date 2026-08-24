@@ -1,0 +1,1284 @@
+{
+  "aleph_authority": "none",
+  "archives": {
+    "images": {
+      "central_directory_range_verified": true,
+      "central_directory_sha256": "e3e3dfaf71319550a2c53e295414c441f818b83a5233d6f2272833b7631815d5",
+      "full_archive_downloaded": false,
+      "member_count": 328681,
+      "name": "Images.zip",
+      "official_metadata_md5": "94b60280816b0e73005050b2973b9851",
+      "size_bytes": 193981784985
+    },
+    "quantitative": {
+      "central_directory_range_verified": false,
+      "central_directory_sha256": "6e2f72c50b074898e8756fd3ee7d68e73af150ee54b44a3b03e7ff22dae7a304",
+      "full_archive_downloaded": false,
+      "member_count": 6660,
+      "name": "Quantitative_data.zip",
+      "official_metadata_md5": "dfc80eb6dacdb66844fa6cc31bcdab09",
+      "size_bytes": 15362201302
+    }
+  },
+  "extracted_layouts": {
+    "220902_A549_EM_ActExp3_Plate_Layout.xlsx": {
+      "archive_member": "Images/raw/ExIF_EMT/220902_A549_EM_ActExp3_Plate_Layout.xlsx",
+      "crc32": "568ffaf9",
+      "sha256": "3413f22510385c2376185cacee3433a83e3859059ac41cb5da1e16efe20473da",
+      "size_bytes": 26756
+    },
+    "layout.xlsx": {
+      "archive_member": "Images/raw/Mulltiplexed_EMT/layout.xlsx",
+      "crc32": "8a1cd030",
+      "sha256": "7fdf3431a76440101a6b373c4e83ee75774d523aeee4a4d4e8ad711d7be63448",
+      "size_bytes": 9281
+    }
+  },
+  "may_select_aleph_parameter": false,
+  "raw_image_pilot": {
+    "field_groups": 48,
+    "manifest_sha256": "3a092f9c3d461bd33bbb87f3ff9d054728c65696d1421b82ced382478d5d6884",
+    "member_count": 240,
+    "members": {
+      "Images/raw/ExIF_EMT/220825_A01_0000_TD.tif": {
+        "crc32": "e4585cf6",
+        "sha256": "bb7df3a3c57a57190a3d4c1e3930acfaa81749440c9695570114dd0dd8667233",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_A01_0000_ex405nm.tif": {
+        "crc32": "c796139c",
+        "sha256": "3f773505122a4e53ead0368f91d98ac142072f6660b0ddd6bbce398411ad76f1",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_A01_0000_ex488nm.tif": {
+        "crc32": "c3965391",
+        "sha256": "453e51161b06ca686a9c4dd6007d268073280ae8baeba1ed1ad8f80a70f6e9cc",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_A01_0000_ex555nm.tif": {
+        "crc32": "1dc9cc9e",
+        "sha256": "70cd1ce4e9c504af7cc5d7c6293cc50e811dea66d599f38c265411c305e243d1",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_A01_0000_ex647nm.tif": {
+        "crc32": "bf2b182a",
+        "sha256": "f1f5e8d093311fe7c2a1446293fd3b787294553b3aaedca72b200f1d0d4f7efa",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_A02_0000_TD.tif": {
+        "crc32": "da9afa75",
+        "sha256": "9bc3311edef37b32925945a950d02707163a19c6faa1bb6f6c67ae24d2d76087",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_A02_0000_ex405nm.tif": {
+        "crc32": "e8af8073",
+        "sha256": "29b9288e953a7298c98f3ca959d8660e4fe0d8635a17644c33f7ef1c3f46af47",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_A02_0000_ex488nm.tif": {
+        "crc32": "2bb79dae",
+        "sha256": "3ea840b8621107c0d085e06184cbad218e0b78c9374192f0cdbb0b6f50fd5b93",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_A02_0000_ex555nm.tif": {
+        "crc32": "99c69aec",
+        "sha256": "e930067d0756f286a26b74342b3ed1fb8b2ebded870d251a4ad6ce258a24705f",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A02_0000_ex647nm.tif": {
+        "crc32": "44657dcc",
+        "sha256": "97e77ffe2ecbd9fc6c68c9421288ca67bd85546b9214c64a8d7398f16ecb18f6",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A03_0000_TD.tif": {
+        "crc32": "38338707",
+        "sha256": "427ddb1bef108de0f5958c03dd2c53bbf7ce9526ff425014f20c4361ce64ea8e",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_A03_0000_ex405nm.tif": {
+        "crc32": "6cdf530d",
+        "sha256": "9227af255d0dc8d3382d1337e72fe65b688e959bb8c7ed77f8853a40da1e2e41",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_A03_0000_ex488nm.tif": {
+        "crc32": "78de3bce",
+        "sha256": "a58a86b2cbb8f32d0adc4e58242fdfcfa165aa8cfa6e427cd2e4973eb831d56b",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_A03_0000_ex555nm.tif": {
+        "crc32": "f90bed66",
+        "sha256": "cf6e72ae163ab401abaaa455d7d0560c20d9bb2e3de3b1733ed916f37408fab5",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A03_0000_ex647nm.tif": {
+        "crc32": "7bc44112",
+        "sha256": "8d894b296fa49f3e99f79d4564c8a91ef2c43e8604e5f40aefe6d4198be02a93",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A04_0000_TD.tif": {
+        "crc32": "b0605233",
+        "sha256": "787500e6993ccc321cf7f811c9dc7e314913153946c563b131a7770802b1e0c6",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_A04_0000_ex405nm.tif": {
+        "crc32": "8490ad22",
+        "sha256": "233877e3bd92de652a51fa1431fec2b0be2d46a3918e86a679aa3ef6a7768485",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_A04_0000_ex488nm.tif": {
+        "crc32": "247335bc",
+        "sha256": "c5b052c0078bef1a089619c0c12889b9a8a58371a9482b228d44d8bfbb7b0287",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_A04_0000_ex555nm.tif": {
+        "crc32": "cc22f824",
+        "sha256": "755cf3c4910012a673aece6b13849ad5514d4819e3c532240858e646d619566a",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A04_0000_ex647nm.tif": {
+        "crc32": "bbc43253",
+        "sha256": "207ec8cec5b7cb957a0b49190641f09377b95413f4e05df9461ac4d72b999c39",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A05_0000_TD.tif": {
+        "crc32": "cad5c15a",
+        "sha256": "6d233cefed8d82b2d2b088fc080de748cee4e9abb363558dc4cf231cd0e51c92",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_A05_0000_ex405nm.tif": {
+        "crc32": "4f9e0e10",
+        "sha256": "d026e352961973f9c9afa8f03d59f36da8a1013799731dfe2ff68aa772ebfd1d",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_A05_0000_ex488nm.tif": {
+        "crc32": "0c452005",
+        "sha256": "430c3839f74ba532dfbd0563cd3f78892bfb3cbaddb12b38f59241dfe199a84d",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_A05_0000_ex555nm.tif": {
+        "crc32": "660772d9",
+        "sha256": "ec9ac4f080ba37a1cce2d3dc74479a9410c27c30d665d1d30491ea32356d73a4",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A05_0000_ex647nm.tif": {
+        "crc32": "c8fccc3b",
+        "sha256": "10cd9b722927fb78fed4d00ecfb65a389c6266e1996e89e15e931d1b3030e9a5",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A06_0000_TD.tif": {
+        "crc32": "c292016f",
+        "sha256": "bfe8d0209b075aa5d78f23712db5f16d117085b8002e9cfb1ab70f5047bb366a",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_A06_0000_ex405nm.tif": {
+        "crc32": "fc85fa75",
+        "sha256": "d721fcb1aada4289ab41224a55203fe76113c9bb6a15c732eea09920318c932f",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_A06_0000_ex488nm.tif": {
+        "crc32": "a71311e3",
+        "sha256": "adbd867fc230c880658ee01398bbe92904fee561e4924b16052c7220b66ff49d",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_A06_0000_ex555nm.tif": {
+        "crc32": "fb558856",
+        "sha256": "7fc3eef82ac1f295fed12c0bfe21a744cfac38ba39d9e062368c24b02f74b273",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_A06_0000_ex647nm.tif": {
+        "crc32": "abc7572f",
+        "sha256": "a93272f4c57ed0cbd0b78b7b488c0d94f9d4f0b2c92984b269f989688a418ffc",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B01_0000_TD.tif": {
+        "crc32": "56c65af2",
+        "sha256": "7dc5c9ee06ae2000350c21813c4f6809bde8b64c10a0e151b832cdc01909036c",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_B01_0000_ex405nm.tif": {
+        "crc32": "282e12d0",
+        "sha256": "34c4345ddb8307078b652b67de02b9955ab03c41638919140a283b7034e6f433",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_B01_0000_ex488nm.tif": {
+        "crc32": "6a0013a8",
+        "sha256": "1941b38c00663c9dc3ee289f0659cc9f958b8f85095d32d2477b251de6ece515",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_B01_0000_ex555nm.tif": {
+        "crc32": "6d087987",
+        "sha256": "62cf0de2894a56ce4bf25bfc924edef17b32703d026e7f8da8d3af6a358ccd08",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_B01_0000_ex647nm.tif": {
+        "crc32": "c7b17d16",
+        "sha256": "eccc30549f1ef91980e630e98f4b03f9cfb1214255d5b0455a70cbd1206c8f22",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_B02_0000_TD.tif": {
+        "crc32": "a2c9001c",
+        "sha256": "72191c09c8a3e8a735a36ab80ac7e28f0bb728fd5fde75fc4e0c1b7b2d902f0c",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_B02_0000_ex405nm.tif": {
+        "crc32": "36d97b3e",
+        "sha256": "cce27919556e7bc817f7e37094de86b718afcc68c8713c2efcc97f2352d61593",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_B02_0000_ex488nm.tif": {
+        "crc32": "eefd7ee5",
+        "sha256": "821081786adb161fef89b1f7382fc04dce6816e4713f864dcef4d32964885ef5",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_B02_0000_ex555nm.tif": {
+        "crc32": "e093d7fd",
+        "sha256": "a708fa6c798a0e34c51271a238482e7fc45fd2d03c8fecc507a9314f76e40cc1",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B02_0000_ex647nm.tif": {
+        "crc32": "d61e1dab",
+        "sha256": "02a6ffd6e5f4740159c514a8057e095ab40806b60e11e818526f52282b055bd0",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B03_0000_TD.tif": {
+        "crc32": "0783015f",
+        "sha256": "e433699802fa5b9e5331ada6daee151b7bfcdc73dcb60563bf599529d4829408",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_B03_0000_ex405nm.tif": {
+        "crc32": "5227a421",
+        "sha256": "cad3e56be0333f740e9f6ebc64f00dbbf924aab139bdc1df99feb001a0773587",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_B03_0000_ex488nm.tif": {
+        "crc32": "a0f0f0d5",
+        "sha256": "2d60822060b065ba2f5c5e94bddcfa1f0e907b1ac7d8f9c663c13320e69ccc11",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_B03_0000_ex555nm.tif": {
+        "crc32": "6dee807d",
+        "sha256": "27c62664fbeee9ac20e331c1252ae7a0a51ee259c38045c61e01c270a1468070",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B03_0000_ex647nm.tif": {
+        "crc32": "8c45e1a1",
+        "sha256": "24339c289a87f0bf54ee87fcba843e6b48059b76f0241dacedc3f22a0c882e0f",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B04_0000_TD.tif": {
+        "crc32": "58522355",
+        "sha256": "02302ab8e192a6681d9750c95f27af1a60384b86c6aeecbbbeba0bfc6da531f1",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_B04_0000_ex405nm.tif": {
+        "crc32": "eead38b5",
+        "sha256": "ec2a26d79baee384a54ca0b3198766b8d8817d6e89b384c32b40d7fdce80fb4d",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_B04_0000_ex488nm.tif": {
+        "crc32": "4ce5256d",
+        "sha256": "ac7a298ef1eab311842ac00c6c8e879dadade6aba24234080d88f3f6526172a8",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_B04_0000_ex555nm.tif": {
+        "crc32": "62d34254",
+        "sha256": "1375a175119e8e6c6c8c2c5979ac4134fdcb421cf747c5a0c933384afb7c4719",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B04_0000_ex647nm.tif": {
+        "crc32": "5e522661",
+        "sha256": "8f8f91a71afcf81aee0e2229334f3a862f3444e262b87ad5ae6d7264ac807a17",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B05_0000_TD.tif": {
+        "crc32": "bed94b5f",
+        "sha256": "c297a0d89e86a3c9fbfba44e5216f25a55cad56f4a6074cf8bc3520212743cc7",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_B05_0000_ex405nm.tif": {
+        "crc32": "5999c44a",
+        "sha256": "f6f08c6eac204eb5252ab813666e60271680a63d21356a0557e4a550e87c6590",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_B05_0000_ex488nm.tif": {
+        "crc32": "09f779fb",
+        "sha256": "0c8faa258a663b02ef3becace752a2ceaab3451836fe4a380df082d26a2b1937",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_B05_0000_ex555nm.tif": {
+        "crc32": "ce001bda",
+        "sha256": "4650d462b8bbead4491f15a1a3e16496939d479ecb2564f113cc8dca86c95940",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B05_0000_ex647nm.tif": {
+        "crc32": "575e7e1d",
+        "sha256": "c5d8a1a96cd3c537edd3bd70a2adaa11e309fde5df285d9459ecfe5d472cad9d",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B06_0000_TD.tif": {
+        "crc32": "a997e7b7",
+        "sha256": "84f6b36b2960bb394946feb7b129308dc0e1c2b9b351658d5652edf92baaf8b9",
+        "size_bytes": 2349923
+      },
+      "Images/raw/ExIF_EMT/220825_B06_0000_ex405nm.tif": {
+        "crc32": "18632aa1",
+        "sha256": "dcb88342391d760cc1d3e9b66a98b4cdb6fc764ee38720cc8d813864259eab08",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_B06_0000_ex488nm.tif": {
+        "crc32": "fdb587b9",
+        "sha256": "06b016a886bc7eb11adc0aeaba9266d8f0e41afb498e393b0bda39751b583935",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_B06_0000_ex555nm.tif": {
+        "crc32": "6fcdda3d",
+        "sha256": "f6e824054b11abef4f7228f24f4a468a94efc259f8531fde29dc261be39dee0e",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_B06_0000_ex647nm.tif": {
+        "crc32": "340beefe",
+        "sha256": "fe1a6689500174a604dca09e941a4f63639d1d1e6e02618006552d3f30c2a4d7",
+        "size_bytes": 2349919
+      },
+      "Images/raw/ExIF_EMT/220825_C01_0000_TD.tif": {
+        "crc32": "c7364bc0",
+        "sha256": "0e06747b1eeb656fbea96aa991c6c655838588d61a017e1e9bf9b0e324604926",
+        "size_bytes": 2349889
+      },
+      "Images/raw/ExIF_EMT/220825_C01_0000_ex405nm.tif": {
+        "crc32": "d222f539",
+        "sha256": "4adcfafd0d78f3e89fc6c72a86402c841f2ef6341e5758c18c1d100b872591d2",
+        "size_bytes": 2349880
+      },
+      "Images/raw/ExIF_EMT/220825_C01_0000_ex488nm.tif": {
+        "crc32": "0375a36f",
+        "sha256": "84eb0bc06b82825d5db5c38cffa03b6300d9e9446dc350a43dfa4149e600381d",
+        "size_bytes": 2349882
+      },
+      "Images/raw/ExIF_EMT/220825_C01_0000_ex555nm.tif": {
+        "crc32": "ea647cca",
+        "sha256": "5b23d17eeb518c3aceaa71d23f1294e09ee811b2f9aaea79e4156c87a89d41a5",
+        "size_bytes": 2349885
+      },
+      "Images/raw/ExIF_EMT/220825_C01_0000_ex647nm.tif": {
+        "crc32": "6eefdb64",
+        "sha256": "f69195b0e1de0e68405b4998ba23e15882c0866154b259c8401f2df8b27780b4",
+        "size_bytes": 2349885
+      },
+      "Images/raw/ExIF_EMT/220825_C02_0000_TD.tif": {
+        "crc32": "a5f25e2c",
+        "sha256": "0e0bab794cd8c3510ae75d55e2bf39004d875567c45e28d2abe4c2fab3dcfefd",
+        "size_bytes": 2349890
+      },
+      "Images/raw/ExIF_EMT/220825_C02_0000_ex405nm.tif": {
+        "crc32": "73a9253d",
+        "sha256": "54a62e841e1a9f24e4dd323ab92eeca5de0410ba020ecf1c0f03f0442b3d5856",
+        "size_bytes": 2349881
+      },
+      "Images/raw/ExIF_EMT/220825_C02_0000_ex488nm.tif": {
+        "crc32": "5d0b89cb",
+        "sha256": "26bbec90c8f62295df8ef51ada8ab8d7924b4d1084434fb949b77961bdeba072",
+        "size_bytes": 2349883
+      },
+      "Images/raw/ExIF_EMT/220825_C02_0000_ex555nm.tif": {
+        "crc32": "e11d6c72",
+        "sha256": "7a82973382956644b07d6f638e167eeb918d787603950758cffdac2ad09872d4",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C02_0000_ex647nm.tif": {
+        "crc32": "efebafc2",
+        "sha256": "dfb53c59ad352140ea3656778f8cb77cdc88982a8ee6c276a6fb0eb41278ba22",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C03_0000_TD.tif": {
+        "crc32": "950f29bd",
+        "sha256": "86fa076523a59f87bc63609d3197a90f16451ef12fa6c79fae3c74914e7895f6",
+        "size_bytes": 2349890
+      },
+      "Images/raw/ExIF_EMT/220825_C03_0000_ex405nm.tif": {
+        "crc32": "2ba1f165",
+        "sha256": "8ac483af2ad24d945b04ff07f8e2609f055130bd428c987880113244d67265af",
+        "size_bytes": 2349881
+      },
+      "Images/raw/ExIF_EMT/220825_C03_0000_ex488nm.tif": {
+        "crc32": "2c78d7e3",
+        "sha256": "50e95fb3add3b3896c288fec0419a1ebe5612d54aac09f9f5f8e45f4343e4d7d",
+        "size_bytes": 2349883
+      },
+      "Images/raw/ExIF_EMT/220825_C03_0000_ex555nm.tif": {
+        "crc32": "2a14a91c",
+        "sha256": "96c40d9dc9f84cc478221cd91ff522c4c3c9254dc6b8491c3a477c330623b254",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C03_0000_ex647nm.tif": {
+        "crc32": "6d20ea98",
+        "sha256": "5bb9e44f61085a3c11074a980237ef14b689de901d3e4911413ef19502bbc46a",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C04_0000_TD.tif": {
+        "crc32": "ce5b584a",
+        "sha256": "70f79a72f94e67d211ff52f9fb3096466547fe550cfc5a5a39a07a13d8a4f9ce",
+        "size_bytes": 2349890
+      },
+      "Images/raw/ExIF_EMT/220825_C04_0000_ex405nm.tif": {
+        "crc32": "85cfc89c",
+        "sha256": "0e665618666308f5c8f42bbdfcca5a6a01eed714450635ec799b3672621b5e09",
+        "size_bytes": 2349881
+      },
+      "Images/raw/ExIF_EMT/220825_C04_0000_ex488nm.tif": {
+        "crc32": "556912e0",
+        "sha256": "0c81efee4cada7990a4c1788b7b729108c076226823c5ec9cf5c6ca5cdb7a95d",
+        "size_bytes": 2349883
+      },
+      "Images/raw/ExIF_EMT/220825_C04_0000_ex555nm.tif": {
+        "crc32": "a7eaaaac",
+        "sha256": "c6a35f22cb62c9359f6db37bb0c13009831b2f26a3d6fdca2623bf6401dbcfc8",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C04_0000_ex647nm.tif": {
+        "crc32": "28463b9a",
+        "sha256": "2d6716a4446348034ac428125d8d6bcb6a85a1fa1f108c0d90b45075c582182f",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C05_0000_TD.tif": {
+        "crc32": "41cf2789",
+        "sha256": "241f406812e7cd8beceb4c91a23a75d9b9431e550b9fc20b8a2e7febe14804f1",
+        "size_bytes": 2349890
+      },
+      "Images/raw/ExIF_EMT/220825_C05_0000_ex405nm.tif": {
+        "crc32": "9af13f80",
+        "sha256": "10fe4e905a3cea8909e74b08721db06d20281930ff65ec8d0dbb78271c701e21",
+        "size_bytes": 2349881
+      },
+      "Images/raw/ExIF_EMT/220825_C05_0000_ex488nm.tif": {
+        "crc32": "0683219f",
+        "sha256": "bd18d43b684068c541200467e198655cf17ff32e15e4c253de702ddbccc54da6",
+        "size_bytes": 2349883
+      },
+      "Images/raw/ExIF_EMT/220825_C05_0000_ex555nm.tif": {
+        "crc32": "f00a72fd",
+        "sha256": "7e965cd2b5f3a6934067de29e3752ca3aa9ac7f9831c89ea35f46b88a0e96a4b",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C05_0000_ex647nm.tif": {
+        "crc32": "b3fbef1c",
+        "sha256": "37a63fd3bd91de74f67f241f306632f6dd466ff96d3208daa675abf2720f2a05",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C06_0000_TD.tif": {
+        "crc32": "27c5ba5f",
+        "sha256": "535a2d9570841ad86ec5ad188cce9fe7fe9fff11339ab327ad7cceb780dedf80",
+        "size_bytes": 2349890
+      },
+      "Images/raw/ExIF_EMT/220825_C06_0000_ex405nm.tif": {
+        "crc32": "ff85b857",
+        "sha256": "435d21a86e2b552aae3c0f600a26bf3f09be7e1022cfb486568caecba72a034e",
+        "size_bytes": 2349881
+      },
+      "Images/raw/ExIF_EMT/220825_C06_0000_ex488nm.tif": {
+        "crc32": "7bd68070",
+        "sha256": "6ac53d0e5d853c0ca5692a17eaa913e25725d75de36ce2a23a2d7a2b26591712",
+        "size_bytes": 2349883
+      },
+      "Images/raw/ExIF_EMT/220825_C06_0000_ex555nm.tif": {
+        "crc32": "3c789e76",
+        "sha256": "2a05c13e24a055ea86ae39aafd1cdd69a74cc8b093881d90b3a66b3295026eca",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_C06_0000_ex647nm.tif": {
+        "crc32": "21fd30fc",
+        "sha256": "22439fa0bf417e98df76348ce87b0aea3c90d6eff1b570887852b43cdd14bedc",
+        "size_bytes": 2349886
+      },
+      "Images/raw/ExIF_EMT/220825_D01_0000_TD.tif": {
+        "crc32": "b16b27f4",
+        "sha256": "c9d25443f09a5929bdae52af14302ac8b855afdeb2c5f0ee92887ffab83ffe72",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_D01_0000_ex405nm.tif": {
+        "crc32": "f9b172da",
+        "sha256": "e49239cac6d1b3862c9c69943c365c8a67294dbdcacaa1119dc418d6dccad644",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_D01_0000_ex488nm.tif": {
+        "crc32": "2c26065a",
+        "sha256": "e88f848e553adad80e9a6b7f4d09d0cb81abcf830baa637ac5dae7feee28e8ad",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_D01_0000_ex555nm.tif": {
+        "crc32": "80a38475",
+        "sha256": "f96a8815720ed3084c468970d70b6d84957b943006abfd9737714b191fc6ec7b",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_D01_0000_ex647nm.tif": {
+        "crc32": "342c92e5",
+        "sha256": "ebc5392f40b00d195e2403bda4b890327109c8215d67bd997326b624b4810c19",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_D02_0000_TD.tif": {
+        "crc32": "79babc2a",
+        "sha256": "3503d5e4917a7400807ba2df07200797d8b578d8ab73be3949a920ad8a077b0e",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_D02_0000_ex405nm.tif": {
+        "crc32": "34b3e756",
+        "sha256": "0583150410534416adf1fe5537f422de5d33a91bcad70dd80fe92fbf880ebb26",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_D02_0000_ex488nm.tif": {
+        "crc32": "6aed76cf",
+        "sha256": "1a7e1adaa1be4bb331ae628681e3b7e4b41eb1ee47ef0a6793b69bccf5d05e3b",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_D02_0000_ex555nm.tif": {
+        "crc32": "c78c928f",
+        "sha256": "1430d3dcac6e1e1beb242ce057acd6e816098dc85edbf70e8a9b24dd5e3581ff",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D02_0000_ex647nm.tif": {
+        "crc32": "369c65e5",
+        "sha256": "67a020ff6877c697a1b2fdba375342f5348c770b46db8dd1971515a6477bd814",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D03_0000_TD.tif": {
+        "crc32": "b8d9a15b",
+        "sha256": "6caf719d892db1bf7aa60eca092d1dc837750c28d4e56fd61d399639b8b62367",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_D03_0000_ex405nm.tif": {
+        "crc32": "89a30b24",
+        "sha256": "57eb644d91b270920303f010939a9ff8cb0873b193ea313c16a2682f8cdb968a",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_D03_0000_ex488nm.tif": {
+        "crc32": "7f35dfeb",
+        "sha256": "b5e1bbf760dee95c6f8a656201ae6d99ab20e2c18a094b8e7921798ccfa29df2",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_D03_0000_ex555nm.tif": {
+        "crc32": "6848caf0",
+        "sha256": "81ace5902bff3f867d81a10b51ee63765a3cf6dce10fbd8f68af393e3e9f8ab2",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D03_0000_ex647nm.tif": {
+        "crc32": "e7245034",
+        "sha256": "39bba8829a5fd55b6011f50cca221c844744849cb570911751cfeb7e0007202d",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D04_0000_TD.tif": {
+        "crc32": "b84fdb4a",
+        "sha256": "2b9b2e0bb92a43060d19fcd06fb07a1a8c76df16db806674fcf107f8d745b5f2",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_D04_0000_ex405nm.tif": {
+        "crc32": "d608c5ef",
+        "sha256": "4f942d74584e8bbcded84be796ebc7357570f28c6a7f7132461d7a36d688db54",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_D04_0000_ex488nm.tif": {
+        "crc32": "fb15d73a",
+        "sha256": "87df210e45e87486c2f94235e9015957a5dd507dd7880926817357fccb5981cc",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_D04_0000_ex555nm.tif": {
+        "crc32": "dc906a30",
+        "sha256": "0ee59cedc8fb2e7083527cc87cebe449967d8ac2f9e97132672abfceeb5c0fa3",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D04_0000_ex647nm.tif": {
+        "crc32": "e9cf27c4",
+        "sha256": "cea0e6720202051136ff33d487cf45a807fd9e743967e217b28375e043bf56d7",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D05_0000_TD.tif": {
+        "crc32": "4f473ad2",
+        "sha256": "0cbdf7b230338fbe0cdd1456b34fe2dd800d0774802f825e9db1dba7a4a82fd4",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_D05_0000_ex405nm.tif": {
+        "crc32": "5862c8d4",
+        "sha256": "974737038467b2736580f33e5d878e56a9aac54135c4b84572467b12d4be6cff",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_D05_0000_ex488nm.tif": {
+        "crc32": "92b10c63",
+        "sha256": "5471ef36d6174e0820cb11eed5c0c1df438b6fdf36c121dc45443e8e9363deed",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_D05_0000_ex555nm.tif": {
+        "crc32": "4d8262fb",
+        "sha256": "8e5a7ab0e548190dadbeddbc4817bb30b344e6455218e2afd965601c60917ed5",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D05_0000_ex647nm.tif": {
+        "crc32": "4d6590f9",
+        "sha256": "649f652d9459d4810936c2e6952601348f367405ca4db82894a73c3479808263",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D06_0000_TD.tif": {
+        "crc32": "983cfcfa",
+        "sha256": "703b76c42f60d7b6490a363ef2aa118fcafda307a7903d7b0320213db005ac6e",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_D06_0000_ex405nm.tif": {
+        "crc32": "98f4efbd",
+        "sha256": "78f43314111ee6a7d834ca7ec7cf904372f9a6ade60da98f213825e695dc16cf",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_D06_0000_ex488nm.tif": {
+        "crc32": "8bb721a8",
+        "sha256": "a0d7e59cbffd9e09476a5e21ff71a9935247ada9be2f558f8f2658dd6dc2da2c",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_D06_0000_ex555nm.tif": {
+        "crc32": "54ec23ef",
+        "sha256": "2ca976b68d644fa1ab3357310ee75f78a711ef9bb75df2065686a5504ae7bff2",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_D06_0000_ex647nm.tif": {
+        "crc32": "9c8e0465",
+        "sha256": "cc510ff0825166a2c34217270b0ea70e79eedcfdc1c619d6b4ee8e5338dfaad5",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_E01_0000_TD.tif": {
+        "crc32": "a42832ff",
+        "sha256": "119739bab592c8662a594cf2cddaa13204c5d40c9214613ab2eab27301ae89e0",
+        "size_bytes": 2349920
+      },
+      "Images/raw/ExIF_EMT/220825_E01_0000_ex405nm.tif": {
+        "crc32": "4f997acb",
+        "sha256": "c4bb093b375be2acccf0d18d32a23dc9e03116e1307a7d6cefb2d17ebf852e0e",
+        "size_bytes": 2349911
+      },
+      "Images/raw/ExIF_EMT/220825_E01_0000_ex488nm.tif": {
+        "crc32": "73d6447a",
+        "sha256": "eae1ce79dde429b15aff8dff53f8dcaaf5ebcee393d8f2fff575a2fc8b4ad549",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_E01_0000_ex555nm.tif": {
+        "crc32": "682cfaca",
+        "sha256": "76d8054ab9b4fc11f582d13b89afbcc23a3ee4ee0dbe00722152080f7fcb6c47",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_E01_0000_ex647nm.tif": {
+        "crc32": "e021cd89",
+        "sha256": "ed0d373809870490f6beb93877b0b5380632761bf47392629e6290083716b7ab",
+        "size_bytes": 2349916
+      },
+      "Images/raw/ExIF_EMT/220825_E02_0000_TD.tif": {
+        "crc32": "a02f89e0",
+        "sha256": "840d3f45080bda325368b0525ed32375098a8c682f48d2e0b6a3e4762387a83e",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_E02_0000_ex405nm.tif": {
+        "crc32": "662d2bf1",
+        "sha256": "e9608121fe0230ec64c01a69865e4783389ea36513021d379d41fd183c6f7376",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_E02_0000_ex488nm.tif": {
+        "crc32": "d5d496b7",
+        "sha256": "9a64a35f28ac9f71cf88351c5637dece830ccdb9e5011258a9bced99be97c562",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_E02_0000_ex555nm.tif": {
+        "crc32": "214a47e3",
+        "sha256": "e8dc2b6e95467821a5c6e20762aec468d8971525e451855cb37ac3b0947465df",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E02_0000_ex647nm.tif": {
+        "crc32": "12dc6057",
+        "sha256": "1357e060552b4b3cde3e56ee35880ce21da2bc7fadbd5429ebdcb9cc1390ffc0",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E03_0000_TD.tif": {
+        "crc32": "ade90f01",
+        "sha256": "8ae62bea4067858b1c5c4f559a630d40cb9b51aba72a07953b67646145684275",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_E03_0000_ex405nm.tif": {
+        "crc32": "55f41e39",
+        "sha256": "50a6134e006a6f79371791f097d733675729bf1cffd9cac9115882ef5afb57c9",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_E03_0000_ex488nm.tif": {
+        "crc32": "85b765aa",
+        "sha256": "9519bafcd81de12016a8b5d2b9ff2f040f5e403271ffe7d1e9fda1cd1d8ca58f",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_E03_0000_ex555nm.tif": {
+        "crc32": "082fd993",
+        "sha256": "7847dabc202a7eb167a62065e21787be5f4bd2be69237feee4d77b3acba9f106",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E03_0000_ex647nm.tif": {
+        "crc32": "f36c6f93",
+        "sha256": "1ec6b605695e1125390087ce169e0c565e79af582b1ca5bcdd2c25bde05aab84",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E04_0000_TD.tif": {
+        "crc32": "746adca3",
+        "sha256": "711857148c7ddd5867eb7345ba3a49ea27fa0ac9e0aa6bc9995c49b649a93f87",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_E04_0000_ex405nm.tif": {
+        "crc32": "7c97a742",
+        "sha256": "1b154c86fd0d0604b2f6af788aa18e42eb6bc94318b3feba38b6dd82be997535",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_E04_0000_ex488nm.tif": {
+        "crc32": "33842d85",
+        "sha256": "b0730697ff737ace4618695dfb3f2e8c7e016f15a215d95de21c2fa472051938",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_E04_0000_ex555nm.tif": {
+        "crc32": "eb1a4edd",
+        "sha256": "0d8a9d0313ebad7bc87c315a8543247e7123f71babdd125a3a53f1c103ac5229",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E04_0000_ex647nm.tif": {
+        "crc32": "b6bd99b2",
+        "sha256": "c145c6c3759347a311ba0d1b435031e3cbe904bffd72bbb2491ff0678a316121",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E05_0000_TD.tif": {
+        "crc32": "27f8ef4f",
+        "sha256": "d17aea6c8622e7a473959f0d9f01c207234b013ad133d3f70c4769bb25664378",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_E05_0000_ex405nm.tif": {
+        "crc32": "bec097cb",
+        "sha256": "c8cd8556e2e6e4ddacafcf33d2a83fc0c9d3718fb7779a66bc1e3184d00175f3",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_E05_0000_ex488nm.tif": {
+        "crc32": "9e5ae503",
+        "sha256": "95359eebbeffaa155aad28756e0280074467c28c1d74a8e98c46397b95a6fa67",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_E05_0000_ex555nm.tif": {
+        "crc32": "e26b22e4",
+        "sha256": "d0acb86fd776f69250663478672b9c3360bcfcc70fe6263f0e220cb3745864e0",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E05_0000_ex647nm.tif": {
+        "crc32": "b72e3841",
+        "sha256": "5c4bbdc946c53668ab373f77d67c63c43ad41a246af8e3203926edcab9ef72d0",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E06_0000_TD.tif": {
+        "crc32": "afac17bd",
+        "sha256": "744d68dfcba8964fc834357d3e71876c4297d99695a018318b9298b8db1dd235",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_E06_0000_ex405nm.tif": {
+        "crc32": "92b9defc",
+        "sha256": "9bed60c76595b320e9fdef237a7a1c83544803c996fc06702de5c54c57c73346",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_E06_0000_ex488nm.tif": {
+        "crc32": "bf4bb183",
+        "sha256": "bc05d0fbd4fd97b4bd01fe532d782fa4cda9219ccc6208605c64b83a036a6655",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_E06_0000_ex555nm.tif": {
+        "crc32": "b111d0ac",
+        "sha256": "7cda3cd2cfaae8af84fea3126b48e07cdb00e4f0eadc3744741a5c462b915869",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_E06_0000_ex647nm.tif": {
+        "crc32": "6661e99f",
+        "sha256": "99dc0ede6a703958f382444a162218ae7154692bc51acea91658122acd74ed68",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_F01_0000_TD.tif": {
+        "crc32": "83cab030",
+        "sha256": "052b5d12fc3c1a85ed3946aaa182a5209b12416f5631bb1ae40828da8ac1f837",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_F01_0000_ex405nm.tif": {
+        "crc32": "3dfd7ed6",
+        "sha256": "5c2dfe489e5677fcbd90381a6c5d8e213a900d9d23769b949527b7baeb552d7b",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_F01_0000_ex488nm.tif": {
+        "crc32": "48ed04f5",
+        "sha256": "3c17a997e4e4665dfc464a84a75166568ba5664e96da5b88471d22675402744c",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_F01_0000_ex555nm.tif": {
+        "crc32": "72c27374",
+        "sha256": "b8b7c152f6f19ec67460ff44f7e2fe89d9576772d81deb18c0ab58a780564753",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_F01_0000_ex647nm.tif": {
+        "crc32": "eb139cab",
+        "sha256": "0a1abeb7890305fbf2b11100f9589a47228a3678e92886ff91500a7c8573b742",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_F02_0000_TD.tif": {
+        "crc32": "5793fe6e",
+        "sha256": "c907bfe8d72235e8b7f5652aa17f22500d1fd1fd21d4649eee94c802114aac6c",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_F02_0000_ex405nm.tif": {
+        "crc32": "b9b7e0f9",
+        "sha256": "04d7d9319fd35b00659c724e22c9808e0d58b99dadfed3395b789dc5f7641ed0",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_F02_0000_ex488nm.tif": {
+        "crc32": "ed097f22",
+        "sha256": "17bc8f4299ed0159d85bdcda7683da701f04d532c194b837154e364facbe40a4",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_F02_0000_ex555nm.tif": {
+        "crc32": "0c9c6ec1",
+        "sha256": "283d6ab0fe1caa6f4482886a432da525984e5fe248b742974e228824e74330b0",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F02_0000_ex647nm.tif": {
+        "crc32": "2866570e",
+        "sha256": "6fff15220bde4d7fb1e3bc4a1c71c619dde84d3ac469889b1370eb680b95c14b",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F03_0000_TD.tif": {
+        "crc32": "15f8abcd",
+        "sha256": "d957bccd5d58faa61c09df11a996822656c4b7dc35e77ee7e3b93d830413e142",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_F03_0000_ex405nm.tif": {
+        "crc32": "218e14d5",
+        "sha256": "df7030ee9f7c5a23a764fdb3f0ebdf030b8326ab0e93a1cebe5a666b013d5f10",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_F03_0000_ex488nm.tif": {
+        "crc32": "9d46448b",
+        "sha256": "7bac1dc9adf8051070686d73479f9d6ae0b43bf41d5232f1113b2aeb31760541",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_F03_0000_ex555nm.tif": {
+        "crc32": "75ac0b2d",
+        "sha256": "8685c9115ed491cba8f8df2cd089c8f41a8694fc34f8d7a32bb49157343e7846",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F03_0000_ex647nm.tif": {
+        "crc32": "9c37f253",
+        "sha256": "af2a47a114060fe2932f7d883a0830739c4e4a25464a98851f1d21fe3ba6998f",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F04_0000_TD.tif": {
+        "crc32": "066ccf53",
+        "sha256": "afd96407f04cad956a4b7f43c717b2a7039dd8626766c4a74a6d82baa357a42a",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_F04_0000_ex405nm.tif": {
+        "crc32": "c43f4823",
+        "sha256": "9cbcea52aff27ba50755e18887ffee1e702c772029a8229193d06ee26e215f36",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_F04_0000_ex488nm.tif": {
+        "crc32": "c71b4653",
+        "sha256": "e90e228c9c450c956354eca43644dca693d8b377f3b2e6081bb567291814eab6",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_F04_0000_ex555nm.tif": {
+        "crc32": "6f15a0d9",
+        "sha256": "7d8f75d6fcc6ca8d6fd3b474245777393141808f21a9f628adfca1a84da3af3b",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F04_0000_ex647nm.tif": {
+        "crc32": "e6568209",
+        "sha256": "90943113307b45f9ef852e62d92f97b5433e0da69d940be727848de74b73097d",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F05_0000_TD.tif": {
+        "crc32": "18c66107",
+        "sha256": "e6e7c97db42323522ff486116b569dde1e9f79c13b2094b2cfe974eae4426e9d",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_F05_0000_ex405nm.tif": {
+        "crc32": "4db22b2c",
+        "sha256": "3fb27d8556fdfdce48939e13c6c25d5b9519166c3ed1b6d99586ae40748fdf92",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_F05_0000_ex488nm.tif": {
+        "crc32": "ee5b4d0a",
+        "sha256": "7d4be387edb4fe31eefcdfe0c02d7cee0540f5a064e072d2ce43d097ecb58b91",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_F05_0000_ex555nm.tif": {
+        "crc32": "6bf4d880",
+        "sha256": "caef68a06f1145126f714ce173902ab595b52db8efffa975f5a75da4a06eaed2",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F05_0000_ex647nm.tif": {
+        "crc32": "5c4991be",
+        "sha256": "833e0cb91e33bad515ffa7115afce3daaf3fa4a01b4c2218c3fe30ac8154152a",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F06_0000_TD.tif": {
+        "crc32": "c3a639c9",
+        "sha256": "a091eaa3f1853105840f40210201ec0eacb89fff59f1d354e7fa89dad80012fd",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_F06_0000_ex405nm.tif": {
+        "crc32": "2c221264",
+        "sha256": "c920096a34a235ea7985fb4ebadf20e5ecef960c1e4e57408bc7472082a0f20f",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_F06_0000_ex488nm.tif": {
+        "crc32": "e3aa9542",
+        "sha256": "08caa13b895144fa291497a50215e0391d696e987cde47e019e09cceae9069c5",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_F06_0000_ex555nm.tif": {
+        "crc32": "9f838a39",
+        "sha256": "f1928ccae07f1e6028034de5342ada6af29d91ee390d5fe15ce6eb5178fe4701",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_F06_0000_ex647nm.tif": {
+        "crc32": "f3e452a6",
+        "sha256": "ccf58f9d0713a575c9710fa8cfcb6a4baa9c53456e71dda2303b4af0610dda8b",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G01_0000_TD.tif": {
+        "crc32": "f2f52d3a",
+        "sha256": "5b94d6721097d0753c88ce2a62b20a8ceba90b232658089073d28d44fa9811b7",
+        "size_bytes": 2349921
+      },
+      "Images/raw/ExIF_EMT/220825_G01_0000_ex405nm.tif": {
+        "crc32": "1426850d",
+        "sha256": "36ec5964590a3c75f47069c1d9e1c9b9fcbe8f9e67d682256dcaa805b7dbc2a6",
+        "size_bytes": 2349912
+      },
+      "Images/raw/ExIF_EMT/220825_G01_0000_ex488nm.tif": {
+        "crc32": "f66c918e",
+        "sha256": "c7a9937238c263d35b6d4c8fa3d0fd16d7cf8d794e7bee2a7a59b4df40f0613f",
+        "size_bytes": 2349914
+      },
+      "Images/raw/ExIF_EMT/220825_G01_0000_ex555nm.tif": {
+        "crc32": "25e85a1c",
+        "sha256": "70e938a3fb819e7430ae1403ae60668f00d6ef2d862f6cdb51596fe56190240b",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_G01_0000_ex647nm.tif": {
+        "crc32": "41a28f91",
+        "sha256": "c5354fc867c4760aa2b0b13d07edd18060f8618c7e670e252612634d82bd957f",
+        "size_bytes": 2349917
+      },
+      "Images/raw/ExIF_EMT/220825_G02_0000_TD.tif": {
+        "crc32": "e18c24bf",
+        "sha256": "9efb77e2b9d5c345c2381c5dfd14d955ec48f6ee7aef600f28e2b479127e4fb3",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_G02_0000_ex405nm.tif": {
+        "crc32": "e1c150e4",
+        "sha256": "855b27415206fcf4cdd169baa2000fc07e8747a1009142a48d49673d2a8abce8",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_G02_0000_ex488nm.tif": {
+        "crc32": "3ca0b1d3",
+        "sha256": "98f09b5372ffbb8483eaa5fe04d1dacc8e3dd241d79408d027b0ec665753ee92",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_G02_0000_ex555nm.tif": {
+        "crc32": "b5bbc12d",
+        "sha256": "de4550f56010a109c6d9b58a7029b48c9ebe19dc7decf35f0590630fdfd408c4",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G02_0000_ex647nm.tif": {
+        "crc32": "64899b65",
+        "sha256": "e5c6098435c1c4409ff5bccaeb7518cd45f50ee0d748775b5690f0ed5caaf27a",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G03_0000_TD.tif": {
+        "crc32": "509007f3",
+        "sha256": "6cd8cf0b2c91110c87e73dab8235769f8af8a333bbd7244c7affa77c35e20b38",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_G03_0000_ex405nm.tif": {
+        "crc32": "c6f30cea",
+        "sha256": "a09914e935a8003dac1d22ec2a90acc37f4c7ad2cac318d99135fc2c884e2e23",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_G03_0000_ex488nm.tif": {
+        "crc32": "94f8a623",
+        "sha256": "252bff44054a498b45f2cb76130f30652b375a409af3b858ff19f381dbba5a14",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_G03_0000_ex555nm.tif": {
+        "crc32": "f69343e4",
+        "sha256": "67d7bf2a1878cd240747e5c86f2a6b0f4e81625e9dab6db9ddc84f98ab7c7435",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G03_0000_ex647nm.tif": {
+        "crc32": "8460762c",
+        "sha256": "237ef450674971e5c129080f7401aa2a78eda50a611597c6786ac4f19e6754d8",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G04_0000_TD.tif": {
+        "crc32": "d6fe04d4",
+        "sha256": "d65f305954d0b9780f8e6911a5c7a3c386e89b31587c96a697fea45934e0ee5e",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_G04_0000_ex405nm.tif": {
+        "crc32": "eec82dca",
+        "sha256": "3ca6179673cd9d5b433d5ee32478e9e14e7cc0afc1015d48caa76289fb086960",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_G04_0000_ex488nm.tif": {
+        "crc32": "32939c28",
+        "sha256": "1b019ce52f08127050a8f1e6d1a36996a98f6b393f57621e3899b6ef93b752ba",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_G04_0000_ex555nm.tif": {
+        "crc32": "eea8eee3",
+        "sha256": "c91688db3860b0fcae5adb24363873be427c16322aff4c33d633cd1e40e80c34",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G04_0000_ex647nm.tif": {
+        "crc32": "a98cffd1",
+        "sha256": "1b845a1c3808f3bf8b4a559a6d8532898322e2a8c4eef95176c44223c5e3b8a3",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G05_0000_TD.tif": {
+        "crc32": "e764a0d2",
+        "sha256": "74bb6a0d34928418443b11b1f2e6f79d1b0b3aba60b1bbdc2a1e5126778a0268",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_G05_0000_ex405nm.tif": {
+        "crc32": "a4c4c088",
+        "sha256": "99bf5633f81224f1de9f564a94bad1bd84c6ef6ee123fb70ca2ccd073338559a",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_G05_0000_ex488nm.tif": {
+        "crc32": "9132a31b",
+        "sha256": "d10ee46a24a16caaf7280b0d24b8b0974af61891775f01d567518d75559b88d2",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_G05_0000_ex555nm.tif": {
+        "crc32": "b8a18100",
+        "sha256": "c3e43c82ee42f2fff757616c1d3461f33fdb851fb48bcd76ec16d05548ea1d8a",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G05_0000_ex647nm.tif": {
+        "crc32": "2a96357b",
+        "sha256": "68165b44de3d49a214bd6dce2ede72c933637ec6643a5e96d9fb1e24c14206a5",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G06_0000_TD.tif": {
+        "crc32": "7eb40604",
+        "sha256": "3521315370079bbd22b0b82428b4bbed3dd3f9ad9c4fd0aba2ba1ad71076b982",
+        "size_bytes": 2349922
+      },
+      "Images/raw/ExIF_EMT/220825_G06_0000_ex405nm.tif": {
+        "crc32": "a89fba34",
+        "sha256": "e988e8ae383d90b38df295cd6e2bd558b1e2e497df362210a546ec3f2ae69d09",
+        "size_bytes": 2349913
+      },
+      "Images/raw/ExIF_EMT/220825_G06_0000_ex488nm.tif": {
+        "crc32": "712be1a8",
+        "sha256": "c7315e51a6361e6b49a1446c9796a6b3c7422cfff33f90e2745c85ac4c844b81",
+        "size_bytes": 2349915
+      },
+      "Images/raw/ExIF_EMT/220825_G06_0000_ex555nm.tif": {
+        "crc32": "4ea18249",
+        "sha256": "d07f9926a43b7a0a6b9855694604cd39b52d44d4a90689b9414fab3076153e0d",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_G06_0000_ex647nm.tif": {
+        "crc32": "06afc31a",
+        "sha256": "0358a137dd10c5f85e1c344973e3326cdc235e0ee336395abff9690786043fe2",
+        "size_bytes": 2349918
+      },
+      "Images/raw/ExIF_EMT/220825_H01_0000_TD.tif": {
+        "crc32": "05487228",
+        "sha256": "3601af604c71ebd26b384c50a78daf4da7317f272784a6bdc747ed4fa159e88b",
+        "size_bytes": 2336504
+      },
+      "Images/raw/ExIF_EMT/220825_H01_0000_ex405nm.tif": {
+        "crc32": "cf34d73c",
+        "sha256": "16daddd8de623318f5431a50ad611a49d5d52f06637d290886d7b760930c5476",
+        "size_bytes": 2336495
+      },
+      "Images/raw/ExIF_EMT/220825_H01_0000_ex488nm.tif": {
+        "crc32": "ed5e23a6",
+        "sha256": "b3b310e734fa21a9833c5c5e91fac7b848d660363f0f83244ae1bc91e5a42dce",
+        "size_bytes": 2336497
+      },
+      "Images/raw/ExIF_EMT/220825_H01_0000_ex555nm.tif": {
+        "crc32": "6a42ebff",
+        "sha256": "ee2d644df31707d67809a82dda43edcf6df717f194a1a92771b02f3d8befb45f",
+        "size_bytes": 2336500
+      },
+      "Images/raw/ExIF_EMT/220825_H01_0000_ex647nm.tif": {
+        "crc32": "31359341",
+        "sha256": "64d1db228694f1466fcc5bd072a37c7560361f7948a09d99641257d444034fe6",
+        "size_bytes": 2336500
+      },
+      "Images/raw/ExIF_EMT/220825_H02_0000_TD.tif": {
+        "crc32": "801607f6",
+        "sha256": "94af14887917e82f762f98c5eeb1452f6af6a2b7f667f0d3a7e65d1a85bcd915",
+        "size_bytes": 2336505
+      },
+      "Images/raw/ExIF_EMT/220825_H02_0000_ex405nm.tif": {
+        "crc32": "436c5b2b",
+        "sha256": "c2b143a1e7ee3362fa83101eb1e6cf90de1cc14373fb7170f2a56606954fec58",
+        "size_bytes": 2336496
+      },
+      "Images/raw/ExIF_EMT/220825_H02_0000_ex488nm.tif": {
+        "crc32": "e8ff1ef8",
+        "sha256": "70734bf11d368bb9d79ccb103f71bd9577213e2befb0328b8a3f4deb3354bc2b",
+        "size_bytes": 2336498
+      },
+      "Images/raw/ExIF_EMT/220825_H02_0000_ex555nm.tif": {
+        "crc32": "69ec12a8",
+        "sha256": "c65c7ac7ce3ed087dc7f1eda2768334c1099df73c716d64171b4be6779b3ef72",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H02_0000_ex647nm.tif": {
+        "crc32": "a6a2efeb",
+        "sha256": "478d8bdd295ea764b518cc1b525305fd65d82a8784a21d3a7fa51268943b662d",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H03_0000_TD.tif": {
+        "crc32": "c6a37d9d",
+        "sha256": "3302556e11999923ff577936f04e572debe08cdcbba367cba6b52925078e21ce",
+        "size_bytes": 2336505
+      },
+      "Images/raw/ExIF_EMT/220825_H03_0000_ex405nm.tif": {
+        "crc32": "bc1b9a26",
+        "sha256": "ddeb7a53b6b50a9b02852c95f65df21560741da84f3dd14a1e5b6044ea0a869d",
+        "size_bytes": 2336496
+      },
+      "Images/raw/ExIF_EMT/220825_H03_0000_ex488nm.tif": {
+        "crc32": "bd720a0f",
+        "sha256": "c4342edfb92f0a3ef7ac2781f6f44407df3bab90ebda36869fcbca3754ebde9c",
+        "size_bytes": 2336498
+      },
+      "Images/raw/ExIF_EMT/220825_H03_0000_ex555nm.tif": {
+        "crc32": "c1d1882f",
+        "sha256": "1a286d442c90621791aa1f02cad9a52899fbb34a7cba31e90d096626ec2085f7",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H03_0000_ex647nm.tif": {
+        "crc32": "396802f7",
+        "sha256": "ad9347dcfc09afcc266689e0b4bf797f8e1823d88e12cd97acbc312a6abf36dd",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H04_0000_TD.tif": {
+        "crc32": "9ed7bd27",
+        "sha256": "7557a9540e0deff2092ca5442dc2fd58dc629f6cbd4d366606e86e626ee6b619",
+        "size_bytes": 2336505
+      },
+      "Images/raw/ExIF_EMT/220825_H04_0000_ex405nm.tif": {
+        "crc32": "d7f3e59e",
+        "sha256": "c04f764dedaf7b370d28b4a9839a58dc532f9b092db6d3c746b66627a7773411",
+        "size_bytes": 2336496
+      },
+      "Images/raw/ExIF_EMT/220825_H04_0000_ex488nm.tif": {
+        "crc32": "84371b49",
+        "sha256": "d0d64d2bf745291f1bafa95c87de3fc0680a89538ffbfc5df32beda9dfb7d327",
+        "size_bytes": 2336498
+      },
+      "Images/raw/ExIF_EMT/220825_H04_0000_ex555nm.tif": {
+        "crc32": "aca318fb",
+        "sha256": "19197f7989f5245302ca44f2f4f3b4a3382d54d2642b8bf2898b3404d5246236",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H04_0000_ex647nm.tif": {
+        "crc32": "f273fc6c",
+        "sha256": "db952de81c7bb2df5c32f54a7b69fa7be8efffece79dbffdf78503f1a570358b",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H05_0000_TD.tif": {
+        "crc32": "370a12fb",
+        "sha256": "e8da7cb7fafce5145d7cac783fdf5ab25bd289227b2ddca9b3d93b9234df6c48",
+        "size_bytes": 2336505
+      },
+      "Images/raw/ExIF_EMT/220825_H05_0000_ex405nm.tif": {
+        "crc32": "3b9427d6",
+        "sha256": "ac14abe6e028e8f298fc6b4ee320cbfdbda8a8fe16e7d036ddda2fdfbcc28eca",
+        "size_bytes": 2336496
+      },
+      "Images/raw/ExIF_EMT/220825_H05_0000_ex488nm.tif": {
+        "crc32": "3986b966",
+        "sha256": "c7754f38e653b58627d94770effa847f74f813024823f9cbc5fa14b28c0523a3",
+        "size_bytes": 2336498
+      },
+      "Images/raw/ExIF_EMT/220825_H05_0000_ex555nm.tif": {
+        "crc32": "0f2e531a",
+        "sha256": "432983cfb31677ed447ed6783f67a11711eb1a298be7756ffe3b50612b5d71a6",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H05_0000_ex647nm.tif": {
+        "crc32": "b4c18a36",
+        "sha256": "60e6702084d0497519a05be8f58d98f49c3810df624d73b1a373999f8e0af803",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H06_0000_TD.tif": {
+        "crc32": "fd81bdc5",
+        "sha256": "1de2a3ba149659446c58ad1a2c76fbf46347cc85c307ea5b4b0e90331d0218c0",
+        "size_bytes": 2336505
+      },
+      "Images/raw/ExIF_EMT/220825_H06_0000_ex405nm.tif": {
+        "crc32": "08596357",
+        "sha256": "fcbaca67e1315915fe6960209ab159dfa3828f7f1f18d39193ba2037b576faea",
+        "size_bytes": 2336496
+      },
+      "Images/raw/ExIF_EMT/220825_H06_0000_ex488nm.tif": {
+        "crc32": "73d18b00",
+        "sha256": "515c981b255cbe08eb74f42c8b619a452a6e9266e8d788c43676b7939df98b6c",
+        "size_bytes": 2336498
+      },
+      "Images/raw/ExIF_EMT/220825_H06_0000_ex555nm.tif": {
+        "crc32": "3fc8ad0b",
+        "sha256": "b2f7326519e13ec43dece5e9f2d2bd02fb864a2fd2dbda291d796be7a95d4dbd",
+        "size_bytes": 2336501
+      },
+      "Images/raw/ExIF_EMT/220825_H06_0000_ex647nm.tif": {
+        "crc32": "cfdc20f9",
+        "sha256": "a8d43f5cba4ce3310668d8bf7e51533f0a70e354911d5c767f90552060932736",
+        "size_bytes": 2336501
+      }
+    },
+    "selection": {
+      "channels": [
+        "TD",
+        "ex405nm",
+        "ex488nm",
+        "ex555nm",
+        "ex647nm"
+      ],
+      "field_ids": [
+        "0000"
+      ],
+      "plate_columns": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "plate_rows": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    "uncompressed_size_bytes": 563576648
+  },
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.figshare_exif_emt_layouts.v1",
+  "source": {
+    "article_id": 26500210,
+    "dataset_doi": "10.6084/m9.figshare.26500210.v1",
+    "license_id": "cc-by-4.0",
+    "paper_doi": "10.1038/s41467-025-59592-7"
+  }
+}

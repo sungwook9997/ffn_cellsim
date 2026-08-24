@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/oa-recoverability-summary-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "authority_status", "screen_version", "articles", "decisions", "article_types", "signal_recoverability_articles", "missing_review_fields", "correction_retraction_status", "articles_with_observation_locator", "articles_with_dataset_accession", "duplicate_dataset_groups", "local_record_set_sha256", "compact_index_sha256", "manual_queue_sha256", "leakage_groups_sha256", "input_manifest_set_sha256", "limitations"],
+  "properties": {
+    "schema": {"const": "aleph.external_training.oa_recoverability_summary.v1"},
+    "authority_status": {"const": "proposed"},
+    "screen_version": {"type": "string"},
+    "articles": {"type": "integer", "minimum": 0},
+    "decisions": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "article_types": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "signal_recoverability_articles": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "missing_review_fields": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "correction_retraction_status": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "articles_with_observation_locator": {"type": "integer", "minimum": 0},
+    "articles_with_dataset_accession": {"type": "integer", "minimum": 0},
+    "duplicate_dataset_groups": {"type": "integer", "minimum": 0},
+    "local_record_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "compact_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manual_queue_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "leakage_groups_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input_manifest_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

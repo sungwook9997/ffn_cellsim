@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "outer.biophysics.inference.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "refused", "input_provenance", "state_posterior",
+    "observable_predictions", "mechanism_support", "intervention_directions",
+    "ambiguity_sets", "uncertainty", "applicability", "aleph_dependency",
+    "may_emit_Aleph_parameter"
+  ],
+  "properties": {
+    "schema": {"const": "outer.biophysics.inference.v1"},
+    "refused": {"type": "boolean"},
+    "input_provenance": {"type": "object"},
+    "state_posterior": {"type": "array", "items": {"type": "object"}},
+    "observable_predictions": {"type": "array", "items": {"type": "object"}},
+    "mechanism_support": {"type": "array", "items": {"type": "object"}},
+    "intervention_directions": {"type": "array", "items": {"type": "object"}},
+    "ambiguity_sets": {"type": "array", "items": {"type": "object"}},
+    "uncertainty": {"type": "object"},
+    "applicability": {"type": "object"},
+    "refusal": {"type": ["object", "null"]},
+    "aleph_dependency": {"const": false},
+    "may_emit_Aleph_parameter": {"const": false}
+  }
+}

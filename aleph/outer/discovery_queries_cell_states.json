@@ -1,0 +1,17 @@
+{
+  "snapshot_date": "2026-08-05",
+  "minimum_year": 2010,
+  "provider": "Europe PMC REST API",
+  "provider_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+  "target_total": 1200,
+  "domains": [
+    {"domain": "epithelial_states", "target": 150, "query": "TITLE_ABS:((epithelial OR keratinocyte OR hepatocyte OR renal) AND (mechanics OR mechanobiology OR migration OR morphology OR differentiation OR EMT))"},
+    {"domain": "fibroblast_stromal_states", "target": 150, "query": "TITLE_ABS:((fibroblast OR myofibroblast OR stromal) AND (mechanics OR contractility OR traction OR activation OR differentiation OR fibrosis))"},
+    {"domain": "immune_cell_states", "target": 150, "query": "TITLE_ABS:((macrophage OR neutrophil OR lymphocyte OR monocyte OR \"immune cell\") AND (mechanics OR migration OR activation OR polarization OR deformability OR phenotype))"},
+    {"domain": "stem_cell_differentiation_states", "target": 150, "query": "TITLE_ABS:((\"stem cell\" OR iPSC OR progenitor) AND (mechanics OR mechanobiology OR stiffness OR differentiation OR morphology OR fate))"},
+    {"domain": "muscle_cardiac_states", "target": 150, "query": "TITLE_ABS:((cardiomyocyte OR myocyte OR \"smooth muscle\" OR \"skeletal muscle\") AND (mechanics OR contractility OR force OR stiffness OR maturation OR disease))"},
+    {"domain": "neural_glial_states", "target": 150, "query": "TITLE_ABS:((neuron OR astrocyte OR microglia OR oligodendrocyte OR neural) AND (mechanics OR mechanobiology OR migration OR morphology OR maturation OR disease))"},
+    {"domain": "endothelial_vascular_states", "target": 150, "query": "TITLE_ABS:((endothelial OR vascular OR angiogenesis) AND (mechanics OR shear OR stiffness OR migration OR barrier OR phenotype))"},
+    {"domain": "cancer_cell_states", "target": 150, "query": "TITLE_ABS:((cancer OR tumor OR metastatic) AND (\"cell state\" OR phenotype OR plasticity OR EMT OR mechanics OR deformability) AND (single-cell OR imaging OR profiling OR migration))"}
+  ]
+}

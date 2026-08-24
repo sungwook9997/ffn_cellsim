@@ -1,0 +1,29 @@
+{
+  "aleph_authority": "none",
+  "annotation_content_used_during_acquisition": false,
+  "files": [
+    {
+      "content_type": "text/csv",
+      "etag": "765336ce4025b71f162576abdd3cfa72",
+      "last_modified": "Mon, 07 Mar 2022 22:16:06 GMT",
+      "local_name": "opencell-localization-annotations.csv",
+      "sha256": "14cf3536d9d3699460dd34e166d001a34e5430fb551488538b9468107f9f10b6",
+      "size_bytes": 61612,
+      "url": "https://opencell.sf.czbiohub.org/data/datasets/opencell-localization-annotations.csv"
+    },
+    {
+      "content_type": "text/csv",
+      "etag": "d70b7606fb43d1c7342ef97c42d41035",
+      "last_modified": "Mon, 07 Mar 2022 22:16:06 GMT",
+      "local_name": "opencell-localization-annotations-readme.csv",
+      "sha256": "1274cc180737bca2c1d5cd8880c3fb8a18477ac11166dd8767087cbd0c167fdf",
+      "size_bytes": 339,
+      "url": "https://opencell.sf.czbiohub.org/data/datasets/opencell-localization-annotations-readme.csv"
+    }
+  ],
+  "frozen_model_checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+  "frozen_model_commit": "e755bd9",
+  "protocol_commit": "2142d43+9dff081",
+  "protocol_sha256": "571eb998fb48023bcd93e3eaa901456bcceca85212be1f37aadb6714e55690ff",
+  "schema": "aleph.outer_library.opencell_if_annotation_acquisition.v1"
+}

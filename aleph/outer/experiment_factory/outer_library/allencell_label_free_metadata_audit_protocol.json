@@ -1,0 +1,55 @@
+{
+  "schema": "aleph.outer_library.allencell_label_free_metadata_audit.v1",
+  "frozen_before_candidate_sampling": true,
+  "scope": "non_disease_normal_WTC11_hiPSC_label_free_mitochondria_external_holdout",
+  "provider": "Allen Institute for Cell Science",
+  "source": {
+    "bucket": "allencell",
+    "metadata_url": "https://allencell.s3.amazonaws.com/aics/hipsc_single_cell_image_dataset/metadata.csv",
+    "readme_url": "https://allencell.s3.amazonaws.com/aics/hipsc_single_cell_image_dataset/README.md",
+    "ground_truth_contract": "raw registered TOMM20 fluorescence, never a label-free model prediction",
+    "forbidden_source": "aics/label-free-imaging-collection because its organelle channels are predictions"
+  },
+  "pre_freeze_disclosure": {
+    "readme_accessed": true,
+    "metadata_header_accessed": true,
+    "first_metadata_data_row_accessed": true,
+    "first_row_structure_name": "TOMM20",
+    "image_headers_accessed": 0,
+    "image_pixels_accessed": 0,
+    "model_predictions_made": 0,
+    "performance_metrics_observed": 0
+  },
+  "sampling": {
+    "range_chunk_bytes": 2097152,
+    "range_chunk_count": 64,
+    "offset_rule": "64 evenly spaced inclusive offsets over [0, content_length - chunk_bytes]",
+    "discard_partial_boundary_rows": true,
+    "eligibility": {
+      "structure_name": "TOMM20",
+      "outlier": "No",
+      "cell_stage": "M0",
+      "crop_raw_and_fov_path_required": true,
+      "positive_brightfield_channel_number_required": true,
+      "positive_structure_channel_number_required": true
+    },
+    "deduplication_unit": "FOVId",
+    "candidate_count": 32,
+    "selection_order": "sha256('20260808:' + FOVId + ':' + CellId), ascending",
+    "insufficient_candidate_policy": "refuse_without_changing_rule"
+  },
+  "future_single_use_confirmation": {
+    "target": "Mitochondria",
+    "provider_independent_from_Light_My_Cells": true,
+    "checkpoint_must_be_pinned_after_v3_training": true,
+    "no_image_access_before_checkpoint_and_evaluation_protocol_are_frozen": true,
+    "performance_endpoint_denominators_must_remain_identical_to_v3": true,
+    "may_reopen_consumed_Light_My_Cells_confirmation": false
+  },
+  "authority": {
+    "metadata_audit_only": true,
+    "external_confirmation_complete": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false
+  }
+}

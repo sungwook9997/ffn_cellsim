@@ -1,0 +1,103 @@
+{
+  "aleph_authority": "none",
+  "classes": [
+    "Piezo1_inhibited_GsMTx4",
+    "TRPV4_inhibited_HC-067047",
+    "untreated_control"
+  ],
+  "external_lab_ood": {
+    "auroc": 0.9095238095238095,
+    "dataset_count": 1,
+    "evaluated": true,
+    "lab_count": 1,
+    "max_probability_auroc": 0.319047619047619,
+    "primary_score": "nearest_class_centroid_distance",
+    "protocol": "independent-lab MDCK-II author-aggregate curves; OOD score=1-max_probability",
+    "sample_count": 7,
+    "task_labels_aligned": false
+  },
+  "external_task_holdout": {
+    "aleph_authority": "none",
+    "external_conditions": [
+      "BINPs (+GsMTx4)",
+      "BINPs (+Mag)",
+      "CaPINS (+GsMTx4)",
+      "CaPINS (+Mag)",
+      "LooPINS (+GsMTx4)",
+      "LooPINS (+Mag)",
+      "No NPs (+GsMTx4)",
+      "No NPs (+Mag)"
+    ],
+    "external_dataset": "zenodo-19890985 EA.hy926",
+    "external_lab_holdout": true,
+    "label_mapping": {
+      "0": "non-inhibited magnetic/mechanical reference",
+      "1": "GsMTx4 Piezo1-inhibited"
+    },
+    "limitations": [
+      "cell line and stimulation protocol differ across labs",
+      "EA.hy926 biological-replicate IDs are not encoded per cell",
+      "mechanism-level labels are aligned; exact treatment labels are not identical"
+    ],
+    "metrics": {
+      "accuracy": 0.5445205479452054,
+      "balanced_accuracy": 0.51789032483409,
+      "class_counts": {
+        "0": 175,
+        "1": 409
+      },
+      "macro_f1": 0.5075573138567661,
+      "sample_count": 584
+    },
+    "sample_overlap_count": 0,
+    "split_unit": "entire dataset and lab",
+    "task": "binary_Piezo1_inhibitor_signature_transfer",
+    "task_holdout_passed": false,
+    "training_conditions": [
+      "Piezo1_inhibited_GsMTx4",
+      "untreated_control"
+    ],
+    "training_dataset": "zenodo-18495219 HeLa",
+    "training_sample_count": 100
+  },
+  "independent_dataset_ood_count": 1,
+  "independent_dataset_task_holdout_count": 1,
+  "independent_dataset_task_holdout_passed_count": 0,
+  "independent_lab_ood_count": 1,
+  "independent_lab_task_holdout_count": 1,
+  "independent_lab_task_holdout_passed_count": 0,
+  "production_eligible": false,
+  "sample_count": 150,
+  "sample_overlap_count": 0,
+  "semantic_ood": {
+    "confidence_fold_aurocs": [
+      0.494,
+      0.418,
+      0.162
+    ],
+    "distance_fold_aurocs": [
+      0.473,
+      0.345,
+      0.97
+    ],
+    "external_lab_ood": false,
+    "mean_auroc": 0.596,
+    "primary_score": "nearest_training_curve_distance",
+    "protocol": "leave_one_author_condition_out"
+  },
+  "split": {
+    "test": 30,
+    "train": 90,
+    "validation": 30
+  },
+  "split_unit": "cell_sample_id",
+  "task": "author_condition_classification_from_single_cell_calcium_time_series",
+  "temperature": 0.3035280027939238,
+  "test": {
+    "accuracy": 0.5666666666666667,
+    "ece_10_bin": 0.21645239890143386,
+    "macro_f1": 0.5528812974465148,
+    "mean_predictive_entropy": 0.6574607996182341,
+    "nll": 1.1334261544633994
+  }
+}

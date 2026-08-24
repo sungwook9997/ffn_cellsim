@@ -1,0 +1,42 @@
+{
+ "schema": "diagnostic@1",
+ "run_label": "w1_timescale_spread",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "evidence_basis": "host reduction over the production Gershgorin row sums; no new physics",
+ "stamp": {
+  "aleph_file": "/home/sungwook/ffn/ffn_cellsim/aleph/__init__.py",
+  "warp_version": "1.14.0",
+  "python": "3.13.14",
+  "device": "cuda:0"
+ },
+ "census": {
+  "n_nodes": 511114,
+  "n_nodes_zero_stiffness": 16312,
+  "actin_crosslink": 1413720,
+  "actin_bending": 353430,
+  "arp23_branch": 0
+ },
+ "gamma_pn_s_per_um": null,
+ "rows_pn_per_um": {
+  "p0": 11.16368721173212,
+  "p1": 920022.3653384878,
+  "p5": 2560022.3648940823,
+  "p25": 5120033.54768807,
+  "p50": 7680022.365282887,
+  "p75": 10760011.182577487,
+  "p95": 14960033.54718003,
+  "p99": 18240033.54755992,
+  "p100": 31560033.54739998
+ },
+ "spread": {
+  "max_over_min": 2827025.9591502147,
+  "p99_over_p1": 19.82564145693261,
+  "note": "max/min is the condition number an explicit relaxation pays: the step is set by the stiffest node and the softest mode relaxes at the softest, so steps ~ this ratio."
+ },
+ "dt_s": null,
+ "timing": {
+  "comparable": false,
+  "not_comparable_reason": "no solve; one host reduction"
+ }
+}

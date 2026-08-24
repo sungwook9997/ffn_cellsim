@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "authority": "external_non_authoritative_weak_supervision",
+  "weights_sha256": "e0175c8ebcbbf8ada8d64c309bf1bdc9bd67024a48f58a1f0208c16f725b837b",
+  "top_k": 3,
+  "results": [
+    {
+      "id": "cortical_tension",
+      "top_weak_domain": {"domain": "cortex_membrane_pressure", "probability": 0.9897617697715759},
+      "retrieval": [
+        {"source_family_id": "doi:10.1016/j.bpj.2024.12.029", "score": 0.9446837902069092, "title": "Migrasome formation is initiated preferentially in tubular junctions by membrane tension."},
+        {"source_family_id": "doi:10.1038/s41556-018-0150-z", "score": 0.9408857822418213, "title": "Decrease in plasma membrane tension triggers PtdIns(4,5)P2 phase separation to inactivate TORC2."},
+        {"source_family_id": "doi:10.1088/1478-3975/add071", "score": 0.9395793676376343, "title": "Effect of membrane tension on pore formation induced by antimicrobial peptides and other membrane-active peptides."}
+      ]
+    },
+    {
+      "id": "traction_force_microscopy",
+      "top_weak_domain": {"domain": "adhesion_traction", "probability": 0.9999831914901733},
+      "retrieval": [
+        {"source_family_id": "doi:10.1007/s12195-010-0119-x", "score": 0.959843099117279, "title": "Modification of Cellular Cholesterol Content Affects Traction Force, Adhesion and Cell Spreading."},
+        {"source_family_id": "doi:10.1016/j.bpj.2016.12.035", "score": 0.9590966105461121, "title": "Two Distinct Actin Networks Mediate Traction Oscillations to Confer Focal Adhesion Mechanosensing."},
+        {"source_family_id": "doi:10.1016/j.actbio.2015.08.023", "score": 0.9575136303901672, "title": "Compressed sensing traction force microscopy."}
+      ]
+    },
+    {
+      "id": "nuclear_mechanics",
+      "top_weak_domain": {"domain": "nucleus_chromatin", "probability": 0.9998910427093506},
+      "retrieval": [
+        {"source_family_id": "doi:10.3390/cells15060501", "score": 0.942064642906189, "title": "Lamin A/C as a Molecular Link Between Nuclear Organization, Chromatin Dynamics, and Tumor Progression."},
+        {"source_family_id": "doi:10.4161/nucl.25019", "score": 0.9357262849807739, "title": "Nuclear mechanics: lamin webs and pathological blebs."},
+        {"source_family_id": "doi:10.1115/1.4035350", "score": 0.928180456161499, "title": "The Nuclear Option: Evidence Implicating the Cell Nucleus in Mechanotransduction."}
+      ]
+    },
+    {
+      "id": "osmotic_volume",
+      "top_weak_domain": {"domain": "osmotic_poroelastic_volume", "probability": 0.9400713443756104},
+      "retrieval": [
+        {"source_family_id": "doi:10.7554/elife.72381", "score": 0.9525137543678284, "title": "A mechano-osmotic feedback couples cell volume to the rate of cell deformation"},
+        {"source_family_id": "doi:10.1038/s41467-023-42817-y", "score": 0.9404470324516296, "title": "Cell volume controlled by LRRC8A-formed volume-regulated anion channels fine-tunes T cell activation and function."},
+        {"source_family_id": "doi:10.1002/glia.70170", "score": 0.9331949353218079, "title": "Anoctamin-1 Is a Calcium-Dependent Chloride Channel in Muller Cells Involved in Cell Volume Regulation."}
+      ]
+    },
+    {
+      "id": "cell_state_routing",
+      "top_weak_domain": {"domain": "mechanotransduction_signalling", "probability": 0.7985108494758606},
+      "retrieval": [
+        {"source_family_id": "doi:10.1080/19768354.2026.2623320", "score": 0.9264065027236938, "title": "MicroRNA-mediated mechanotransduction and chondrocyte differentiation in mesenchymal stem cells."},
+        {"source_family_id": "doi:10.3389/fcell.2026.1849535", "score": 0.9035926461219788, "title": "Mechanotransduction in glioma stem cell fate determination: from niche mechanics to therapeutic vulnerability and state plasticity."},
+        {"source_family_id": "doi:10.1038/s41598-018-29700-3", "score": 0.9026386141777039, "title": "Vinexin family proteins regulate mechanotransduction in mesenchymal stem cells."}
+      ],
+      "warning": "The broad mixed-state query routes primarily to mechanotransduction; this is a visible weak-label limitation, not a biological conclusion."
+    }
+  ],
+  "refusal_boundary": "Literature routing only; no physical-parameter estimate, physics validation, evidence promotion, or authority claim."
+}

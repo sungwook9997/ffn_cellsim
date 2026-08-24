@@ -1,0 +1,161 @@
+[OK] Granted sungwook access to /dev/dxg for Slurm job 39.
+[GPU SUBMIT]
+  reserved_token: rtx3090
+  physical_gpu:   2
+  visible_device: cuda:0
+  CUDA_VISIBLE_DEVICES=2
+  cpus:           8
+  mem_gb:         48
+  PWD=/home/sungwook/ffn/ffn_cellsim_cortical_tension
+
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.3
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA GeForce RTX 3090" (24 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+Module aleph.components.incumbent.live_mesh_domain 07b917a load on device 'cuda:0' took 1.55 ms  (cached)
+Module aleph.laws.network_warp 25d681b load on device 'cuda:0' took 2.02 ms  (cached)
+Module aleph.laws.forces_warp f7f4cb5 load on device 'cuda:0' took 0.42 ms  (cached)
+Module aleph.laws.membrane_surface 6fb4428 load on device 'cuda:0' took 2.41 ms  (cached)
+Module aleph.components.nucleus.envelope 1572811 load on device 'cuda:0' took 0.91 ms  (cached)
+Module aleph.components.incumbent.compartments 8111c33 load on device 'cuda:0' took 0.47 ms  (cached)
+Module aleph.components.incumbent.erm_tether 2edfc82 load on device 'cuda:0' took 0.85 ms  (cached)
+Module aleph.components.incumbent.membrane_pressure 61de45d load on device 'cuda:0' took 0.66 ms  (cached)
+Module aleph.components.solid.steric_warp 75a3ba0 load on device 'cuda:0' took 2.94 ms  (cached)
+Module aleph.components.fluid.biot_substrate fd600cf load on device 'cuda:0' took 3.54 ms  (cached)
+Module aleph.components.incumbent.inner_mechanics 81f500f load on device 'cuda:0' took 2.07 ms  (cached)
+Module aleph.components.incumbent.implicit_mechanics 4364704 load on device 'cuda:0' took 6.90 ms  (cached)
+Module aleph.components.incumbent.nonlinear_acceleration 61a6101 load on device 'cuda:0' took 177.45 ms  (cached)
+Module aleph.components.incumbent.erm_schwarz 7ed87a9 load on device 'cuda:0' took 1.08 ms  (cached)
+Module aleph.components.incumbent.erm_gauss_seidel 4c0bd24 load on device 'cuda:0' took 5.62 ms  (cached)
+{
+  "out": "aleph/outputs/ac/afm_cortical_tension_readiness/raw/c2_candidate_plateau_force_audit_d7fc9490.json",
+  "projected_max": {
+    "global_node": 510353,
+    "owner": "membrane",
+    "norm_pn": 0.42477053322416347,
+    "raw_total_vector_pn": [
+      -0.07587247606130938,
+      0.33712548184723745,
+      -0.24702182648732507
+    ],
+    "projected_total_vector_pn": [
+      -0.07587247606130938,
+      0.33712548184723745,
+      -0.24702182648732507
+    ],
+    "channel_contributions": {
+      "actin_bending_cytosim": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "actin_crosslink_link_spring": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "arp23_branch_angle": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "biot_pressure_coupling": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "membrane_compartment_force": {
+        "vector_pn": [
+          -0.008679377961222996,
+          -0.4431560701825579,
+          -0.0009974271316528227
+        ],
+        "norm_pn": 0.44324217872662447
+      },
+      "membrane_pressure_traction": {
+        "vector_pn": [
+          -0.06719309810008638,
+          0.7802815520297954,
+          -0.24602439935567225
+        ],
+        "norm_pn": 0.8209032939077743
+      },
+      "nmii_minifilament_force": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "nucleus_compartment_force": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      },
+      "steric_wca": {
+        "vector_pn": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "norm_pn": 0.0
+      }
+    }
+  },
+  "projected_blocks": {
+    "cortex": {
+      "node_count": 494802,
+      "max_norm_pn": 0.42477052521894476,
+      "max_global_node": 132047,
+      "resultant_pn": [
+        17.440399758015637,
+        -34.090455278845354,
+        -0.07828728739528029
+      ],
+      "sum_norm_pn": 8549.252182384542
+    },
+    "nucleus": {
+      "node_count": 642,
+      "max_norm_pn": 0.15669292612571528,
+      "max_global_node": 494810,
+      "resultant_pn": [
+        0.011576604163225847,
+        0.002974036226900732,
+        0.003121174452045645
+      ],
+      "sum_norm_pn": 6.834714610081047
+    },
+    "membrane": {
+      "node_count": 40962,
+      "max_norm_pn": 0.42477053322416347,
+      "max_global_node": 510353,
+      "resultant_pn": [
+        -17.45197636217825,
+        34.087481242618054,
+        0.07516611294267753
+      ],
+      "sum_norm_pn": 3245.843958388823
+    }
+  },
+  "assembly_relative_error": 6.011294279088244e-15
+}
+[OK] Kept sungwook access to /dev/dxg; another Slurm job is still active.

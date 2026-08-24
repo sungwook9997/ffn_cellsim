@@ -1,0 +1,1031 @@
+{
+ "schema": "ffn-world-phase4-native@1",
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "device": "cuda:0",
+ "build_s": 1.019,
+ "steps_s": 13.348,
+ "s_per_step": 0.2225,
+ "n_nodes": 4558554,
+ "cell": "FULL: cortex, membrane, nuclear_envelope + 8 more, from world/populations.py \u2014 the same builder PHASE 1 and the renderer use",
+ "populations": [
+  "chromatin",
+  "cortex",
+  "filopodium",
+  "intermediate_filament",
+  "lamellipodium",
+  "lamina",
+  "membrane",
+  "microtubule",
+  "nuclear_envelope",
+  "sf_arc",
+  "stress_fiber"
+ ],
+ "census": {
+  "capacity": {
+   "node": 12000000,
+   "segment": 12000000,
+   "angle3": 12000000,
+   "angle4": 2000000,
+   "face": 1500000,
+   "strand": 200000,
+   "bond": 1000000,
+   "grid_cell": 4000000
+  },
+  "live": {
+   "node": 4558554,
+   "segment": 4280891,
+   "angle3": 4209526,
+   "angle4": 614400,
+   "face": 409600,
+   "strand": 2001,
+   "bond": 0,
+   "grid_cell": 0
+  },
+  "utilisation": {
+   "node": 0.3798795,
+   "segment": 0.3567409166666667,
+   "angle3": 0.35079383333333336,
+   "angle4": 0.3072,
+   "face": 0.2730666666666667,
+   "strand": 0.010005,
+   "bond": 0.0,
+   "grid_cell": 0.0
+  },
+  "populations": {
+   "cortex": {
+    "node": 4197654,
+    "segment": 4128840,
+    "angle3": 4060026
+   },
+   "membrane": {
+    "node": 163842,
+    "face": 327680,
+    "angle4": 491520
+   },
+   "nuclear_envelope": {
+    "node": 40962,
+    "face": 81920,
+    "angle4": 122880
+   },
+   "microtubule": {
+    "node": 74001,
+    "strand": 500,
+    "segment": 73500,
+    "angle3": 73000
+   },
+   "intermediate_filament": {
+    "node": 2460,
+    "strand": 60,
+    "segment": 2400,
+    "angle3": 2340
+   },
+   "filopodium": {
+    "node": 61000,
+    "strand": 1000,
+    "segment": 60000,
+    "angle3": 59000
+   },
+   "lamellipodium": {
+    "node": 4200,
+    "strand": 200,
+    "segment": 4000,
+    "angle3": 3800
+   },
+   "sf_arc": {
+    "node": 2600,
+    "strand": 100,
+    "segment": 2500,
+    "angle3": 2400
+   },
+   "stress_fiber": {
+    "node": 9240,
+    "strand": 140,
+    "segment": 9100,
+    "angle3": 8960
+   },
+   "lamina": {
+    "node": 2043
+   },
+   "chromatin": {
+    "node": 552,
+    "strand": 1,
+    "segment": 551
+   }
+  },
+  "n_claims": 37,
+  "device": "cuda:0",
+  "node_arrays": [
+   "force",
+   "mobility",
+   "position",
+   "position_snap",
+   "range_id",
+   "strand_id"
+  ],
+  "node_bytes_arithmetic": 1056000000
+ },
+ "placement_check": {
+  "cortex": {
+   "n_nodes": 4197654,
+   "r_max_um": 7.499999320507052,
+   "n_outside": 0
+  },
+  "membrane": {
+   "n_nodes": 163842,
+   "r_max_um": 7.500000000000002,
+   "n_outside": 0
+  },
+  "nuclear_envelope": {
+   "n_nodes": 40962,
+   "r_max_um": 5.100000000000002,
+   "n_outside": 0
+  },
+  "microtubule": {
+   "n_nodes": 74001,
+   "r_max_um": 7.400000000000002,
+   "n_outside": 0
+  },
+  "intermediate_filament": {
+   "n_nodes": 2460,
+   "r_max_um": 7.250000000000002,
+   "n_outside": 0
+  },
+  "filopodium": {
+   "n_nodes": 61000,
+   "r_max_um": 7.250035034398111,
+   "n_outside": 0
+  },
+  "lamellipodium": {
+   "n_nodes": 4200,
+   "r_max_um": 7.290693333709313,
+   "n_outside": 0
+  },
+  "sf_arc": {
+   "n_nodes": 2600,
+   "r_max_um": 7.2731173611562765,
+   "n_outside": 0
+  },
+  "stress_fiber": {
+   "n_nodes": 9240,
+   "r_max_um": 7.359355943406575,
+   "n_outside": 0
+  },
+  "lamina": {
+   "n_nodes": 2043,
+   "r_max_um": 5.1000000000000005,
+   "n_outside": 0
+  },
+  "chromatin": {
+   "n_nodes": 552,
+   "r_max_um": 4.799031703261257,
+   "n_outside": 0
+  }
+ },
+ "placement_envelope": {
+  "r_cell_um": 7.5,
+  "z_basal_um": -7.0,
+  "r_footprint_um": 2.6926,
+  "footprint_basis": "sqrt(R_cell^2 - z_basal^2) \u2014 the basal contact disc, DERIVED from the built membrane radius, not a call-site constant",
+  "sf_pitch_um": 0.5,
+  "n_stress_fibres": 7,
+  "sf_pitch_source_class": "PI_GAP",
+  "n_stress_fibres_source_class": "PI_GAP",
+  "n_stress_fibres_inheritance": "the count INHERITS the pitch's source class \u2014 a derivation must not launder its input. Register a sourced pitch and this reports DERIVED with no edit here.",
+  "n_stress_fibres_basis": "floor(2 half_side / pitch) + 1. The pitch is held and the count yields, so the sourced quantity stays sourced.",
+  "sf_length_um": 3.2367,
+  "lamellipodium_width_um": 1.2367,
+  "lamellipodium_depth_um": 0.6184,
+  "filopodium_root_r_um": 4.25,
+  "nmii_radius_um": 6.95,
+  "sf_origin_um": [
+   -1.6184,
+   0.0,
+   -7.0
+  ],
+  "lamellipodium_origin_um": [
+   -0.3092,
+   0.0,
+   -7.0
+  ],
+  "origin_note": "`origin` is where a builder STARTS its rectangle, not where it centres it; passing the disc centre pushed both sheets into +x and their far corners outside the membrane",
+  "inscribed_square_clearance": 0.85,
+  "inscribed_square_note": "the contact region is a DISC and every builder lays down a RECTANGLE; sizing it to the disc diameter puts the corners outside the sphere while every edge midpoint is inside",
+  "filopodium_note": "rooted so the tip REACHES the membrane and stops. A real filopodium protrudes and the membrane follows it; this membrane is a rigid icosphere, so protrusion and 'inside the membrane' cannot both hold. PHASE 2 property, recorded rather than silently traded away."
+ },
+ "sign_gate": {
+  "mean_radial_force_pn": -0.0011504499137865287,
+  "asserted": "a POSITIVE surface tension pulls a closed surface INWARD",
+  "verdict": "PASS"
+ },
+ "extra_bindings": [
+  {
+   "population": "microtubule",
+   "n_segments": 73500,
+   "n_angles": 73000,
+   "topology_source": "DERIVED from chain arithmetic",
+   "device": "cuda:0",
+   "claims_no_coefficient": "this binding supplies topology only; k_axial, kappa and every rest length come from the caller and there is no default for any of them",
+   "k_axial_pn_per_um": 100000.0,
+   "kappa_pn_um2": 20.0,
+   "rest_um": 0.05,
+   "coefficient_basis": "TEST POINTS stated by the caller; no default exists for any of them"
+  }
+ ],
+ "cortex_binding": {
+  "population": "cortex",
+  "n_segments": 4128840,
+  "n_angles": 4060026,
+  "topology_source": "READ from the builder's device arrays",
+  "device": "cuda:0",
+  "claims_no_coefficient": "this binding supplies topology only; k_axial, kappa and every rest length come from the caller and there is no default for any of them",
+  "k_axial_pn_per_um": 88000.0,
+  "kappa_pn_um2": 0.07,
+  "coefficient_basis": "TEST POINTS stated by the caller. NOT sourced values for this cell \u2014 see CROSSLINK_STIFFNESS_AXIS_2026-08-16.md, where the production k_xl of 8.2e5 pN/um is a Bell-Evans binding-barrier curvature read as a structural spring constant against a field band of 0.1-100.",
+  "rest_length_basis": "the BUILT chord from cortex.py, not the requested arc step"
+ },
+ "coefficients": {
+  "sigma_pn_per_um": 1.0,
+  "kappa_tilde_pn_um": 20.0,
+  "basis": "TEST POINTS, not sourced values for this cell. They set the force scale, so no residual from this run is a physical residual.",
+  "relax_um_per_pn": 0.0,
+  "relax_basis": "a DECLARED numerical relaxation, not a drag law. The builders leave the arena's per-node mobility at zero deliberately (membrane.py:49-50).",
+  "dt_phys_s": 0.05,
+  "dt_phys_basis": "this driver's clock, not a physiological quantity"
+ },
+ "thermostat": {
+  "n_nodes": 4558554,
+  "mobility_um_per_pn_s": 1e-06,
+  "mobility_basis": "\u26a0 UNSOURCED. The arena's per-node mobility is zero because a mobility is a drag law's parameter and the builders decline to invent one (build/membrane.py:49-50). The one drag law this repo has is on FORBIDDEN_DRAG_SYMBOLS as PI framework trap #4. So the TIMESCALE of any series produced here is unsourced: it is stationary in STEPS, and calling those seconds needs the drag law.",
+  "temperature_k": 310.0,
+  "temperature_basis": "310 K, physiological; the one sourced quantity in this step",
+  "kbt_pn_um": 0.0042800119,
+  "dt_s": 0.05,
+  "rms_kick_um": 2.068818962596776e-05,
+  "noise_basis": "sqrt(2 kB T mobility dt) \u2014 fixed by the fluctuation-dissipation theorem, NOT a parameter. A free noise amplitude would make this a heater with an arbitrary stationary distribution.",
+  "rng": {
+   "base_seed": 0,
+   "step_index": 59,
+   "note": "seeded per step from (base_seed, step_index); the run reproduces from those two integers"
+  },
+  "claims": "NOTHING physical. This moves nodes; it accepts no step and asserts no state.",
+  "n_steps": 60,
+  "stability_bound_s": 11.363636363636365,
+  "stability_note": "REPORTED, never enforced. dt < 1/(mobility * k_max) is what the stiffest bond implies; a module that clamped the caller's dt would be choosing a timestep, and a timestep chosen so a run behaves is what the charter forbids."
+ },
+ "gamma": null,
+ "step": {
+  "schema": "ffn-world-step@1",
+  "predicate": "undefined",
+  "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+  "n_steps": 60,
+  "n_judged": 0,
+  "n_accepted": 0,
+  "n_unjudged": 60,
+  "steps": [
+   {
+    "step_index": 0,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.9148778167227735e-13,
+    "tol_pn": 0.0002402320704850741,
+    "n_events": 0,
+    "wall_s": 0.180885,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 1,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 5.974657927592e-12,
+    "tol_pn": 0.08512902856216523,
+    "n_events": 0,
+    "wall_s": 0.160493,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 2,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.000804004757653e-12,
+    "tol_pn": 0.11858887678925066,
+    "n_events": 0,
+    "wall_s": 0.163988,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 3,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.2492816366718733e-12,
+    "tol_pn": 0.1429258723605233,
+    "n_events": 0,
+    "wall_s": 0.162268,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 4,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 6.296740327040188e-12,
+    "tol_pn": 0.1626091707686749,
+    "n_events": 0,
+    "wall_s": 0.159421,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 5,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.2306047182761587e-11,
+    "tol_pn": 0.1793380849061164,
+    "n_events": 0,
+    "wall_s": 0.194315,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 6,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.456362444495721e-12,
+    "tol_pn": 0.1939123120637469,
+    "n_events": 0,
+    "wall_s": 0.161064,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 7,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.8823832065597923e-11,
+    "tol_pn": 0.20687706340692855,
+    "n_events": 0,
+    "wall_s": 0.160308,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 8,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.0469744288309642e-11,
+    "tol_pn": 0.2184836845802835,
+    "n_events": 0,
+    "wall_s": 0.164626,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 9,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.2183231281098743e-11,
+    "tol_pn": 0.22920242937381757,
+    "n_events": 0,
+    "wall_s": 0.167885,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 10,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.2520146742279611e-11,
+    "tol_pn": 0.23896099508857954,
+    "n_events": 0,
+    "wall_s": 0.179104,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 11,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.1407021165452766e-11,
+    "tol_pn": 0.24814084921138052,
+    "n_events": 0,
+    "wall_s": 0.171785,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 12,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.6248561863872657e-11,
+    "tol_pn": 0.2566418190845589,
+    "n_events": 0,
+    "wall_s": 0.171034,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 13,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.6688251181704783e-11,
+    "tol_pn": 0.26449864192356576,
+    "n_events": 0,
+    "wall_s": 0.170716,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 14,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.3156723847568839e-11,
+    "tol_pn": 0.2716913599262548,
+    "n_events": 0,
+    "wall_s": 0.172117,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 15,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 8.556485021833882e-12,
+    "tol_pn": 0.27850876988672685,
+    "n_events": 0,
+    "wall_s": 0.176125,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 16,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 6.846351019197371e-12,
+    "tol_pn": 0.2850846086044162,
+    "n_events": 0,
+    "wall_s": 0.19371,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 17,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.296737248083508e-11,
+    "tol_pn": 0.2911323680805564,
+    "n_events": 0,
+    "wall_s": 0.167962,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 18,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.2339613389741544e-12,
+    "tol_pn": 0.29697776697279143,
+    "n_events": 0,
+    "wall_s": 0.166378,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 19,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.1925953342743834e-11,
+    "tol_pn": 0.3024444338834565,
+    "n_events": 0,
+    "wall_s": 0.166674,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 20,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.075136848700803e-11,
+    "tol_pn": 0.30784578080277303,
+    "n_events": 0,
+    "wall_s": 0.175304,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 21,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.7318674012157904e-11,
+    "tol_pn": 0.3128778845230475,
+    "n_events": 0,
+    "wall_s": 0.167685,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 22,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.8235225359182246e-11,
+    "tol_pn": 0.31752860139782446,
+    "n_events": 0,
+    "wall_s": 0.166647,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 23,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.993862262171917e-11,
+    "tol_pn": 0.3219940588311017,
+    "n_events": 0,
+    "wall_s": 0.168827,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 24,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.7076177743979215e-11,
+    "tol_pn": 0.326559077716661,
+    "n_events": 0,
+    "wall_s": 0.175143,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 25,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.8984276164084095e-11,
+    "tol_pn": 0.33082784388623826,
+    "n_events": 0,
+    "wall_s": 0.184534,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 26,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.9522660032736134e-11,
+    "tol_pn": 0.33474770398810255,
+    "n_events": 0,
+    "wall_s": 0.187611,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 27,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.903313497674778e-11,
+    "tol_pn": 0.3385456686444347,
+    "n_events": 0,
+    "wall_s": 0.252314,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 28,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.0395186417872015e-11,
+    "tol_pn": 0.342276023913875,
+    "n_events": 0,
+    "wall_s": 0.223659,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 29,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.5282105672110586e-11,
+    "tol_pn": 0.34586560203341027,
+    "n_events": 0,
+    "wall_s": 0.213505,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 30,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.497332751675217e-11,
+    "tol_pn": 0.3491636537726305,
+    "n_events": 0,
+    "wall_s": 0.237973,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 31,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.2050315982232948e-11,
+    "tol_pn": 0.3524044052038567,
+    "n_events": 0,
+    "wall_s": 0.219776,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 32,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.460296995142771e-11,
+    "tol_pn": 0.35548115945559344,
+    "n_events": 0,
+    "wall_s": 0.22324,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 33,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.0831325984300906e-11,
+    "tol_pn": 0.35856223393560566,
+    "n_events": 0,
+    "wall_s": 0.217782,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 34,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.394985995755387e-11,
+    "tol_pn": 0.3614033480162173,
+    "n_events": 0,
+    "wall_s": 0.222377,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 35,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.6144479316688544e-11,
+    "tol_pn": 0.36437523837309505,
+    "n_events": 0,
+    "wall_s": 0.228845,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 36,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.299578891851624e-11,
+    "tol_pn": 0.3671133217373947,
+    "n_events": 0,
+    "wall_s": 0.255383,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 37,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.966772503725909e-11,
+    "tol_pn": 0.36964155807410876,
+    "n_events": 0,
+    "wall_s": 0.217575,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 38,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.3332980864421817e-11,
+    "tol_pn": 0.3722456671749489,
+    "n_events": 0,
+    "wall_s": 0.248285,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 39,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.7099695903860424e-11,
+    "tol_pn": 0.3746665130391659,
+    "n_events": 0,
+    "wall_s": 0.217172,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 40,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 8.516844938331942e-12,
+    "tol_pn": 0.3769988703090284,
+    "n_events": 0,
+    "wall_s": 0.223492,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 41,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.9888070627450612e-11,
+    "tol_pn": 0.3792370733286782,
+    "n_events": 0,
+    "wall_s": 0.215748,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 42,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.1103425883186198e-11,
+    "tol_pn": 0.3815063515589435,
+    "n_events": 0,
+    "wall_s": 0.217091,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 43,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.3250582738907504e-11,
+    "tol_pn": 0.38367891743305826,
+    "n_events": 0,
+    "wall_s": 0.228536,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 44,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 6.4946439241821136e-12,
+    "tol_pn": 0.3857461592047449,
+    "n_events": 0,
+    "wall_s": 0.223279,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 45,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.229048411282575e-11,
+    "tol_pn": 0.38789230429871024,
+    "n_events": 0,
+    "wall_s": 0.222238,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 46,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.056967713866254e-11,
+    "tol_pn": 0.38984558699488886,
+    "n_events": 0,
+    "wall_s": 0.211937,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 47,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.0294774263860153e-11,
+    "tol_pn": 0.39174474987121816,
+    "n_events": 0,
+    "wall_s": 0.213084,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 48,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.041102618907371e-11,
+    "tol_pn": 0.39339982040520743,
+    "n_events": 0,
+    "wall_s": 0.211972,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 49,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.6795930300391337e-11,
+    "tol_pn": 0.39494869538711547,
+    "n_events": 0,
+    "wall_s": 0.300151,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 50,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.184160061970683e-11,
+    "tol_pn": 0.3965010288820336,
+    "n_events": 0,
+    "wall_s": 0.255086,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 51,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.131772540287921e-11,
+    "tol_pn": 0.3983131679048387,
+    "n_events": 0,
+    "wall_s": 0.220785,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 52,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.2719830637375726e-11,
+    "tol_pn": 0.40004105034949267,
+    "n_events": 0,
+    "wall_s": 0.22403,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 53,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.4187676560919432e-11,
+    "tol_pn": 0.4015997530106546,
+    "n_events": 0,
+    "wall_s": 0.212164,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 54,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.130652483103459e-11,
+    "tol_pn": 0.40311007066739973,
+    "n_events": 0,
+    "wall_s": 0.218079,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 55,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 1.3096911169972136e-11,
+    "tol_pn": 0.4045196803569218,
+    "n_events": 0,
+    "wall_s": 0.222221,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 56,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 3.78251194755206e-11,
+    "tol_pn": 0.405853209449747,
+    "n_events": 0,
+    "wall_s": 0.215343,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 57,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.09213307711539e-11,
+    "tol_pn": 0.40720137050978666,
+    "n_events": 0,
+    "wall_s": 0.211621,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 58,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 4.4654396179135365e-11,
+    "tol_pn": 0.40833879295861114,
+    "n_events": 0,
+    "wall_s": 0.21235,
+    "quantitative_claim_status": "BLOCKED"
+   },
+   {
+    "step_index": 59,
+    "verdict": "ACCEPTANCE_UNDEFINED",
+    "predicate": "undefined",
+    "predicate_tests": "NOTHING. STATE.md (e) 1 is undecidable as written: stationarity of what is unspecified and cortical tension, the observable it needs, is not emitted on the resting path. This predicate exists so a step can run without a verdict being invented for it.",
+    "dt_phys_s": 0.05,
+    "residual_pn": 2.6347274413809876e-11,
+    "tol_pn": 0.4096372780317678,
+    "n_events": 0,
+    "wall_s": 0.213567,
+    "quantitative_claim_status": "BLOCKED"
+   }
+  ],
+  "accepted_step_evidence": null,
+  "accepted_step_evidence_note": "None means at least one step carries no criterion. CellStatePosterior.accepted_step_evidence is typed AdmissibilityVerdict | None and stays None until every step in a run has been judged \u2014 an unjudged step may not be counted as admissible evidence, which is the whole reason this field is nullable."
+ },
+ "not_a_claim": "NO step in this run was accepted, and none was rejected \u2014 this engine has no acceptance criterion. Both it has shipped are one-sided and both were measured: the balance gate is the Higham summation bound and cannot fail for physics; descent_ratio read a post-rollback residual and cannot succeed. STATE.md (e) 1 is undecidable as written. Every step here therefore records ACCEPTANCE_UNDEFINED, and is_accepted is False for it.",
+ "sequence": {
+  "path": "aleph/outputs/ac/world_phase4/seq_demo.alephcell",
+  "n_frames": 13,
+  "bytes": 750312861,
+  "steps": [
+   0,
+   5,
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45,
+   50,
+   55,
+   60
+  ]
+ }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "interface_residual_gate_controls",
+  "kind": "diagnostic",
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "controls on the two-body force-balance gate: a genuine pair balances, a one-sided scatter is caught and returns the injected magnitude, a sign flip is caught, and an unbound world reports UNBOUND rather than balanced. BLOCKED because no physics ran \u2014 these are injected forces on a synthetic pair, not a cell.",
+  "cut": {
+    "components": [
+      "cortex",
+      "cytosol"
+    ],
+    "connector": "surface_porous_transfer"
+  },
+  "results": {
+    "pair": {
+      "status": "BALANCED",
+      "residual_pn": 0.0,
+      "n_imbalanced": 0
+    },
+    "one_sided": {
+      "status": "IMBALANCED",
+      "residual_pn": 0.5,
+      "injected_pn": 0.5
+    },
+    "sign_flip": {
+      "status": "IMBALANCED",
+      "residual_pn": 6.87386354243376
+    },
+    "unbound": {
+      "n_cuts": 27,
+      "n_measured": 0,
+      "n_imbalanced": 0,
+      "all_unbound": true
+    }
+  },
+  "verdict": "PASS",
+  "failures": []
+}

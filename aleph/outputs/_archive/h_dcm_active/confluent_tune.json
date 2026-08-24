@@ -1,0 +1,207 @@
+{
+  "n_cells": 16,
+  "n_relax": 4000,
+  "subdivisions": 1,
+  "baseline": {
+    "params": {
+      "spacing_factor": 2.3,
+      "c_adh": 5e-07,
+      "adh_strength": 100000000.0,
+      "k_edge": 0.001
+    },
+    "stable": true,
+    "packing_fraction": 0.44040989857890617,
+    "contact_fraction": 0.0,
+    "mean_contact_nodes": 0.0
+  },
+  "sweep": [
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 3e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.4804361295005489,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.4804361295005489
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 3e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.47969930444809933,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.47969930444809933
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 3e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.4804361295005489,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.4804361295005489
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 3e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.47969930444809933,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.47969930444809933
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 5e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.500901170258137,
+      "contact_fraction": 0.7321428571428571,
+      "mean_contact_nodes": 125.75,
+      "score": 1.233044027400994
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 5e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.49536342835365205,
+      "contact_fraction": 0.7321428571428571,
+      "mean_contact_nodes": 126.875,
+      "score": 1.227506285496509
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 5e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.55208095499437,
+      "contact_fraction": 0.75,
+      "mean_contact_nodes": 181.0,
+      "score": 1.30208095499437
+    },
+    {
+      "spacing_factor": 1.9,
+      "c_adh": 5e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.5586119872259754,
+      "contact_fraction": 0.75,
+      "mean_contact_nodes": 189.125,
+      "score": 1.3086119872259754
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 3e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.47827277769730714,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.47827277769730714
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 3e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.47519842201267554,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.47519842201267554
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 3e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.47827277769730714,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.47827277769730714
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 3e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.47519842201267554,
+      "contact_fraction": 0.0,
+      "mean_contact_nodes": 0.0,
+      "score": 0.47519842201267554
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 5e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.49083794270947806,
+      "contact_fraction": 0.6428571428571429,
+      "mean_contact_nodes": 90.0,
+      "score": 1.133695085566621
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 5e-06,
+      "adh_strength": 300000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.48619811588893447,
+      "contact_fraction": 0.6428571428571429,
+      "mean_contact_nodes": 90.0,
+      "score": 1.1290552587460774
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 5e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 0.0002,
+      "stable": true,
+      "packing_fraction": 0.4978763479937155,
+      "contact_fraction": 0.7321428571428571,
+      "mean_contact_nodes": 97.5,
+      "score": 1.2300192051365726
+    },
+    {
+      "spacing_factor": 2.0,
+      "c_adh": 5e-06,
+      "adh_strength": 800000000.0,
+      "k_edge": 5e-05,
+      "stable": true,
+      "packing_fraction": 0.49417580196136524,
+      "contact_fraction": 0.7321428571428571,
+      "mean_contact_nodes": 97.5,
+      "score": 1.2263186591042223
+    }
+  ],
+  "best": {
+    "spacing_factor": 1.9,
+    "c_adh": 5e-06,
+    "adh_strength": 800000000.0,
+    "k_edge": 5e-05,
+    "stable": true,
+    "packing_fraction": 0.5586119872259754,
+    "contact_fraction": 0.75,
+    "mean_contact_nodes": 189.125,
+    "score": 1.3086119872259754
+  },
+  "wall_s": 66.5
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/oa-recoverability-second-pass-summary-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "authority_status", "screen_version", "articles", "decisions", "automatic_tier_a_promotions", "article_types", "signal_recoverability_articles", "missing_review_fields", "correction_retraction_status", "articles_with_observation_locator", "articles_with_dataset_accession", "within_second_pass_leakage", "combined", "local_record_set_sha256", "compact_index_sha256", "manual_queue_sha256", "within_leakage_sha256", "combined_leakage_sha256", "input_manifest_set_sha256", "first_pass_compact_index_sha256", "limitations"],
+  "properties": {
+    "schema": {"const": "aleph.external_training.oa_recoverability_second_pass_summary.v1"},
+    "authority_status": {"const": "proposed"},
+    "screen_version": {"type": "string"},
+    "articles": {"const": 2974},
+    "decisions": {"type": "object"},
+    "automatic_tier_a_promotions": {"const": 0},
+    "article_types": {"type": "object"},
+    "signal_recoverability_articles": {"type": "object"},
+    "missing_review_fields": {"type": "object"},
+    "correction_retraction_status": {"type": "object"},
+    "articles_with_observation_locator": {"type": "integer", "minimum": 0},
+    "articles_with_dataset_accession": {"type": "integer", "minimum": 0},
+    "within_second_pass_leakage": {"type": "object"},
+    "combined": {"type": "object"},
+    "local_record_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "compact_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manual_queue_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "within_leakage_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "combined_leakage_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input_manifest_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "first_pass_compact_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

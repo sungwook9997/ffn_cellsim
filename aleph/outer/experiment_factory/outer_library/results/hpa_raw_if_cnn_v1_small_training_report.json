@@ -1,0 +1,531 @@
+{
+  "HPA_sealed_test": {
+    "exact_match_accuracy": 0.017857142857142856,
+    "macro_auroc": 0.7264188230037689,
+    "macro_average_precision": 0.42779833382357085,
+    "macro_f1": 0.340546162768385,
+    "mean_prediction_set_size": 7.946428571428571,
+    "micro_f1": 0.42735042735042733,
+    "multilabel_ece_15_bin": 0.24937334761673968,
+    "per_class": [
+      {
+        "auroc": 0.9358974099159241,
+        "average_precision": 0.9524735768717427,
+        "f1": 0.8,
+        "support": 30
+      },
+      {
+        "auroc": 0.7454545497894287,
+        "average_precision": 0.06666666666666667,
+        "f1": 0.037037037037037035,
+        "support": 1
+      },
+      {
+        "auroc": 0.773737370967865,
+        "average_precision": 0.501852825537036,
+        "f1": 0.4864864864864865,
+        "support": 11
+      },
+      {
+        "auroc": 0.48427674174308777,
+        "average_precision": 0.07218720821661999,
+        "f1": 0.0,
+        "support": 3
+      },
+      {
+        "auroc": 0.7735849022865295,
+        "average_precision": 0.5270270270270271,
+        "f1": 0.0,
+        "support": 3
+      },
+      {
+        "auroc": 0.7019230723381042,
+        "average_precision": 0.3468253968253968,
+        "f1": 0.4,
+        "support": 4
+      },
+      {
+        "auroc": 0.7005208134651184,
+        "average_precision": 0.3418221033352612,
+        "f1": 0.4,
+        "support": 8
+      },
+      {
+        "auroc": 0.6176870465278625,
+        "average_precision": 0.5464200120810229,
+        "f1": 0.5128205128205128,
+        "support": 21
+      },
+      {
+        "auroc": 0.8046875,
+        "average_precision": 0.4949101878513643,
+        "f1": 0.42857142857142855,
+        "support": 8
+      }
+    ],
+    "positive_label_conformal_coverage": 0.9887640449438202,
+    "sample_count": 56
+  },
+  "OpenCell_accessed": false,
+  "aleph_authority": "none",
+  "architecture": [
+    "Conv2d(2,16,3,padding=1), GroupNorm(4,16), GELU, MaxPool2d(2)",
+    "Conv2d(16,32,3,padding=1), GroupNorm(8,32), GELU, MaxPool2d(2)",
+    "Conv2d(32,64,3,padding=1), GroupNorm(8,64), GELU, MaxPool2d(2)",
+    "Conv2d(64,96,3,padding=1), GroupNorm(8,96), GELU, AdaptiveAvgPool2d(1)",
+    "Linear(96,9)"
+  ],
+  "calibration": {
+    "class_eligible": {
+      "cytoskeleton_or_adhesion": true,
+      "cytosol": true,
+      "endoplasmic_reticulum": false,
+      "golgi": true,
+      "mitochondria": true,
+      "nuclear_envelope": false,
+      "nuclear_interior": true,
+      "plasma_membrane_or_junction": true,
+      "vesicular_organelle": true
+    },
+    "conformal_thresholds": {
+      "cytoskeleton_or_adhesion": 0.7573250532150269,
+      "cytosol": 0.898977518081665,
+      "endoplasmic_reticulum": 1.0,
+      "golgi": 0.6040534973144531,
+      "mitochondria": 0.672736406326294,
+      "nuclear_envelope": 1.0,
+      "nuclear_interior": 0.8152397274971008,
+      "plasma_membrane_or_junction": 0.7883373498916626,
+      "vesicular_organelle": 0.7404301762580872
+    },
+    "decision_thresholds": {
+      "cytoskeleton_or_adhesion": 0.49999999999999994,
+      "cytosol": 0.37499999999999994,
+      "endoplasmic_reticulum": 0.825,
+      "golgi": 0.7,
+      "mitochondria": 0.75,
+      "nuclear_envelope": 0.075,
+      "nuclear_interior": 0.7999999999999999,
+      "plasma_membrane_or_junction": 0.5499999999999999,
+      "vesicular_organelle": 0.6
+    },
+    "negative_log_likelihood": 0.5516689419746399,
+    "temperature": 1.1327738116743113
+  },
+  "checkpoint_sha256": "6574a244a042aba51607b85d37561a15ea8851f890deaec07aa85e2f0cefc68c",
+  "classes": [
+    "nuclear_interior",
+    "nuclear_envelope",
+    "cytosol",
+    "endoplasmic_reticulum",
+    "golgi",
+    "mitochondria",
+    "plasma_membrane_or_junction",
+    "cytoskeleton_or_adhesion",
+    "vesicular_organelle"
+  ],
+  "external_holdout_status": "unopened",
+  "forbidden_HPA_channels_used": false,
+  "frozen_internal_endpoint_passed": false,
+  "manifest_sha256": "c66fe1f11e0eace9bb84bd4a9e480bd9c30a02b2a0f117bfa97709fecb2454ae",
+  "mapped_image_count": 498,
+  "may_select_aleph_parameter": false,
+  "protocol_sha256": "bc82a82017e84af17ab194d4a9dd70e323f565d44dd23e0c304aa836034633db",
+  "receipt_sha256": "19aaa8a1eb4129666ca95eb4c7d391c6b0b89f8af65b6606b3df9faa75d90453",
+  "schema": "aleph.outer_library.hpa_raw_if_cnn_training.v1",
+  "software": {
+    "numpy": "2.5.1",
+    "torch": "2.8.0"
+  },
+  "split_counts": {
+    "calibration": 56,
+    "test": 56,
+    "train": 309,
+    "validation": 77
+  },
+  "split_positive_counts": {
+    "calibration": {
+      "cytoskeleton_or_adhesion": 18,
+      "cytosol": 16,
+      "endoplasmic_reticulum": 2,
+      "golgi": 3,
+      "mitochondria": 3,
+      "nuclear_envelope": 2,
+      "nuclear_interior": 26,
+      "plasma_membrane_or_junction": 9,
+      "vesicular_organelle": 14
+    },
+    "test": {
+      "cytoskeleton_or_adhesion": 21,
+      "cytosol": 11,
+      "endoplasmic_reticulum": 3,
+      "golgi": 3,
+      "mitochondria": 4,
+      "nuclear_envelope": 1,
+      "nuclear_interior": 30,
+      "plasma_membrane_or_junction": 8,
+      "vesicular_organelle": 8
+    },
+    "train": {
+      "cytoskeleton_or_adhesion": 100,
+      "cytosol": 74,
+      "endoplasmic_reticulum": 13,
+      "golgi": 19,
+      "mitochondria": 18,
+      "nuclear_envelope": 11,
+      "nuclear_interior": 167,
+      "plasma_membrane_or_junction": 34,
+      "vesicular_organelle": 59
+    },
+    "validation": {
+      "cytoskeleton_or_adhesion": 25,
+      "cytosol": 18,
+      "endoplasmic_reticulum": 3,
+      "golgi": 6,
+      "mitochondria": 5,
+      "nuclear_envelope": 3,
+      "nuclear_interior": 35,
+      "plasma_membrane_or_junction": 13,
+      "vesicular_organelle": 20
+    }
+  },
+  "trained_before_opencell_annotation_or_image_content_access": true,
+  "training": {
+    "epochs_executed": 64,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 1.1361205485260601,
+        "validation_macro_average_precision": 0.3081747943810625
+      },
+      {
+        "epoch": 2,
+        "train_loss": 1.1042063531366366,
+        "validation_macro_average_precision": 0.3429475947944296
+      },
+      {
+        "epoch": 3,
+        "train_loss": 1.0847903771693652,
+        "validation_macro_average_precision": 0.32893460024134824
+      },
+      {
+        "epoch": 4,
+        "train_loss": 1.0626568068964195,
+        "validation_macro_average_precision": 0.35431428911936164
+      },
+      {
+        "epoch": 5,
+        "train_loss": 1.0508557992074097,
+        "validation_macro_average_precision": 0.3490114122001848
+      },
+      {
+        "epoch": 6,
+        "train_loss": 1.0192291809902994,
+        "validation_macro_average_precision": 0.359274675377991
+      },
+      {
+        "epoch": 7,
+        "train_loss": 1.0132288674320604,
+        "validation_macro_average_precision": 0.36449089662052125
+      },
+      {
+        "epoch": 8,
+        "train_loss": 1.00119473343914,
+        "validation_macro_average_precision": 0.38317470839380535
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.9859173276663599,
+        "validation_macro_average_precision": 0.37759267519348094
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.9748235994943909,
+        "validation_macro_average_precision": 0.38759787249257976
+      },
+      {
+        "epoch": 11,
+        "train_loss": 0.9575746186728616,
+        "validation_macro_average_precision": 0.4076381740163527
+      },
+      {
+        "epoch": 12,
+        "train_loss": 0.9605380840671872,
+        "validation_macro_average_precision": 0.40954862747501586
+      },
+      {
+        "epoch": 13,
+        "train_loss": 0.9633173516267326,
+        "validation_macro_average_precision": 0.38667257186271886
+      },
+      {
+        "epoch": 14,
+        "train_loss": 0.9374811518153712,
+        "validation_macro_average_precision": 0.41696344031124655
+      },
+      {
+        "epoch": 15,
+        "train_loss": 0.930940184006799,
+        "validation_macro_average_precision": 0.4137361102364828
+      },
+      {
+        "epoch": 16,
+        "train_loss": 0.9472794048608699,
+        "validation_macro_average_precision": 0.4198129778410339
+      },
+      {
+        "epoch": 17,
+        "train_loss": 0.9238836641836321,
+        "validation_macro_average_precision": 0.39564413295545475
+      },
+      {
+        "epoch": 18,
+        "train_loss": 0.9142997550347091,
+        "validation_macro_average_precision": 0.39854976236762796
+      },
+      {
+        "epoch": 19,
+        "train_loss": 0.9085311714113723,
+        "validation_macro_average_precision": 0.4184977884723977
+      },
+      {
+        "epoch": 20,
+        "train_loss": 0.9123059187120605,
+        "validation_macro_average_precision": 0.4128308330039774
+      },
+      {
+        "epoch": 21,
+        "train_loss": 0.9084051388367095,
+        "validation_macro_average_precision": 0.42141869982852037
+      },
+      {
+        "epoch": 22,
+        "train_loss": 0.9413440725178395,
+        "validation_macro_average_precision": 0.40040456716967515
+      },
+      {
+        "epoch": 23,
+        "train_loss": 0.9166392489158606,
+        "validation_macro_average_precision": 0.4152042429953137
+      },
+      {
+        "epoch": 24,
+        "train_loss": 0.898909512268301,
+        "validation_macro_average_precision": 0.4218252187914449
+      },
+      {
+        "epoch": 25,
+        "train_loss": 0.8976138328657182,
+        "validation_macro_average_precision": 0.42686844239041094
+      },
+      {
+        "epoch": 26,
+        "train_loss": 0.8963881298947874,
+        "validation_macro_average_precision": 0.4248191690757629
+      },
+      {
+        "epoch": 27,
+        "train_loss": 0.899659466589153,
+        "validation_macro_average_precision": 0.4075705823861808
+      },
+      {
+        "epoch": 28,
+        "train_loss": 0.898144253056412,
+        "validation_macro_average_precision": 0.4261145038922605
+      },
+      {
+        "epoch": 29,
+        "train_loss": 0.89860641069011,
+        "validation_macro_average_precision": 0.41761180850139923
+      },
+      {
+        "epoch": 30,
+        "train_loss": 0.9143445385698362,
+        "validation_macro_average_precision": 0.42777197686747637
+      },
+      {
+        "epoch": 31,
+        "train_loss": 0.9036436682765924,
+        "validation_macro_average_precision": 0.4283696061762801
+      },
+      {
+        "epoch": 32,
+        "train_loss": 0.8913895389408741,
+        "validation_macro_average_precision": 0.4234131265262709
+      },
+      {
+        "epoch": 33,
+        "train_loss": 0.8791458734030863,
+        "validation_macro_average_precision": 0.4246072658405773
+      },
+      {
+        "epoch": 34,
+        "train_loss": 0.884926010104059,
+        "validation_macro_average_precision": 0.42607141404035376
+      },
+      {
+        "epoch": 35,
+        "train_loss": 0.8734863240356199,
+        "validation_macro_average_precision": 0.4019133708237492
+      },
+      {
+        "epoch": 36,
+        "train_loss": 0.8814598401001742,
+        "validation_macro_average_precision": 0.42488895880307126
+      },
+      {
+        "epoch": 37,
+        "train_loss": 0.8810051814637909,
+        "validation_macro_average_precision": 0.4327833250777434
+      },
+      {
+        "epoch": 38,
+        "train_loss": 0.866515568159159,
+        "validation_macro_average_precision": 0.4334363641563906
+      },
+      {
+        "epoch": 39,
+        "train_loss": 0.8620484789598335,
+        "validation_macro_average_precision": 0.43414359918161316
+      },
+      {
+        "epoch": 40,
+        "train_loss": 0.8655356799514549,
+        "validation_macro_average_precision": 0.4087094474484491
+      },
+      {
+        "epoch": 41,
+        "train_loss": 0.8598173125662079,
+        "validation_macro_average_precision": 0.4027147240668479
+      },
+      {
+        "epoch": 42,
+        "train_loss": 0.8600305405635278,
+        "validation_macro_average_precision": 0.42989377516527966
+      },
+      {
+        "epoch": 43,
+        "train_loss": 0.8480566811407269,
+        "validation_macro_average_precision": 0.4445917532599524
+      },
+      {
+        "epoch": 44,
+        "train_loss": 0.8486610294159947,
+        "validation_macro_average_precision": 0.43890058979526025
+      },
+      {
+        "epoch": 45,
+        "train_loss": 0.841256507006278,
+        "validation_macro_average_precision": 0.39124681348962603
+      },
+      {
+        "epoch": 46,
+        "train_loss": 0.8400861350849609,
+        "validation_macro_average_precision": 0.40464372822873806
+      },
+      {
+        "epoch": 47,
+        "train_loss": 0.836242143968934,
+        "validation_macro_average_precision": 0.42098096640752497
+      },
+      {
+        "epoch": 48,
+        "train_loss": 0.832966180102339,
+        "validation_macro_average_precision": 0.4298260545798353
+      },
+      {
+        "epoch": 49,
+        "train_loss": 0.8499667169978318,
+        "validation_macro_average_precision": 0.45427247915988533
+      },
+      {
+        "epoch": 50,
+        "train_loss": 0.8265646113546921,
+        "validation_macro_average_precision": 0.40781447398205584
+      },
+      {
+        "epoch": 51,
+        "train_loss": 0.8176254479630479,
+        "validation_macro_average_precision": 0.3941104047006565
+      },
+      {
+        "epoch": 52,
+        "train_loss": 0.8104152563706185,
+        "validation_macro_average_precision": 0.41182484416415893
+      },
+      {
+        "epoch": 53,
+        "train_loss": 0.8155377759902609,
+        "validation_macro_average_precision": 0.4193167710898799
+      },
+      {
+        "epoch": 54,
+        "train_loss": 0.8236298325763937,
+        "validation_macro_average_precision": 0.4110516065071418
+      },
+      {
+        "epoch": 55,
+        "train_loss": 0.8102816156199063,
+        "validation_macro_average_precision": 0.4138488826641116
+      },
+      {
+        "epoch": 56,
+        "train_loss": 0.8083226329686186,
+        "validation_macro_average_precision": 0.41697643347892976
+      },
+      {
+        "epoch": 57,
+        "train_loss": 0.8067605969975296,
+        "validation_macro_average_precision": 0.40573561669988073
+      },
+      {
+        "epoch": 58,
+        "train_loss": 0.8125433786787262,
+        "validation_macro_average_precision": 0.4091969721426596
+      },
+      {
+        "epoch": 59,
+        "train_loss": 0.8044656329941982,
+        "validation_macro_average_precision": 0.4000643237788548
+      },
+      {
+        "epoch": 60,
+        "train_loss": 0.8128069068235872,
+        "validation_macro_average_precision": 0.4134203504080709
+      },
+      {
+        "epoch": 61,
+        "train_loss": 0.8057027599958154,
+        "validation_macro_average_precision": 0.41971759630169303
+      },
+      {
+        "epoch": 62,
+        "train_loss": 0.8009070975880792,
+        "validation_macro_average_precision": 0.40529100125135775
+      },
+      {
+        "epoch": 63,
+        "train_loss": 0.791969190909253,
+        "validation_macro_average_precision": 0.4157740167423985
+      },
+      {
+        "epoch": 64,
+        "train_loss": 0.7913932100083064,
+        "validation_macro_average_precision": 0.3981175289422427
+      }
+    ],
+    "positive_weights": {
+      "cytoskeleton_or_adhesion": 2.09,
+      "cytosol": 3.175675675675676,
+      "endoplasmic_reticulum": 20.0,
+      "golgi": 15.263157894736842,
+      "mitochondria": 16.166666666666668,
+      "nuclear_envelope": 20.0,
+      "nuclear_interior": 1.0,
+      "plasma_membrane_or_junction": 8.088235294117647,
+      "vesicular_organelle": 4.237288135593221
+    },
+    "selected_epoch": 49,
+    "selected_validation_macro_average_precision": 0.45427247915988533
+  }
+}

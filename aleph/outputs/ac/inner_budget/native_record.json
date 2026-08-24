@@ -1,0 +1,218 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "inner_budget_sensitivity_down",
+  "kind": "diagnostic",
+  "evidence": "NATIVE",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "max|PF| at the final accepted step vs n_inner, judged against the across-seed scatter at the incumbent default. Pre-registered in outputs/ac/inner_budget/PREREGISTRATION.md before the sweep ran. BLOCKED: nothing converged, so no magnitude here is physical and the wall-clock is not a speed number for the engine \u2014 a timing is a property of an engine at a stated convergence, and this run states none.",
+  "pre_registration": "aleph/outputs/ac/inner_budget/PREREGISTRATION.md",
+  "result": {
+    "reference_outer": 40,
+    "reference_mean_max_pf_pn": 0.7720352682482406,
+    "seed_scatter_S40_pn": 0.00010923100201532019,
+    "points": {
+      "5": {
+        "n_seeds": 3,
+        "max_pf_mean_pn": 0.887812763634234,
+        "max_pf_stdev_pn": 0.0627316617765408,
+        "abs_shift_from_reference_pn": 0.11577749538599336,
+        "verdict": "SENSITIVE",
+        "wall_s_per_step_mean": 6.426200842522344,
+        "runs": [
+          {
+            "path": "outer5_seed0.json",
+            "seed": 0,
+            "max_pf_pn": 0.872094530671839,
+            "steps_run": 30,
+            "wall_s_per_step": 6.40194384866724,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer5_seed1.json",
+            "seed": 1,
+            "max_pf_pn": 0.9569088318165999,
+            "steps_run": 30,
+            "wall_s_per_step": 6.48775075316662,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer5_seed2.json",
+            "seed": 2,
+            "max_pf_pn": 0.8344349284142634,
+            "steps_run": 30,
+            "wall_s_per_step": 6.388907925733171,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          }
+        ]
+      },
+      "10": {
+        "n_seeds": 3,
+        "max_pf_mean_pn": 0.8134763829130139,
+        "max_pf_stdev_pn": 0.05334104666568052,
+        "abs_shift_from_reference_pn": 0.04144111466477329,
+        "verdict": "SENSITIVE",
+        "wall_s_per_step_mean": 6.4867892162777325,
+        "runs": [
+          {
+            "path": "outer10_seed0.json",
+            "seed": 0,
+            "max_pf_pn": 0.7905364376923267,
+            "steps_run": 30,
+            "wall_s_per_step": 6.583472404666827,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer10_seed1.json",
+            "seed": 1,
+            "max_pf_pn": 0.8744497538344251,
+            "steps_run": 30,
+            "wall_s_per_step": 6.447110532833419,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer10_seed2.json",
+            "seed": 2,
+            "max_pf_pn": 0.77544295721229,
+            "steps_run": 30,
+            "wall_s_per_step": 6.429784711332953,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          }
+        ]
+      },
+      "20": {
+        "n_seeds": 3,
+        "max_pf_mean_pn": 0.7745381371994616,
+        "max_pf_stdev_pn": 0.0004562543930047396,
+        "abs_shift_from_reference_pn": 0.0025028689512209823,
+        "verdict": "SENSITIVE",
+        "wall_s_per_step_mean": 6.662636919455448,
+        "runs": [
+          {
+            "path": "outer20_seed0.json",
+            "seed": 0,
+            "max_pf_pn": 0.774248390091908,
+            "steps_run": 30,
+            "wall_s_per_step": 6.733220115166235,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer20_seed1.json",
+            "seed": 1,
+            "max_pf_pn": 0.7750640659085433,
+            "steps_run": 30,
+            "wall_s_per_step": 6.610370513933594,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer20_seed2.json",
+            "seed": 2,
+            "max_pf_pn": 0.7743019555979337,
+            "steps_run": 30,
+            "wall_s_per_step": 6.6443201292665135,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          }
+        ]
+      },
+      "40": {
+        "n_seeds": 3,
+        "max_pf_mean_pn": 0.7720352682482406,
+        "max_pf_stdev_pn": 0.00010923100201532019,
+        "abs_shift_from_reference_pn": 0.0,
+        "verdict": "INSENSITIVE",
+        "wall_s_per_step_mean": 6.800719901800039,
+        "runs": [
+          {
+            "path": "outer40_seed0.json",
+            "seed": 0,
+            "max_pf_pn": 0.7719532912853654,
+            "steps_run": 30,
+            "wall_s_per_step": 6.72223698446663,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer40_seed1.json",
+            "seed": 1,
+            "max_pf_pn": 0.7721592702524898,
+            "steps_run": 30,
+            "wall_s_per_step": 6.826192980999864,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer40_seed2.json",
+            "seed": 2,
+            "max_pf_pn": 0.7719932432068666,
+            "steps_run": 30,
+            "wall_s_per_step": 6.853729739933624,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          }
+        ]
+      },
+      "80": {
+        "n_seeds": 3,
+        "max_pf_mean_pn": 0.7675270920503928,
+        "max_pf_stdev_pn": 0.00024291395219270883,
+        "abs_shift_from_reference_pn": 0.004508176197847824,
+        "verdict": "SENSITIVE",
+        "wall_s_per_step_mean": 6.8891759409336375,
+        "runs": [
+          {
+            "path": "outer80_seed0.json",
+            "seed": 0,
+            "max_pf_pn": 0.7674036399873538,
+            "steps_run": 30,
+            "wall_s_per_step": 6.9122854895666626,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer80_seed1.json",
+            "seed": 1,
+            "max_pf_pn": 0.7678069393309195,
+            "steps_run": 30,
+            "wall_s_per_step": 6.838860122667393,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          },
+          {
+            "path": "outer80_seed2.json",
+            "seed": 2,
+            "max_pf_pn": 0.7673706968329052,
+            "steps_run": 30,
+            "wall_s_per_step": 6.916382210566856,
+            "cortex_filaments": 70686,
+            "build": "unknown",
+            "device": "cuda:0"
+          }
+        ]
+      }
+    },
+    "lowest_insensitive_outer": 40,
+    "up_control_outer80": "SENSITIVE"
+  }
+}

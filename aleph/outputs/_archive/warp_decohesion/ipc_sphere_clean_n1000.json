@@ -1,0 +1,13 @@
+{
+  "tag": "ipc_sphere_clean_n1000",
+  "n": 1000,
+  "steps": 2500,
+  "elapsed_s": 1422.7,
+  "aa0_final": 1.0468727397693778,
+  "aa0_peak": 1.0468727397693778,
+  "vv0_final": 0.9487471424552226,
+  "pen_final": 8605.71182528145,
+  "pen_peak": 8605.71182528145,
+  "drift_um": 0.5823640961135048,
+  "npz": "/home/sungwook/ffn_phase_c/ffn_sim/outputs/warp_decohesion/ipc_sphere_clean_n1000.npz"
+}

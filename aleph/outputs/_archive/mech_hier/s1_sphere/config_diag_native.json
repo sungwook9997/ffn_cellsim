@@ -1,0 +1,35 @@
+{
+  "note": "native NF=70686 knob isolation vs 4141 baseline",
+  "rows": [
+    {
+      "variant": "baseline_physio",
+      "E_fit_Pa": 4130.563498595272,
+      "verdict": "HERTZ-SOLID (needs rigor)",
+      "shell_r2": 0.9789995097542581
+    },
+    {
+      "variant": "soft_plate",
+      "E_fit_Pa": 904751.233650577,
+      "verdict": "HERTZ-SOLID (needs rigor)",
+      "shell_r2": 0.8887046592028286
+    },
+    {
+      "variant": "no_eta_bulk",
+      "E_fit_Pa": 4130.563498775207,
+      "verdict": "HERTZ-SOLID (needs rigor)",
+      "shell_r2": 0.9789995097455638
+    },
+    {
+      "variant": "load_time_90",
+      "E_fit_Pa": 4496.9863110758615,
+      "verdict": "HERTZ-SOLID (needs rigor)",
+      "shell_r2": 0.9649410377672518
+    },
+    {
+      "variant": "plus_membrane",
+      "E_fit_Pa": 4061.9918823093985,
+      "verdict": "HERTZ-SOLID (needs rigor)",
+      "shell_r2": 0.9791885485906832
+    }
+  ]
+}

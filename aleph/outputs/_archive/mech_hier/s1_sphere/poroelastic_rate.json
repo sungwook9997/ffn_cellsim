@@ -1,0 +1,9 @@
+{
+  "question": "Is the cortex mechanics really the cytoplasm (fluid) filling, not the filament assembly?",
+  "answer": "It is POROELASTIC (Moeendarbary 2013): a filament skeleton + interstitial cytoplasm fluid. Fast loading traps the fluid -> stiff; slow loading drains it -> soft. So the fluid MODULATES the apparent stiffness by rate. BUT over PHYSICAL rates the effect is modest (~3.7x, 4.1->1.1 kPa), NOT dominant. The 888 kPa 'fluid dominates' impression came from INSTANT loading (rate -> infinity), an unphysical artifact. The filament network sets the baseline skeleton modulus + controls the drainage timescale; the fluid modulates it. Both matter.",
+  "config": "ff_hertz_validation rate_sweep: Lp=1e-7 um/s/Pa, K_drained=300 Pa, xl_koff=0.066/s, f_excess=0.25 (membrane), NF=2000, CPU",
+  "rate_um_s": [50.0, 5.0, 0.5, 0.05, 0.005],
+  "E_fit_Pa": [4119.2, 4109.9, 4035.2, 3393.8, 1116.2],
+  "instant_artifact_Pa": 888072,
+  "mcf7_band": [224.0, 279.0]
+}

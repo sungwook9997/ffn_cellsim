@@ -1,0 +1,292 @@
+{
+  "record": "run-record@2",
+  "kind": "synthesis",
+  "gate": "c1_method_synthesis",
+  "inputs": {
+    "step_relaxation": {
+      "build": {
+        "commit": "2753580a3df3ce397d9e5ad9de7adb2a2b574140",
+        "source": "declared",
+        "why": "the run host is an rsync'd tree, not a git checkout"
+      },
+      "verdict": "PASS",
+      "device": "cuda:0"
+    },
+    "oscillatory": {
+      "build": {
+        "commit": "242b4005887ecb2415900da542308dbeb56475e4",
+        "source": "declared"
+      },
+      "verdict": "PASS",
+      "device": "cuda:0",
+      "failed_inversion": {
+        "observable": "tau = 1/omega_45, the 45-degree phase-lag crossing (the standard first-order/single-relaxation reading)",
+        "outcome": "NO CROSSING EXISTS. 45 degrees is the ASYMPTOTE of a diffusive phase lag, not a point on it; a first-order model runs to 90 degrees, so fitting arctan(omega*tau) to poroelastic data reports a corner frequency that does not exist. Measured phase maxima are recorded per point.",
+        "phase_max_deg": [
+          82.4275865065297,
+          81.97560504433835,
+          82.86699956378811,
+          82.5049992818637,
+          81.97560504433835,
+          82.86699956378811,
+          82.50499928186372,
+          81.97560504433835,
+          82.86699956378813,
+          82.50499928186372,
+          82.24683004299051
+        ],
+        "why_kept": "a method that cannot measure this medium is a result about the method, and deleting the attempt would delete the finding"
+      }
+    },
+    "creep": {
+      "build": {
+        "commit": "242b4005887ecb2415900da542308dbeb56475e4",
+        "source": "declared"
+      },
+      "verdict": "FAIL",
+      "device": "cuda:0",
+      "grid_invariance": {
+        "relative_spread": 0.0775837600744281,
+        "bound": 0.05,
+        "verdict": "FAIL",
+        "why": "the patch is loaded instantaneously, so the initial flux is grid-set; if tau moves with dx then this method's number is partly the mesh, not the medium",
+        "points": [
+          {
+            "dx_um": 0.3,
+            "n": 161,
+            "tau_creep_s": 0.0055311305433633435,
+            "monotone_hull_applied": false
+          },
+          {
+            "dx_um": 0.2,
+            "n": 241,
+            "tau_creep_s": 0.005534337610019324,
+            "monotone_hull_applied": false
+          },
+          {
+            "dx_um": 0.15,
+            "n": 321,
+            "tau_creep_s": 0.005760497383842025,
+            "monotone_hull_applied": false
+          },
+          {
+            "dx_um": 0.1,
+            "n": 481,
+            "tau_creep_s": 0.00596927842748534,
+            "monotone_hull_applied": false
+          }
+        ]
+      },
+      "creep_over_relaxation": {
+        "per_point": [
+          0.19855906617699517,
+          0.20962842812696852,
+          0.18988765142169953,
+          0.196020450704477,
+          0.2096284281270354,
+          0.18988765142168132,
+          0.19602045070445592,
+          0.2096284281269973,
+          0.189887651421736,
+          0.19602045070439159,
+          0.20619836004158001
+        ],
+        "median": 0.196020450704477,
+        "why": "the textbook split between creep and relaxation, measured for a poroelastic medium"
+      }
+    }
+  },
+  "n_readings_total": 5,
+  "n_readings_fitted": 5,
+  "n_readings_valid": 4,
+  "excluded_from_headline": [
+    {
+      "method": "creep",
+      "reading": "flux_decay",
+      "exponent": 2.0058817069663997,
+      "r2": 0.9992861717715467,
+      "verdict": "FAIL",
+      "why": "its own method reported a failing internal validity check, so it is evidence about the method rather than about the medium"
+    }
+  ],
+  "declared_before_reading_the_records": {
+    "exponent_agreement": 0.1,
+    "prefactor_disagreement_min": 1.5
+  },
+  "readings": [
+    {
+      "method": "step_relaxation",
+      "reading": "l2_norm",
+      "exponent": 1.9997781317555434,
+      "prefactor": 0.027920781591437197,
+      "r2": 0.9999989323385841,
+      "n_kept": 11,
+      "verdict": "PASS",
+      "prefactor_in_a2_over_D": 1.3960390795718598
+    },
+    {
+      "method": "step_relaxation",
+      "reading": "peak",
+      "exponent": 1.9996840039706993,
+      "prefactor": 0.009510699036481836,
+      "r2": 0.9999981634253354,
+      "n_kept": 11,
+      "verdict": "PASS",
+      "prefactor_in_a2_over_D": 0.4755349518240918
+    },
+    {
+      "method": "step_relaxation",
+      "reading": "patch_mean",
+      "exponent": 1.999880323807974,
+      "prefactor": 0.011588465601160645,
+      "r2": 0.999997924930736,
+      "n_kept": 11,
+      "verdict": "PASS",
+      "prefactor_in_a2_over_D": 0.5794232800580322
+    },
+    {
+      "method": "oscillatory",
+      "reading": "minus_3dB_bandwidth",
+      "exponent": 1.999740095562466,
+      "prefactor": 0.017266282129169436,
+      "r2": 0.9999987291229527,
+      "n_kept": 11,
+      "verdict": "PASS",
+      "sweep_verdict": "PASS",
+      "method_verdict": "PASS",
+      "prefactor_in_a2_over_D": 0.8633141064584718
+    },
+    {
+      "method": "creep",
+      "reading": "flux_decay",
+      "exponent": 2.0058817069663997,
+      "prefactor": 0.005554475770841954,
+      "r2": 0.9992861717715467,
+      "n_kept": 11,
+      "verdict": "FAIL",
+      "sweep_verdict": "PASS",
+      "method_verdict": "FAIL",
+      "prefactor_in_a2_over_D": 0.2777237885420977
+    }
+  ],
+  "exponent_spread": 0.0001963198372747499,
+  "exponent_mean": 1.9997706387741707,
+  "prefactor_ratio_max_over_min": 2.9357233873489865,
+  "mesh_ratio_structure": {
+    "by_a_over_dx": {
+      "3.67": {
+        "a_um": [
+          0.55,
+          1.1,
+          2.2
+        ],
+        "oracle_ratio": [
+          1.0012273114175456,
+          1.0012273114170338,
+          1.0012273114167392
+        ],
+        "spread_within_group": 8.064660050877137e-13
+      },
+      "5.0": {
+        "a_um": [
+          0.75,
+          1.5,
+          3.0
+        ],
+        "oracle_ratio": [
+          0.9998960364220446,
+          0.9998960364201696,
+          0.9998960364193928
+        ],
+        "spread_within_group": 2.6517676943171864e-12
+      },
+      "7.33": {
+        "a_um": [
+          0.55,
+          1.1,
+          2.2
+        ],
+        "oracle_ratio": [
+          0.9973611004240583,
+          0.9973611004250295,
+          0.9973611004242985
+        ],
+        "spread_within_group": 9.711120796396244e-13
+      }
+    },
+    "reading": "points sharing a mesh ratio agree far more tightly than points sharing a probe size, so the residual is discretisation and not a length-scale effect \u2014 the exponent is exact in the continuum"
+  },
+  "mesh_sensitivity": {
+    "step_relaxation": {
+      "C_by_a_over_dx": {
+        "3.67": 1.3985482975929624,
+        "5.0": 1.396688727484506,
+        "5.33": 1.3962722758384583,
+        "6.67": 1.3943208118539399,
+        "7.33": 1.393147842830852
+      },
+      "relative_spread": 0.0038690871331500277,
+      "C_measured_range": [
+        1.393147842830852,
+        1.3985482975929624
+      ],
+      "continuum_C_extrapolated": 1.388548286248529,
+      "extrapolation_r2": 0.9380031353474355,
+      "extrapolation_status": "TREND_BUT_EXTRAPOLATED_BEYOND_DATA \u2014 check the assumed order before quoting; a second-order scheme errs as (dx/a)^2 and a fit linear in (dx/a) overshoots",
+      "why": "C fitted against 1/(a/dx) and extrapolated to an infinitely fine mesh"
+    },
+    "oscillatory": {
+      "C_by_a_over_dx": {
+        "3.67": 0.8644503774604408,
+        "5.0": 0.8614718675619022,
+        "5.33": 0.861864152149164,
+        "6.67": 0.8624678330559934,
+        "7.33": 0.8646208295403826
+      },
+      "relative_spread": 0.003648960786653409,
+      "C_measured_range": [
+        0.8614718675619022,
+        0.8646208295403826
+      ],
+      "continuum_C_extrapolated": 0.8622856133529568,
+      "extrapolation_r2": 0.01748227450457518,
+      "extrapolation_status": "NO_TREND \u2014 residual is scatter at the converged level; the fit is through noise",
+      "why": "C fitted against 1/(a/dx) and extrapolated to an infinitely fine mesh"
+    },
+    "creep": {
+      "C_by_a_over_dx": {
+        "3.67": 0.26524151768680465,
+        "5.0": 0.2738080199171624,
+        "5.33": 0.27735404418847187,
+        "6.67": 0.28802486919224235,
+        "7.33": 0.2928161047356505
+      },
+      "relative_spread": 0.09867487740766372,
+      "C_measured_range": [
+        0.26524151768680465,
+        0.2928161047356505
+      ],
+      "continuum_C_extrapolated": 0.3174167008732061,
+      "extrapolation_r2": 0.9340176626058451,
+      "extrapolation_status": "TREND_BUT_EXTRAPOLATED_BEYOND_DATA \u2014 check the assumed order before quoting; a second-order scheme errs as (dx/a)^2 and a fit linear in (dx/a) overshoots",
+      "why": "C fitted against 1/(a/dx) and extrapolated to an infinitely fine mesh"
+    }
+  },
+  "D_reference_um2_s": 50.0,
+  "prefactor_units": "a^2/D \u2014 the raw fit is in seconds and is not comparable to a closed form without its D",
+  "verdict_parts": {
+    "scaling_transfers": true,
+    "magnitude_is_instrument_specific": true
+  },
+  "reading": "the scaling belongs to the medium and the magnitude belongs to the instrument (4 of 5 readings; 1 excluded for failing their own method's validity checks)",
+  "replicate_scatter": {
+    "value": 0.0,
+    "why": "the Biot field solve is DETERMINISTIC \u2014 no RNG enters it, so replicate scatter is exactly zero and running replicates would measure nothing. The uncertainty here is NUMERICAL, and it is bounded by the dx-invariance sweep and the fit r2, both of which are in the step record. C-1 section 6.1's three-replicate requirement binds the CELL measurement, where kinetics carry seeds; it does not transfer to this."
+  },
+  "may_not_be_quoted_for": [
+    "any statement about a cell \u2014 every input is the field alone",
+    "which reading is correct \u2014 they measure different functionals of one state",
+    "the C-1 gate, which is scored on an indented cell",
+    "a cytoplasm viscosity or any physiological magnitude"
+  ]
+}

@@ -1,0 +1,204 @@
+{
+  "aleph_dependency": false,
+  "all_checks_passed": true,
+  "checks": {
+    "bilayer_vs_attachment_remains_ambiguous": true,
+    "fixed_kappa_adds_conditional_apparent_tension": true,
+    "force_alone_returns_only_kappa_sigma_product": true,
+    "mechanism_probability_not_fabricated": true,
+    "no_Aleph_dependency_or_parameter_output": true,
+    "unsupported_operator_refused": true,
+    "wrong_unit_refused": true
+  },
+  "current_external_training_phase_depends_on_Aleph_sweep": false,
+  "execution_order_change": true,
+  "final_program_objective": "promote_validated_observables_into_bounded_Aleph_parameter_sweeps",
+  "final_program_objective_includes_Aleph_sweep": true,
+  "may_emit_Aleph_parameter": false,
+  "measured_tether_with_assumed_kappa": {
+    "aleph_dependency": false,
+    "ambiguity_sets": [
+      {
+        "bounds_under_nonnegative_components": {
+          "attachment_energy_density_pn_per_um": [
+            0.0,
+            53.99565994043127
+          ],
+          "sigma_bilayer_pn_per_um": [
+            0.0,
+            53.99565994043127
+          ]
+        },
+        "constant_pn_per_um": 53.99565994043127,
+        "may_choose_one_point": false,
+        "relation": "sigma_app = sigma_bilayer + membrane_cortex_attachment_energy_density"
+      }
+    ],
+    "applicability": {
+      "assumptions_verified_by_input": false,
+      "required_assumptions": [
+        "long_cylindrical_tether",
+        "quasi_static_plateau",
+        "homogeneous_effective_kappa_and_sigma_app"
+      ],
+      "status": "conditional"
+    },
+    "input_provenance": {
+      "authority": "author_reported_experiment_mean",
+      "dataset_id": "elife-72381-hela-mechano-osmotic",
+      "measurement_operator": "AFM_membrane_tether_plateau_force"
+    },
+    "intervention_directions": [],
+    "may_emit_Aleph_parameter": false,
+    "mechanism_support": [
+      {
+        "probability": null,
+        "support": "compatible_not_compared_against_alternative_models",
+        "theory_id": "membrane_tether_quasistatic"
+      }
+    ],
+    "observable_predictions": [],
+    "refusal": null,
+    "refused": false,
+    "schema": "outer.biophysics.inference.v1",
+    "state_posterior": [
+      {
+        "authority": "theory_conditional",
+        "conditioning": "none_beyond_quasistatic_tether_expert",
+        "estimate": 4.427644115115364,
+        "latent_id": "bending_rigidity_times_apparent_tension",
+        "unit": "pN^2"
+      },
+      {
+        "authority": "theory_conditional",
+        "conditioning": "bending_rigidity_fixed_at_0.082_pN_um",
+        "estimate": 53.99565994043127,
+        "latent_id": "apparent_membrane_tension",
+        "unit": "pN/micrometre"
+      }
+    ],
+    "uncertainty": {
+      "does_not_include_model_discrepancy": true,
+      "force_standard_error_pn": 0.3,
+      "kind": "first_order_measurement_propagation",
+      "product_standard_error_pn2": 0.14208320242756847
+    }
+  },
+  "measured_tether_without_kappa": {
+    "aleph_dependency": false,
+    "ambiguity_sets": [
+      {
+        "constant_pn2": 4.427644115115364,
+        "free_variables": [
+          "bending_rigidity_pn_um",
+          "apparent_tension_pn_per_um"
+        ],
+        "may_choose_one_point": false,
+        "relation": "kappa * sigma_app = observed_force^2/(8*pi^2)"
+      }
+    ],
+    "applicability": {
+      "assumptions_verified_by_input": false,
+      "required_assumptions": [
+        "long_cylindrical_tether",
+        "quasi_static_plateau",
+        "homogeneous_effective_kappa_and_sigma_app"
+      ],
+      "status": "conditional"
+    },
+    "input_provenance": {
+      "authority": "author_reported_experiment_mean",
+      "dataset_id": "elife-72381-hela-mechano-osmotic",
+      "measurement_operator": "AFM_membrane_tether_plateau_force"
+    },
+    "intervention_directions": [],
+    "may_emit_Aleph_parameter": false,
+    "mechanism_support": [
+      {
+        "probability": null,
+        "support": "compatible_not_compared_against_alternative_models",
+        "theory_id": "membrane_tether_quasistatic"
+      }
+    ],
+    "observable_predictions": [],
+    "refusal": null,
+    "refused": false,
+    "schema": "outer.biophysics.inference.v1",
+    "state_posterior": [
+      {
+        "authority": "theory_conditional",
+        "conditioning": "none_beyond_quasistatic_tether_expert",
+        "estimate": 4.427644115115364,
+        "latent_id": "bending_rigidity_times_apparent_tension",
+        "unit": "pN^2"
+      }
+    ],
+    "uncertainty": {
+      "does_not_include_model_discrepancy": true,
+      "force_standard_error_pn": 0.3,
+      "kind": "first_order_measurement_propagation",
+      "product_standard_error_pn2": 0.14208320242756847
+    }
+  },
+  "objective_change": false,
+  "phase_objective": "train_and_validate_external_observation_inference_while_Aleph_sweeps_are_infeasible",
+  "refusal_examples": {
+    "unsupported_operator": {
+      "aleph_dependency": false,
+      "ambiguity_sets": [],
+      "applicability": {
+        "status": "outside_current_expert_scope"
+      },
+      "input_provenance": {
+        "dataset_id": "synthetic_test_only"
+      },
+      "intervention_directions": [],
+      "may_emit_Aleph_parameter": false,
+      "mechanism_support": [],
+      "observable_predictions": [],
+      "refusal": {
+        "code": "NO_APPLICABLE_EXPERT",
+        "detail": {
+          "implemented_modalities": [
+            "AFM_membrane_tether_force"
+          ],
+          "modality": "western_blot_band_intensity"
+        },
+        "reason": "no implemented expert accepts this measurement operator"
+      },
+      "refused": true,
+      "schema": "outer.biophysics.inference.v1",
+      "state_posterior": [],
+      "uncertainty": {}
+    },
+    "wrong_unit": {
+      "aleph_dependency": false,
+      "ambiguity_sets": [],
+      "applicability": {
+        "status": "outside_current_expert_scope"
+      },
+      "input_provenance": {
+        "authority": "author_reported_experiment_mean",
+        "dataset_id": "elife-72381-hela-mechano-osmotic",
+        "measurement_operator": "AFM_membrane_tether_plateau_force"
+      },
+      "intervention_directions": [],
+      "may_emit_Aleph_parameter": false,
+      "mechanism_support": [],
+      "observable_predictions": [],
+      "refusal": {
+        "code": "UNIT_MISMATCH",
+        "detail": {
+          "unit": "nN"
+        },
+        "reason": "tether expert requires pN force"
+      },
+      "refused": true,
+      "schema": "outer.biophysics.inference.v1",
+      "state_posterior": [],
+      "uncertainty": {}
+    }
+  },
+  "required_promotion_contract": "aleph.outer_library.latent_promotion.v1",
+  "schema": "outer.biophysics.external_inference_evaluation.v1"
+}

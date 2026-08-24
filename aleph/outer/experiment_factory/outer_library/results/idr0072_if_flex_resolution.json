@@ -1,0 +1,28 @@
+{
+  "additional_pixel_files_downloaded": 0,
+  "aleph_parameter_authority": "none",
+  "input_manifest_sha256": "61ff86eec15bbaa90d54a950ab9e55a20fc6ad8f127aec89012cc38e4d8f9e8d",
+  "input_rows": 2594,
+  "metadata_receipts": {
+    "screenA": {
+      "bytes": 1402,
+      "plate_count": 10,
+      "sha256": "5d6dc94228c0e9c7f0920d1fc440e33ab98309a01179ca222f20615b42fba2f4",
+      "url": "https://raw.githubusercontent.com/IDR/idr0072-schormann-subcellref/85d154650a26f011b57f13f91e4be11d1f9dde12/screenA/idr0072-screenA-plates.tsv"
+    },
+    "screenB": {
+      "bytes": 11577,
+      "plate_count": 84,
+      "sha256": "78c19fc6b397fa22442d49045e53721bc5aa9b0a7e9fd19a2e0d3fc909c7afd9",
+      "url": "https://raw.githubusercontent.com/IDR/idr0072-schormann-subcellref/85d154650a26f011b57f13f91e4be11d1f9dde12/screenB/idr0072-screenB-plates.tsv"
+    }
+  },
+  "metadata_repository_commit": "85d154650a26f011b57f13f91e4be11d1f9dde12",
+  "missing_plate_names": [],
+  "model_predictions_made": 0,
+  "pristine_holdout_authority": false,
+  "resolved_manifest_sha256": "40ac8cf5d52ec887e4c65fe41b7eec1d407d7bf4a73d473f7362587104dc3371",
+  "resolved_rows": 2594,
+  "schema": "aleph.outer_library.idr0072_if_flex_resolution.v1",
+  "status": "flex_sources_resolved_before_pixel_access"
+}

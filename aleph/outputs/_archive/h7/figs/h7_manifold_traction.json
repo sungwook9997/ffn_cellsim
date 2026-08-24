@@ -1,0 +1,30 @@
+{
+  "subdivisions": 2,
+  "n_tri": 320,
+  "R_cell_m": 7.5e-06,
+  "mean_patch_edge_m": 2.24499056488919e-06,
+  "n_integrin_bonds": 4,
+  "n_bonds_loaded": 4,
+  "n_basal_patches": 4,
+  "contact_area_m2": 8.697830359341214e-12,
+  "total_normal_force_N": 1.6870745743974288e-11,
+  "total_tangential_force_N": 1.9676380649494788e-10,
+  "total_normal_traction_Pa": 1.9396498950862617,
+  "total_tangential_traction_Pa": 22.622171089325665,
+  "total_force_vec_N": [
+    1.286634191391905e-10,
+    2.6986910898010853e-11,
+    -1.5014859266238944e-10
+  ],
+  "polarity_magnitude": 0.8840924349705286,
+  "polarity_angle_deg": 46.831396623526516,
+  "contact_conservation_passed": true,
+  "contact_conservation_max_abs_residual_N": 0.0,
+  "subdivisions_hint": "mean_patch_edge=2.245e-06 m; n_tri=320; basal_patches=4; bonds/basal_patch=1.00",
+  "n_filaments": 160,
+  "is_full_scale": false,
+  "device": "cpu",
+  "seed": 1,
+  "k_int_bare_N_per_m": 0.001,
+  "integrin_r0_m": 0.0
+}

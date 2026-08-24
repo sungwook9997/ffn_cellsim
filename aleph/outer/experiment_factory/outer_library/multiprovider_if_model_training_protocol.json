@@ -1,0 +1,124 @@
+{
+  "schema": "aleph.outer_library.multiprovider_if_model_training_protocol.v1",
+  "frozen_before_any_multiprovider_model_optimization": true,
+  "objective": "train an independently useful HPA/OpenCell coarse-localization encoder now because Aleph sweeps are not yet computationally feasible, while preserving its later role as a non-authoritative pre-sweep compression layer",
+  "final_program_objective_unchanged": "after external validation, matched observation operators, identifiability, and Aleph forward sensitivity, use the inferred posterior and ambiguity set to reduce candidate axes and bound an executable Aleph parameter sweep",
+  "source_contract": {
+    "base_protocol_sha256": "41dc73848e0208dd1b4c7295e2740dd18accb07e26d0f9e2cc1155e59684f77a",
+    "hpa_tensor_sha256": "88cac80d6504904b7f47c8b84bbe3b6dc7ebf418998938f7bff988e936932ae9",
+    "hpa_tensor_report_sha256": "cdd9100a36066d96eb41441a9d0bd1870a7e7795543f655ac6a20f73f82f89e4",
+    "opencell_tensor_sha256": "c2b82622984bfcf3c84dd7eea28f867c07a00c7759d7a62114d3eb3b470ed22c",
+    "opencell_tensor_report_sha256": "27f86a8d3d115c096ffd1cf3be10ae1d5a9ec0c30d4f52ef1f02562008dff3c6",
+    "allencell_metadata_gate_sha256": "0c3528660049e2ef4ab8a8aa588d10e8deab497ceeb48ac27d0f6dc67837dfce",
+    "Allen_confirmation_status": "structurally_refused_before_image_or_pixel_access",
+    "Allen_pixels_accessed": 0,
+    "Allen_predictions_made": 0
+  },
+  "input_contract": {
+    "shape": [2, 128, 128],
+    "dtype_on_disk": "uint8",
+    "decode": "float32 division by 255",
+    "channel_order": ["nucleus_or_DNA", "target_protein_or_tagged_structure"],
+    "gene_or_protein_identity_as_input": false,
+    "provider_identifier_as_input": false,
+    "absolute_intensity_claim": false
+  },
+  "split_contract": {
+    "HPA_train_unit": "gene-antibody component; 2037 components",
+    "HPA_selection_unit": "gene-antibody component; 381 components",
+    "HPA_calibration_unit": "gene-antibody component; 384 components",
+    "HPA_test_role": "already-opened internal diagnostic only; never model selection, calibration, or external authority",
+    "OpenCell_train_unit": "target; 761 targets and at most two nested projections per target",
+    "OpenCell_selection_unit": "target; 157 targets; average projection logits before metrics",
+    "OpenCell_calibration_unit": "target; 199 targets; average projection logits before calibration",
+    "OpenCell_semantic_OOD_unit": "target; 13 targets; average projection embeddings before OOD scoring",
+    "cross_split_component_or_target_overlap_allowed": false,
+    "OpenCell_is_development_only": true
+  },
+  "architecture": {
+    "family": "domain_balanced_residual_CNN",
+    "stem": "Conv2d(2,16,3,padding=1,bias=false), GroupNorm(4,16), GELU",
+    "stage_1": "ResidualBlock(16,16) then MaxPool2d(2)",
+    "stage_2": "Conv2d(16,32,3,padding=1,bias=false), GroupNorm(8,32), GELU, ResidualBlock(32,32), MaxPool2d(2)",
+    "stage_3": "Conv2d(32,64,3,padding=1,bias=false), GroupNorm(8,64), GELU, ResidualBlock(64,64), MaxPool2d(2)",
+    "stage_4": "Conv2d(64,96,3,padding=1,bias=false), GroupNorm(8,96), GELU, ResidualBlock(96,96), AdaptiveAvgPool2d(1)",
+    "residual_block": "two Conv2d(C,C,3,padding=1,bias=false)+GroupNorm(8 or largest divisor <=8)+GELU after first convolution; add identity then GELU",
+    "embedding": "Linear(96,64), GELU; L2-normalized copy only for contrastive loss and OOD",
+    "classifier": "Linear(64,9)",
+    "embedding_dimension": 64,
+    "output_class_count": 9
+  },
+  "optimization": {
+    "seed": 20260807,
+    "device": "CPU",
+    "torch_threads": 8,
+    "deterministic_algorithms": true,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "maximum_epochs": 80,
+    "early_stopping_patience_epochs": 15,
+    "minimum_improvement": 0.000001,
+    "provider_samples_per_batch": 16,
+    "steps_per_epoch": 127,
+    "HPA_sampling": "seed+epoch permutation; first 2032 of 2037 train components",
+    "OpenCell_sampling": "seed+epoch target permutation cycles with replacement to 2032 targets; choose nested projection by salted target occurrence plus epoch modulo available projections",
+    "augmentation": "independent uniform rotations in {0,90,180,270} degrees plus independent horizontal and vertical Bernoulli(0.5) flips",
+    "BCE": "elementwise BCEWithLogits; positive weight sqrt(provider_train_unit_count/provider_positive_unit_count), negative weight 1; mean within provider then equal mean across providers",
+    "supervised_contrastive": "standard temperature-0.1 log-softmax over the 64d L2 embedding; another batch item is positive when multilabel Jaccard >=0.5 and at least one label is shared; anchors without a positive are omitted",
+    "supervised_contrastive_weight": 0.05,
+    "gradient_clip_global_norm": 5.0
+  },
+  "selection_contract": {
+    "evaluation_frequency_epochs": 1,
+    "OpenCell_projection_aggregation": "mean logits per target before sigmoid",
+    "provider_supported_class": "at least 5 positive and 5 negative selection units in that provider",
+    "macro_average_precision": "unweighted mean over provider-supported classes",
+    "prevalence_normalized_AP": "mean over supported classes of (AP-prevalence)/(1-prevalence)",
+    "checkpoint_score": "minimum of HPA and OpenCell prevalence_normalized_AP",
+    "tie_break": "earlier epoch when scores differ by at most minimum_improvement",
+    "development_open_gates": {
+      "HPA_selection_macro_AP_minimum": 0.55,
+      "OpenCell_selection_macro_AP_minimum": 0.45,
+      "minimum_provider_prevalence_normalized_AP_minimum": 0.15,
+      "every_supported_provider_class_AP_above_prevalence": true,
+      "OpenCell_semantic_OOD_AUROC_minimum": 0.65
+    }
+  },
+  "decision_and_uncertainty_contract": {
+    "decision_grid": "0.05 through 0.95 inclusive in increments of 0.025",
+    "decision_threshold": "per class maximize the minimum provider selection F1 among providers with at least 5 positive and 5 negative units; ties choose closest to 0.5 then lower threshold",
+    "temperature": "one scalar fit by equal-provider mean calibration BCE on aggregated HPA and OpenCell calibration units; bounded 0.05 to 20",
+    "positive_conformal_alpha": 0.10,
+    "provider_class_calibration_minimum_positive_units": 10,
+    "positive_nonconformity": "1-calibrated_probability for true positive units",
+    "finite_sample_quantile": "ceil((n+1)*(1-alpha))-th order statistic capped at n",
+    "cross_provider_threshold": "maximum eligible provider-specific nonconformity quantile; classes lacking 10 positives in either provider receive no cross-provider calibration authority",
+    "reported_internal_checks": ["provider positive-label coverage", "provider mean set size", "15-bin multilabel ECE"],
+    "internal_checks_do_not_grant_external_uncertainty_authority": true
+  },
+  "OOD_contract": {
+    "fit_reference": "64d L2-normalized train embeddings, aggregated by development unit",
+    "class_reference": "per class centroid and diagonal variance over positive train units pooled across providers; variance floor 1e-6",
+    "score": "minimum mean squared standardized distance to any class centroid",
+    "development_endpoint": "AUROC comparing OpenCell semantic-OOD targets against OpenCell in-domain selection targets",
+    "external_threshold": "95th percentile of pooled HPA/OpenCell calibration unit scores; diagnostic only until a new independent provider is evaluated"
+  },
+  "failure_policy": {
+    "nonfinite_training_or_output": "refuse model",
+    "development_gate_failure": "freeze the best checkpoint and failure report, keep every new confirmation provider pixel sealed, and grant no production, uncertainty, observable-evidence, or Aleph authority",
+    "development_gate_success": "freeze checkpoint, thresholds, calibration and OOD reference before preregistering and opening a replacement external provider",
+    "posthoc_endpoint_or_ontology_change": "forbidden"
+  },
+  "authority_contract": {
+    "independently_useful_current_scope": "coarse localization representation and ambiguity-aware observable context",
+    "external_provider_validation_complete": false,
+    "production_eligible": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "Aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_remove_sweep_axis": false,
+    "future_sweep_role": "pre-sweep posterior and ambiguity-set compression only after the explicit external, observation-operator, identifiability, and forward-sensitivity gates"
+  }
+}

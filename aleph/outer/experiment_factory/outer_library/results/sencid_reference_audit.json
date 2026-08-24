@@ -1,0 +1,108 @@
+{
+  "aleph_authority": "none",
+  "eligible_role": "frozen_reference_expert_pending_untouched_dataset_evaluation",
+  "external_validation_eligible": false,
+  "independent_retraining_possible_from_repository_alone": false,
+  "may_select_aleph_parameter": false,
+  "model_artifacts": {
+    "SID1.pkl": {
+      "bytes": 3316,
+      "executed_during_audit": false,
+      "sha256": "2d0cdf8a3238956816314068bc784f818decbe86347bbf0a8180867c77959883"
+    },
+    "SID1_L.pkl": {
+      "bytes": 900,
+      "executed_during_audit": false,
+      "sha256": "c3953a5a67ff913fa4bf7965321ef50de4f42ab6288af882bb8273f86225adc0"
+    },
+    "SID2.pkl": {
+      "bytes": 1996,
+      "executed_during_audit": false,
+      "sha256": "b8076e6ac9dc557b9774940bba9390da522d2f13071a43500490a183e161e067"
+    },
+    "SID2_L.pkl": {
+      "bytes": 852,
+      "executed_during_audit": false,
+      "sha256": "23a5e846886bf243ed9ce30853bbccd76aa2361a3c697ad579b9b751e450a631"
+    },
+    "SID3.pkl": {
+      "bytes": 26888,
+      "executed_during_audit": false,
+      "sha256": "ab84f5aff9aaef26c012cb41487db6b33fdd2cef521441759931f928881e87a8"
+    },
+    "SID3_L.pkl": {
+      "bytes": 2236,
+      "executed_during_audit": false,
+      "sha256": "e2c6d6f45518c899483ae59f1ba9bea8bbb70d2d9362f0c21092a132fd20c7e0"
+    },
+    "SID4.pkl": {
+      "bytes": 9844,
+      "executed_during_audit": false,
+      "sha256": "1674b641e2498bcf40e840706d078ce2208eda15d7501b3035ccd1a69bde178f"
+    },
+    "SID4_L.pkl": {
+      "bytes": 1444,
+      "executed_during_audit": false,
+      "sha256": "39673f0832aeb6f81beb652e012d681b9cf73c06a39ed45cc640b69b0eabfbbd"
+    },
+    "SID5.pkl": {
+      "bytes": 16300,
+      "executed_during_audit": false,
+      "sha256": "ecfac0e54487bec667e87ca7648ccd74f44e43f68fad9e5a4663abaccbeb90a2"
+    },
+    "SID5_L.pkl": {
+      "bytes": 1412,
+      "executed_during_audit": false,
+      "sha256": "31112921ca40c9097448fc3dd6f2aea89e212ae744962f918e192935a21fed59"
+    },
+    "SID6.pkl": {
+      "bytes": 22996,
+      "executed_during_audit": false,
+      "sha256": "7eaa650321f59ac9a23dd36deb7d36e11165eea2611df6f2a68cf461ff6e662e"
+    },
+    "SID6_L.pkl": {
+      "bytes": 2540,
+      "executed_during_audit": false,
+      "sha256": "fa8413e20552728869d6d0b835d52982e44e4e7dbb76798dace56adcdaf1ad9e"
+    },
+    "recommend_model.pkl": {
+      "bytes": 2228433,
+      "executed_during_audit": false,
+      "sha256": "b038abda6085b4f06d9df7405b00a38fb395216e96f325ad59a1f8934375e95f"
+    }
+  },
+  "pickle_execution_policy": "never_execute_during_corpus_audit",
+  "preprocessing_risks": [
+    "default path depends on DCA and TensorFlow versions older than the Aleph environment",
+    "Zcol fits a scaler independently within every sample across genes",
+    "joblib pickle artifacts are executable serialization and are not loaded by this audit"
+  ],
+  "reason_not_external_validation": "the public repository ships models but not the 52-study training matrix, labels, or study-level split manifest needed to exclude overlap and reproduce fitting",
+  "schema": "aleph.outer_library.sencid_reference_audit.v1",
+  "seneset_gene_count": 1290,
+  "sid_feature_counts": {
+    "1": 19,
+    "2": 13,
+    "3": 186,
+    "4": 87,
+    "5": 83,
+    "6": 224
+  },
+  "source": {
+    "commit": "f93cba19b9d44e84f89504ecc6aaeb108ce8e508",
+    "license": "MIT",
+    "paper_doi": "10.1016/j.cmet.2024.03.009",
+    "paper_reported_training_scope": {
+      "cell_types": 30,
+      "samples": 602,
+      "senescence_identities": 6,
+      "studies": 52
+    },
+    "repository": "https://github.com/JackieHanLab/SenCID"
+  },
+  "study_level_training_manifest_present": false,
+  "tracked_file_count": 30,
+  "tracked_training_matrix_files": [],
+  "training_code_present": false,
+  "unique_sid_features": 445
+}

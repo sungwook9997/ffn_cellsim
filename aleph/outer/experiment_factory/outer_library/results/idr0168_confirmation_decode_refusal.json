@@ -1,0 +1,73 @@
+{
+  "Aleph_parameter_authority": "none",
+  "acquisition_sha256": "4055464658fd3ba683f24f4cccdc64c515faaa1d4fcfaffc4ef2a756807ea711",
+  "decoded_fields_before_refusal": 7,
+  "external_provider_validation_complete": false,
+  "failed_archive": {
+    "cell_line": "A375",
+    "gene_symbol": "RBM23",
+    "local_name": "A375_8_RBM23_Z-stack_HF_01_2024-03-07_YunHao_01.29.06.zarr.tgz",
+    "sha256": "ee9239c25bbb8d6c4a5ec9fb3e37cf1aab7d171eb140ded771b43fedbee12487",
+    "size_bytes": 929941454,
+    "source_name": "A375_RBM23_01",
+    "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/891/S-BIAD1891/Files/A375_8_RBM23_Z-stack_HF_01_2024-03-07_YunHao_01.29.06.zarr.tgz"
+  },
+  "may_be_reused_as_pristine": false,
+  "may_emit_numeric_sweep_range": false,
+  "may_remove_sweep_axis": false,
+  "model_predictions_made": 0,
+  "nuclear_localization_external_evidence_eligible": false,
+  "production_eligible": false,
+  "protocol_sha256": "1806e129f9a57e5c9f804f77ccb1961fd62c7a62072385337672f01f2b347fe6",
+  "replacement_field_used": false,
+  "schema": "aleph.outer_library.idr0168_decode_refusal.v1",
+  "single_use_confirmation_consumed": true,
+  "source_integrity": {
+    "all_sampled_remote_ranges_match_acquired_object": true,
+    "expected_native_Zarr_metadata_member": "./0/0/.zarray",
+    "gzip_error": "BadGzipFile: CRC check failed 0x1a76f459 != 0x6f6f9669",
+    "gzip_integrity_passed": false,
+    "native_Zarr_metadata_present": false,
+    "present_pyramid_array_metadata_members": [
+      "./0/1/.zarray",
+      "./0/2/.zarray",
+      "./0/3/.zarray"
+    ],
+    "remote_range_checks": [
+      {
+        "end_byte_inclusive": 1048575,
+        "remote_matches_local": true,
+        "sha256": "230496201026d732073e3bf28b8bf8a6968551999daeb6e586dff5b81ec4c73a",
+        "start_byte": 0
+      },
+      {
+        "end_byte_inclusive": 233533938,
+        "remote_matches_local": true,
+        "sha256": "47da2311f89f50f65f27457c9f361f23ff328ba4446cb0605645322355a366a2",
+        "start_byte": 232485363
+      },
+      {
+        "end_byte_inclusive": 466019302,
+        "remote_matches_local": true,
+        "sha256": "5f0574ee2cdb29beb55e8c0b980af5052efcffd98add2d4ed9b3f708a76d825b",
+        "start_byte": 464970727
+      },
+      {
+        "end_byte_inclusive": 698504665,
+        "remote_matches_local": true,
+        "sha256": "09dad3441f46d0f03d93c8f011706ee4670dd2b959a8557cd0520d0e06518f7a",
+        "start_byte": 697456090
+      },
+      {
+        "end_byte_inclusive": 929941453,
+        "remote_matches_local": true,
+        "sha256": "c60a63bbaf5464938eafb2a2e5324230da2f7b7e4544a04fa5c57c11ce8e1100",
+        "start_byte": 928892878
+      }
+    ],
+    "tar_error": null,
+    "tar_stream_iteration_completed_without_exception": true
+  },
+  "status": "failed_source_integrity_and_permanently_consumed",
+  "tensor_written": false
+}

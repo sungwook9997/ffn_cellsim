@@ -1,0 +1,236 @@
+{
+  "OOD_refusal_validated": false,
+  "TGF_beta1_marker_direction_check": {
+    "all_expected_directions_reproduced": false,
+    "directions_reproduced": 4,
+    "inferential_test_permitted": false,
+    "paper_expected_marker_count": 5,
+    "reason": "two wells and one admitted field per condition/marker are technical measurements from one plate date",
+    "rows": [
+      {
+        "TGF_beta1_minus_control": 82.43699645996094,
+        "direction_reproduced": null,
+        "marker": "CD44_standard",
+        "n_fields_per_condition": 2,
+        "observed_direction": "increase",
+        "paper_expected_direction": null,
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 232.48818969726562,
+          "TGF_beta1_10ng_per_mL_48h": 176.187744140625,
+          "untreated_control": 93.75074768066406
+        }
+      },
+      {
+        "TGF_beta1_minus_control": 63.91839599609375,
+        "direction_reproduced": null,
+        "marker": "CD44_total",
+        "n_fields_per_condition": 2,
+        "observed_direction": "increase",
+        "paper_expected_direction": null,
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 210.46588134765625,
+          "TGF_beta1_10ng_per_mL_48h": 222.57650756835938,
+          "untreated_control": 158.65811157226562
+        }
+      },
+      {
+        "TGF_beta1_minus_control": -9.04525375366211,
+        "direction_reproduced": true,
+        "marker": "CD44_variant_9",
+        "n_fields_per_condition": 2,
+        "observed_direction": "decrease",
+        "paper_expected_direction": "decrease",
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 389.9606628417969,
+          "TGF_beta1_10ng_per_mL_48h": 188.94374465942383,
+          "untreated_control": 197.98899841308594
+        }
+      },
+      {
+        "TGF_beta1_minus_control": -113.54332733154297,
+        "direction_reproduced": true,
+        "marker": "E_cadherin",
+        "n_fields_per_condition": 2,
+        "observed_direction": "decrease",
+        "paper_expected_direction": "decrease",
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 162.19938278198242,
+          "TGF_beta1_10ng_per_mL_48h": 102.8218002319336,
+          "untreated_control": 216.36512756347656
+        }
+      },
+      {
+        "TGF_beta1_minus_control": 46.82235336303711,
+        "direction_reproduced": false,
+        "marker": "EpCAM",
+        "n_fields_per_condition": 2,
+        "observed_direction": "increase",
+        "paper_expected_direction": "decrease",
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 104.32395553588867,
+          "TGF_beta1_10ng_per_mL_48h": 152.47961807250977,
+          "untreated_control": 105.65726470947266
+        }
+      },
+      {
+        "TGF_beta1_minus_control": 19.441251754760742,
+        "direction_reproduced": true,
+        "marker": "N_cadherin",
+        "n_fields_per_condition": 2,
+        "observed_direction": "increase",
+        "paper_expected_direction": "increase",
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 67.31975555419922,
+          "TGF_beta1_10ng_per_mL_48h": 82.7984619140625,
+          "untreated_control": 63.35721015930176
+        }
+      },
+      {
+        "TGF_beta1_minus_control": -51.030006408691406,
+        "direction_reproduced": null,
+        "marker": "PTEN",
+        "n_fields_per_condition": 2,
+        "observed_direction": "decrease",
+        "paper_expected_direction": null,
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 161.29723358154297,
+          "TGF_beta1_10ng_per_mL_48h": 148.33028030395508,
+          "untreated_control": 199.36028671264648
+        }
+      },
+      {
+        "TGF_beta1_minus_control": 6.887928009033203,
+        "direction_reproduced": true,
+        "marker": "Vimentin",
+        "n_fields_per_condition": 2,
+        "observed_direction": "increase",
+        "paper_expected_direction": "increase",
+        "raw_field_mean_intensity_medians": {
+          "EGF_0.1ug_per_mL_48h": 55.95860290527344,
+          "TGF_beta1_10ng_per_mL_48h": 60.21028518676758,
+          "untreated_control": 53.322357177734375
+        }
+      }
+    ]
+  },
+  "aleph_authority": "none",
+  "design_audit": {
+    "biological_replicates_released": false,
+    "common_task_with_HPA_localization_labels": false,
+    "condition_is_confounded_with_plate_column_pair": true,
+    "field_samples": 48,
+    "fields_are_technical_measurements": true,
+    "plate_dates": 1,
+    "well_split_groups": 48
+  },
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "limitations": [
+    "the author labels are treatment conditions that weakly or strongly drive EMT, not per-cell EMT ground truth",
+    "all admitted fields come from one released plate date",
+    "paired-column transfer cannot remove plate-position confounding",
+    "this source is an independent provider from HPA but does not share HPA localization labels",
+    "no numeric Aleph parameter range is identified"
+  ],
+  "may_select_aleph_parameter": false,
+  "mean_paired_transfer_accuracy": 0.6875,
+  "mean_paired_transfer_macro_f1": 0.6925647451963242,
+  "observable_evidence_eligible": false,
+  "paired_well_column_transfer_general_channels_only": [
+    {
+      "accuracy": 0.6666666666666666,
+      "confusion_rows_true_columns_predicted": [
+        [
+          5,
+          3,
+          0
+        ],
+        [
+          3,
+          4,
+          1
+        ],
+        [
+          0,
+          1,
+          7
+        ]
+      ],
+      "macro_f1": 0.6666666666666666,
+      "test_columns": [
+        "02",
+        "04",
+        "06"
+      ],
+      "test_samples": 24,
+      "train_columns": [
+        "01",
+        "03",
+        "05"
+      ],
+      "train_samples": 24
+    },
+    {
+      "accuracy": 0.7083333333333334,
+      "confusion_rows_true_columns_predicted": [
+        [
+          6,
+          2,
+          0
+        ],
+        [
+          3,
+          5,
+          0
+        ],
+        [
+          2,
+          0,
+          6
+        ]
+      ],
+      "macro_f1": 0.7184628237259817,
+      "test_columns": [
+        "01",
+        "03",
+        "05"
+      ],
+      "test_samples": 24,
+      "train_columns": [
+        "02",
+        "04",
+        "06"
+      ],
+      "train_samples": 24
+    }
+  ],
+  "pre_sweep_role": {
+    "candidate_mechanism_families": [
+      "cell_cell_adhesion",
+      "intermediate_filament_remodelling",
+      "actomyosin_contractility",
+      "growth_factor_signalling_context"
+    ],
+    "may_emit_sweep_axis": false,
+    "numeric_range": null,
+    "required_before_promotion": [
+      "independent-lab raw-IF EMT condition holdout",
+      "biological-replicate-complete uncertainty calibration",
+      "orthogonal migration or force observables aligned to the same state",
+      "Aleph observation operators and forward sensitivity"
+    ],
+    "role": "future_state_conditioning_and_sweep_space_reduction"
+  },
+  "representation_training_eligible": true,
+  "schema": "aleph.outer_library.figshare_exif_emt_evaluation.v1",
+  "source": {
+    "dataset_doi": "10.6084/m9.figshare.26500210.v1",
+    "dataset_id": "figshare-26500210-exif-a549-emt-4plex",
+    "lab_group": "Lock_Lab_UNSW_Sydney",
+    "paper_doi": "10.1038/s41467-025-59592-7"
+  },
+  "state_axis": "EMT_epithelial_mesenchymal_state",
+  "state_axis_status": "author_treatment_labelled_raw_IF_training_only",
+  "task": "raw_multichannel_IF_EMT_condition_representation",
+  "uncertainty_holdout_passed": false
+}

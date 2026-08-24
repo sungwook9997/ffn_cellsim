@@ -1,0 +1,29 @@
+{
+  "aleph_authority": "none",
+  "author_aggregated_single_cell_count": 5094,
+  "author_processed_profiles_locally_acquired": true,
+  "cross_split_well_overlap_count": 0,
+  "dataset_id": "biad2515-hela-staurosporine-apoptosis",
+  "dose_count": 10,
+  "dose_present_once_in_each_split": true,
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "live_feature_count": 2336,
+  "manifest_sha256": "041a04836037ca30ce67510713fc54982e7df050602a216425dbfa5974ddf8ae",
+  "may_select_aleph_parameter": false,
+  "raw_image_archive_accession": "S-BIAD2515",
+  "raw_images_locally_acquired": false,
+  "schema": "aleph.outer_library.biad2515_apoptosis_tensor.v1",
+  "split_well_counts": {
+    "calibration": 10,
+    "fit": 10,
+    "sealed_test": 10
+  },
+  "status": "same_provider_well_disjoint_training_only",
+  "target": "Terminal_Cytoplasm_Intensity_UpperQuartileIntensity_AnnexinV",
+  "tensor_sha256": "b8d69654a423415848f1a913e39a79d184c8b2fd1270617c1a0a8e2b9d7dbfd9",
+  "terminal_AnnexinV_features_present_in_X": false,
+  "terminal_feature_count_excluded_from_inputs": 530,
+  "well_count": 30,
+  "wells_per_dose": 3
+}

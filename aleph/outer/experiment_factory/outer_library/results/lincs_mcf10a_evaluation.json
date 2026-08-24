@@ -1,0 +1,1015 @@
+{
+  "OOD_refusal_validated": false,
+  "aleph_authority": "none",
+  "all_paired_contrasts": [
+    {
+      "collection": "C1",
+      "contrast": "TGFB_plus_EGF_minus_EGF",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            -769.0,
+            -93.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -93.0,
+            -769.0,
+            -396.0
+          ],
+          "paired_median_delta": -396.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.14250000000000002,
+            -0.07999999999999999
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -0.07999999999999999,
+            -0.14250000000000002,
+            -0.12490000000000004
+          ],
+          "paired_median_delta": -0.12490000000000004,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -183600.0,
+            -41600.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -183600.0,
+            -41600.0,
+            -81600.0
+          ],
+          "paired_median_delta": -81600.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -320.79999999999995,
+            -156.69999999999993
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -320.79999999999995,
+            -156.69999999999993,
+            -206.80000000000007
+          ],
+          "paired_median_delta": -206.80000000000007,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.3899999999999999,
+            0.5028999999999999
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.41100000000000003,
+            0.3899999999999999,
+            0.5028999999999999
+          ],
+          "paired_median_delta": 0.41100000000000003,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -3.012,
+            -2.218
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -2.218,
+            -3.012,
+            -2.8000000000000003
+          ],
+          "paired_median_delta": -2.8000000000000003,
+          "positive_pairs": 0
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "time_h": 24
+    },
+    {
+      "collection": "C2",
+      "contrast": "TGFB_plus_EGF_minus_EGF",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            -500.0,
+            -10.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -500.0,
+            -10.0,
+            -394.0,
+            -370.0
+          ],
+          "paired_median_delta": -382.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.12724999999999997,
+            -0.04139999999999999
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -0.04139999999999999,
+            -0.0867,
+            -0.07350000000000001,
+            -0.12724999999999997
+          ],
+          "paired_median_delta": -0.0801,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -151200.0,
+            -79300.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -151200.0,
+            -79300.0,
+            -102300.0,
+            -85500.0
+          ],
+          "paired_median_delta": -93900.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -228.2,
+            -179.0
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -228.2,
+            -179.0,
+            -190.49999999999994,
+            -197.45000000000005
+          ],
+          "paired_median_delta": -193.975,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.1399999999999999,
+            0.26900000000000013
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.15599999999999992,
+            0.26900000000000013,
+            0.1399999999999999,
+            0.2682
+          ],
+          "paired_median_delta": 0.21209999999999996,
+          "positive_pairs": 4
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -1.6465,
+            -0.9319999999999999
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -1.099,
+            -0.9319999999999999,
+            -1.0170000000000003,
+            -1.6465
+          ],
+          "paired_median_delta": -1.0580000000000003,
+          "positive_pairs": 0
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "time_h": 24
+    },
+    {
+      "collection": "C1",
+      "contrast": "TGFB_plus_EGF_minus_EGF",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            -2928.0,
+            -1584.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -1584.0,
+            -2851.0,
+            -2928.0
+          ],
+          "paired_median_delta": -2851.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.035900000000000015,
+            0.012400000000000022
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 1,
+          "paired_deltas": [
+            -0.035900000000000015,
+            0.0022000000000000353,
+            0.012400000000000022
+          ],
+          "paired_median_delta": 0.0022000000000000353,
+          "positive_pairs": 2
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            36000.0,
+            46700.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            36000.0,
+            46700.0,
+            39500.0
+          ],
+          "paired_median_delta": 39500.0,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -80.30000000000001,
+            -49.5
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -54.400000000000034,
+            -80.30000000000001,
+            -49.5
+          ],
+          "paired_median_delta": -54.400000000000034,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.236,
+            0.393
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.236,
+            0.393,
+            0.29899999999999993
+          ],
+          "paired_median_delta": 0.29899999999999993,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -7.4879999999999995,
+            -6.6499999999999995
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -6.6499999999999995,
+            -6.959000000000001,
+            -7.4879999999999995
+          ],
+          "paired_median_delta": -6.959000000000001,
+          "positive_pairs": 0
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "time_h": 48
+    },
+    {
+      "collection": "C2",
+      "contrast": "TGFB_plus_EGF_minus_EGF",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            -2112.0,
+            -1100.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -2112.0,
+            -1456.0,
+            -1100.0
+          ],
+          "paired_median_delta": -1456.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.07550000000000001,
+            -0.021699999999999997
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -0.05020000000000002,
+            -0.07550000000000001,
+            -0.021699999999999997
+          ],
+          "paired_median_delta": -0.05020000000000002,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -29500.0,
+            64600.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 1,
+          "paired_deltas": [
+            64600.0,
+            1400.0,
+            -29500.0
+          ],
+          "paired_median_delta": 1400.0,
+          "positive_pairs": 2
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -124.39999999999998,
+            -15.100000000000023
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -15.100000000000023,
+            -107.19999999999999,
+            -124.39999999999998
+          ],
+          "paired_median_delta": -107.19999999999999,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.18500000000000005,
+            0.34799999999999986
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.18500000000000005,
+            0.34799999999999986,
+            0.2450000000000001
+          ],
+          "paired_median_delta": 0.2450000000000001,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -4.314,
+            -3.8370000000000006
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -4.314,
+            -4.0969999999999995,
+            -3.8370000000000006
+          ],
+          "paired_median_delta": -4.0969999999999995,
+          "positive_pairs": 0
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "time_h": 48
+    },
+    {
+      "collection": "C1",
+      "contrast": "TGFB_plus_EGF_minus_PBS",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            626.0,
+            1002.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            988.0,
+            1002.0,
+            626.0
+          ],
+          "paired_median_delta": 988.0,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.03765000000000002,
+            0.02975
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 1,
+          "paired_deltas": [
+            0.02975,
+            -0.03765000000000002,
+            0.01579999999999998
+          ],
+          "paired_median_delta": 0.01579999999999998,
+          "positive_pairs": 2
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -773900.0,
+            -446100.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -773900.0,
+            -446100.0,
+            -470700.0
+          ],
+          "paired_median_delta": -470700.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -1090.5,
+            -760.4
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -1090.5,
+            -760.4,
+            -768.6
+          ],
+          "paired_median_delta": -768.6,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.54985,
+            0.6434499999999999
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.6088500000000001,
+            0.54985,
+            0.6434499999999999
+          ],
+          "paired_median_delta": 0.6088500000000001,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -2.1430000000000002,
+            -0.7890000000000001
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -1.0185000000000002,
+            -0.7890000000000001,
+            -2.1430000000000002
+          ],
+          "paired_median_delta": -1.0185000000000002,
+          "positive_pairs": 0
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "time_h": 24
+    },
+    {
+      "collection": "C2",
+      "contrast": "TGFB_plus_EGF_minus_PBS",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            364.0,
+            1000.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            569.5,
+            1000.0,
+            859.5,
+            364.0
+          ],
+          "paired_median_delta": 714.5,
+          "positive_pairs": 4
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.07379999999999998,
+            0.09820000000000001
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 2,
+          "paired_deltas": [
+            0.09820000000000001,
+            0.07419999999999999,
+            -0.01739999999999997,
+            -0.07379999999999998
+          ],
+          "paired_median_delta": 0.02840000000000001,
+          "positive_pairs": 2
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -398450.0,
+            -197000.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -356950.0,
+            -197000.0,
+            -241000.0,
+            -398450.0
+          ],
+          "paired_median_delta": -298975.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -618.7,
+            -518.3499999999999
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -618.7,
+            -533.4,
+            -518.3499999999999,
+            -552.95
+          ],
+          "paired_median_delta": -543.175,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -0.0035000000000000586,
+            0.655
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 1,
+          "paired_deltas": [
+            0.5847499999999999,
+            0.655,
+            0.27749999999999986,
+            -0.0035000000000000586
+          ],
+          "paired_median_delta": 0.43112499999999987,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -1.5854999999999997,
+            -0.19650000000000034
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 4,
+          "paired_deltas": [
+            -1.172,
+            -1.4769999999999999,
+            -0.19650000000000034,
+            -1.5854999999999997
+          ],
+          "paired_median_delta": -1.3245,
+          "positive_pairs": 0
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "time_h": 24
+    },
+    {
+      "collection": "C1",
+      "contrast": "TGFB_plus_EGF_minus_PBS",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            1615.5,
+            2804.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            2804.0,
+            2314.0,
+            1615.5
+          ],
+          "paired_median_delta": 2314.0,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.022299999999999986,
+            0.16276000000000002
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.022299999999999986,
+            0.08240000000000003,
+            0.16276000000000002
+          ],
+          "paired_median_delta": 0.08240000000000003,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -641300.0,
+            -353950.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -411200.0,
+            -641300.0,
+            -353950.0
+          ],
+          "paired_median_delta": -411200.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -894.3,
+            -585.7
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -585.7,
+            -894.3,
+            -648.7499999999999
+          ],
+          "paired_median_delta": -648.7499999999999,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.4756999999999998,
+            0.76735
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.5335000000000001,
+            0.4756999999999998,
+            0.76735
+          ],
+          "paired_median_delta": 0.5335000000000001,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -1.3980000000000001,
+            1.0105
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 1,
+          "paired_deltas": [
+            1.0105,
+            0.5129999999999999,
+            -1.3980000000000001
+          ],
+          "paired_median_delta": 0.5129999999999999,
+          "positive_pairs": 2
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "time_h": 48
+    },
+    {
+      "collection": "C2",
+      "contrast": "TGFB_plus_EGF_minus_PBS",
+      "features": [
+        {
+          "bootstrap_95_percent_CI": [
+            1328.5,
+            2630.0
+          ],
+          "feature": "Well_Cell_Count",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            2161.0,
+            2630.0,
+            1328.5
+          ],
+          "paired_median_delta": 2161.0,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.05460000000000001,
+            0.1206
+          ],
+          "feature": "G2m_Proportion",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.1206,
+            0.05460000000000001,
+            0.07205
+          ],
+          "paired_median_delta": 0.07205,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -653600.0,
+            -228400.0
+          ],
+          "feature": "Intensity_IntegratedIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -263050.0,
+            -228400.0,
+            -653600.0
+          ],
+          "paired_median_delta": -263050.0,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            -894.7,
+            -499.59999999999997
+          ],
+          "feature": "Intensity_MeanIntensity_KRT5",
+          "negative_pairs": 3,
+          "paired_deltas": [
+            -543.6999999999999,
+            -499.59999999999997,
+            -894.7
+          ],
+          "paired_median_delta": -543.6999999999999,
+          "positive_pairs": 0
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.39749999999999996,
+            0.6286
+          ],
+          "feature": "Normalized_Second_Neighbor_Dist",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.5373000000000001,
+            0.6286,
+            0.39749999999999996
+          ],
+          "paired_median_delta": 0.5373000000000001,
+          "positive_pairs": 3
+        },
+        {
+          "bootstrap_95_percent_CI": [
+            0.03799999999999981,
+            0.6305000000000001
+          ],
+          "feature": "Mean_Cells_per_Cluster",
+          "negative_pairs": 0,
+          "paired_deltas": [
+            0.30450000000000044,
+            0.6305000000000001,
+            0.03799999999999981
+          ],
+          "paired_median_delta": 0.30450000000000044,
+          "positive_pairs": 3
+        }
+      ],
+      "paired_biological_replicates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "time_h": 48
+    }
+  ],
+  "collection_holdout_classifier": [
+    {
+      "AUROC": 1.0,
+      "accuracy": 1.0,
+      "correct": 8,
+      "sealed_test_collection": "C2",
+      "test_biological_specimens": 8,
+      "test_specimens": [
+        "EGF_24_C2_A",
+        "EGF_24_C2_B",
+        "EGF_24_C2_C",
+        "EGF_24_C2_D",
+        "TGFB_24_C2_A",
+        "TGFB_24_C2_B",
+        "TGFB_24_C2_C",
+        "TGFB_24_C2_D"
+      ],
+      "time_h": 24,
+      "total": 8,
+      "train_biological_specimens": 6,
+      "training_collection": "C1"
+    },
+    {
+      "AUROC": 1.0,
+      "accuracy": 0.8333333333333334,
+      "correct": 5,
+      "sealed_test_collection": "C2",
+      "test_biological_specimens": 6,
+      "test_specimens": [
+        "EGF_48_C2_A",
+        "EGF_48_C2_B",
+        "EGF_48_C2_C",
+        "TGFB_48_C2_A",
+        "TGFB_48_C2_B",
+        "TGFB_48_C2_C"
+      ],
+      "time_h": 48,
+      "total": 6,
+      "train_biological_specimens": 6,
+      "training_collection": "C1"
+    }
+  ],
+  "collection_holdout_passed": true,
+  "design_audit": {
+    "C1_and_C2_are_distinct_collection_periods_same_OHSU_site": true,
+    "TGFB_condition_is_TGFB_plus_EGF": true,
+    "author_well_rows": 159,
+    "biological_replicate_groups": 7,
+    "companion_EGF_dose_metadata_conflict_unresolved": true,
+    "independent_dataset_relative_to_ExIF_and_MTRACK": true,
+    "independent_lab_common_observable_holdout": false,
+    "technical_rows_aggregated_before_inference": true
+  },
+  "independent_lab_holdout": false,
+  "limitations": [
+    "C2 is a later OHSU collection, not an independent laboratory",
+    "the condition contrast does not identify a unique Aleph parameter",
+    "TGFB was co-administered with EGF and its companion dose conflicts between Methods and metadata",
+    "seven released IF biological groups cannot verify the paper-wide statement of eight replicates",
+    "the small collection holdout does not establish calibrated OOD refusal"
+  ],
+  "may_select_aleph_parameter": false,
+  "observable_evidence_eligible": true,
+  "paired_direction_holdout": {
+    "Intensity_MeanIntensity_KRT5": {
+      "C1_discovery_C2_holdout_reproduced": true,
+      "collections": {
+        "C1": {
+          "all_pairs_expected_direction": true,
+          "bootstrap_CI_excludes_zero_in_expected_direction": true,
+          "median_delta": -54.400000000000034
+        },
+        "C2": {
+          "all_pairs_expected_direction": true,
+          "bootstrap_CI_excludes_zero_in_expected_direction": true,
+          "median_delta": -107.19999999999999
+        }
+      },
+      "expected_direction": "decrease"
+    },
+    "Mean_Cells_per_Cluster": {
+      "C1_discovery_C2_holdout_reproduced": true,
+      "collections": {
+        "C1": {
+          "all_pairs_expected_direction": true,
+          "bootstrap_CI_excludes_zero_in_expected_direction": true,
+          "median_delta": -6.959000000000001
+        },
+        "C2": {
+          "all_pairs_expected_direction": true,
+          "bootstrap_CI_excludes_zero_in_expected_direction": true,
+          "median_delta": -4.0969999999999995
+        }
+      },
+      "expected_direction": "decrease"
+    },
+    "Normalized_Second_Neighbor_Dist": {
+      "C1_discovery_C2_holdout_reproduced": true,
+      "collections": {
+        "C1": {
+          "all_pairs_expected_direction": true,
+          "bootstrap_CI_excludes_zero_in_expected_direction": true,
+          "median_delta": 0.29899999999999993
+        },
+        "C2": {
+          "all_pairs_expected_direction": true,
+          "bootstrap_CI_excludes_zero_in_expected_direction": true,
+          "median_delta": 0.2450000000000001
+        }
+      },
+      "expected_direction": "increase"
+    }
+  },
+  "pre_sweep_role": {
+    "candidate_mechanism_families": [
+      "cell_cell_adhesion",
+      "cell_spreading_and_dispersion",
+      "epithelial_cytoskeletal_state",
+      "collective_migration"
+    ],
+    "may_emit_sweep_axis": false,
+    "numeric_range": null,
+    "required_Aleph_operators": [
+      "KRT5_IF_proxy_or_declared_unavailable",
+      "cell_centroid_neighbor_distance",
+      "cell_cluster_size",
+      "population_cell_count"
+    ],
+    "required_before_numeric_promotion": [
+      "independent_lab_common_observable_holdout",
+      "calibrated_semantic_OOD_refusal",
+      "resolve_TGFB_companion_EGF_dose_conflict",
+      "Aleph_forward_sensitivity"
+    ],
+    "role": "condition_future_Aleph_sweep_on_KRT5_spatial_dispersion_cluster_state"
+  },
+  "representation_training_eligible": true,
+  "schema": "aleph.outer_library.lincs_mcf10a_collection_holdout.v1",
+  "semantic_OOD_diagnostic": [
+    {
+      "C2_in_distribution_acceptance": 0.75,
+      "C2_other_ligand_rejection": 0.75,
+      "distance_OOD_AUROC": 0.78125,
+      "in_distribution_specimens": 8,
+      "other_ligand_specimens": 20,
+      "other_ligands": [
+        "BMP2",
+        "HGF",
+        "IFNG",
+        "OSM",
+        "PBS"
+      ],
+      "threshold_max_C1_training_nearest_centroid_distance": 2.0602131091447062,
+      "time_h": 24
+    },
+    {
+      "C2_in_distribution_acceptance": 0.3333333333333333,
+      "C2_other_ligand_rejection": 1.0,
+      "distance_OOD_AUROC": 0.9444444444444444,
+      "in_distribution_specimens": 6,
+      "other_ligand_specimens": 15,
+      "other_ligands": [
+        "BMP2",
+        "HGF",
+        "IFNG",
+        "OSM",
+        "PBS"
+      ],
+      "threshold_max_C1_training_nearest_centroid_distance": 1.9273016763864754,
+      "time_h": 48
+    }
+  ],
+  "source": {
+    "dataset_id": "lincs-mcf10a-ligand-if-phenotypes",
+    "lab_group": "OHSU_MEP_LINCS_MCF10A",
+    "paper_doi": "10.1038/s42003-022-03975-9"
+  },
+  "state_axis": "ligand_conditioned_MCF10A_EMT_related_phenotype",
+  "uncertainty_status": "paired_biological_group_bootstrap_passed_for_primary_directions"
+}

@@ -1,0 +1,36 @@
+# ============================================================================
+# RECIPE: adherent_passive  (H.7 compartment platform — 2026-06-08)
+# ============================================================================
+# The suspended baseline cell settled onto a RIGID ligand-coated dish via focal
+# adhesions — no active leading edge yet. This is the KU-3.5 settled operating
+# point: an FA-adhered, equilibrated cell. The substrate is rigid (glass /
+# thin col-I-in-PBS coating => SubstrateLigandPin, k_sub -> inf), so the
+# compliant `substrate` spring stays OFF (it is a separate soft-gel ECM variant).
+#
+# Builds the FA-adhered cell that, per the FA-overload fix, must be assembled with
+# an EQUILIBRATION prelude (a raw free run trips the BAOAB guard); the loader's
+# build_baseline_cell(..., equilibrate=True) handles that.
+# ============================================================================
+
+name: adherent_passive
+description: FA-adhered MCF7 cell on a rigid ligand-coated dish (KU-3.5 settled operating point).
+scope: adherent
+extends: suspended_round
+
+observables: [cortical_tension, traction]
+
+enable:
+  - fa                    # focal-adhesion molecular clutch (integrin-ligand catch)
+  - rigid_ligand_coating  # SubstrateLigandPin: rigid-dish anchor (k_sub -> inf)
+
+# lamellipodium stays OFF (passive adhesion, no active spreading).
+disable: []
+
+declare_pending: []
+
+notes: >
+  FA clutch bonds (integrin_ligand, fa_actin_clutch) are DENYLISTED from the
+  cortical-gamma estimator (~100x inflation otherwise). Traction is a separate
+  basal-plane observable. Per-bond r0-binning gives force-free integrin birth
+  (FA_INTEGRIN_OVERLOAD_FIX). Build with equilibrate=True (settle onto substrate
+  before free integration).

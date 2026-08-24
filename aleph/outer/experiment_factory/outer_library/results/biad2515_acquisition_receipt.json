@@ -1,0 +1,42 @@
+{
+  "accession": "S-BIAD2515",
+  "aleph_authority": "none",
+  "author_analysis_commit": "78d77675abcc056d0d3e7f3dded9ce49609e8f6c",
+  "author_processed_profiles_locally_acquired": true,
+  "doi": "10.6019/S-BIAD2515",
+  "files": {
+    "biostudies_metadata.json": {
+      "sha256": "187646cb2e94e3b78bd9f7d1796ab31832a9f9e432139eaa15e95939ca7b1b81",
+      "size": 18380,
+      "url": "https://www.ebi.ac.uk/biostudies/api/v1/studies/S-BIAD2515"
+    },
+    "filelist_bioimage.json": {
+      "sha256": "0beec09551350ceb4326e029a99a2e57be06f0fd4a4b4dced5b454f9af49d6de",
+      "size": 1042081,
+      "url": "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/515/S-BIAD2515/Files/filelist_bioimage.json"
+    },
+    "test.parquet": {
+      "sha256": "69fabdce42807fd88ce504f34873d840a65503bc4b7d4cf9a41eb346a1e82777",
+      "size": 2620033,
+      "url": "https://raw.githubusercontent.com/WayScience/live_cell_timelapse_apoptosis_analysis/78d77675abcc056d0d3e7f3dded9ce49609e8f6c/5.bulk_timelapse_model/data_splits/test.parquet"
+    },
+    "train.parquet": {
+      "sha256": "8a92d3d34980a8f115fac5a1ec48e62a50dc914221b82b06308091373d48eebe",
+      "size": 2869835,
+      "url": "https://raw.githubusercontent.com/WayScience/live_cell_timelapse_apoptosis_analysis/78d77675abcc056d0d3e7f3dded9ce49609e8f6c/5.bulk_timelapse_model/data_splits/train.parquet"
+    },
+    "train_test_wells.parquet": {
+      "sha256": "7255db106bf47358dbe773b08bf6e709889f84eebd2c9f6d8ff96fb19af9024d",
+      "size": 1839,
+      "url": "https://raw.githubusercontent.com/WayScience/live_cell_timelapse_apoptosis_analysis/78d77675abcc056d0d3e7f3dded9ce49609e8f6c/5.bulk_timelapse_model/data_splits/train_test_wells.parquet"
+    }
+  },
+  "license_id": "CC0-1.0",
+  "may_select_aleph_parameter": false,
+  "official_raw_image_file_count": 6240,
+  "official_raw_image_total_bytes": 45085609920,
+  "raw_images_locally_acquired": false,
+  "release_date": "2026-01-21",
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.biad2515_acquisition_receipt.v1"
+}

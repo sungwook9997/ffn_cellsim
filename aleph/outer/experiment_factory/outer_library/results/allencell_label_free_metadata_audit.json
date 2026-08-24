@@ -1,0 +1,408 @@
+{
+  "aleph_parameter_authority": "none",
+  "complete_rows_observed": 16997,
+  "distinct_eligible_FOVs": 205,
+  "eligible_rows_observed": 2277,
+  "external_confirmation_complete": false,
+  "image_headers_accessed": 0,
+  "image_pixels_accessed": 0,
+  "malformed_or_partial_rows_excluded": 0,
+  "metadata_remote": {
+    "content_length": 1692668963,
+    "etag": "\"abf93a812e0be6f439dda5ec7d91a281-202\"",
+    "last_modified": "Thu, 14 Jul 2022 10:54:27 GMT"
+  },
+  "model_predictions_made": 0,
+  "protocol_sha256": "81c5f027ca92af8665f9860b0bd0428cd00d90b8e35bcef6088412699c2a0171",
+  "range_bytes_read": 134217728,
+  "range_receipts": [
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 0-2097151/1692668963",
+      "end": 2097151,
+      "offset": 0
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 26834473-28931624/1692668963",
+      "end": 28931624,
+      "offset": 26834473
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 53668946-55766097/1692668963",
+      "end": 55766097,
+      "offset": 53668946
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 80503420-82600571/1692668963",
+      "end": 82600571,
+      "offset": 80503420
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 107337893-109435044/1692668963",
+      "end": 109435044,
+      "offset": 107337893
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 134172366-136269517/1692668963",
+      "end": 136269517,
+      "offset": 134172366
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 161006839-163103990/1692668963",
+      "end": 163103990,
+      "offset": 161006839
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 187841312-189938463/1692668963",
+      "end": 189938463,
+      "offset": 187841312
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 214675786-216772937/1692668963",
+      "end": 216772937,
+      "offset": 214675786
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 241510259-243607410/1692668963",
+      "end": 243607410,
+      "offset": 241510259
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 268344732-270441883/1692668963",
+      "end": 270441883,
+      "offset": 268344732
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 295179205-297276356/1692668963",
+      "end": 297276356,
+      "offset": 295179205
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 322013678-324110829/1692668963",
+      "end": 324110829,
+      "offset": 322013678
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 348848151-350945302/1692668963",
+      "end": 350945302,
+      "offset": 348848151
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 375682625-377779776/1692668963",
+      "end": 377779776,
+      "offset": 375682625
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 402517098-404614249/1692668963",
+      "end": 404614249,
+      "offset": 402517098
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 429351571-431448722/1692668963",
+      "end": 431448722,
+      "offset": 429351571
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 456186044-458283195/1692668963",
+      "end": 458283195,
+      "offset": 456186044
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 483020517-485117668/1692668963",
+      "end": 485117668,
+      "offset": 483020517
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 509854991-511952142/1692668963",
+      "end": 511952142,
+      "offset": 509854991
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 536689464-538786615/1692668963",
+      "end": 538786615,
+      "offset": 536689464
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 563523937-565621088/1692668963",
+      "end": 565621088,
+      "offset": 563523937
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 590358410-592455561/1692668963",
+      "end": 592455561,
+      "offset": 590358410
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 617192883-619290034/1692668963",
+      "end": 619290034,
+      "offset": 617192883
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 644027357-646124508/1692668963",
+      "end": 646124508,
+      "offset": 644027357
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 670861830-672958981/1692668963",
+      "end": 672958981,
+      "offset": 670861830
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 697696303-699793454/1692668963",
+      "end": 699793454,
+      "offset": 697696303
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 724530776-726627927/1692668963",
+      "end": 726627927,
+      "offset": 724530776
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 751365249-753462400/1692668963",
+      "end": 753462400,
+      "offset": 751365249
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 778199723-780296874/1692668963",
+      "end": 780296874,
+      "offset": 778199723
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 805034196-807131347/1692668963",
+      "end": 807131347,
+      "offset": 805034196
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 831868669-833965820/1692668963",
+      "end": 833965820,
+      "offset": 831868669
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 858703142-860800293/1692668963",
+      "end": 860800293,
+      "offset": 858703142
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 885537615-887634766/1692668963",
+      "end": 887634766,
+      "offset": 885537615
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 912372088-914469239/1692668963",
+      "end": 914469239,
+      "offset": 912372088
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 939206562-941303713/1692668963",
+      "end": 941303713,
+      "offset": 939206562
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 966041035-968138186/1692668963",
+      "end": 968138186,
+      "offset": 966041035
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 992875508-994972659/1692668963",
+      "end": 994972659,
+      "offset": 992875508
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1019709981-1021807132/1692668963",
+      "end": 1021807132,
+      "offset": 1019709981
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1046544454-1048641605/1692668963",
+      "end": 1048641605,
+      "offset": 1046544454
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1073378928-1075476079/1692668963",
+      "end": 1075476079,
+      "offset": 1073378928
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1100213401-1102310552/1692668963",
+      "end": 1102310552,
+      "offset": 1100213401
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1127047874-1129145025/1692668963",
+      "end": 1129145025,
+      "offset": 1127047874
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1153882347-1155979498/1692668963",
+      "end": 1155979498,
+      "offset": 1153882347
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1180716820-1182813971/1692668963",
+      "end": 1182813971,
+      "offset": 1180716820
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1207551294-1209648445/1692668963",
+      "end": 1209648445,
+      "offset": 1207551294
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1234385767-1236482918/1692668963",
+      "end": 1236482918,
+      "offset": 1234385767
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1261220240-1263317391/1692668963",
+      "end": 1263317391,
+      "offset": 1261220240
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1288054713-1290151864/1692668963",
+      "end": 1290151864,
+      "offset": 1288054713
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1314889186-1316986337/1692668963",
+      "end": 1316986337,
+      "offset": 1314889186
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1341723660-1343820811/1692668963",
+      "end": 1343820811,
+      "offset": 1341723660
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1368558133-1370655284/1692668963",
+      "end": 1370655284,
+      "offset": 1368558133
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1395392606-1397489757/1692668963",
+      "end": 1397489757,
+      "offset": 1395392606
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1422227079-1424324230/1692668963",
+      "end": 1424324230,
+      "offset": 1422227079
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1449061552-1451158703/1692668963",
+      "end": 1451158703,
+      "offset": 1449061552
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1475896025-1477993176/1692668963",
+      "end": 1477993176,
+      "offset": 1475896025
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1502730499-1504827650/1692668963",
+      "end": 1504827650,
+      "offset": 1502730499
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1529564972-1531662123/1692668963",
+      "end": 1531662123,
+      "offset": 1529564972
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1556399445-1558496596/1692668963",
+      "end": 1558496596,
+      "offset": 1556399445
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1583233918-1585331069/1692668963",
+      "end": 1585331069,
+      "offset": 1583233918
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1610068391-1612165542/1692668963",
+      "end": 1612165542,
+      "offset": 1610068391
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1636902865-1639000016/1692668963",
+      "end": 1639000016,
+      "offset": 1636902865
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1663737338-1665834489/1692668963",
+      "end": 1665834489,
+      "offset": 1663737338
+    },
+    {
+      "bytes_received": 2097152,
+      "content_range": "bytes 1690571811-1692668962/1692668963",
+      "end": 1692668962,
+      "offset": 1690571811
+    }
+  ],
+  "range_request_count": 64,
+  "schema": "aleph.outer_library.allencell_label_free_metadata_audit_result.v1",
+  "selected_candidate_count": 32,
+  "selected_manifest_sha256": "148da06db99cdb76c1ade1d9a844c183e80187a52d8251e060adfcdf71210d55"
+}

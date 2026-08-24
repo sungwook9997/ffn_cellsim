@@ -1,0 +1,408 @@
+Warp 1.14.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "CPU"
+     "cuda:0"   : "NVIDIA RTX A5000 Laptop GPU" (16 GiB, sm_86, mempool enabled)
+   Kernel cache:
+     /home/sungwook/.cache/warp/1.14.0
+Module ffn_sim.ac.cell.live_mesh_domain 07b917a load on device 'cuda:0' took 1.28 ms  (cached)
+Module __main__ 5622f98 load on device 'cuda:0' took 0.85 ms  (cached)
+Module ffn_sim.ac.fluid.field_grid 77e35cf load on device 'cuda:0' took 0.47 ms  (cached)
+Module ffn_sim.ac.fluid.biot_substrate fd600cf load on device 'cuda:0' took 0.73 ms  (cached)
+Module ffn_sim.ac.fluid.boundary e41e225 load on device 'cuda:0' took 0.77 ms  (cached)
+Module ffn_sim.ac.fluid.domain e91c184 load on device 'cuda:0' took 6.21 ms  (cached)
+Module ffn_sim.ac.cell.fsi_coupling 90bc223 load on device 'cuda:0' took 0.72 ms  (cached)
+Module ffn_sim.ac.fluid.scheduler fe53bd6 load on device 'cuda:0' took 0.64 ms  (cached)
+Module ffn_sim.ac.cell.membrane_pressure 61de45d load on device 'cuda:0' took 0.59 ms  (cached)
+Module ffn_sim.ac.cell.inner_mechanics 7ab41b2 load on device 'cuda:0' took 0.87 ms  (cached)
+Module ffn_sim.ff.network_warp 25d681b load on device 'cuda:0' took 1.78 ms  (cached)
+Module ffn_sim.ff.forces_warp f7f4cb5 load on device 'cuda:0' took 0.33 ms  (cached)
+Module ffn_sim.ff.membrane_surface 6fb4428 load on device 'cuda:0' took 0.63 ms  (cached)
+Module ffn_sim.ac.nucleus.envelope 1572811 load on device 'cuda:0' took 0.78 ms  (cached)
+Module ffn_sim.ac.cell.compartments 8111c33 load on device 'cuda:0' took 0.40 ms  (cached)
+Module ffn_sim.ac.cell.erm_tether 57e0b40 load on device 'cuda:0' took 0.40 ms  (cached)
+{
+  "device": "cuda:0",
+  "device_retry_multistep": {
+    "accepted_multistep_control": {
+      "accepted_time_s": [
+        0.001,
+        0.002,
+        0.003
+      ],
+      "outer_accepted": [
+        true,
+        true,
+        true
+      ],
+      "pass": true,
+      "prescribed_ramp_time_s": 0.003,
+      "step_enabled": [
+        true,
+        true,
+        true
+      ]
+    },
+    "converged_first_chunk": {
+      "configured_attempts": 3,
+      "executed_attempts": 1,
+      "first_converged_iteration": 1,
+      "matches_one_chunk_control_bit_exact": true,
+      "pass": true
+    },
+    "retry_exhaustion_fail_stop": {
+      "accepted_time_s": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bit_exact_restoration": {
+        "div_vs": true,
+        "mask": true,
+        "p": true,
+        "p_new": true,
+        "pos": true,
+        "s_membrane": true,
+        "s_total": true
+      },
+      "configured_attempts": 3,
+      "first_step_executed_attempts": 3,
+      "first_step_iterations": 3,
+      "outer_accepted": [
+        false,
+        false,
+        false
+      ],
+      "pass": true,
+      "step_enabled": [
+        true,
+        false,
+        false
+      ]
+    },
+    "status": "PASS"
+  },
+  "fsi_conservation": {
+    "affine_dilation_integral_identity": {
+      "dilation_rate_per_s": 0.125,
+      "divergence_core_max_abs_error_per_s": 0.0,
+      "expected_integral_um3_per_s": 3.0,
+      "measured_integral_um3_per_s": 3.0,
+      "pass": true,
+      "relative_error": 0.0,
+      "velocity_core_max_abs_error_um_per_s": 0.0
+    },
+    "pass": true,
+    "rigid_translation_zero_divergence": {
+      "divergence_max_abs_error_per_s": 4.163336342344337e-16,
+      "pass": true,
+      "velocity_max_abs_error_um_per_s": 3.3306690738754696e-16
+    },
+    "spread_partition_conservation": {
+      "grid_momentum_um4_per_s": [
+        5.39999999999999,
+        -2.700000000000002,
+        10.799999999999997
+      ],
+      "grid_weight_um3": 27.0,
+      "momentum_relative_error": 7.399310882872958e-16,
+      "node_momentum_um4_per_s": [
+        5.399999999999981,
+        -2.7000000000000006,
+        10.799999999999999
+      ],
+      "node_weight_um3": 27.0,
+      "pass": true,
+      "weight_relative_error": 0.0
+    },
+    "status": "PASS"
+  },
+  "live_domain": {
+    "allocation_identity_after": {
+      "membrane_mesh_id": 12919203840,
+      "membrane_points_ptr": 12919148544,
+      "nucleus_mesh_id": 12919040000,
+      "nucleus_points_ptr": 12918616064
+    },
+    "allocation_identity_before": {
+      "membrane_mesh_id": 12919203840,
+      "membrane_points_ptr": 12919148544,
+      "nucleus_mesh_id": 12919040000,
+      "nucleus_points_ptr": 12918616064
+    },
+    "allocation_identity_stable": true,
+    "deformed": {
+      "fluid_cells": 9838,
+      "label": "volume_preserving_affine",
+      "membrane_surface_ties": 0,
+      "nucleus_cells": 4129,
+      "nucleus_surface_ties": 0,
+      "outside_cells": 65540,
+      "pass": true,
+      "query_failures": 0,
+      "tie_cell_mismatches_reported": 0,
+      "valid_cell_mismatches": 0
+    },
+    "pass": true,
+    "rest": {
+      "fluid_cells": 9810,
+      "label": "rest",
+      "membrane_surface_ties": 6,
+      "nucleus_cells": 4145,
+      "nucleus_surface_ties": 6,
+      "outside_cells": 65552,
+      "pass": true,
+      "query_failures": 0,
+      "tie_cell_mismatches_reported": 12,
+      "valid_cell_mismatches": 0
+    }
+  },
+  "ng2": {
+    "canonical_coupled_outer_step": {
+      "accepted_time_s": 0.001,
+      "content_delta": -0.11714361528548434,
+      "content_end": 4.787856384714517,
+      "content_start": 4.905000000000001,
+      "interior_source_integral": 0.012262500000003465,
+      "membrane_deposition_error": -3.3351922298138076e-21,
+      "membrane_deposition_relative_error": 7.394586649534377e-21,
+      "membrane_grid_source_integral": 4.5751810247499493e-07,
+      "membrane_surface_flux_integral": 4.5751810247499827e-07,
+      "moving_face_delta": 0.32162502475354193,
+      "n_biot_subcycles": 2,
+      "nonzero_terms": {
+        "interior": true,
+        "membrane_grid": true,
+        "membrane_surface": true,
+        "moving_face": true,
+        "solid_dilatation": true
+      },
+      "outer_accepted": true,
+      "outer_rolled_back": false,
+      "pass": true,
+      "physical_conservation_error": -4.381217610927024e-14,
+      "physical_conservation_relative_error": 9.713770907973871e-14,
+      "solid_dilatation_integral": -0.4510315975570884,
+      "solver_conservation_error": -4.381217610927024e-14,
+      "solver_conservation_relative_error": 9.713770907973871e-14,
+      "status": "PASS",
+      "time_index_contract": "ledger consumes div(v_s)^n during Biot subcycles; post-remap div(v_s)^(n+1) is next-step state"
+    },
+    "component_suite_status": "PASS",
+    "constant_state": {
+      "max_abs_Pa": 0.0,
+      "pass": true
+    },
+    "device_green_impulse": {
+      "expected_2dcv_um2_per_s": 300.0,
+      "measured_d_r2_dt_um2_per_s": 299.99999999998766,
+      "n_cells_per_axis": 61,
+      "n_steps": 60,
+      "pass": true,
+      "relative_error": 4.1116739642651134e-14
+    },
+    "device_terzaghi_dirichlet": {
+      "degree_absolute_error": 3.0987798121384635e-05,
+      "degree_numeric": 0.61320508276281,
+      "degree_oracle": 0.6132360705609314,
+      "n_cells": 80,
+      "n_steps": 1920,
+      "pass": true,
+      "profile_rmse": 7.276099792796895e-06,
+      "time_factor": 0.3
+    },
+    "impermeable": {
+      "pass": true,
+      "relative_content_drift": 6.657634915170319e-15
+    },
+    "implemented_subgates_pass": true,
+    "membrane_content_equals_flux": {
+      "analytic_surface_flux_um3_per_s": 0.0004502337384229174,
+      "content_balance_relative_error": 2.6374043720209037e-11,
+      "content_delta": 1.688376519041399e-07,
+      "discretization": "LIVE_TRIANGLE_CONSERVATIVE",
+      "expected_content_delta": 1.6883765190859284e-07,
+      "grid_deposition_relative_error": 7.224262066298654e-15,
+      "grid_source_integral_um3_per_s": 0.0004502337384229174,
+      "integrated_surface_flux_um3_per_s": 0.00045023373842291415,
+      "live_triangle_area_um2": 703.4902162858084,
+      "pass": true,
+      "surface_quadrature_relative_error": 7.224262066298654e-15,
+      "unresolved_faces": 0
+    },
+    "moving_domain": {
+      "balance_error": -7.778500066280003e-15,
+      "constant_state_max_abs_Pa": 0.0,
+      "moving_face_delta": 0.01400000000000002,
+      "pass": true,
+      "relative_error": 5.55607147591428e-13
+    },
+    "source_and_dilatation": {
+      "balance_error": 3.306426313298694e-14,
+      "delta_content": -0.0017321586457423876,
+      "expected_delta": -0.001732158645775452,
+      "pass": true,
+      "relative_error": 1.9088472764101088e-11
+    },
+    "status": "PASS"
+  },
+  "ng3": {
+    "native_config_pass": true,
+    "native_cortical_filaments": 70686,
+    "native_diagnostics_pass": false,
+    "native_inner_converged": false,
+    "native_population_pass": true,
+    "physiological_t0_pass": false,
+    "spatial_linear_field_trace": {
+      "device_oracle_relative_error": 1.2707335931932186e-15,
+      "gradient_Pa_per_um": [
+        1.0,
+        -0.5,
+        0.25
+      ],
+      "invalid_trace_faces": 0,
+      "pass": true,
+      "pressure_trace_relative_error": 3.659016065012336e-15,
+      "status": "PASS",
+      "unresolved_faces": 0
+    },
+    "status": "FAIL_OPEN",
+    "surface_law": {
+      "closed_surface_force_relative_error": 1.51482546922043e-16,
+      "device_oracle_relative_error": 2.657092582133908e-15,
+      "pass": true,
+      "sign_reversal_relative_error": 1.3984252127484977e-16,
+      "unresolved_faces": 0,
+      "virial_relative_error": 0.0,
+      "zero_is_bit_zero": true
+    },
+    "young_laplace_required_tension_pN_per_um": 150.0
+  },
+  "ng5_closed_system_force": {
+    "fsi_transfer_adjoint_work_identity": {
+      "grid_work_pN_um_per_s": 2299.4180110271145,
+      "node_work_pN_um_per_s": 2299.418011047478,
+      "nonnegative_dissipation_pass": true,
+      "pass": true,
+      "relative_error": 8.85597410947452e-12
+    },
+    "native_actin_nodes": 494802,
+    "native_cortical_filaments": 70686,
+    "pass": true,
+    "spatial_affine_pressure_bulk_plus_surface_net_force": {
+      "bulk_oracle_relative_error": 3.4179946524208054e-12,
+      "bulk_total_pN": [
+        -1751.9375322051462,
+        875.9687661025731,
+        -437.98438305128656
+      ],
+      "combined_total_pN": [
+        5.98426197484514e-09,
+        -2.998895354267006e-09,
+        1.4960903627070365e-09
+      ],
+      "gradient_Pa_per_um": [
+        1.0,
+        -0.5,
+        0.25
+      ],
+      "membrane_discrete_volume_um3": 1751.9375322111337,
+      "net_force_relative_error": 3.417271368619066e-12,
+      "node_control_volume_um3": 1751.9375322111343,
+      "pass": true,
+      "surface_oracle_relative_error": 1.1666829179694463e-15,
+      "surface_total_pN": [
+        1751.937532211133,
+        -875.968766105565,
+        437.9843830527821
+      ],
+      "unresolved_membrane_faces": 0
+    },
+    "status": "PASS",
+    "uniform_pressure_closed_surface": "COVERED_BY_NG3_COMPONENT"
+  },
+  "ng6": {
+    "full_native": {
+      "available": true,
+      "hot_loop_dtoh_copies": 0,
+      "pass": true,
+      "positive_control_dtoh_copies": 1
+    },
+    "small_fixture": {
+      "hot_loop_dtoh_copies": 0,
+      "hot_loop_dtoh_elapsed_ms": 0.0,
+      "pass": true,
+      "positive_control_dtoh_copies": 1
+    },
+    "status": "PASS"
+  },
+  "ng9_native_measurement": {
+    "available": true,
+    "exact_peak_gpu_bytes": null,
+    "exact_peak_gpu_bytes_pass": false,
+    "memory_accounting_probe_status": "ACCOUNTING_DISABLED",
+    "memory_accounting_status": "PARTIAL_MEMPOOL_ONLY",
+    "mempool_high_water_bytes": 258522474,
+    "outer_step_wall_s": 1.130682397633791,
+    "outer_step_wall_time_pass": true,
+    "population_pass": true,
+    "reason": "Warp mempool high-water and endpoint device usage do not include/prove every CUDA allocation's whole-step peak; inspect memory_accounting_probe_status for the NVML exact-counter blocker",
+    "status": "INCOMPLETE"
+  },
+  "outer_rejection_transaction": {
+    "erm_commit_only_rupture": {
+      "candidate_outer_accepted": false,
+      "candidate_outer_rolled_back": true,
+      "explicit_commit_ruptured_tethers": 1,
+      "force_evaluation_bound_state_bit_exact": true,
+      "forced_tension_to_threshold_ratio": 2.0000000000000013,
+      "pass": true,
+      "rejected_bound_state_bit_exact": true,
+      "rejected_geometry_bit_exact": true,
+      "super_threshold_candidate_force_zero": true
+    },
+    "invalid_dt_no_mutation": {
+      "pass": true,
+      "pressure_unchanged": true,
+      "raised_before_attempt": true
+    },
+    "nonfinite_fluid": {
+      "accepted_time_s": 0.0,
+      "fluid_finite": false,
+      "geometry_unchanged_bit_exact": true,
+      "inner_updates_executed": 0,
+      "outer_accepted": false,
+      "outer_rolled_back": true,
+      "pass": true,
+      "pressure_restored_bit_exact": true,
+      "pressure_scratch_restored_bit_exact": true
+    },
+    "pass": true,
+    "unconverged_candidate": {
+      "accepted_time_s": 0.0,
+      "attempted_time_s": 0.001,
+      "bit_exact_restoration": {
+        "div_vs": true,
+        "mask": true,
+        "p": true,
+        "p_new": true,
+        "pos": true,
+        "s_membrane": true,
+        "s_total": true
+      },
+      "committed_content_delta": 0.0,
+      "committed_interior_source_integral": 0.0,
+      "committed_membrane_grid_source_integral": 0.0,
+      "committed_membrane_surface_flux_integral": 0.0,
+      "committed_physical_conservation_error": 0.0,
+      "committed_solid_dilatation_integral": 0.0,
+      "committed_solver_conservation_error": 0.0,
+      "moving_face_delta": 0.0,
+      "outer_accepted": false,
+      "outer_rolled_back": true,
+      "pass": true
+    }
+  },
+  "overall_status": "INCOMPLETE_OR_FAIL",
+  "schema": "ffn-ac-foundation-gates-v2"
+}

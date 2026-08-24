@@ -1,0 +1,555 @@
+{
+  "schema": "ac.engine.observe/run-record@2",
+  "run_label": "gate_b_cortex_motor \u2014 cortical tension trajectory from NMII binding events",
+  "build": {
+    "commit": "unknown",
+    "dirty": null,
+    "branch": null,
+    "source": "unavailable",
+    "reason": "git unavailable or /home/sungwook/ffn is not a repository, and no commit was declared"
+  },
+  "device": "cuda:0",
+  "evidence": "CUDA_UNIT",
+  "quantitative_claim_status": "BLOCKED",
+  "evidence_basis": "recorded the per-sample cortical tension, its source/network split and the bound-head count over accepted physical steps at the stated population, and judged each series for stationarity (gamma_total: TOO_SHORT). BLOCKED because every NMII magnitude here is a PI-GAP (k_xb, f_stall, kappa, N_side, L_bb) and every step is force-accepted rather than admitted on the balance predicate",
+  "config": {
+    "steps_requested": 30,
+    "steps_run": 30,
+    "dt_phys": 0.01,
+    "n_inner": 5,
+    "detach": "SLIP (Bell, provisional-sourced)",
+    "k_xb": 1000.0,
+    "filaments": 70686,
+    "cortex_seg_um": 0.5,
+    "cortex_density": 20.0,
+    "cortex_length_um": 3.0,
+    "membrane_subdiv": 6,
+    "seed": 2,
+    "acceptance": "force-accept (accepted_d = ones); --balance-gate is not implemented",
+    "engine_cortex": false,
+    "omitted_channels": [],
+    "gamma_every": 1,
+    "sample_dt_s": 0.01,
+    "until_stationary": false,
+    "max_steps": 30,
+    "max_wall_minutes": 0.0,
+    "stationarity_contract": {
+      "min_windows": 5.0,
+      "drift_sigma": 1.0,
+      "driving_tau_s_override": 0.0
+    }
+  },
+  "config_sha256": "sha256:5a4806f5b991d985330d6adede28a080cdbc65c129062d4bb817a2f6aee6e59b",
+  "census": {
+    "cortex_filaments": 70686,
+    "cortex_filaments_requested": 70686,
+    "n_actin_nodes": 494802,
+    "n_total_nodes": 551434,
+    "n_heads": 8840,
+    "membrane_vertices": 40962,
+    "membrane_subdiv": 6,
+    "fraction_of_native_cortex": 1.0,
+    "exact_peak_gpu_bytes": 487236771
+  },
+  "parameter_provenance": {
+    "k_xb": {
+      "provenance": "PI_GAP",
+      "value": 1000.0,
+      "units": "pN/um"
+    },
+    "f_stall": {
+      "provenance": "PI_GAP",
+      "value": 0.5,
+      "units": "pN"
+    },
+    "kappa_hill": {
+      "provenance": "PI_GAP",
+      "value": 0.5,
+      "units": "1"
+    },
+    "N_side": {
+      "provenance": "PI_GAP",
+      "value": 10,
+      "units": "heads/side"
+    },
+    "L_bb": {
+      "provenance": "PI_GAP",
+      "value": 14,
+      "units": "backbone beads"
+    },
+    "k_on": {
+      "provenance": "PI_GAP",
+      "value": 50.0,
+      "units": "1/s"
+    },
+    "k_off0": {
+      "provenance": "SOURCED",
+      "value": 0.35,
+      "units": "1/s"
+    },
+    "_schema": "each entry is {provenance, value, units}; the value is what THIS run used"
+  },
+  "t0": {
+    "n_bound": 3477,
+    "gamma_total_pn_per_um": 1.6307382183094412,
+    "note": "the first ACCEPTED step; heads start unbound, so t0 is the state after one dt"
+  },
+  "timing": {
+    "wall_seconds": 191.66723777199513,
+    "physical_time_s": 0.3,
+    "real_time_factor": 638.8907925733172,
+    "n_steps": 30,
+    "wall_seconds_per_step": 6.388907925733171,
+    "n_inner_iterations": 150,
+    "wall_seconds_per_inner_iteration": 1.2777815851466343,
+    "device_note": "telemetry (gamma readback + host force norm) runs BETWEEN steps every 1 step(s) and is included in this wall-clock; it is not free \u2014 at native it dominated the per-step cost until the stride existed",
+    "comparable": false,
+    "not_comparable_reason": "the gate verdict is absent, so this run did not establish the convergence its cost would have to be quoted at. Quoting it as the engine's speed compares the cost of NOT converging"
+  },
+  "measurements": {
+    "trajectory": [
+      {
+        "step": 0,
+        "t_s": 0.01,
+        "n_bound": 3477,
+        "bound_fraction": 0.3933257918552036,
+        "gamma_source_pn_per_um": 0.009679234768040139,
+        "gamma_network_pn_per_um": 1.6210589835414009,
+        "gamma_total_pn_per_um": 1.6307382183094412,
+        "max_pf_pn": 0.7759785988128762,
+        "max_f_cortex_pn": 0.03107756784491869
+      },
+      {
+        "step": 1,
+        "t_s": 0.02,
+        "n_bound": 5533,
+        "bound_fraction": 0.6259049773755656,
+        "gamma_source_pn_per_um": 0.015129747641899262,
+        "gamma_network_pn_per_um": 2.6976319927664036,
+        "gamma_total_pn_per_um": 2.712761740408303,
+        "max_pf_pn": 0.7759853825744982,
+        "max_f_cortex_pn": 3.342052908456589
+      },
+      {
+        "step": 2,
+        "t_s": 0.03,
+        "n_bound": 6776,
+        "bound_fraction": 0.7665158371040725,
+        "gamma_source_pn_per_um": 0.01829597479983882,
+        "gamma_network_pn_per_um": 3.352586457064638,
+        "gamma_total_pn_per_um": 3.3708824318644766,
+        "max_pf_pn": 0.7759853246985744,
+        "max_f_cortex_pn": 4.011488384690914
+      },
+      {
+        "step": 3,
+        "t_s": 0.04,
+        "n_bound": 7537,
+        "bound_fraction": 0.8526018099547511,
+        "gamma_source_pn_per_um": 0.019478376162369117,
+        "gamma_network_pn_per_um": 3.7454346919386285,
+        "gamma_total_pn_per_um": 3.7649130681009972,
+        "max_pf_pn": 0.7759853010800521,
+        "max_f_cortex_pn": 4.4394188522819
+      },
+      {
+        "step": 4,
+        "t_s": 0.05,
+        "n_bound": 8021,
+        "bound_fraction": 0.9073529411764706,
+        "gamma_source_pn_per_um": 0.02017414384205814,
+        "gamma_network_pn_per_um": 4.000659270865094,
+        "gamma_total_pn_per_um": 4.020833414707152,
+        "max_pf_pn": 0.7759852972694637,
+        "max_f_cortex_pn": 4.462068471186557
+      },
+      {
+        "step": 5,
+        "t_s": 0.06,
+        "n_bound": 8312,
+        "bound_fraction": 0.9402714932126697,
+        "gamma_source_pn_per_um": 0.02074907472351269,
+        "gamma_network_pn_per_um": 4.155224559878032,
+        "gamma_total_pn_per_um": 4.1759736346015455,
+        "max_pf_pn": 0.7760061481181393,
+        "max_f_cortex_pn": 4.478101264426708
+      },
+      {
+        "step": 6,
+        "t_s": 0.07,
+        "n_bound": 8465,
+        "bound_fraction": 0.957579185520362,
+        "gamma_source_pn_per_um": 0.021092155837875007,
+        "gamma_network_pn_per_um": 4.2353542526267685,
+        "gamma_total_pn_per_um": 4.256446408464644,
+        "max_pf_pn": 0.776005996719339,
+        "max_f_cortex_pn": 4.599182113889275
+      },
+      {
+        "step": 7,
+        "t_s": 0.08,
+        "n_bound": 8589,
+        "bound_fraction": 0.971606334841629,
+        "gamma_source_pn_per_um": 0.021400992765487507,
+        "gamma_network_pn_per_um": 4.29655430915477,
+        "gamma_total_pn_per_um": 4.317955301920257,
+        "max_pf_pn": 0.7760059973227214,
+        "max_f_cortex_pn": 4.599186881929903
+      },
+      {
+        "step": 8,
+        "t_s": 0.09,
+        "n_bound": 8644,
+        "bound_fraction": 0.9778280542986425,
+        "gamma_source_pn_per_um": 0.021343850277336887,
+        "gamma_network_pn_per_um": 4.325314234983788,
+        "gamma_total_pn_per_um": 4.346658085261125,
+        "max_pf_pn": 0.7760059972580599,
+        "max_f_cortex_pn": 4.599187835838629
+      },
+      {
+        "step": 9,
+        "t_s": 0.1,
+        "n_bound": 8690,
+        "bound_fraction": 0.9830316742081447,
+        "gamma_source_pn_per_um": 0.02155191824923732,
+        "gamma_network_pn_per_um": 4.3530787796454975,
+        "gamma_total_pn_per_um": 4.374630697894734,
+        "max_pf_pn": 0.776005997335046,
+        "max_f_cortex_pn": 4.599188026665183
+      },
+      {
+        "step": 10,
+        "t_s": 0.11,
+        "n_bound": 8719,
+        "bound_fraction": 0.9863122171945702,
+        "gamma_source_pn_per_um": 0.021706368332519172,
+        "gamma_network_pn_per_um": 4.371865152585586,
+        "gamma_total_pn_per_um": 4.393571520918105,
+        "max_pf_pn": 0.8344335237253634,
+        "max_f_cortex_pn": 4.599188064799799
+      },
+      {
+        "step": 11,
+        "t_s": 0.12,
+        "n_bound": 8717,
+        "bound_fraction": 0.9860859728506788,
+        "gamma_source_pn_per_um": 0.021668412562461707,
+        "gamma_network_pn_per_um": 4.37074458413677,
+        "gamma_total_pn_per_um": 4.392412996699232,
+        "max_pf_pn": 0.8344336742711308,
+        "max_f_cortex_pn": 4.599188072425959
+      },
+      {
+        "step": 12,
+        "t_s": 0.13,
+        "n_bound": 8742,
+        "bound_fraction": 0.9889140271493213,
+        "gamma_source_pn_per_um": 0.021839191544447467,
+        "gamma_network_pn_per_um": 4.37934198947921,
+        "gamma_total_pn_per_um": 4.401181181023658,
+        "max_pf_pn": 0.834433692707834,
+        "max_f_cortex_pn": 4.599188073946674
+      },
+      {
+        "step": 13,
+        "t_s": 0.14,
+        "n_bound": 8753,
+        "bound_fraction": 0.990158371040724,
+        "gamma_source_pn_per_um": 0.02177609189004159,
+        "gamma_network_pn_per_um": 4.388206760666321,
+        "gamma_total_pn_per_um": 4.409982852556363,
+        "max_pf_pn": 0.8344357542595546,
+        "max_f_cortex_pn": 4.599188097114621
+      },
+      {
+        "step": 14,
+        "t_s": 0.15,
+        "n_bound": 8765,
+        "bound_fraction": 0.9915158371040724,
+        "gamma_source_pn_per_um": 0.021776091906472235,
+        "gamma_network_pn_per_um": 4.392909019564489,
+        "gamma_total_pn_per_um": 4.414685111470961,
+        "max_pf_pn": 0.8344382032415153,
+        "max_f_cortex_pn": 4.59918809918547
+      },
+      {
+        "step": 15,
+        "t_s": 0.16,
+        "n_bound": 8773,
+        "bound_fraction": 0.992420814479638,
+        "gamma_source_pn_per_um": 0.021776091909559103,
+        "gamma_network_pn_per_um": 4.396692598190827,
+        "gamma_total_pn_per_um": 4.4184686901003865,
+        "max_pf_pn": 0.8344381324318564,
+        "max_f_cortex_pn": 4.599188099627792
+      },
+      {
+        "step": 16,
+        "t_s": 0.17,
+        "n_bound": 8766,
+        "bound_fraction": 0.9916289592760181,
+        "gamma_source_pn_per_um": 0.021704497815641065,
+        "gamma_network_pn_per_um": 4.3890369925725725,
+        "gamma_total_pn_per_um": 4.410741490388213,
+        "max_pf_pn": 0.83443581509407,
+        "max_f_cortex_pn": 4.599188099716658
+      },
+      {
+        "step": 17,
+        "t_s": 0.18,
+        "n_bound": 8765,
+        "bound_fraction": 0.9915158371040724,
+        "gamma_source_pn_per_um": 0.02159412583809215,
+        "gamma_network_pn_per_um": 4.388420802775938,
+        "gamma_total_pn_per_um": 4.4100149286140296,
+        "max_pf_pn": 0.8344357081760468,
+        "max_f_cortex_pn": 4.5991880997382655
+      },
+      {
+        "step": 18,
+        "t_s": 0.19,
+        "n_bound": 8769,
+        "bound_fraction": 0.9919683257918552,
+        "gamma_source_pn_per_um": 0.021652382110356073,
+        "gamma_network_pn_per_um": 4.391560278473466,
+        "gamma_total_pn_per_um": 4.413212660583822,
+        "max_pf_pn": 0.8344346654231852,
+        "max_f_cortex_pn": 4.478115091434343
+      },
+      {
+        "step": 19,
+        "t_s": 0.2,
+        "n_bound": 8765,
+        "bound_fraction": 0.9915158371040724,
+        "gamma_source_pn_per_um": 0.02162052493417916,
+        "gamma_network_pn_per_um": 4.390212313481996,
+        "gamma_total_pn_per_um": 4.411832838416175,
+        "max_pf_pn": 0.8344348016314281,
+        "max_f_cortex_pn": 4.599189692264891
+      },
+      {
+        "step": 20,
+        "t_s": 0.21,
+        "n_bound": 8750,
+        "bound_fraction": 0.9898190045248869,
+        "gamma_source_pn_per_um": 0.021648702586101878,
+        "gamma_network_pn_per_um": 4.383619223076176,
+        "gamma_total_pn_per_um": 4.405267925662279,
+        "max_pf_pn": 0.8344344851565036,
+        "max_f_cortex_pn": 4.599189692264986
+      },
+      {
+        "step": 21,
+        "t_s": 0.22,
+        "n_bound": 8746,
+        "bound_fraction": 0.9893665158371041,
+        "gamma_source_pn_per_um": 0.021697239082994237,
+        "gamma_network_pn_per_um": 4.381869630426538,
+        "gamma_total_pn_per_um": 4.4035668695095325,
+        "max_pf_pn": 0.8344355918857959,
+        "max_f_cortex_pn": 4.599189692278643
+      },
+      {
+        "step": 22,
+        "t_s": 0.23,
+        "n_bound": 8748,
+        "bound_fraction": 0.9895927601809955,
+        "gamma_source_pn_per_um": 0.021499584911500023,
+        "gamma_network_pn_per_um": 4.379774450084282,
+        "gamma_total_pn_per_um": 4.401274034995783,
+        "max_pf_pn": 0.8344356202348826,
+        "max_f_cortex_pn": 4.59918969228464
+      },
+      {
+        "step": 23,
+        "t_s": 0.24,
+        "n_bound": 8735,
+        "bound_fraction": 0.9881221719457014,
+        "gamma_source_pn_per_um": 0.021297474875862733,
+        "gamma_network_pn_per_um": 4.371561935743156,
+        "gamma_total_pn_per_um": 4.3928594106190175,
+        "max_pf_pn": 0.8344368959920225,
+        "max_f_cortex_pn": 4.599189692275638
+      },
+      {
+        "step": 24,
+        "t_s": 0.25,
+        "n_bound": 8753,
+        "bound_fraction": 0.990158371040724,
+        "gamma_source_pn_per_um": 0.02135921593172317,
+        "gamma_network_pn_per_um": 4.381829387690599,
+        "gamma_total_pn_per_um": 4.403188603622322,
+        "max_pf_pn": 0.7760059968534668,
+        "max_f_cortex_pn": 4.599189692275638
+      },
+      {
+        "step": 25,
+        "t_s": 0.26,
+        "n_bound": 8749,
+        "bound_fraction": 0.9897058823529412,
+        "gamma_source_pn_per_um": 0.021493048355267004,
+        "gamma_network_pn_per_um": 4.381827035658848,
+        "gamma_total_pn_per_um": 4.403320084014114,
+        "max_pf_pn": 0.7760059968813231,
+        "max_f_cortex_pn": 4.599189692275604
+      },
+      {
+        "step": 26,
+        "t_s": 0.27,
+        "n_bound": 8753,
+        "bound_fraction": 0.990158371040724,
+        "gamma_source_pn_per_um": 0.021518409170400238,
+        "gamma_network_pn_per_um": 4.383549517716788,
+        "gamma_total_pn_per_um": 4.405067926887188,
+        "max_pf_pn": 0.7760059969148512,
+        "max_f_cortex_pn": 4.599189692275604
+      },
+      {
+        "step": 27,
+        "t_s": 0.28,
+        "n_bound": 8759,
+        "bound_fraction": 0.9908371040723982,
+        "gamma_source_pn_per_um": 0.021715945467821338,
+        "gamma_network_pn_per_um": 4.383206701474788,
+        "gamma_total_pn_per_um": 4.40492264694261,
+        "max_pf_pn": 0.7760059969147252,
+        "max_f_cortex_pn": 4.599189692280078
+      },
+      {
+        "step": 28,
+        "t_s": 0.29,
+        "n_bound": 8765,
+        "bound_fraction": 0.9915158371040724,
+        "gamma_source_pn_per_um": 0.02157394262665536,
+        "gamma_network_pn_per_um": 4.386043421212012,
+        "gamma_total_pn_per_um": 4.407617363838668,
+        "max_pf_pn": 0.7760059968810712,
+        "max_f_cortex_pn": 4.599189692280078
+      },
+      {
+        "step": 29,
+        "t_s": 0.3,
+        "n_bound": 8766,
+        "bound_fraction": 0.9916289592760181,
+        "gamma_source_pn_per_um": 0.021449234362118,
+        "gamma_network_pn_per_um": 4.388301722098295,
+        "gamma_total_pn_per_um": 4.409750956460413,
+        "max_pf_pn": 0.8344349284142634,
+        "max_f_cortex_pn": 4.599189692284619
+      }
+    ],
+    "physical_time_s": 0.3,
+    "sample_dt_s": 0.01,
+    "bound_head_lifetime": {
+      "zero_load_s": 2.857142857142857,
+      "mean_load_s": 2.664432813186325,
+      "conservative_s": 2.857142857142857,
+      "n_bound": 8766,
+      "derivation": "Bell slip prefactor k_off0 = 0.35 /s at zero load; mean_load_s = 1/<k_off> over the bound bonds' own loads through the same closed form the device kernel implements"
+    },
+    "bound_head_lifetime_s": 2.857142857142857,
+    "lifetimes_covered": 0.105,
+    "stationarity": {
+      "gamma_total_pn_per_um": {
+        "verdict": "TOO_SHORT",
+        "observable": "gamma_total_pn_per_um",
+        "mean": null,
+        "sem": null,
+        "std": 0.594708861122962,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.3,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 2.857142857142857,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 14.3 s (5 x the 2.86 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 30
+      },
+      "gamma_network_pn_per_um": {
+        "verdict": "TOO_SHORT",
+        "observable": "gamma_network_pn_per_um",
+        "mean": null,
+        "sem": null,
+        "std": 0.5922787655925056,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.3,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 2.857142857142857,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 14.3 s (5 x the 2.86 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 30
+      },
+      "gamma_source_pn_per_um": {
+        "verdict": "TOO_SHORT",
+        "observable": "gamma_source_pn_per_um",
+        "mean": null,
+        "sem": null,
+        "std": 0.002443258444338586,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.3,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 2.857142857142857,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 14.3 s (5 x the 2.86 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 30
+      },
+      "bound_fraction": {
+        "verdict": "TOO_SHORT",
+        "observable": "bound_fraction",
+        "mean": null,
+        "sem": null,
+        "std": 0.12796338422963216,
+        "tau_int_s": NaN,
+        "n_eff": 0.0,
+        "equilibration_time_s": 0.0,
+        "analysed_time_s": 0.3,
+        "drift_per_s": NaN,
+        "drift_over_std": NaN,
+        "contract": {
+          "min_windows": 5.0,
+          "drift_sigma": 1.0,
+          "driving_correlation_time_s": 2.857142857142857,
+          "declared": "before the run; recorded here so the verdict is judged against its own criterion"
+        },
+        "notes": {
+          "reason": "0.3 s of physical time against a required 14.3 s (5 x the 2.86 s driving correlation time). This is the GATE B case: a transient cannot be told from a steady state here, so no mean is returned"
+        },
+        "n_samples": 30
+      }
+    },
+    "stationarity_during_run": [],
+    "stop_reason": "step target reached"
+  },
+  "gate": null,
+  "notes": {
+    "not_a_claim": "no steady state is asserted by the run label. Whether this trajectory reached one is answered by measurements.stationarity, and the series is here so it can be re-judged without re-running",
+    "verdict_is_not_yet_a_gate": "the stationarity verdicts are RECORDED, not acceptance criteria. The amendment that would make settling what stage 1's outer gate scores is PROPOSED and PI ratification is pending, so nothing here rejects a run; a DRIFTING or TOO_SHORT verdict says the mean must not be quoted, which is a statement about the number and not about the run"
+  }
+}

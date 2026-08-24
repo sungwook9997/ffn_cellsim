@@ -1,0 +1,131 @@
+{
+  "aleph_dependency": false,
+  "schema": "outer.biophysics.theory_registry.v1",
+  "theories": [
+    {
+      "assumptions": [
+        "long cylindrical tether with negligible end correction",
+        "quasi-static mechanical equilibrium",
+        "homogeneous effective bending rigidity and apparent tension",
+        "apparent tension may combine bilayer tension and membrane-cortex attachment"
+      ],
+      "citation": {
+        "identifier": "DOI:10.1103/PhysRevLett.88.238101",
+        "title": "Formation and interaction of membrane tubes"
+      },
+      "compatible_modalities": ["AFM_membrane_tether_force", "optical_tweezer_tether_force"],
+      "equations": [
+        "F_tether = 2*pi*sqrt(2*kappa*sigma_app)",
+        "sigma_app = F_tether^2/(8*pi^2*kappa)"
+      ],
+      "evidence_role": "expert",
+      "geometry": "long cylindrical membrane tether",
+      "identifiable": ["sigma_app_given_kappa", "kappa_times_sigma_app"],
+      "implementation": "theory_runtime.py:tether_force",
+      "inputs": [
+        {"domain": ">0", "name": "bending_rigidity", "unit": "pN*micrometre"},
+        {"domain": ">=0", "name": "apparent_tension", "unit": "pN/micrometre"}
+      ],
+      "non_identifiable": [
+        "bilayer_tension_and_membrane_cortex_attachment_from_tether_force_alone",
+        "bending_rigidity_and_apparent_tension_if_both_unknown"
+      ],
+      "outputs": [{"name": "tether_force", "unit": "pN"}],
+      "status": "implemented",
+      "theory_id": "membrane_tether_quasistatic",
+      "time_regime": "steady_state_plateau",
+      "version": "1.0.0"
+    },
+    {
+      "assumptions": [
+        "linear viscoelastic response",
+        "single relaxation timescale",
+        "step-like forcing and time-invariant coefficients"
+      ],
+      "citation": {
+        "identifier": "ISBN:9780486644616",
+        "title": "The Theory of Linear Viscoelasticity"
+      },
+      "compatible_modalities": ["AFM_relaxation", "microrheology", "force_relaxation"],
+      "equations": ["y(t) = y_inf + (y0-y_inf)*exp(-t/tau)"],
+      "evidence_role": "expert",
+      "geometry": "measurement-operator dependent linear response",
+      "identifiable": ["initial_response", "long_time_response", "single_relaxation_time"],
+      "implementation": "theory_runtime.py:standard_linear_solid_relaxation",
+      "inputs": [
+        {"domain": ">=0", "name": "time", "unit": "second"},
+        {"domain": "finite", "name": "initial_response", "unit": "operator_unit"},
+        {"domain": "finite", "name": "long_time_response", "unit": "operator_unit"},
+        {"domain": ">0", "name": "relaxation_time", "unit": "second"}
+      ],
+      "non_identifiable": ["multi_mode_spectrum_from_single_exponential_data", "spring_dashpot_decomposition_without_protocol"],
+      "outputs": [{"name": "response", "unit": "operator_unit"}],
+      "status": "implemented",
+      "theory_id": "standard_linear_solid_single_mode",
+      "time_regime": "transient_single_mode",
+      "version": "1.0.0"
+    },
+    {
+      "assumptions": [
+        "isotropic two-dimensional persistent random walk",
+        "stationary speed scale",
+        "exponentially decaying velocity direction correlation"
+      ],
+      "citation": {
+        "identifier": "DOI:10.1098/rsif.2008.0014",
+        "title": "Random walk models in biology"
+      },
+      "compatible_modalities": ["single_cell_tracking", "PIV_derived"],
+      "equations": ["MSD_2D(t) = 2*v^2*tau_p*(t-tau_p*(1-exp(-t/tau_p)))"],
+      "evidence_role": "expert",
+      "geometry": "isotropic 2D trajectory",
+      "identifiable": ["speed_scale_and_persistence_time_with_sufficient_time_range"],
+      "implementation": "theory_runtime.py:persistent_random_walk_msd_2d",
+      "inputs": [
+        {"domain": ">=0", "name": "lag_time", "unit": "minute"},
+        {"domain": ">=0", "name": "speed_scale", "unit": "micrometre/minute"},
+        {"domain": ">0", "name": "persistence_time", "unit": "minute"}
+      ],
+      "non_identifiable": ["speed_and_persistence_when_only_short_or_long_asymptote_is_observed", "active_mechanism_identity"],
+      "outputs": [{"name": "mean_squared_displacement", "unit": "square_micrometre"}],
+      "status": "implemented",
+      "theory_id": "persistent_random_walk_2d",
+      "time_regime": "transient_and_long_time",
+      "version": "1.0.0"
+    },
+    {
+      "assumptions": ["small deformation", "elastic half-space or declared contact geometry"],
+      "citation": {"identifier": "ISBN:9780521347969", "title": "Contact Mechanics"},
+      "compatible_modalities": ["AFM_indentation"],
+      "equations": ["force = contact_geometry_function(modulus, indentation, radius, poisson_ratio)"],
+      "evidence_role": "constraint",
+      "geometry": "Hertz/contact-geometry dependent",
+      "identifiable": ["operator_specific_apparent_modulus_under_fixed_geometry"],
+      "implementation": null,
+      "inputs": [],
+      "non_identifiable": ["cortex_membrane_cytosol_decomposition_from_one_force_curve"],
+      "outputs": [],
+      "status": "planned",
+      "theory_id": "AFM_contact_family",
+      "time_regime": "quasi_static",
+      "version": "0.1.0"
+    },
+    {
+      "assumptions": ["declared adhesion bonds and actin retrograde flow", "model-specific loading law"],
+      "citation": {"identifier": "DOI:10.1126/science.1163595", "title": "Traction dynamics of filopodia on compliant substrates"},
+      "compatible_modalities": ["traction_force_microscopy", "actin_retrograde_flow", "adhesion_imaging"],
+      "equations": ["traction = clutch_state_function(substrate, bonds, actin_flow)"],
+      "evidence_role": "synthetic_generator",
+      "geometry": "adhesion-clutch interface",
+      "identifiable": ["model_conditional_load_transfer_regime"],
+      "implementation": null,
+      "inputs": [],
+      "non_identifiable": ["unique_molecular_clutch_parameters_from_traction_alone"],
+      "outputs": [],
+      "status": "planned",
+      "theory_id": "molecular_clutch_family",
+      "time_regime": "dynamic",
+      "version": "0.1.0"
+    }
+  ]
+}

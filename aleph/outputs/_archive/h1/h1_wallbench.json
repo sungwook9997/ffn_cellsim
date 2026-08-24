@@ -1,0 +1,19 @@
+{
+  "n_fibers": 3142,
+  "n_beads": 65982,
+  "n_xl_bonds": 7687,
+  "dt_s": 3.787993607139461e-09,
+  "build_s": 0.12230467796325684,
+  "prelude_s": 26.260480880737305,
+  "prelude_steps_total": 1000,
+  "prelude_steps_per_s": 38.08003381741285,
+  "prelude_max_force_before_N": 7193.415939855629,
+  "prelude_max_force_after_soft_N": 2.1664703171369625e-11,
+  "prelude_max_force_after_baoab_N": 4.9101200928497854e-11,
+  "production_s": 265.2863578796387,
+  "production_steps": 10000,
+  "production_steps_per_s": 37.695115873757196,
+  "post_production_max_force_N": 5.616543149345112e-11,
+  "simulated_time_s": 3.787993607139461e-05,
+  "wall_per_simulated_second": 7003347.560556527
+}

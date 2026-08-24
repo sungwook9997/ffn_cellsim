@@ -1,0 +1,39 @@
+ingested 128 PDFs -> 5327 chunks (89 linked to SourceEvidence by DOI)
+skipped 21 exact byte-duplicate(s):
+  Directed_invasion_of_cancer_cell_spheroids_inside_.pdf  == Directed_invasion_of_cancer_cell_spheroids_inside_ (1).pdf
+  journal.pone.0264571 (1).pdf  == Directed_invasion_of_cancer_cell_spheroids_inside_ (1).pdf
+  journal.pone.0264571.pdf  == Directed_invasion_of_cancer_cell_spheroids_inside_ (1).pdf
+  Arruda2026_NpjSystBiolAppl.pdf  == s41540-026-00648-9.pdf
+  Audoin2022_SciRep.pdf  == s41598-022-18950-x.pdf
+  Botticelli2025_FrontBioengBiotechnol.pdf  == fbioe-13-1515962.pdf
+  Brningk2019_SciRep.pdf  == s41598-019-54117-x.pdf
+  Bustamante2021_Biofabrication.pdf  == Bustamante_2021_Biofabrication_13_035010.pdf
+  Chen2017_MBE.pdf  == 10.3934_mbe.2018016.pdf
+  De2018_CommunBiol.pdf  == s42003-018-0084-9.pdf
+  Dhandapani2023_AdvHealthcareMaterials.pdf  == Adv Healthcare Materials - 2023 - Dhandapani - In Vitro 3D Spheroid Model Preserves Tumor Microenvironment of Hot and Cold.pdf
+  Fang2016_PhysRevE.pdf  == PhysRevE.93.042404.pdf
+  Geiger2022_PLoSONE.pdf  == Directed_invasion_of_cancer_cell_spheroids_inside_ (1).pdf
+  Herold2023_PLoSComputBiol.pdf  == pcbi.1010471.pdf
+  Hou2018_SciRep.pdf  == s41598-018-25337-4.pdf
+  Kim2012_IntegrBiol.pdf  == c2ib20159c.pdf
+  Kim2023_Jour.pdf  == 11744268-6759-4d1c-8363-9666c54cd8c3.pdf
+  Odenthal2013_PLoSComputBiol.pdf  == pcbi.1003267.pdf
+  SciRep2025_GliomaAFM.pdf  == Masud2025_SciRep.pdf
+  Wang2016_PLoSONE.pdf  == Spheroid_Formation_of_Hepatocarcinoma_Cells_in_Mic.pdf
+  Zhuo2018_LightSciAppl.pdf  == s41377-018-0001-5.pdf
+local index -> /Users/sw1/ffn_cellsim/ffn_sim/references/tag_corpus.json
+
+references: 128 PDFs | paper_chunks: 5327 | linked to SE: 89
+
+sample BM25 search 'cortical tension actin':
+  [5.88] Boot2021_AdvancesInPhysicsX p18: discussed DAH has successfully accounted for many observations of tissue 
+sorting, it focu
+  [5.29] Tsujita2021_NatCommun p7: esponsible for
+maintaining homeostatic PM tension in non-invasive cells.
+However, changes
+  [5.02] Boot2021_AdvancesInPhysicsX p17: he mechanics of the actin cortex 
+that underlies the membrane, which is a principal determ
+  [4.84] Ruprecht2015_Cell p5: 3Kinase (L-294002), previously shown to be required for
+mesendodermal progenitor cell migr
+  [4.83] Yap2015_DevCell p2: , the cadherin-associated actin cyto-
+skeleton is dynamic, undergoing turnover and assembl

@@ -1,0 +1,159 @@
+{
+ "schema": "ffn-world-tier1-crossbridge@1",
+ "provenance": {
+  "build_commit": "ba0160f9 (COMMIT_STAMP, hand-deployed)",
+  "closure_digest": "sha256:32a0715269543171fd7437449546d7a3ccbbf285a88366ca5e25407afc0b2f72",
+  "closure_files": "22",
+  "session": "unnamed@pid4088336",
+  "argv": "aleph/scripts/world_tier1_crossbridge.py --nmii-heads-per-side 30 --out aleph/outputs/ac/world_tier1/first_bonds.json",
+  "python": "3.13.14",
+  "env_prefix": "/home/sungwook/miniforge3/envs/ffn_sim",
+  "warp": "1.14.0"
+ },
+ "kind": "diagnostic",
+ "quantitative_claim_status": "BLOCKED",
+ "not_a_claim": "\u26a0 NO MAGNITUDE. k_xb is params_i0b3.yaml's own MASTER FORCE KNOB and is a DECLARED TEST POINT here, so every pN in this record is a consequence of that choice. What is claimed is structural and mechanistic: BONDs stand for the first time in this engine, the built geometry loads them, and the catch branch responds to load in the direction its form requires. NOTHING WAS STEPPED AND NOTHING WAS ACCEPTED.",
+ "blocked_still": "\u26a0 The attach/detach CYCLE did not run and cannot. propose_crossbridge_transitions_kernel writes `proposal` and never `bound`, because a kinetic connector may commit only on an accepted physical step and PI queue 18 leaves the predicate undefined. The tier's own MEASUREMENT_TIERS entry lists only queue 11 as its blocker; that is an UNDERSTATEMENT and is reported here rather than worked around. The emergent bound fraction, which the tier promises as a cross-check against the NM2B duty band, is not reachable.",
+ "device": "cuda:0",
+ "build_s": 1.526,
+ "n_heads_per_side": {
+  "value": 30,
+  "status": "UNRATIFIED \u2014 PI queue 2, a declared test point"
+ },
+ "declared_constants": {
+  "k_catch0": {
+   "value": 0.35,
+   "unit": "1/s",
+   "grade": "DECLARED",
+   "note": "zero-force catch-pathway rate. Constrained by the Kovacs 2007 5x/12x load slowdown, NOT fitted to it; carried as provisional by the earlier native gate driver."
+  },
+  "x_catch_um": {
+   "value": 0.001,
+   "unit": "um",
+   "grade": "DECLARED",
+   "note": "catch-pathway bond length, 1 nm. Larger => stronger load-strengthening."
+  },
+  "k_slip0": {
+   "value": 0.35,
+   "unit": "1/s",
+   "grade": "DECLARED",
+   "note": "zero-force slip-pathway rate."
+  },
+  "x_slip_um": {
+   "value": 0.0006,
+   "unit": "um",
+   "grade": "DECLARED",
+   "note": "\u26a0 Veigel 2002's Bell x_beta, borrowed into the SLIP branch of a catch-slip law. That is a TRANSFER, not a source, and the module says so where the gap is documented. Declared with the transfer named."
+  },
+  "k_on": {
+   "value": 50.0,
+   "unit": "1/s",
+   "grade": "DECLARED",
+   "note": "\u26a0 per-head attachment rate. Its recorded provenance is configs/phase1_h3.yaml \u2014 a CONFIGURATION FILE, not a measurement. Declared with that named."
+  },
+  "capture_radius_um": {
+   "value": 0.21,
+   "unit": "um",
+   "grade": "DERIVED",
+   "note": "head->actin KINETIC capture radius = r0_head 0.200 + ~10 nm slack, KU-3.5. Reconciled 2026-07-24 and verified 2026-08-22 to be the single value in the tree. Distinct from a builder's geometric pairing reach."
+  },
+  "k_xb_pn_per_um": {
+   "value": 100.0,
+   "unit": "pN/um",
+   "grade": "DECLARED TEST POINT",
+   "note": "\u26a0 params_i0b3.yaml's own MASTER FORCE KNOB. 100 is the one dose whose 5.0 nm working stroke lies inside the model's 5-20 nm window, which is why it is the test point \u2014 but every force it produces is a consequence of it. NO MAGNITUDE FROM THIS RUN MAY BE QUOTED."
+  },
+  "r0_xb_um": {
+   "value": 0.0,
+   "unit": "um",
+   "grade": "MODELLING DECISION",
+   "note": "\u26a0 NOT a sourcing gap: two readings were defensible and the PI ruled. (b) r0 = 0 \u2014 'a bound head sits on the actin site', the Huxley convention. The rejected (a) was 'force-free as built', which a SCALAR r0 cannot deliver: the built head->actin separation spans 2.8-43.9 nm, so the best a scalar does is centre the distribution, and the centre is itself a cortex DISCRETISATION number. \u26a0 THE STANDING ASSUMPTION, recorded rather than hidden: under r0 = 0 the load is the built separation, so it depends on the cortex mesh. Changing the discretisation changes the load."
+  }
+ },
+ "reach_um": {
+  "value": 0.21,
+  "why": "the kinetic capture radius; pairing beyond it would stand bonds that could never transition"
+ },
+ "tau_s": {
+  "value": 0.001,
+  "why": "declared; sets the Poisson probability only. No clock advances."
+ },
+ "bond": {
+  "live_before": 0,
+  "live_after": 26520,
+  "n_crossbridges": 26520,
+  "capacity": 1000000
+ },
+ "state": {
+  "bound_at_t0": 0,
+  "n_commits": 0,
+  "why_all_free": "a bound t=0 is an imposed duty ratio, which params_i0b3.yaml prohibits; all-free is the only legal initial state"
+ },
+ "tension_pn": {
+  "min": 0.29261360533069775,
+  "p05": 1.196652108670016,
+  "median": 3.2137849539418006,
+  "p95": 7.299836707740259,
+  "max": 11.225333315294286
+ },
+ "census": {
+  "connector": "nmii_cortex_motor",
+  "chemistry_card": "nmii_head_actin_catchslip_kovacs2007",
+  "declared_chemistry_card": "nmii_head_actin_hill_bell",
+  "kinetic": true,
+  "first_kinetic_family": true,
+  "n_bonds": 26520,
+  "n_stations": 442,
+  "n_heads_per_side": 30,
+  "n_heads_per_side_is_a_test_point_not_a_band": true,
+  "f_stall_head_pn_reference": 2.0,
+  "reach_um": 0.21,
+  "as_built_separation_um": {
+   "min": 0.0029261360533069775,
+   "max": 0.11225333315294285,
+   "mean": 0.03642315064404856
+  },
+  "r0_xb_um": 0.0,
+  "n_beyond_capture_at_t0": 0,
+  "initial_bound_fraction": 0.0,
+  "commit_reachable_today": false,
+  "commit_reachable_today_note": "world/step.py defaults to UndefinedAcceptance -> ACCEPTANCE_UNDEFINED -> is_accepted False (PI decision 18, 2026-08-21: the acceptance predicate is undecidable until cortical tension is emitted on the resting path). CrossbridgeState.commit refuses an unaccepted step, so nothing this family proposes can be applied on the current path.",
+  "partner_is_dynamic": true,
+  "live_partner_owner": "aleph.world.families.nmii_cortex_crossbridge.CrossbridgeState.bound",
+  "n_bonds_is": "CAPACITY; occupancy is emergent and lives with the kinetics",
+  "free_list": "unnecessary \u2014 the bond population IS the head population; a slot is a head's identity, so detaching frees nothing",
+  "snapshot_twin": "unnecessary \u2014 the KMC kernel writes a separate proposal array and cannot touch committed state, so a rejected step is a non-copy, not a rollback",
+  "provenance": {
+   "family": "nmii_cortex_motor",
+   "chemistry_card": "nmii_head_actin_catchslip_kovacs2007",
+   "n_bonds": 26520,
+   "basis": "per_filament",
+   "density": 60.0,
+   "support": 442.0,
+   "support_unit": "filaments",
+   "scope": "MCF7 cortical NMII, resting \u2014 CAPACITY, one site per head, 2H per bipolar minifilament. Not an occupancy: nothing is bound.",
+   "source_class": "PI_GAP",
+   "provenance": "derived from n_heads_per_side, which is UNRATIFIED (PI queue 2)",
+   "n_bonds_is": "CAPACITY; occupancy is emergent and lives with the kinetics",
+   "partner_is_dynamic": true,
+   "live_partner_owner": "aleph.world.families.nmii_cortex_crossbridge.CrossbridgeState.bound",
+   "node_j_is": "the AS-BUILT partner only; the partner in force at any step is state, owned by aleph.world.families.nmii_cortex_crossbridge.CrossbridgeState.bound"
+  },
+  "kinetics": {
+   "law": "pereverzev_catch_slip",
+   "chemistry": "nmii_head_actin_kovacs2007",
+   "k_catch0": 0.35,
+   "x_catch_um": 0.001,
+   "k_slip0": 0.35,
+   "x_slip_um": 0.0006,
+   "k_on": 50.0,
+   "capture_radius_um": 0.21,
+   "kT": 0.004280011900000001,
+   "scope": "MCF7 cortical NMII, resting, 310 K \u2014 DECLARED under the PI's (a-all) ruling 2026-08-22, not sourced",
+   "provenance": "k_catch0: DECLARED \u2014 zero-force catch-pathway rate. Constrained by the Kovacs 2007 5x/12x load slowdown, NOT fitted to it; carried as provisional by the earlier native gate driver.; x_catch_um: DECLARED \u2014 catch-pathway bond length, 1 nm. Larger => stronger load-strengthening.; k_slip0: DECLARED \u2014 zero-force slip-pathway rate.; x_slip_um: DECLARED \u2014 \u26a0 Veigel 2002's Bell x_beta, borrowed into the SLIP branch of a catch-slip law. That is a TRANSFER, not a source, and the module says so where the gap is documented. Declared with the transfer named.; k_on: DECLARED \u2014 \u26a0 per-head attachment rate. Its recorded provenance is configs/phase1_h3.yaml \u2014 a CONFIGURATION FILE, not a measurement. Declared with that named.; capture_radius_um: DERIVED \u2014 head->actin KINETIC capture radius = r0_head 0.200 + ~10 nm slack, KU-3.5. Reconciled 2026-07-24 and verified 2026-08-22 to be the single value in the tree. Distinct from a builder's geometric pairing reach.",
+   "unloaded_off_rate_per_s": 0.7,
+   "peak_force_pn": 1.3664623428396026,
+   "unloaded_bound_fraction": 0.9861932938856015
+  }
+ }
+}

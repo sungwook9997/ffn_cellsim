@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "authority": "external_non_authoritative_oa_weak_supervision",
+  "source_family_id": "doi:10.1038/s41556-025-01807-6",
+  "title": "Target cell cortical tension regulates macrophage trogocytosis.",
+  "bounded_section_token_counts": {"abstract": 174, "methods": 220, "results": 1, "conclusion": 0},
+  "top_weak_domain": {"domain": "cortex_membrane_pressure", "probability": 0.9693640470504761},
+  "retrieval": [
+    {"source_family_id": "doi:10.1107/s1600576725011343", "cosine_score": 0.984366238117218},
+    {"source_family_id": "doi:10.1038/s41598-017-12348-w", "cosine_score": 0.9797416925430298},
+    {"source_family_id": "doi:10.1016/j.isci.2026.115209", "cosine_score": 0.9790602922439575},
+    {"source_family_id": "doi:10.1371/journal.pcbi.1005354", "cosine_score": 0.9739868640899658},
+    {"source_family_id": "doi:10.1038/s41467-025-63253-0", "cosine_score": 0.9727528095245361}
+  ],
+  "refusal_boundary": "OA literature routing only; no physical-parameter estimate, physics validation, evidence promotion, or authority claim."
+}

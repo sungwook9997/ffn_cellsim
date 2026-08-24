@@ -1,0 +1,380 @@
+{
+  "authority": "external_non_authoritative_combined_oa_router",
+  "combined_content_plus_metadata": {
+    "accuracy": 0.6990407673860911,
+    "best_validation_macro_f1": 0.6536548259133164,
+    "epochs_completed": 13,
+    "history": [
+      {
+        "epoch": 1,
+        "train_cross_entropy": 1.9878093488514423,
+        "validation_macro_f1": 0.32894273705797134
+      },
+      {
+        "epoch": 2,
+        "train_cross_entropy": 0.907172653824091,
+        "validation_macro_f1": 0.589518646833125
+      },
+      {
+        "epoch": 3,
+        "train_cross_entropy": 0.33074106369167566,
+        "validation_macro_f1": 0.64263237860605
+      },
+      {
+        "epoch": 4,
+        "train_cross_entropy": 0.14522617729380727,
+        "validation_macro_f1": 0.6336173242301454
+      },
+      {
+        "epoch": 5,
+        "train_cross_entropy": 0.09189521870575845,
+        "validation_macro_f1": 0.6403055660620994
+      },
+      {
+        "epoch": 6,
+        "train_cross_entropy": 0.07656381034757942,
+        "validation_macro_f1": 0.6536548259133164
+      },
+      {
+        "epoch": 7,
+        "train_cross_entropy": 0.0695087721105665,
+        "validation_macro_f1": 0.6515502126364197
+      },
+      {
+        "epoch": 8,
+        "train_cross_entropy": 0.0691187031334266,
+        "validation_macro_f1": 0.6370404812999982
+      },
+      {
+        "epoch": 9,
+        "train_cross_entropy": 0.06393030320759863,
+        "validation_macro_f1": 0.645199944879974
+      },
+      {
+        "epoch": 10,
+        "train_cross_entropy": 0.059356445097364485,
+        "validation_macro_f1": 0.6409319530264438
+      },
+      {
+        "epoch": 11,
+        "train_cross_entropy": 0.05384407890960574,
+        "validation_macro_f1": 0.6418955484122273
+      },
+      {
+        "epoch": 12,
+        "train_cross_entropy": 0.053940097452141345,
+        "validation_macro_f1": 0.6358361664635394
+      },
+      {
+        "epoch": 13,
+        "train_cross_entropy": 0.055432507186196744,
+        "validation_macro_f1": 0.6421987752810496
+      }
+    ],
+    "macro_f1": 0.6518366120863505,
+    "per_domain": {
+      "adhesion_ecm_mechanics": {
+        "f1": 0.6666666666666666,
+        "test_support": 86
+      },
+      "cell_state_mechanics": {
+        "f1": 0.8078817733990148,
+        "test_support": 189
+      },
+      "cortical_membrane_pressure": {
+        "f1": 0.5753424657534246,
+        "test_support": 43
+      },
+      "cytoskeleton_motor_rheology": {
+        "f1": 0.6229508196721312,
+        "test_support": 64
+      },
+      "division_morphogenesis_tissue": {
+        "f1": 0.68,
+        "test_support": 74
+      },
+      "flow_shear": {
+        "f1": 0.75,
+        "test_support": 53
+      },
+      "measurement_inference": {
+        "f1": 0.7661290322580645,
+        "test_support": 114
+      },
+      "mechanotransduction": {
+        "f1": 0.46808510638297873,
+        "test_support": 51
+      },
+      "migration_invasion": {
+        "f1": 0.5357142857142857,
+        "test_support": 63
+      },
+      "nuclear_mechanics": {
+        "f1": 0.6956521739130435,
+        "test_support": 20
+      },
+      "organelle_general_mechanics": {
+        "f1": 0.36,
+        "test_support": 30
+      },
+      "osmotic_volume_poroelasticity": {
+        "f1": 0.8936170212765957,
+        "test_support": 47
+      }
+    },
+    "retrieval": {
+      "hit_rate_at_k": 0.7637889688249401,
+      "k": 5,
+      "precision_at_k": 0.6904076738609114,
+      "queries": 834
+    },
+    "runtime_seconds": 9.365959167000256
+  },
+  "delta": {
+    "accuracy": 0.08992805755395683,
+    "macro_f1": 0.08415801421612779,
+    "retrieval_hit_rate_at_5": 0.04196642685851326,
+    "retrieval_precision_at_5": 0.12038369304556373
+  },
+  "input": {
+    "derived": {
+      "first": {
+        "chunk_files": 2701,
+        "empty_files": 1,
+        "no_target_text": 5,
+        "usable": 2695,
+        "with_abstract": 2689,
+        "with_conclusion": 1306,
+        "with_methods": 2231,
+        "with_results": 2056
+      },
+      "second": {
+        "chunk_files": 2974,
+        "usable": 2974,
+        "with_abstract": 2972,
+        "with_conclusion": 1206,
+        "with_methods": 2880,
+        "with_results": 2861
+      }
+    },
+    "first_pass_manifest_aggregate_sha256": "d7fcb6ebbc2156aa85d49e087bbbf1f6a54ddc370c8b32c5f5535403ae17c9d2",
+    "metadata": {
+      "cross_pass_metadata_overlap": 5,
+      "first_metadata": 7213,
+      "second_metadata": 3000
+    },
+    "quality_index_families": {
+      "first": 2701,
+      "second": 2974
+    },
+    "second_pass_manifest_set_sha256": "9627db89509f0a2f363ec93e65a2da4b68d3ab1b0415195788145b54a30bcf0f",
+    "usable_unique_families": 5669
+  },
+  "label_counts_by_split": {
+    "test": {
+      "adhesion_ecm_mechanics": 86,
+      "cell_state_mechanics": 189,
+      "cortical_membrane_pressure": 43,
+      "cytoskeleton_motor_rheology": 64,
+      "division_morphogenesis_tissue": 74,
+      "flow_shear": 53,
+      "measurement_inference": 114,
+      "mechanotransduction": 51,
+      "migration_invasion": 63,
+      "nuclear_mechanics": 20,
+      "organelle_general_mechanics": 30,
+      "osmotic_volume_poroelasticity": 47
+    },
+    "train": {
+      "adhesion_ecm_mechanics": 403,
+      "cell_state_mechanics": 927,
+      "cortical_membrane_pressure": 217,
+      "cytoskeleton_motor_rheology": 269,
+      "division_morphogenesis_tissue": 305,
+      "flow_shear": 213,
+      "measurement_inference": 525,
+      "mechanotransduction": 271,
+      "migration_invasion": 286,
+      "nuclear_mechanics": 191,
+      "organelle_general_mechanics": 155,
+      "osmotic_volume_poroelasticity": 218
+    },
+    "validation": {
+      "adhesion_ecm_mechanics": 90,
+      "cell_state_mechanics": 188,
+      "cortical_membrane_pressure": 55,
+      "cytoskeleton_motor_rheology": 46,
+      "division_morphogenesis_tissue": 76,
+      "flow_shear": 44,
+      "measurement_inference": 110,
+      "mechanotransduction": 70,
+      "migration_invasion": 51,
+      "nuclear_mechanics": 44,
+      "organelle_general_mechanics": 37,
+      "osmotic_volume_poroelasticity": 44
+    }
+  },
+  "leakage": {
+    "combined_artifact_sha256": "16442a2b92b17fc0560fe7ed774f72d1a79ecde13cb3f50f85d759ad0152868c",
+    "connected_components": 27,
+    "group_split_violations": 0,
+    "grouped_source_families": 140,
+    "largest_component": 71,
+    "multi_group_components": 9,
+    "raw_accession_groups": 120,
+    "usable_grouped_families": 140,
+    "usable_mixed_label_components": 14
+  },
+  "limitations": [
+    "Coarse classes map incompatible weak discovery routes; they are routing labels, not biological truth.",
+    "Dataset-accession co-membership is a conservative leakage constraint, not proof of dataset identity.",
+    "Quality records are proposed recoverability routes and provide no training authority or Tier A promotion.",
+    "Metrics are not directly comparable to v2's 29-label task."
+  ],
+  "pipeline_runtime_seconds": 21.059563167000306,
+  "schema_version": "1.0.0",
+  "splits": {
+    "test": 834,
+    "train": 3980,
+    "validation": 855
+  },
+  "taxonomy": {
+    "classes": [
+      "adhesion_ecm_mechanics",
+      "cell_state_mechanics",
+      "cortical_membrane_pressure",
+      "cytoskeleton_motor_rheology",
+      "division_morphogenesis_tissue",
+      "flow_shear",
+      "measurement_inference",
+      "mechanotransduction",
+      "migration_invasion",
+      "nuclear_mechanics",
+      "organelle_general_mechanics",
+      "osmotic_volume_poroelasticity"
+    ],
+    "sha256": "2b0d69827c88eee5dcd8f4cc8956a05eb33dd93ed26362e7ddf4ccc98a2ae403"
+  },
+  "title_only": {
+    "accuracy": 0.6091127098321343,
+    "best_validation_macro_f1": 0.5307695689771172,
+    "epochs_completed": 10,
+    "history": [
+      {
+        "epoch": 1,
+        "train_cross_entropy": 2.0681654550135136,
+        "validation_macro_f1": 0.33320025312073187
+      },
+      {
+        "epoch": 2,
+        "train_cross_entropy": 1.1715982872992754,
+        "validation_macro_f1": 0.5302963830338076
+      },
+      {
+        "epoch": 3,
+        "train_cross_entropy": 0.6040355674922466,
+        "validation_macro_f1": 0.5307695689771172
+      },
+      {
+        "epoch": 4,
+        "train_cross_entropy": 0.3252903139218688,
+        "validation_macro_f1": 0.5257762994196254
+      },
+      {
+        "epoch": 5,
+        "train_cross_entropy": 0.20067892130464315,
+        "validation_macro_f1": 0.5100996510971488
+      },
+      {
+        "epoch": 6,
+        "train_cross_entropy": 0.14736120169982314,
+        "validation_macro_f1": 0.5110329907434655
+      },
+      {
+        "epoch": 7,
+        "train_cross_entropy": 0.11795479594729841,
+        "validation_macro_f1": 0.5114906202067409
+      },
+      {
+        "epoch": 8,
+        "train_cross_entropy": 0.09701693966053426,
+        "validation_macro_f1": 0.5073946021454165
+      },
+      {
+        "epoch": 9,
+        "train_cross_entropy": 0.08956795069389045,
+        "validation_macro_f1": 0.5118788346916442
+      },
+      {
+        "epoch": 10,
+        "train_cross_entropy": 0.08634009840898216,
+        "validation_macro_f1": 0.4997153684289964
+      }
+    ],
+    "macro_f1": 0.5676785978702227,
+    "per_domain": {
+      "adhesion_ecm_mechanics": {
+        "f1": 0.6395348837209303,
+        "test_support": 86
+      },
+      "cell_state_mechanics": {
+        "f1": 0.7213930348258707,
+        "test_support": 189
+      },
+      "cortical_membrane_pressure": {
+        "f1": 0.5647058823529412,
+        "test_support": 43
+      },
+      "cytoskeleton_motor_rheology": {
+        "f1": 0.6557377049180327,
+        "test_support": 64
+      },
+      "division_morphogenesis_tissue": {
+        "f1": 0.5333333333333333,
+        "test_support": 74
+      },
+      "flow_shear": {
+        "f1": 0.6476190476190476,
+        "test_support": 53
+      },
+      "measurement_inference": {
+        "f1": 0.5849802371541502,
+        "test_support": 114
+      },
+      "mechanotransduction": {
+        "f1": 0.5,
+        "test_support": 51
+      },
+      "migration_invasion": {
+        "f1": 0.47368421052631576,
+        "test_support": 63
+      },
+      "nuclear_mechanics": {
+        "f1": 0.5555555555555556,
+        "test_support": 20
+      },
+      "organelle_general_mechanics": {
+        "f1": 0.3076923076923077,
+        "test_support": 30
+      },
+      "osmotic_volume_poroelasticity": {
+        "f1": 0.627906976744186,
+        "test_support": 47
+      }
+    },
+    "retrieval": {
+      "hit_rate_at_k": 0.7218225419664268,
+      "k": 5,
+      "precision_at_k": 0.5700239808153477,
+      "queries": 834
+    },
+    "runtime_seconds": 6.956286166008795
+  },
+  "v2_coverage_comparison_only": {
+    "metric_comparison_permitted": false,
+    "v2_labels": 29,
+    "v2_usable_families": 2695,
+    "v3_coarse_labels": 12,
+    "v3_usable_families": 5669
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "authority_status": "proposed",
+  "limitation": "gold_candidate is a sampling cohort, not label truth",
+  "performance_metrics_computed": false,
+  "prediction_representation_only": {
+    "metadata": {
+      "mean_max_probability": 0.36963351271649264,
+      "predicted_route_distribution": {
+        "adhesion_ecm_mechanics": 19,
+        "cell_state_mechanics": 72,
+        "cortical_membrane_pressure": 17,
+        "cytoskeleton_motor_rheology": 7,
+        "division_morphogenesis_tissue": 23,
+        "flow_shear": 37,
+        "measurement_inference": 23,
+        "mechanotransduction": 14,
+        "migration_invasion": 25,
+        "nuclear_mechanics": 31,
+        "organelle_general_mechanics": 22,
+        "osmotic_volume_poroelasticity": 10
+      }
+    },
+    "metadata_numeric": {
+      "mean_max_probability": 0.41060034399013984,
+      "predicted_route_distribution": {
+        "adhesion_ecm_mechanics": 20,
+        "cell_state_mechanics": 63,
+        "cortical_membrane_pressure": 16,
+        "cytoskeleton_motor_rheology": 18,
+        "division_morphogenesis_tissue": 27,
+        "flow_shear": 29,
+        "measurement_inference": 18,
+        "mechanotransduction": 27,
+        "migration_invasion": 26,
+        "nuclear_mechanics": 25,
+        "organelle_general_mechanics": 21,
+        "osmotic_volume_poroelasticity": 10
+      }
+    },
+    "metadata_numeric_visual": {
+      "mean_max_probability": 0.45348746934913703,
+      "predicted_route_distribution": {
+        "adhesion_ecm_mechanics": 20,
+        "cell_state_mechanics": 61,
+        "cortical_membrane_pressure": 19,
+        "cytoskeleton_motor_rheology": 14,
+        "division_morphogenesis_tissue": 32,
+        "flow_shear": 23,
+        "measurement_inference": 19,
+        "mechanotransduction": 33,
+        "migration_invasion": 23,
+        "nuclear_mechanics": 27,
+        "organelle_general_mechanics": 22,
+        "osmotic_volume_poroelasticity": 7
+      }
+    },
+    "metadata_numeric_visual_dataset": {
+      "mean_max_probability": 0.4654299208233009,
+      "predicted_route_distribution": {
+        "adhesion_ecm_mechanics": 19,
+        "cell_state_mechanics": 60,
+        "cortical_membrane_pressure": 19,
+        "cytoskeleton_motor_rheology": 17,
+        "division_morphogenesis_tissue": 25,
+        "flow_shear": 28,
+        "measurement_inference": 19,
+        "mechanotransduction": 25,
+        "migration_invasion": 25,
+        "nuclear_mechanics": 29,
+        "organelle_general_mechanics": 24,
+        "osmotic_volume_poroelasticity": 10
+      }
+    }
+  },
+  "schema": "aleph.external_training.gold_candidate_representation_audit.v1",
+  "sources": 300,
+  "used_for_test_metrics": false,
+  "used_for_training": false,
+  "used_for_validation_model_selection": false,
+  "view_coverage": {
+    "dataset_manifest": 98,
+    "numeric": 298,
+    "visual_asset_receipt": 116,
+    "visual_descriptor": 116,
+    "visual_metadata": 300
+  }
+}

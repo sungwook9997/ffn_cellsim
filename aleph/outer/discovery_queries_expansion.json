@@ -1,0 +1,21 @@
+{
+  "snapshot_date": "2026-08-05",
+  "minimum_year": 2010,
+  "provider": "Europe PMC REST API",
+  "provider_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+  "target_total": 1800,
+  "domains": [
+    {"domain": "cell_division_cytokinesis", "target": 150, "query": "TITLE_ABS:((mitosis OR cytokinesis OR \"cell division\") AND (mechanics OR force OR cortex OR shape))"},
+    {"domain": "mechanotransduction_signalling", "target": 150, "query": "TITLE_ABS:((mechanotransduction OR YAP OR TAZ OR PIEZO1 OR integrin) AND (force OR stiffness OR tension OR mechanics))"},
+    {"domain": "cytoskeleton_networks", "target": 150, "query": "TITLE_ABS:((actomyosin OR microtubule OR \"intermediate filament\" OR cytoskeleton) AND (mechanics OR force OR tension OR rheology))"},
+    {"domain": "organelle_mechanics", "target": 150, "query": "TITLE_ABS:((mitochondria OR lysosome OR endoplasmic-reticulum OR Golgi OR organelle) AND (mechanics OR force OR tension OR deformation OR mechanobiology))"},
+    {"domain": "immune_cell_mechanics", "target": 150, "query": "TITLE_ABS:((macrophage OR neutrophil OR lymphocyte OR \"immune cell\") AND (mechanics OR traction OR migration OR deformability OR mechanotransduction))"},
+    {"domain": "developmental_morphogenesis", "target": 150, "query": "TITLE_ABS:((morphogenesis OR gastrulation OR embryo OR development) AND (\"tissue mechanics\" OR force OR tension OR mechanobiology))"},
+    {"domain": "tissue_organoid_mechanics", "target": 150, "query": "TITLE_ABS:((organoid OR spheroid OR epithelium OR tissue) AND (mechanics OR tension OR traction OR rheology OR mechanobiology))"},
+    {"domain": "fluid_shear_endothelium", "target": 150, "query": "TITLE_ABS:((endothelial OR epithelium OR cell) AND (\"fluid shear\" OR \"shear stress\" OR flow) AND (mechanotransduction OR mechanics OR cytoskeleton))"},
+    {"domain": "cancer_invasion_mechanics", "target": 150, "query": "TITLE_ABS:((cancer OR tumor OR metastasis) AND (\"cell mechanics\" OR mechanobiology OR traction OR deformability OR invasion))"},
+    {"domain": "mechanical_measurement_modalities", "target": 150, "query": "TITLE_ABS:((AFM OR \"atomic force microscopy\" OR micropipette OR \"optical tweezers\" OR Brillouin OR rheology) AND (cell OR tissue) AND (mechanics OR stiffness OR force))"},
+    {"domain": "single_cell_multimodal_state", "target": 150, "query": "TITLE_ABS:((\"single cell\" OR multimodal OR \"spatial transcriptomics\") AND (mechanobiology OR morphology OR mechanics OR migration) AND (profiling OR inference OR imaging))"},
+    {"domain": "biomaterials_mechanoresponse", "target": 150, "query": "TITLE_ABS:((hydrogel OR biomaterial OR scaffold OR substrate) AND (stiffness OR viscoelasticity OR mechanics) AND (cell response OR mechanotransduction OR migration))"}
+  ]
+}

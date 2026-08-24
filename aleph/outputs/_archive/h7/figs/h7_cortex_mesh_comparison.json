@@ -1,0 +1,56 @@
+{
+  "R_cell_m": 7.5e-06,
+  "n_filaments": 1000,
+  "ell0_m": 5e-07,
+  "bridge_reach_m": 8.407486824596893e-07,
+  "uniform": {
+    "n_filaments": 1000,
+    "n_beads": 7000,
+    "L_mean_um": 2.999999999999999,
+    "L_std_um": 8.470329472543003e-16,
+    "L_min_um": 3.0,
+    "L_max_um": 3.0,
+    "span_mean_um": 3.0,
+    "span_max_um": 3.0000000000000013,
+    "n_branches": 0
+  },
+  "bimodal": {
+    "n_filaments": 1000,
+    "n_beads": 3279,
+    "L_mean_um": 1.1395,
+    "L_std_um": 2.026274845621886,
+    "L_min_um": 0.5,
+    "L_max_um": 14.999999999999998,
+    "span_mean_um": 0.9436740381443322,
+    "span_max_um": 10.903688185113275,
+    "n_branches": 622
+  },
+  "raw_geometry_connectivity_confounded_by_bead_density": {
+    "reach_60nm": {
+      "uniform": {
+        "z": 0.264,
+        "giant": 0.006,
+        "n_components": 868
+      },
+      "bimodal": {
+        "z": 0.096,
+        "giant": 0.004,
+        "n_components": 952
+      }
+    },
+    "reach_sqrtAn": {
+      "uniform": {
+        "z": 24.206,
+        "giant": 1.0,
+        "n_components": 1
+      },
+      "bimodal": {
+        "z": 9.092,
+        "giant": 1.0,
+        "n_components": 1
+      }
+    }
+  },
+  "note": "The figure shows the CONSTRUCTION difference (length distribution, per-filament span, Arp2/3 branch count) \u2014 purely geometric, unconfounded. Raw-geometry all-pairs connectivity is reported only in raw_geometry_connectivity_* and is CONFOUNDED by bead density (uniform has ~2x the beads): at 60nm both fragment, at sqrt(A/n) both saturate. The production percolation (z 1.3->3.3, giant 7%->99%) is a SEEDING-RECIPE property (bridge-different-filament + bundling + seeded-adhered crosslinks at sqrt(A/n)), shown in manifold_search_benchmark.png / connected_mesh.py \u2014 NOT raw geometry.",
+  "figure": "/Users/sw1/ffn_cellsim/ffn_sim/outputs/h7/figs/h7_cortex_mesh_comparison.png"
+}

@@ -1,0 +1,78 @@
+{
+  "schema": "aleph.outer_library.lightmycells_model_training_protocol.v1",
+  "frozen_before_model_training_or_confirmation_access": true,
+  "base_protocol_sha256": "7989bf6004ecee0f9f1a65ae14ea2538099e12d84a34056173be46a90aeffa57",
+  "source_integrity_protocol_sha256": "d487070139dc96daf8f4b4b188692fc8ffc227cbd9a7af718564b379bf059193",
+  "training_tensor": {
+    "path": "results/lightmycells_spatial_tensor.npz",
+    "sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0",
+    "report_path": "results/lightmycells_spatial_tensor_report.json",
+    "report_sha256": "49111403fa21fbd287e454582dd35be617e6237129c7883c711c0c1752da459c",
+    "fit_pairs": 3744,
+    "selection_pairs": 61,
+    "calibration_pairs": 569,
+    "confirmation_pairs": 0
+  },
+  "conditioning": {
+    "input_channels": ["normalized_transmitted_light"],
+    "target_channel_one_hot_order": ["Nucleus", "Mitochondria", "Tubulin", "Actin"],
+    "input_modality_one_hot_order": ["BF", "PC", "DIC"],
+    "study_identifier_as_feature": false,
+    "alignment_method_as_feature": false
+  },
+  "architecture_selection": {
+    "family": "conditional_small_UNet",
+    "candidate_base_channels": [8, 16],
+    "convolution_kernel": 3,
+    "downsampling_levels": 1,
+    "output_activation": "sigmoid",
+    "embedding": "global_average_pooled_bottleneck",
+    "selection_metric": "Nucleus_and_Mitochondria_macro_selection_MAE",
+    "tie_break_order": ["smaller_base_channels", "earlier_epoch"],
+    "maximum_epochs": 12,
+    "checkpoint_policy": "retain exact best selection epoch; do not retrain on selection or calibration"
+  },
+  "optimization": {
+    "seed": 20260807,
+    "device": "CPU",
+    "batch_size": 64,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "loss": "pixel_MSE_plus_0.05_first_difference_L1",
+    "fit_sampling": "inverse_sqrt_target_frequency",
+    "data_augmentation": "none",
+    "selection_or_calibration_rows_used_for_gradient_updates": false
+  },
+  "baseline": {
+    "kind": "fit_only_per_target_mean_map",
+    "selection_or_calibration_target_pixels_used": false
+  },
+  "uncertainty_calibration": {
+    "residual": "absolute normalized pixel residual",
+    "within_study_statistic": "90th percentile across pixels and acquisition sets",
+    "across_study_statistic": "maximum of calibration-study 90th percentiles",
+    "minimum_calibration_studies_per_target": 2,
+    "unsupported_target_action": "no interval authority",
+    "interval": "clip prediction plus_or_minus target threshold to [0,1]"
+  },
+  "ood_contract": {
+    "embedding_reference": "fit rows only",
+    "score": "diagonal_Mahalanobis_squared_with_variance_floor_1e-6",
+    "final_endpoint": "AUROC separating single-use confirmation embeddings from fit-reference embeddings",
+    "confirmation_scores_used_before_checkpoint_freeze": false
+  },
+  "reporting": {
+    "per_study_and_per_target_selection_metrics": true,
+    "technical_pixels_or_fields_are_not_biological_replicates": true,
+    "absolute_fluorescence_intensity_prediction_permitted": false,
+    "confirmation_remains_sealed_until_checkpoint_and_calibration_commit": true
+  },
+  "authority_contract": {
+    "current_result_role": "same-source cross-study model selection and uncertainty calibration only",
+    "external_confirmation_authority_before_confirmation": false,
+    "general_cell_state_production_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "aleph_authority": "none",
+  "biological_replicates_reported": false,
+  "compact_image_shape": [
+    58,
+    64,
+    64
+  ],
+  "condition_counts": {
+    "DMSO": 29,
+    "FCCP": 29
+  },
+  "image_count": 58,
+  "independent_lab_holdout": false,
+  "manifest_sha256": "f2fc259cbbf121182de472bbd5347d09f10d207f2b301e1d9319188a36615720",
+  "may_select_aleph_parameter": false,
+  "morphology_feature_count": 13,
+  "schema": "aleph.outer_library.bbbc053_mito_stress.v1",
+  "source_image_shape": [
+    2048,
+    2048
+  ],
+  "status": "same_provider_training_only",
+  "tensor_sha256": "c39d645061ae7d5c1f7fbf55e0296b6b9f78cd2d6ffdc2994a198c31c35b7d35"
+}

@@ -1,0 +1,44 @@
+{
+  "aleph_authority": "none",
+  "counts": {
+    "author_well_rows": 159,
+    "biological_replicate_groups": 7,
+    "canonical_observations": 1263,
+    "collections": 2
+  },
+  "feature_names": [
+    "Well_Cell_Count",
+    "Intensity_IntegratedIntensity_EdU",
+    "Intensity_MeanIntensity_EdU",
+    "Edu_Positive_Proportion",
+    "G2m_Proportion",
+    "Intensity_IntegratedIntensity_KRT5",
+    "Intensity_MeanIntensity_KRT5",
+    "Normalized_Second_Neighbor_Dist",
+    "Mean_Cells_per_Cluster"
+  ],
+  "manifest_sha256": "f4c07238cde0935bd14448a66ca97fe790d1186b39dc37e72d2d4d7199b54b6a",
+  "may_select_aleph_parameter": false,
+  "metadata_conflict": {
+    "paper_methods_TGFB_companion_EGF_ng_per_mL": 10.0,
+    "resolved": false,
+    "supplementary_metadata_TGFB_companion_EGF_ng_per_mL": 20.0
+  },
+  "replicate_contract": {
+    "paper_reports_eight_biological_replicates_but_released_IF_table_contains_seven_groups": true,
+    "rows_may_be_split_independently": false,
+    "split_unit": "collection_plus_replicate_biological_group",
+    "technical_unit": "source_row_because_WellIndex_repeats_across_unreleased_plates"
+  },
+  "schema": "aleph.outer_library.lincs_mcf10a_if_phenotypes.v1",
+  "source": {
+    "dataset_id": "lincs-mcf10a-ligand-if-phenotypes",
+    "lab_group": "OHSU_MEP_LINCS_MCF10A",
+    "paper_doi": "10.1038/s42003-022-03975-9"
+  },
+  "tensor_sha256": "a87ed0729585fb879b01ba4a1e0f13bb7ab43c5d5d1ac389a64855c3eaebb056",
+  "tensor_shape": [
+    159,
+    9
+  ]
+}

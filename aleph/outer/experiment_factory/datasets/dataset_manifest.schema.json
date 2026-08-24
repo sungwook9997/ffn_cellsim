@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-aleph.invalid/schemas/external-training/dataset-manifest-v1.json",
+  "title": "Project Aleph proposed public DatasetManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority_status", "manifest_id", "leakage_component_id", "provider",
+    "accession", "identifier_type", "canonical_url", "access_state", "title",
+    "license", "file_count", "total_size_bytes", "modality_hints", "source_count",
+    "source_family_ids", "gold_candidate_source_count", "metadata_receipt", "pilot_files",
+    "limitations"
+  ],
+  "properties": {
+    "schema": {"const": "aleph.external_training.dataset_manifest.v1"},
+    "authority_status": {"const": "proposed"},
+    "manifest_id": {"type": "string", "pattern": "^dataset:[0-9a-f]{16}$"},
+    "leakage_component_id": {"type": "string", "pattern": "^ds:[0-9a-f]{16}$"},
+    "provider": {"type": "string", "minLength": 2},
+    "accession": {"type": "string", "minLength": 3},
+    "identifier_type": {"type": "string", "minLength": 2},
+    "canonical_url": {"type": ["string", "null"]},
+    "access_state": {"enum": ["public_metadata_resolved", "public_metadata_unresolved", "restricted", "embargoed", "unavailable", "unknown"]},
+    "title": {"type": ["string", "null"]},
+    "license": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "identifier", "source"],
+      "properties": {
+        "state": {"enum": ["explicit_open", "explicit_restricted", "not_exposed", "unknown"]},
+        "identifier": {"type": ["string", "null"]},
+        "source": {"type": ["string", "null"]}
+      }
+    },
+    "file_count": {"type": ["integer", "null"], "minimum": 0},
+    "total_size_bytes": {"type": ["integer", "null"], "minimum": 0},
+    "modality_hints": {"type": "array", "items": {"type": "string"}},
+    "source_count": {"type": "integer", "minimum": 1},
+    "source_family_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "gold_candidate_source_count": {"type": "integer", "minimum": 0},
+    "metadata_receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "official_url", "http_status", "retrieved_at", "response_sha256", "error"],
+      "properties": {
+        "status": {"enum": ["resolved", "not_attempted", "not_found", "failed", "restricted", "embargoed"]},
+        "official_url": {"type": ["string", "null"]},
+        "http_status": {"type": ["integer", "null"]},
+        "retrieved_at": {"type": ["string", "null"]},
+        "response_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "error": {"type": ["string", "null"]}
+      }
+    },
+    "pilot_files": {"type": "array"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

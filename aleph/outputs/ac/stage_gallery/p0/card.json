@@ -1,0 +1,67 @@
+{
+  "stage": "P0",
+  "stage_name": "incumbent build_cell (N=70,686)",
+  "evidence": "CONNECTED",
+  "npz": "aleph/outputs/ac/cell_assembled/native_full_v2.npz",
+  "html": "/Users/sw1/ffn_cellsim_c1_relaxation/aleph/outputs/ac/stage_gallery/p0/ac_stage_p0.html",
+  "components": [
+    {
+      "key": "cortex",
+      "nodes": 494802,
+      "actors": 70686
+    },
+    {
+      "key": "nmii",
+      "nodes": 11492,
+      "actors": 442
+    },
+    {
+      "key": "nucleus",
+      "nodes": 642,
+      "actors": 1
+    },
+    {
+      "key": "membrane",
+      "nodes": 642,
+      "actors": 1
+    }
+  ],
+  "connectors": [
+    {
+      "family": "LINC",
+      "a": "nucleus",
+      "b": "cortex",
+      "n": 642
+    }
+  ],
+  "scenes_total": 11,
+  "scenes_checked": [
+    "composed cell \u00b7 cortex |F| (log pN) \u00b7 CUT slider",
+    "\u25e6 cortex only \u00b7 cortex F-actin",
+    "\u25b8 compose 1/4 \u00b7 +cortex",
+    "\u25b8 compose 2/4 \u00b7 +nmii",
+    "\u25b8 compose 3/4 \u00b7 +nucleus",
+    "\u25b8 compose 4/4 \u00b7 +membrane",
+    "steric interpenetration hotspots (missing 7 nm EV)"
+  ],
+  "scenes_failed": [],
+  "gifs": [
+    "gifs/ac_p0_shape.gif",
+    "gifs/ac_p0_shape1.gif",
+    "gifs/ac_p0_steric_interpenetration_hotspots_missing_7_nm_ev.gif"
+  ],
+  "counts": {
+    "n_components": 4,
+    "n_connectors": 1,
+    "n_scenes": 11,
+    "comp:cortex_nodes": 494802,
+    "comp:nmii_nodes": 11492,
+    "comp:nucleus_nodes": 642,
+    "comp:membrane_nodes": 642,
+    "comp:cortex_actors": 70686,
+    "comp:nmii_actors": 442,
+    "comp:nucleus_actors": 1,
+    "comp:membrane_actors": 1,
+    "conn:LINC_nucleus-cortex": 642
+  }
+}

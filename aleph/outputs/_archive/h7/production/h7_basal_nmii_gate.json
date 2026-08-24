@@ -1,0 +1,31 @@
+{
+  "verdict": "PASS",
+  "controls": {
+    "n_motors": 40,
+    "n_beads_per_motor": 34,
+    "assembled": true,
+    "force_free": {
+      "ok": true,
+      "backbone_strain": 1.3887180798175975e-14,
+      "head_offset_rel_dev": 0.007133588755792707
+    },
+    "heads_near_actin": {
+      "ok": true,
+      "eligible_fraction": 0.96375,
+      "median_perp_m": 1.0346114664849528e-07,
+      "max_perp_m": 4.0311288741492767e-07,
+      "capture_perp_m": 2.1e-07,
+      "max_centre_to_actin_m": 0.0
+    },
+    "sf_denylisted": true,
+    "distinct_from_cortex_myosin": true
+  },
+  "gate": "B4 basal sf_myosin_ NMII placement",
+  "params": {
+    "n_motors": 40,
+    "prefix": "sf_myosin_",
+    "n_backbone": 14,
+    "n_heads_per_side": 10
+  },
+  "note": "sf_myosin_ NMII placed ON the basal apparatus (prefix split \u2460a + actin-pool \u2460b). Force-free + \u226580% heads binding-eligible + sf_-denylisted (cortical active-\u03b3 untouched). Dynamic contraction \u2192 Kumar single-SF tension is the equilibrated B5 gate (needs prelude + PI N_filaments/k_actin + gbook GPU)."
+}

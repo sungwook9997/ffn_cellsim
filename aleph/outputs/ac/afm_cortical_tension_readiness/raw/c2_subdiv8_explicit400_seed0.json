@@ -1,0 +1,103 @@
+{
+  "status": "ACCEPTED",
+  "physical_step_index": 0,
+  "device": "cuda:0",
+  "full_native": {
+    "n_filaments": 70686,
+    "n_total_nodes": 1150806,
+    "membrane_subdivisions": 8,
+    "nucleus_subdivisions": 3
+  },
+  "solver": {
+    "name": "explicit",
+    "dt_phys_s": 0.01,
+    "iterations_per_chunk": 40,
+    "max_inner_retries": 9,
+    "iteration_budget": 400,
+    "line_search_steps": 4,
+    "line_search_objective": "max_force",
+    "coarse_modes": 0,
+    "coarse_iterations": 8,
+    "reported_iterations": 280,
+    "attempts": 7,
+    "candidate_residual_pN": 0.4848576055229363,
+    "max_projected_force_pN": 0.20926850127767316,
+    "max_displacement_um": 7.405186206800851e-09,
+    "constraint_residual_um": 1.4432899320127035e-15,
+    "dt_mu_um_per_pN": 3.535943748517097e-08,
+    "displacement_tolerance_um": 7.449122950141183e-09,
+    "projected_force_tolerance_pN": 0.21066859316597425,
+    "accepted_trial_counts": null,
+    "convergence_history": {
+      "iteration": [
+        20,
+        40,
+        60,
+        80,
+        100,
+        120,
+        140,
+        160,
+        180,
+        200,
+        220,
+        240,
+        260,
+        280
+      ],
+      "max_displacement_um": [
+        1.001180038657488e-08,
+        9.748103714767021e-09,
+        9.489105426252405e-09,
+        9.236697108598188e-09,
+        8.992613926845458e-09,
+        8.757403612519375e-09,
+        8.531084018612595e-09,
+        8.31345022267873e-09,
+        8.104198499349844e-09,
+        7.902980384766721e-09,
+        7.74925835350828e-09,
+        7.632376710654519e-09,
+        7.51769983241624e-09,
+        7.405186206800851e-09
+      ],
+      "constraint_residual_um": [
+        1.4988010832439613e-15,
+        1.5543122344752192e-15,
+        1.4432899320127035e-15,
+        1.609823385706477e-15,
+        1.3877787807814457e-15,
+        1.3877787807814457e-15,
+        1.4988010832439613e-15,
+        1.4432899320127035e-15,
+        1.5543122344752192e-15,
+        1.609823385706477e-15,
+        1.5543122344752192e-15,
+        1.5543122344752192e-15,
+        1.3322676295501878e-15,
+        1.4432899320127035e-15
+      ],
+      "projected_force_pN": [
+        0.2827649376666614,
+        0.2753166416669283,
+        0.2679993655659391,
+        0.26087199446015935,
+        0.2539814399846943,
+        0.24734210001602158,
+        0.24095401544431777,
+        0.2348111892581078,
+        0.22890492914657004,
+        0.22322536991596376,
+        0.2189899257998991,
+        0.21568756859443525,
+        0.21244748392397855,
+        0.20926850127767316
+      ]
+    }
+  },
+  "acceptance": {
+    "accepted": true,
+    "candidate_geometry_captured_before_rollback": true,
+    "rejected_candidate_never_advanced_biological_time": false
+  }
+}

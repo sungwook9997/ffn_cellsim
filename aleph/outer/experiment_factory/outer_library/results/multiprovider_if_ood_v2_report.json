@@ -1,0 +1,502 @@
+{
+  "Aleph_parameter_authority": "none",
+  "all_v2_development_gates_passed": true,
+  "calibration_clean_unit_counts": {
+    "HPA": 160,
+    "OpenCell": 116
+  },
+  "candidate_selection": [
+    {
+      "L2_lambda": 0.01,
+      "optimizer": {
+        "gradient_max_abs": 1.9961614282349143e-07,
+        "iterations": 64,
+        "objective": 0.26125482629438884,
+        "success": true
+      },
+      "selection": {
+        "macro_provider_by_family_AUROC": 0.9665520310655253,
+        "minimum_provider_by_family_AUROC": 0.84366391184573,
+        "provider_by_family": {
+          "HPA:channel_swap": {
+            "AUROC": 0.9732421875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:cross_unit_target_mismatch": {
+            "AUROC": 0.9118359375,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_pixel_permutation": {
+            "AUROC": 0.9862109375,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_tile_permutation": {
+            "AUROC": 0.9726953125,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_nucleus": {
+            "AUROC": 1.0,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_target": {
+            "AUROC": 0.98578125,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "OpenCell:channel_swap": {
+            "AUROC": 0.894915059687787,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:cross_unit_target_mismatch": {
+            "AUROC": 0.84366391184573,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_pixel_permutation": {
+            "AUROC": 0.9997704315886135,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_tile_permutation": {
+            "AUROC": 0.9656795224977043,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_nucleus": {
+            "AUROC": 0.9980486685032139,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_target": {
+            "AUROC": 0.9998852157943067,
+            "clean_units": 132,
+            "corrupted_units": 132
+          }
+        }
+      }
+    },
+    {
+      "L2_lambda": 0.1,
+      "optimizer": {
+        "gradient_max_abs": 1.7010277779047622e-07,
+        "iterations": 30,
+        "objective": 0.38144345436840305,
+        "success": true
+      },
+      "selection": {
+        "macro_provider_by_family_AUROC": 0.9385161937967335,
+        "minimum_provider_by_family_AUROC": 0.720787419651056,
+        "provider_by_family": {
+          "HPA:channel_swap": {
+            "AUROC": 0.9040234375,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:cross_unit_target_mismatch": {
+            "AUROC": 0.8604296875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_pixel_permutation": {
+            "AUROC": 0.977421875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_tile_permutation": {
+            "AUROC": 0.9504296875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_nucleus": {
+            "AUROC": 0.99953125,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_target": {
+            "AUROC": 0.9785546875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "OpenCell:channel_swap": {
+            "AUROC": 0.8336776859504132,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:cross_unit_target_mismatch": {
+            "AUROC": 0.720787419651056,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_pixel_permutation": {
+            "AUROC": 0.9991391184573003,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_tile_permutation": {
+            "AUROC": 0.92705463728191,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_nucleus": {
+            "AUROC": 0.9892102846648301,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_target": {
+            "AUROC": 0.9989669421487604,
+            "clean_units": 132,
+            "corrupted_units": 132
+          }
+        }
+      }
+    },
+    {
+      "L2_lambda": 1.0,
+      "optimizer": {
+        "gradient_max_abs": 6.415899596323715e-08,
+        "iterations": 16,
+        "objective": 0.5317024665129383,
+        "success": true
+      },
+      "selection": {
+        "macro_provider_by_family_AUROC": 0.8982764997786304,
+        "minimum_provider_by_family_AUROC": 0.6328053259871441,
+        "provider_by_family": {
+          "HPA:channel_swap": {
+            "AUROC": 0.7732421875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:cross_unit_target_mismatch": {
+            "AUROC": 0.792734375,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_pixel_permutation": {
+            "AUROC": 0.9433203125,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_tile_permutation": {
+            "AUROC": 0.9128125,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_nucleus": {
+            "AUROC": 0.9859765625,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_target": {
+            "AUROC": 0.9379296875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "OpenCell:channel_swap": {
+            "AUROC": 0.7746212121212122,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:cross_unit_target_mismatch": {
+            "AUROC": 0.6328053259871441,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_pixel_permutation": {
+            "AUROC": 0.9811753902662994,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_tile_permutation": {
+            "AUROC": 0.8940541781450873,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_nucleus": {
+            "AUROC": 0.955119375573921,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_target": {
+            "AUROC": 0.9920798898071626,
+            "clean_units": 132,
+            "corrupted_units": 132
+          }
+        }
+      }
+    },
+    {
+      "L2_lambda": 10.0,
+      "optimizer": {
+        "gradient_max_abs": 2.3566640964980783e-08,
+        "iterations": 13,
+        "objective": 0.6559019799780105,
+        "success": true
+      },
+      "selection": {
+        "macro_provider_by_family_AUROC": 0.8792393061089794,
+        "minimum_provider_by_family_AUROC": 0.6136363636363636,
+        "provider_by_family": {
+          "HPA:channel_swap": {
+            "AUROC": 0.7163671875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:cross_unit_target_mismatch": {
+            "AUROC": 0.7632421875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_pixel_permutation": {
+            "AUROC": 0.9351953125,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:target_tile_permutation": {
+            "AUROC": 0.8973046875,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_nucleus": {
+            "AUROC": 0.9665625,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "HPA:zero_target": {
+            "AUROC": 0.9212890625,
+            "clean_units": 160,
+            "corrupted_units": 160
+          },
+          "OpenCell:channel_swap": {
+            "AUROC": 0.7505739210284664,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:cross_unit_target_mismatch": {
+            "AUROC": 0.6136363636363636,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:saturated_both": {
+            "AUROC": 1.0,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_pixel_permutation": {
+            "AUROC": 0.9641873278236914,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:target_tile_permutation": {
+            "AUROC": 0.8863636363636364,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_nucleus": {
+            "AUROC": 0.9154040404040404,
+            "clean_units": 132,
+            "corrupted_units": 132
+          },
+          "OpenCell:zero_target": {
+            "AUROC": 0.9792240587695134,
+            "clean_units": 132,
+            "corrupted_units": 132
+          }
+        }
+      }
+    }
+  ],
+  "clean_refusal_threshold": 0.6794918986409287,
+  "corruption_families": [
+    "zero_nucleus",
+    "zero_target",
+    "saturated_both",
+    "channel_swap",
+    "target_pixel_permutation",
+    "target_tile_permutation",
+    "cross_unit_target_mismatch"
+  ],
+  "cross_role_unit_overlap_count": 0,
+  "development_gates": {
+    "all_seven_corruption_families_present_each_provider": true,
+    "finite_features_probabilities_and_coefficients": true,
+    "macro_provider_by_corruption_family_AUROC": true,
+    "maximum_clean_false_refusal_rate_each_provider": true,
+    "minimum_provider_by_corruption_family_AUROC": true
+  },
+  "external_OOD_authority": false,
+  "external_provider_pixels_accessed": 0,
+  "external_provider_validation_complete": false,
+  "feature_count": 92,
+  "final_development_test_unit_counts": {
+    "HPA": 381,
+    "OpenCell": 157
+  },
+  "final_v2_development_test": {
+    "clean_false_refusal_rate": {
+      "HPA": 0.03412073490813648,
+      "OpenCell": 0.012738853503184714
+    },
+    "macro_provider_by_family_AUROC": 0.9706626719953799,
+    "minimum_provider_by_family_AUROC": 0.8675808349223092,
+    "provider_by_family": {
+      "HPA:channel_swap": {
+        "AUROC": 0.9777350665812443,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "HPA:cross_unit_target_mismatch": {
+        "AUROC": 0.9236916251610281,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "HPA:saturated_both": {
+        "AUROC": 1.0,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "HPA:target_pixel_permutation": {
+        "AUROC": 0.9894048676986242,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "HPA:target_tile_permutation": {
+        "AUROC": 0.9784239568479137,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "HPA:zero_nucleus": {
+        "AUROC": 0.9999724443893332,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "HPA:zero_target": {
+        "AUROC": 0.9915817609412997,
+        "clean_units": 381,
+        "corrupted_units": 381
+      },
+      "OpenCell:channel_swap": {
+        "AUROC": 0.8901781005314617,
+        "clean_units": 157,
+        "corrupted_units": 157
+      },
+      "OpenCell:cross_unit_target_mismatch": {
+        "AUROC": 0.8675808349223092,
+        "clean_units": 157,
+        "corrupted_units": 157
+      },
+      "OpenCell:saturated_both": {
+        "AUROC": 1.0,
+        "clean_units": 157,
+        "corrupted_units": 157
+      },
+      "OpenCell:target_pixel_permutation": {
+        "AUROC": 0.9999188608057122,
+        "clean_units": 157,
+        "corrupted_units": 157
+      },
+      "OpenCell:target_tile_permutation": {
+        "AUROC": 0.9738731794393282,
+        "clean_units": 157,
+        "corrupted_units": 157
+      },
+      "OpenCell:zero_nucleus": {
+        "AUROC": 0.9969167106170636,
+        "clean_units": 157,
+        "corrupted_units": 157
+      },
+      "OpenCell:zero_target": {
+        "AUROC": 1.0,
+        "clean_units": 157,
+        "corrupted_units": 157
+      }
+    }
+  },
+  "may_emit_numeric_sweep_range": false,
+  "may_remove_sweep_axis": false,
+  "observable_evidence_eligible": false,
+  "production_eligible": false,
+  "protocol_sha256": "f8fe78a4fa061ed1fc77d557104330ae382d3a63dc8e9a8b0cbdace9a227b9b5",
+  "provider_clean_score_95th_percentiles": {
+    "HPA": 0.6794918986409287,
+    "OpenCell": 0.6502719154831011
+  },
+  "quality_head_sha256": "0450ac55185539179bd398e568cc98ac3f461ab62bb66e226367d1ad516c18ec",
+  "replacement_external_provider_may_be_preregistered_and_opened_once": true,
+  "role_unit_counts": {
+    "OOD_calibration": {
+      "HPA": 160,
+      "OpenCell": 116
+    },
+    "OOD_fit": {
+      "HPA": 512,
+      "OpenCell": 512
+    },
+    "OOD_selection": {
+      "HPA": 160,
+      "OpenCell": 132
+    }
+  },
+  "schema": "aleph.outer_library.multiprovider_if_ood_v2_report.v1",
+  "selected_L2_lambda": 0.01,
+  "selected_optimizer": {
+    "gradient_max_abs": 1.9961614282349143e-07,
+    "iterations": 64,
+    "objective": 0.26125482629438884,
+    "success": true
+  },
+  "semantic_novelty_identifiable_from_image_alone": false,
+  "source_hashes": {
+    "hpa_tensor_sha256": "88cac80d6504904b7f47c8b84bbe3b6dc7ebf418998938f7bff988e936932ae9",
+    "localization_checkpoint_may_be_updated": false,
+    "localization_checkpoint_sha256": "c63c124813f800742f5bc55672e449cab61be787ff168041b8361fd65bbc8e1c",
+    "localization_model_report_sha256": "2367a63eb1f613597c76ab4c88b5c9bbf30667466217d0fa71bc9d0e1899808b",
+    "localization_thresholds_or_calibration_may_be_updated": false,
+    "new_external_provider_pixels_accessed_before_freeze": 0,
+    "opencell_tensor_sha256": "c2b82622984bfcf3c84dd7eea28f867c07a00c7759d7a62114d3eb3b470ed22c",
+    "v1_failure_diagnostic_sha256": "fcb63f9afaad1a1e61dff12e8555ed3e19421c06c5466fb6bc633371ca6ccc62"
+  },
+  "uncertainty_authority": false,
+  "v1_semantic_OOD_gate_remains_failed": true
+}

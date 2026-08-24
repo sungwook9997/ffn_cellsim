@@ -1,0 +1,28 @@
+{
+  "authority_status": "proposed",
+  "chunk_count": 139557,
+  "index_sha256": "ada80630836a929eee13027d17e510fc9eabb0a9618743ff665fb279ee7c029e",
+  "local_source_families": 2695,
+  "model_content_weights_sha256": "f13932828a0b4d69099247f4e6db58b20388699864b07fc7ed359e963ca4c262",
+  "model_source_families": 2695,
+  "ragtagcag": {
+    "ledger_head_hash": "a93c1912ed4973a1fba090eb0a37da9564e93bfd7210ea0e3fb9912e9da978ce",
+    "projection_hash": "d6e6e86e25b43923f629002812d7d256d772451184ce85752d601837bcb8e7db",
+    "source_families": 7213,
+    "validation_receipt_sha256": "b2352c57619320c6d2b58b2cc89ee6b1bc329f727d9528b0e5f2c9f0134385ad"
+  },
+  "schema": "aleph.external_training.retrieval_index_receipt.v1",
+  "section_class_counts": {
+    "abstract": 3720,
+    "conclusion": 2076,
+    "discussion": 9004,
+    "figure_caption": 19019,
+    "introduction": 7916,
+    "methods": 6227,
+    "other": 85471,
+    "results": 3200,
+    "supplementary": 930,
+    "table_caption": 1994
+  },
+  "text_committed": false
+}

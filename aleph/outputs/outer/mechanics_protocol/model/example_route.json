@@ -1,0 +1,46 @@
+{
+  "aleph_authority": "none",
+  "authority": "ontology_routing_diagnostic_only",
+  "external_holdout": false,
+  "heads": {
+    "method": {
+      "prediction": "internal_or_local_magnetic_rheology",
+      "probabilities": {
+        "internal_or_local_magnetic_rheology": 0.9903923878430047,
+        "local_afm": 0.004202777272386217,
+        "noncontact_whole_cell_deformation": 0.0026521266232788355,
+        "optical_probe_microrheology": 0.0017561955907829995,
+        "whole_cell_afm_confinement": 6.93832440335342e-05,
+        "whole_cell_suction": 0.0009271294265137618
+      }
+    },
+    "scope": {
+      "prediction": "effective_cytoplasm_viscoelasticity",
+      "probabilities": {
+        "cytoplasmic_solvent_microviscosity": 0.0017953971309568571,
+        "effective_cytoplasm_viscoelasticity": 0.9846164795485131,
+        "local_cortical_stiffness": 0.004906001009205414,
+        "local_cytoplasm_apparent_viscosity": 0.0037822910676463713,
+        "poroelastic_diffusivity": 0.0009054449550245602,
+        "short_time_cortical_prestress": 0.0028574880966947816,
+        "total_effective_surface_tension": 5.638090311572527e-05,
+        "whole_cell_apparent_viscosity": 0.001080517288843142
+      }
+    },
+    "surface_state": {
+      "prediction": "adherent",
+      "probabilities": {
+        "adherent": 0.9980213467789022,
+        "suspended": 0.0019786532210978682
+      }
+    }
+  },
+  "matched_record_ids": [
+    "dessard2024_mcf10a_mrs",
+    "dessard2024_mcf7_mrs",
+    "dessard2024_mdamb231_mrs"
+  ],
+  "may_compare_values_across_scopes": false,
+  "refused": false,
+  "schema": "aleph.outer_library.mechanics_protocol_inference.v1"
+}

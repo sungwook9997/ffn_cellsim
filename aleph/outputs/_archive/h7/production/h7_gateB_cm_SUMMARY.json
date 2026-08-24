@@ -1,0 +1,33 @@
+{
+  "tag": "gateB_cm",
+  "confirm_band_mN_m": [
+    0.18,
+    0.4
+  ],
+  "gamma_active_rigid_mN_m": -0.0035789863904015645,
+  "gamma_active_relaxed_mN_m": -0.0026538692431967,
+  "gate_a_plateau_mN_m": 0.00306,
+  "verdict": "REFUTE: \u03b3_active=-0.0027 < 0.03 \u2014 buckling NOT the lever.",
+  "conditions": {
+    "rigid_myoON": {
+      "g_struct_plateau_mN_m": 0.0779832657662377,
+      "s_grip_plateau": 0.37045565317559936,
+      "bond_over_l0_last": 1.0000000000395433
+    },
+    "rigid_myoOFF": {
+      "g_struct_plateau_mN_m": 0.08156225215663926,
+      "s_grip_plateau": 0.0,
+      "bond_over_l0_last": 1.0000000000376614
+    },
+    "relaxed_myoON": {
+      "g_struct_plateau_mN_m": 0.001359217943028197,
+      "s_grip_plateau": 0.37349106965861356,
+      "bond_over_l0_last": 0.9840782803487784
+    },
+    "relaxed_myoOFF": {
+      "g_struct_plateau_mN_m": 0.004013087186224897,
+      "s_grip_plateau": 0.0,
+      "bond_over_l0_last": 0.9931933123776335
+    }
+  }
+}

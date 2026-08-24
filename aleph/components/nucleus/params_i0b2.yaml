@@ -1,0 +1,260 @@
+# I0-B2 parameter gate — I2 deformable-mesh nucleus (lamina shell + chromatin + LINC + nucleoplasm)
+# ============================================================================================
+# Per NEW_ENGINE_BUILD_PLAN_2026-07-16.md §4 (I0-Bn) + AC_PARALLEL_SESSIONS §1.6 + §3 Session B.
+# Format: claim ID · evidence status · owner · provisional policy · blocking increment.
+#
+# HARD rules honoured: no empirical magic numbers; provisional values labelled with owner +
+# expiry-trigger and NEVER adjusted to pass a gate; magnitude gates INVALID until the blocking
+# parameter closes. STRUCTURAL gates (8pikappa topology, FD-gradient sign, volume conservation to
+# machine precision, knee modulus-ratio crossover, Young-Laplace, rupture on/off) are magnitude-
+# INDEPENDENT and already pass (tests/ac/nucleus, 41 host-numpy tests green on the dev Mac).
+#
+# KB provenance (queried from outputs/tag_kb/kb.duckdb, 2026-07-16 — verified/draft as marked):
+#   KB-3.B2.1 (verified)  E_nuc 1-10 kPa; nuc:cyto 1.4-5x in-situ / 3-10x isolated (technique-dep)
+#   KB-3.B2.2 (verified)  chromatin governs <3um extension; lamin-A/C strain-stiffening; lamin-B ~const
+#   KB-3.B2.3 (verified)  NE rupture at ~10% cross-section confinement -> DNA damage, ESCRT-III repair
+#   KB-3.B2.4 (verified)  cancer lamin-A/C down -> softer nucleus; NO single fold-softening law
+#   KB-DRAFT-3.B-01       kappa_NE = 0.0828 pN*um (~20 kBT); subdivisions=3
+#   KB-DRAFT-3.B-02       chromatin short-strain modulus (= E_nuc low-strain) ~100-400 Pa
+#   KB-DRAFT-3.B-03       eta_nucleoplasm ~1-100 Pa*s (code mis-set to 65.9 cytoplasm); a_Stokes=0.1um
+#   KB-DRAFT-3.B-05       E_nuc MCF7 in-situ (Fischer2020) 399.01 +/- 117.16 Pa; MDA 157.7 Pa
+#   KB-DRAFT-3.B-09       k_linc = HALT->PI (nesprin nonlinear, no Hookean k); LINC tension ~8 (2-10) pN
+# ============================================================================================
+
+meta:
+  increment: I2
+  gate: I0-B2
+  track: nucleus
+  branch: ac/nucleus
+  author: "Session B (nucleus track)"
+  drafted_on: "2026-07-16"
+  native_run_blocked_on:                       # magnitude gates INVALID until these close (PI)
+    - lamin_AC_vs_B_split
+    - eps_rupture
+    - eta_nucleoplasm
+    - k_linc
+    - oblate_aspect_mcf7
+  analytic_build_unblocked: true               # 8pikappa/FD/volume/knee-ratio/YL/rupture-on-off need no physio magnitude
+  units_convention: "SI in this ledger; engine runtime is um-pN-s (convert at load: 1 Pa = 1 pN/um^2)"
+
+parameters:
+
+  # ---- PRIMARY ANCHOR: nuclear stiffness setpoint (method-dependent; NOT a single number) --------
+  E_nuc:
+    title: "nuclear elastic modulus setpoint (MCF7 baseline)"
+    symbol: "E_nuc"
+    value: 399.0
+    range: [150.0, 10000.0]                     # MCF7 in-situ 399 <-> cross-technique 1-10 kPa band
+    unit: "Pa"                                   # = pN/um^2
+    role: "primary areal-modulus anchor; K_areal = E_nuc * h_lamina"
+    kb_claim: "KB-DRAFT-3.B-05 (MCF7 primary) + KB-3.B2.1 (method-dependence band)"
+    source: "Fischer 2020 (MCF7 in-situ AFM 399 +/- 117 Pa); Caille 2002 (in-situ ~5 kPa / isolated ~8 kPa)"
+    evidence_status: "draft/High (MCF7-specific); the 1-10 kPa band is verified/KB-3.B2.1"
+    provisional: true
+    reason_provisional: >
+      The framework-#6 "E_nuc 1-10 kPa (method-dependent)" and the MCF7-specific Fischer2020 399 Pa are
+      NOT a contradiction: KB-3.B2.1 is explicit that nucleus:cytoplasm stiffness is 1.4-5x in-situ vs
+      3-10x isolated -> technique-dependent, "do NOT hard-code". 399 Pa is the MCF7 in-situ (low-strain,
+      chromatin-regime) anchor; isolated-nucleus / large-strain AFM reaches kPa (lamin-A/C-engaged regime).
+    owner: PI
+    expiry_trigger: "an MCF7-specific isolated-nucleus / large-strain modulus datum lands"
+    policy: >
+      USE 399 Pa as the low-strain (chromatin) MCF7 anchor. Do NOT substitute the 1-10 kPa isolated
+      value silently (different method + strain regime). The lamin-A/C large-strain tangent is a SPLIT
+      (below), not this number scaled. NEVER tune E_nuc to hit a flatten/rupture band.
+
+  h_lamina:
+    title: "lamina thickness (areal-modulus conversion length)"
+    symbol: "h_lamina"
+    value: 0.015
+    range: [0.010, 0.020]
+    unit: "um"                                   # ~15 nm
+    kb_claim: "KB-DRAFT-3.B-01 (envelope shell)"
+    source: "lamina meshwork ~15 nm (proxy; not MCF7-specific)"
+    evidence_status: "draft/Medium (surfaced proxy)"
+    provisional: true
+    owner: PI
+    policy: "K_areal[pN/um] = E_nuc[Pa] * h_lamina[um]. Carried from the ff scaffold; not MCF7-derived."
+
+  # ---- framework-#6 LAMIN SPLIT (the net-new depth) — the individual moduli are a GAP ------------
+  lamin_AC_vs_B_split:
+    title: "lamin-A/C vs lamin-B areal-modulus split (chromatin + lamin-B soft; lamin-A/C stiff)"
+    symbol: "K_chrom, K_lamin_b, K_lamin_ac"
+    value: null                                  # GAP — do NOT choose the individual moduli
+    unit: "pN/um (areal)"
+    kb_claim: "KB-3.B2.2 (verified: split EXISTS) + KB-DRAFT-3.B-02 (chromatin ~100-400 Pa)"
+    source: >
+      KB-3.B2.2 (verified): "Chromatin governs <3um extension; lamin-A/C governs strain-stiffening;
+      lamin-B ~constant." KB-DRAFT-3.B-02: chromatin short-strain modulus (= E_nuc low-strain) ~100-400 Pa.
+    evidence_status: "GAP — PI (the split STRUCTURE is verified; the three individual moduli are not)"
+    provisional: false
+    owner: PI
+    blocking_increment: I2-native (and I7 flatten)
+    what_is_known: >
+      The THREE-regime STRUCTURE is verified (KB-3.B2.2): (i) small strain = chromatin internal net
+      (soft, ~100-400 Pa, KB-DRAFT-3.B-02); (ii) lamin-B = ~constant baseline meshwork (soft, adds to
+      the small-strain tangent); (iii) lamin-A/C = strain-stiffening, engages past the knee (stiff).
+      The oracle (lamina_analytic.LaminaParams) is parameterized by exactly these three areal moduli.
+    what_is_gap: >
+      The NUMERICAL split — how E_nuc(399 Pa in-situ) partitions into K_chrom, K_lamin_b, K_lamin_ac —
+      is unsourced. KB-3.B2.2 gives SCALINGS (lamin-A ~ tissue-E^0.7; viscosity ~ [lamin-A]^3;
+      elasticity ~ [lamin-A]^0.5) and a ratio band (1.4-5x in-situ, KB-3.B2.1), NOT the MCF7 absolute
+      partition. Do NOT invent it; do NOT reuse the ff single-bilinear RATIO_LAMIN=3.0 as if sourced
+      (it is a scaffold proxy). The knee modulus-ratio crossover gate is REPORT-not-tune (finding).
+    policy: >
+      PI-authored KnowledgeClaim required before the native flatten/stiffening magnitude gate. Until
+      then the structural gate (tangent jumps UP by K_laminAC/K_soft at the knee) runs on labeled
+      test-params, and the crossover ratio is REPORTED, never tuned.
+
+  knee_strain:
+    title: "lamin-A/C engagement knee (chromatin->lamin strain-stiffening onset)"
+    symbol: "eps_knee"
+    value: 0.10
+    range: [0.05, 0.30]
+    unit: "dimensionless (areal strain)"
+    kb_claim: "KB-3.B2.2"
+    source: "KB-3.B2.2 chromatin governs <3um extension; lamin-A/C past that"
+    evidence_status: "draft/Medium — ⚠ STRAIN-MEASURE conversion open"
+    provisional: true
+    owner: PI
+    surface_to_pi: >
+      KB-3.B2.2 states the knee as an EXTENSION (~3 um for a ~10 um nucleus ~ 30% linear strain), NOT
+      an areal strain. The ff scaffold used 10% areal strain. The extension->areal-strain conversion is
+      a MODELING ASSUMPTION to ratify (do NOT silently keep 0.10). The structural knee-crossover gate
+      is measure-agnostic (a jump at whatever eps_knee); only the magnitude gate needs the ratified value.
+
+  # ---- envelope bending rigidity (grounded) ------------------------------------------------------
+  kappa_NE:
+    title: "nuclear-envelope Helfrich bending rigidity"
+    symbol: "kappa_NE"
+    value: 0.0828
+    range: [0.04, 0.16]
+    unit: "pN*um"                                # ~20 kBT (lamina + bilayer)
+    kb_claim: "KB-DRAFT-3.B-01"
+    source: "lamina+bilayer ~20 kBT, same order as the plasma membrane (Rawicz-order)"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    policy: >
+      kappa_tilde = 8*pi*kappa_NE / Sigma_ref, calibrated to the RESTING mesh (Sigma_ref ~ 7.50 icosphere,
+      resolution- and R-invariant -> Magic-Number Block satisfied). Reuses the ff/membrane Helfrich kernel.
+
+  # ---- EMERGENT rupture threshold — GAP (tension vs strain criterion open) -----------------------
+  eps_rupture:
+    title: "nuclear-envelope rupture threshold (EMERGENT tear)"
+    symbol: "eps_rupture (or T_rupture)"
+    value: null                                  # GAP — do NOT choose; do NOT keep ff proxy 0.50
+    unit: "dimensionless (areal strain) OR pN/um (tension) — criterion UNRESOLVED"
+    kb_claim: "KB-3.B2.3 (verified) + KB-3.B2.4 (verified)"
+    source: >
+      KB-3.B2.3: NE rupture at ~10% cross-section confinement -> DNA damage, ESCRT-III repair.
+      KB-3.B2.4: cancer lamin-A/C down -> rupture up; NO single fold-softening law.
+    evidence_status: "GAP — PI"
+    provisional: false
+    owner: PI
+    blocking_increment: I2-native
+    surface_to_pi: >
+      Framework #6 asks for a rupture TENSION threshold; the KB (KB-3.B2.3) gives a geometric/STRAIN
+      criterion (~10% cross-section under CONFINEMENT compression). These are different criteria (and
+      the KB case is COMPRESSIVE confinement, whereas an areal-EXPANSION strain proxy — the ff 0.50 —
+      is unsourced). PI must ratify (i) tension-governed vs strain-governed rupture and (ii) the MCF7
+      value. The rupture-on/off STRUCTURAL gate is threshold-parameterized (passes for any threshold);
+      only the native magnitude verdict is blocked. NEVER tune the threshold to a gate (falsifiable gate).
+
+  # ---- nucleoplasm viscosity (band known, exact GAP) ---------------------------------------------
+  eta_nucleoplasm:
+    title: "nucleoplasm viscosity (distinct viscous medium, NOT cytoplasm)"
+    symbol: "eta_nuc -> gamma_nuc"
+    value: null                                  # GAP — band known, MCF7 value not
+    range: [1.0, 100.0]
+    unit: "Pa*s"
+    kb_claim: "KB-DRAFT-3.B-03"
+    source: "KB-DRAFT-3.B-03 eta_nucleoplasm ~1-100 Pa*s; a_Stokes=0.1 um"
+    evidence_status: "GAP — PI (band verified-draft; MCF7 point value not)"
+    provisional: false
+    owner: PI
+    surface_to_pi: >
+      ⚠ KB flags the code was MIS-SET to 65.9 Pa*s (that is the CYTOPLASM bulk drag — a DIFFERENT
+      medium; the same double-count trap as the fluid-spine mu_pore vs 65.9 separation). Keep the
+      nucleoplasm viscosity SEPARATE. gamma_nuc[pN*s/um] = 6*pi*eta_nuc*a_Stokes (per-node Stokes drag).
+      The 1-100 Pa*s band spans 100x; pin the MCF7 value at PI before the native rate-dependent gate.
+
+  # ---- LINC tether — k_linc is HALT->PI (nesprin nonlinear) --------------------------------------
+  k_linc:
+    title: "LINC (nesprin/SUN) tether stiffness"
+    symbol: "k_linc"
+    value: null                                  # HALT -> PI (no Hookean k exists)
+    unit: "pN/um (nonlinear — NOT a single stiffness)"
+    kb_claim: "KB-DRAFT-3.B-09 + KB-DRAFT-3.B-04"
+    source: >
+      KB-DRAFT-3.B-09: "k_linc = HALT->PI (nesprin nonlinear, no Hookean k); LINC resting tension ~8
+      (band 2-10) pN". KB-DRAFT-3.B-04: nesprin unbinding ~10-40 pN; k_LINC ~0.1-1 pN/nm order.
+    evidence_status: "GAP — PI (HALT)"
+    provisional: false
+    owner: PI
+    blocking_increment: I7 (cap->LINC->flatten) — flatten magnitude gate INVALID until sourced
+    surface_to_pi: >
+      §4C + KB-DRAFT-3.B-09 both state "8 pN is a TENSION, not a stiffness". The LINC oracle
+      (linc_analytic.linc_tether_force) is a cubic-STIFFENING tension-only spring parameterized by
+      (k_linc, stiffening) with a force-free rest — the STRUCTURE (monotone, force-free, dE/dx=f) is
+      gated now; the nesprin nonlinear force-extension law + its magnitude are the I7 GAP. The ~8 pN
+      resting tension is the pre-stress SEED, not the stiffness. Do NOT fit a Hookean k to the flatten.
+
+  linc_resting_tension:
+    title: "LINC resting tension (pre-stress seed, NOT a stiffness)"
+    symbol: "T_linc0"
+    value: 8.0
+    range: [2.0, 10.0]
+    unit: "pN"
+    kb_claim: "KB-DRAFT-3.B-09"
+    evidence_status: "draft/Medium"
+    provisional: true
+    owner: PI
+    policy: "Seed value for the I7 pre-stress; distinct from k_linc (which is HALT). Do NOT tune."
+
+  # ---- nucleoplasm incompressibility (numerical penalty, NOT a lit value) ------------------------
+  K_vol:
+    title: "nucleoplasm volume-penalty stiffness (incompressible nu->1/2)"
+    symbol: "K_vol"
+    value: null                                  # numerical penalty — set by convergence, grid-invariant
+    unit: "pN/um^2"
+    evidence_status: "numerical sizing decision (NOT a literature constant)"
+    owner: Lead
+    policy: >
+      A stiff incompressibility penalty enforcing V==V0 (nu->1/2). Chosen by a convergence study (large
+      enough that V-drift < tol, small enough for CFL), asserted grid-invariant per the Magic-Number
+      Block, added to kmax. NOT tuned to a deformation outcome. Reference: nucleoplasm ~ water-incompressible.
+
+  # ---- oblate aspect (adherent flatten target — MCF7 GAP) ----------------------------------------
+  oblate_aspect_mcf7:
+    title: "resting/adherent nuclear oblate aspect a/c (MCF7)"
+    symbol: "A = a/c"
+    value: null                                  # GAP — MCF7-specific
+    range: [1.5, 3.0]
+    unit: "dimensionless"
+    kb_claim: "KB-6.2.2 (MDA reference) + brief band"
+    source: "KB-6.2.2 (PI-ratified): MDA-MB-231 aspect 4.42 (2D) / 2.2-4.7 (3D). MCF7 not registered."
+    evidence_status: "GAP — PI (MDA-specific exists; MCF7 does not)"
+    provisional: false
+    owner: PI
+    surface_to_pi: >
+      The 1.5-3 band is the brief's planning estimate. KB-6.2.2 gives MDA-MB-231 aspect (mesenchymal,
+      more deformable) but NOT MCF7 (epithelial). The adherent flatten is measured at the RESTING
+      baseline (Khatau), volume conserved (oblate_equatorial_radius_at_constant_volume, pre-authored).
+      This is an I7 output (cap->LINC flatten), REPORT-not-tune — do NOT set the aspect, let it EMERGE.
+
+  # ---- mesh resolution (numerical) ---------------------------------------------------------------
+  subdivisions:
+    title: "envelope icosphere subdivision level"
+    symbol: "subdiv"
+    value: 3
+    unit: "dimensionless (icosphere level: 3 -> 1280 faces / 642 nodes)"
+    kb_claim: "KB-DRAFT-3.B-01"
+    evidence_status: "numerical sizing (resolution-convergence; report node/face counts at native gate)"
+    owner: Lead
+    policy: >
+      subdiv=3 (642 nodes) is the shell resolution (the nucleus is a continuum shell, coarser than the
+      cortex filament nodes). Assert Sigma_ref (bending) + volume converged at the chosen level;
+      report N_nodes/N_faces/N_hinges in the I0-B2 population ledger. Nuclear-lamina + chromatin
+      populations register unique IDs (A.1 ledger): envelope nodes/edges/faces + explicit chromatin
+      polymer IDs, neither hidden in a radial spring nor a bulk modulus.

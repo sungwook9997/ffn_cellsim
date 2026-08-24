@@ -1,0 +1,341 @@
+{
+  "summary": {
+    "n_cells": 20,
+    "N_particles": 840,
+    "device": "CPU",
+    "steps": 40000,
+    "dt_s": 1e-09,
+    "arrest_radius_factor": 1.7,
+    "R0_cluster_um": 24.766285908226486,
+    "r_max_um": 42.102686043985024,
+    "t_real_span_s": 24.000000000000004,
+    "accel_factor": 600000.0,
+    "band": [
+      2.0,
+      4.0
+    ],
+    "on_p90_plateau": {
+      "final": 3.463492664341914,
+      "plateaus": true,
+      "last_third_mean": 3.357918867041196,
+      "last_third_std": 0.11847613914822941,
+      "rel_drift": 0.08557154079818248,
+      "rel_spread": 0.03528260921105093
+    },
+    "off_p90_final": {
+      "final": 3.463492472839637,
+      "plateaus": true,
+      "last_third_mean": 3.3579187738193306,
+      "last_third_std": 0.11847605614688633,
+      "rel_drift": 0.0855714861437519,
+      "rel_spread": 0.03528258547246826
+    },
+    "on_hull_plateau": {
+      "final": 3.661789370229347,
+      "plateaus": true,
+      "last_third_mean": 3.5495334638654343,
+      "last_third_std": 0.12410890901625823,
+      "rel_drift": 0.08438836081719166,
+      "rel_spread": 0.034964851093727656
+    },
+    "off_hull_final": {
+      "final": 3.661791778746898,
+      "plateaus": true,
+      "last_third_mean": 3.549534636610818,
+      "last_third_std": 0.12410996896349598,
+      "rel_drift": 0.08438901148037066,
+      "rel_spread": 0.03496513815737806
+    },
+    "calibration": "r_max = arrest_radius_factor \u00b7 R0_cluster; factor 1.7 \u2192 equilibrium footprint ~1.7\u00d7 linear \u2192 A/A0 \u2248 1.7\u00b2 \u2248 2.9 \u2208 [2,4]. Membrane-tension/contact-inhibition stall (Chan-Odde / Elosegui-Artola motor-clutch)."
+  },
+  "arrest_on": {
+    "arrest": true,
+    "arrest_radius_factor": 1.7,
+    "n_cells": 20,
+    "N_particles": 840,
+    "device": "CPU",
+    "steps": 40000,
+    "dt_s": 1e-09,
+    "A0_hull": 6.679839943298072e-10,
+    "A0_p90": 8.171517081013024e-10,
+    "wall_s": 531.1838755829958,
+    "R0_cluster_um": 24.766285908226486,
+    "trajectory": [
+      {
+        "step": 3333,
+        "t_real_s": 1.9998,
+        "A_hull": 1.1900206025911126e-09,
+        "AoverA0_hull": 1.7815106539866545,
+        "A_p90": 1.3143227003403345e-09,
+        "AoverA0_p90": 1.6084194493018151,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 6666,
+        "t_real_s": 3.9996,
+        "A_hull": 1.3860271516808762e-09,
+        "AoverA0_hull": 2.074940662420342,
+        "A_p90": 1.525207965249855e-09,
+        "AoverA0_p90": 1.8664930270950062,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 9999,
+        "t_real_s": 5.9994000000000005,
+        "A_hull": 1.5680588561157463e-09,
+        "AoverA0_hull": 2.3474497434463086,
+        "A_p90": 1.7207991957824995e-09,
+        "AoverA0_p90": 2.1058503319792017,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 13332,
+        "t_real_s": 7.9992,
+        "A_hull": 1.696426499236145e-09,
+        "AoverA0_hull": 2.539621478413088,
+        "A_p90": 1.904508695928242e-09,
+        "AoverA0_p90": 2.330667215214509,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 16665,
+        "t_real_s": 9.999,
+        "A_hull": 1.7848140781935372e-09,
+        "AoverA0_hull": 2.671941383841469,
+        "A_p90": 2.012936891438956e-09,
+        "AoverA0_p90": 2.463357625619026,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 19998,
+        "t_real_s": 11.998800000000001,
+        "A_hull": 1.870312141159145e-09,
+        "AoverA0_hull": 2.799935562880727,
+        "A_p90": 2.1209981263756454e-09,
+        "AoverA0_p90": 2.595598963262162,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 23331,
+        "t_real_s": 13.9986,
+        "A_hull": 1.9595698976830825e-09,
+        "AoverA0_hull": 2.9335581605501373,
+        "A_p90": 2.2149036921713615e-09,
+        "AoverA0_p90": 2.7105171172165985,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 26664,
+        "t_real_s": 15.9984,
+        "A_hull": 2.0529527287465757e-09,
+        "AoverA0_hull": 3.0733561674727206,
+        "A_p90": 2.3122063194866016e-09,
+        "AoverA0_p90": 2.8295924692602576,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 29997,
+        "t_real_s": 17.9982,
+        "A_hull": 2.148619190038619e-09,
+        "AoverA0_hull": 3.216572864435686,
+        "A_p90": 2.4412873988708455e-09,
+        "AoverA0_p90": 2.9875571141414032,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 33330,
+        "t_real_s": 19.998,
+        "A_hull": 2.2459292247124882e-09,
+        "AoverA0_hull": 3.3622500595479745,
+        "A_p90": 2.5953967024949067e-09,
+        "AoverA0_p90": 3.1761503730139116,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 36663,
+        "t_real_s": 21.9978,
+        "A_hull": 2.3462792514781685e-09,
+        "AoverA0_hull": 3.512478250069758,
+        "A_p90": 2.7200680408765964e-09,
+        "AoverA0_p90": 3.328718540155568,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 39996,
+        "t_real_s": 23.997600000000002,
+        "A_hull": 2.445900998689712e-09,
+        "AoverA0_hull": 3.661616175614658,
+        "A_p90": 2.830052861438385e-09,
+        "AoverA0_p90": 3.46331389065339,
+        "arrest_gain_mean": 0.999433494756994,
+        "finite": true
+      },
+      {
+        "step": 40000,
+        "t_real_s": 24.000000000000004,
+        "A_hull": 2.4460166899202285e-09,
+        "AoverA0_hull": 3.661789370229347,
+        "A_p90": 2.830198946663326e-09,
+        "AoverA0_p90": 3.463492664341914,
+        "arrest_gain_mean": 0.9994186389811788,
+        "finite": true
+      }
+    ]
+  },
+  "arrest_off": {
+    "arrest": false,
+    "arrest_radius_factor": 1.7,
+    "n_cells": 20,
+    "N_particles": 840,
+    "device": "CPU",
+    "steps": 40000,
+    "dt_s": 1e-09,
+    "A0_hull": 6.679839943298072e-10,
+    "A0_p90": 8.171517081013024e-10,
+    "wall_s": 532.763938834003,
+    "R0_cluster_um": null,
+    "trajectory": [
+      {
+        "step": 3333,
+        "t_real_s": 1.9998,
+        "A_hull": 1.1900206025911126e-09,
+        "AoverA0_hull": 1.7815106539866545,
+        "A_p90": 1.3143227003403345e-09,
+        "AoverA0_p90": 1.6084194493018151,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 6666,
+        "t_real_s": 3.9996,
+        "A_hull": 1.3860271516808762e-09,
+        "AoverA0_hull": 2.074940662420342,
+        "A_p90": 1.525207965249855e-09,
+        "AoverA0_p90": 1.8664930270950062,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 9999,
+        "t_real_s": 5.9994000000000005,
+        "A_hull": 1.5680588561157463e-09,
+        "AoverA0_hull": 2.3474497434463086,
+        "A_p90": 1.7207991957824995e-09,
+        "AoverA0_p90": 2.1058503319792017,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 13332,
+        "t_real_s": 7.9992,
+        "A_hull": 1.696426499236145e-09,
+        "AoverA0_hull": 2.539621478413088,
+        "A_p90": 1.904508695928242e-09,
+        "AoverA0_p90": 2.330667215214509,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 16665,
+        "t_real_s": 9.999,
+        "A_hull": 1.7848140781935372e-09,
+        "AoverA0_hull": 2.671941383841469,
+        "A_p90": 2.012936891438956e-09,
+        "AoverA0_p90": 2.463357625619026,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 19998,
+        "t_real_s": 11.998800000000001,
+        "A_hull": 1.870312141159145e-09,
+        "AoverA0_hull": 2.799935562880727,
+        "A_p90": 2.1209981263756454e-09,
+        "AoverA0_p90": 2.595598963262162,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 23331,
+        "t_real_s": 13.9986,
+        "A_hull": 1.9595698976830825e-09,
+        "AoverA0_hull": 2.9335581605501373,
+        "A_p90": 2.2149036921713615e-09,
+        "AoverA0_p90": 2.7105171172165985,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 26664,
+        "t_real_s": 15.9984,
+        "A_hull": 2.0529527287465757e-09,
+        "AoverA0_hull": 3.0733561674727206,
+        "A_p90": 2.3122063194866016e-09,
+        "AoverA0_p90": 2.8295924692602576,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 29997,
+        "t_real_s": 17.9982,
+        "A_hull": 2.148619190038619e-09,
+        "AoverA0_hull": 3.216572864435686,
+        "A_p90": 2.4412873988708455e-09,
+        "AoverA0_p90": 2.9875571141414032,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 33330,
+        "t_real_s": 19.998,
+        "A_hull": 2.2459292247124882e-09,
+        "AoverA0_hull": 3.3622500595479745,
+        "A_p90": 2.5953967024949067e-09,
+        "AoverA0_p90": 3.1761503730139116,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 36663,
+        "t_real_s": 21.9978,
+        "A_hull": 2.3462792514781685e-09,
+        "AoverA0_hull": 3.512478250069758,
+        "A_p90": 2.7200680408765964e-09,
+        "AoverA0_p90": 3.328718540155568,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 39996,
+        "t_real_s": 23.997600000000002,
+        "A_hull": 2.445902523339121e-09,
+        "AoverA0_hull": 3.661618458078642,
+        "A_p90": 2.8300527132191723e-09,
+        "AoverA0_p90": 3.4633137092682063,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      },
+      {
+        "step": 40000,
+        "t_real_s": 24.000000000000004,
+        "A_hull": 2.4460182987714028e-09,
+        "AoverA0_hull": 3.661791778746898,
+        "A_p90": 2.830198790176913e-09,
+        "AoverA0_p90": 3.463492472839637,
+        "arrest_gain_mean": 1.0,
+        "finite": true
+      }
+    ]
+  }
+}

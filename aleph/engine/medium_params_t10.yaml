@@ -1,0 +1,128 @@
+# T10 parameter gate — the extracellular_medium component (exterior Stokes)
+# ============================================================================
+# Per AC_EXECUTION_PLAN_2026-07-25.md §T5 (PI decision D5-A, 2026-07-28) + §T10 checklist.
+# Format mirrors ac/motor/params_i0b3.yaml: claim ID · evidence status · owner ·
+# provisional policy · blocking gate.
+#
+# GOVERNING RULE (HARD): any value whose literature grounding is NOT closed is
+#   value: null  +  evidence_status: "GAP — PI"
+# and is surfaced to PI. It is NEVER filled with a convenience default, and the
+# physiological-baseline rule makes that non-negotiable here: the medium's whole purpose is to be
+# the physically correct regulariser of the cell's six rigid modes, so running it at a made-up
+# viscosity would reproduce the exact failure mode the rule was written for (water viscosity used
+# as the entire cytoplasm rheology, PI 2026-06-04).
+#
+# ANALYTIC + STRUCTURAL BUILD UNBLOCKED, deliberately. Every gate in
+# tests/ac/engine/test_medium_exterior.py is either a structural identity (exact symmetry, positive
+# definiteness, exact isotropy under icosahedral symmetry, exact linearity in mu, exact time
+# reversal), a convergence statement, or a ratio in which the viscosity cancels
+# (8 pi mu a^3 / 6 pi mu a = (4/3) a^2). So the operator is fully verifiable at mu = 1 and the GAP
+# below blocks exactly one thing: a production MAGNITUDE. That separation is the point — it is what
+# lets T10 land the physics without inventing a number.
+# ============================================================================
+
+meta:
+  track: T10
+  component: extracellular_medium
+  connector: membrane_medium_traction
+  gate: T10-medium
+  lane: ecm-adhesion
+  decided_by: PI
+  drafted_on: "2026-07-28"
+  contract_declared: "PI decision D5-A, 2026-07-28 (ac/engine/contracts.py) — CONTRACTED only"
+  runtime: "ac/engine/medium_exterior.py (regularised-Stokeslet single layer, matrix-free CG)"
+  kb_query_2026_07_28: >
+    The knowledge base has NO KnowledgeClaim and NO SourceEvidence for an exterior-medium viscosity.
+    The 14 rows a viscosity query returns are all INTRACELLULAR or MEMBRANE: KB-3.3 (lumped cytoplasm,
+    1e2-1e4 Pa*s), KB-3.B3.1 (MCF7 MRS, 56.4 +/- 16.6 Pa*s, Dessard2024_NanoscaleAdv), KB-DRAFT-3.B-18
+    (interstitial pore water, ~1e-3 to 5e-2 Pa*s, anchors Happel1983 = CHECK), KB-DRAFT-3.B-20 (Brinkman
+    inside a bleb cap, ~1e-3 Pa*s, anchors Brinkman1949 = CHECK), KB-DRAFT-3.B-22 (2D membrane surface
+    viscosity, where eta_water appears only as a SYMBOL inside the Saffman-Delbruck length with no value
+    and no source). None of these is the exterior medium, two are status draft with CHECK-verdict anchors,
+    and the citation-integrity rule forbids citing a non-OK verdict in a deliverable.
+  native_run_blocked_on: [viscosity_medium]
+  structural_build_unblocked: true
+  units_convention: >
+    engine runtime is um-pN-s. Pa*s and pN*s/um^2 are numerically EQUAL (ff/units.py:126), so a
+    viscosity in Pa*s enters the kernel with no conversion factor. Drag 6*pi*mu*a with mu in Pa*s and
+    a in um gives pN*s/um, which against a velocity in um/s gives pN.
+
+# ============================================================================
+# GAP — the one physiological magnitude the exterior solve needs
+# ============================================================================
+parameters:
+
+  viscosity_medium:
+    title: "dynamic viscosity of the extracellular medium (cell-culture bath) at 37 C"
+    symbol: "mu_medium"
+    value: null
+    unit: "Pa*s"
+    evidence_status: "GAP — PI"
+    candidate_a:
+      value: 6.913e-4
+      source: "pure water at 37 C (IAPWS formulation) — NOT registered as SourceEvidence"
+      note: >
+        The lower bound. Defensible only if the medium is treated as water, which ignores serum protein
+        and the 10% FBS the PI's own condition uses.
+    candidate_b:
+      value: null
+      range: [7.0e-4, 1.0e-3]
+      source: "DMEM + 10% FBS at 37 C — a measured value is required; none is registered"
+      note: >
+        The physiologically correct target, since the PI baseline is a collagen-coated 2D culture. Needs a
+        rheology paper registered as SourceEvidence with an OK verdict before any production run.
+    conflict: >
+      Not a conflict between two audited claims — an ABSENCE. Neither candidate exists in the KB as a
+      SourceEvidence row, so neither may be cited. Recorded as two candidates so the audit is non-vacuous
+      and so the eventual PI choice is visible as a choice.
+    owner: PI
+    expiry_trigger: >
+      A SourceEvidence row for a measured culture-medium viscosity at 37 C is registered in Notion,
+      verify_sources reports verdict OK, and TAG is refreshed.
+    policy: >
+      NEVER default. ExteriorStokesMediumSettings.viscosity_pa_s is a REQUIRED constructor argument with
+      no default precisely so this null cannot leak into a run as a convenience value. Every landed gate
+      is viscosity-free or a ratio; the only thing this GAP blocks is a quotable magnitude.
+    blocks:
+      - "any tier-(a) magnitude for exterior drag, surface traction, or crawl speed"
+      - "release of BLOCKS_CRAWL as a QUANTITATIVE claim (the MECHANISM does not depend on it)"
+
+# ============================================================================
+# DERIVED — not a GAP, and recorded here so it is not mistaken for one
+# ============================================================================
+derived:
+
+  blob_epsilon:
+    title: "regularised-Stokeslet blob length"
+    symbol: "epsilon"
+    rule: "epsilon = epsilon_ratio * h, with h the surface quadrature's mean nearest-neighbour spacing"
+    default_ratio: 1.0
+    unit: "um"
+    evidence_status: "DERIVED (Magic-Number Block satisfied)"
+    derivation: >
+      The blob width equals the point spacing, so the discrete single layer exactly resolves its own blob.
+      Grid-invariant by construction: refining the surface lowers epsilon with it and the answer converges.
+    grid_invariance_evidence: >
+      medium_stokes_analytic.sphere_drag_convergence at radius 7.5 um, epsilon_ratio = 1.0, icosphere
+      levels 1/2/3 (42/162/642 points): translation relative error 0.2094 / 0.0923 / 0.0415, fitted order
+      1.195 in h; rotation relative error 0.6034 / 0.2557 / 0.1169; translation isotropy residual exactly
+      0.0 at every level. MEASURED on the dev Mac (host NumPy) at build a4d13ad5, reported not tuned.
+    policy: >
+      The ratio is held FIXED across refinements and is never adjusted to move a result. The lever for
+      accuracy is refining the surface, not lowering epsilon. Note the consequence honestly: at the
+      native membrane mesh resolution (icosphere subdivision 3, 642 nodes, ac/cell/compartments.py:641)
+      the exterior translation resistance carries a 4.2% discretisation error.
+
+  wall_mode:
+    title: "which exterior Green's function the medium uses"
+    symbol: "wall_mode"
+    value: "free_space"
+    evidence_status: "DECLARED — HALF_SPACE_BLAKE not implemented"
+    note: >
+      T10 checklist item 3 (the asymmetric world boundary: basal face = 2D collagen + far-field anchor,
+      free face = media) needs the no-slip planar-wall image system. It is exact and closed-form (Blake
+      1971) with an exact oracle (Brenner wall correction), but it is a separate landing. The enum member
+      exists and RAISES, so free-space drag can never be returned under a wall's name.
+    blocks:
+      - "spreading and crawl, which a symmetric boundary cannot produce"
+      - "the cell-substrate lubrication film"

@@ -1,0 +1,10 @@
+{
+  "authority_status": "proposed",
+  "evidence_policy": "explicit_number_and_unit_plus_biological_or_assay_signal",
+  "experiment_boundary": "one exact JATS paragraph, table row, or figure caption; candidate only",
+  "missing_relation_policy": "null_or_ambiguous_never_inferred",
+  "normalization_arithmetic": "exact_decimal_lexical_conversion",
+  "output_policy": "full records local and ignored; committed artifacts text-free",
+  "schema_target": "../schema/experiment_record.schema.json",
+  "extractor_version": "1"
+}

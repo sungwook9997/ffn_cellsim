@@ -1,0 +1,3 @@
+source_family_id,doi,title,year,screening_lane,exception_reason,quality_decision,rationale,authority_status
+doi:10.1073/pnas.0903353106,10.1073/pnas.0903353106,Role of cortical tension in bleb growth,2009,exception,foundational_pre_2010,exception,Explicit policy exception; remains proposed and separate from primary lane,proposed
+doi:10.1093/pnasnexus/pgac299,10.1093/pnasnexus/pgac299,Effective cell membrane tension is independent of polyacrylamide substrate stiffness,2023,exception,negative_evidence,exception,Explicit policy exception; remains proposed and separate from primary lane,proposed

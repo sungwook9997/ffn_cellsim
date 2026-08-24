@@ -1,0 +1,104 @@
+{
+  "acquisition_receipt_sha256": "3aadf97f68f6c9482490d032b1453315e6a90bf411b0cffab7f11f7082b67168",
+  "authority": {
+    "aleph_parameter_authority": "none",
+    "role": "pre_sweep_context_compression_only"
+  },
+  "duplicate_external_gene_symbols_using_first_released_row": 34,
+  "external": {
+    "author_annotation_cells": 31021,
+    "excluded_author_labels": {
+      "Unassigned": 46
+    },
+    "experiment_method_counts": {
+      "PBMC1::10x-Chromium-v2-A": 3182,
+      "PBMC1::10x-Chromium-v2-B": 3044,
+      "PBMC1::10x-Chromium-v3": 3215,
+      "PBMC1::CEL-Seq2": 251,
+      "PBMC1::Drop-seq": 2873,
+      "PBMC1::Seq-Well": 3176,
+      "PBMC1::inDrops": 3222,
+      "PBMC2::CEL-Seq2": 273,
+      "PBMC2::Drop-seq": 3358
+    },
+    "in_domain_cells": 21866,
+    "label_counts": {
+      "B cell": 3263,
+      "CD14+ monocyte": 3843,
+      "CD16+ monocyte": 600,
+      "CD4+ T cell": 5254,
+      "Cytotoxic T cell": 7447,
+      "Dendritic cell": 209,
+      "Megakaryocyte": 728,
+      "Natural killer cell": 1148,
+      "Plasmacytoid dendritic cell": 102
+    },
+    "matched_and_retained_cells": 22594,
+    "released_expression_cells": 44615,
+    "semantic_ood_cells": 728,
+    "unmatched_author_annotation_cells": 8381
+  },
+  "protocol_sha256": "796809ce20c81c00186adcd9b94f0d72cf41238d400ed0e2e5677fa51744b73e",
+  "schema": "aleph.outer_library.pbmc_cross_lab_tensor.v1",
+  "secondary_benchmark_label_audit": {
+    "decision": "rejected_as_classifier_targets",
+    "official_geo_method_cells": {
+      "10x-Chromium-v2": 3362,
+      "10x-Chromium-v2-A": 5172,
+      "10x-Chromium-v2-B": 3057,
+      "10x-Chromium-v3": 4033,
+      "CEL-Seq2": 564,
+      "Drop-seq": 11095,
+      "Seq-Well": 6038,
+      "Smart-seq2": 584,
+      "inDrops": 10710
+    },
+    "reason": "selected CSV row counts do not align one-to-one with the official GSE132044 per-method expression cell axes",
+    "zenodo_csv_rows": {
+      "10Xv2_pbmc1Labels.csv": 23154,
+      "10Xv3_pbmc1Labels.csv": 19690,
+      "CL_pbmc1Labels.csv": 19754,
+      "DR_pbmc1Labels.csv": 23154,
+      "SM2_pbmc1Labels.csv": 18886,
+      "SW_pbmc1Labels.csv": 18966,
+      "iD_pbmc1Labels.csv": 21832
+    }
+  },
+  "split": {
+    "calibration_donor": "1256",
+    "fit_donors": [
+      "101",
+      "1015",
+      "1016",
+      "1039",
+      "107",
+      "1244"
+    ],
+    "rule": "frozen_lexical_fallback",
+    "sealed_test_donor": "1488"
+  },
+  "tensor_sha256": "1b35358983a5042afa8ab85e30195367a9bfff13761cecbb2875a9a5b938e814",
+  "training": {
+    "cells": 24413,
+    "common_frozen_features": 508,
+    "condition_counts": {
+      "ctrl": 12193,
+      "stim": 12220
+    },
+    "genes": 35635,
+    "label_counts": {
+      "B_cell": 2573,
+      "CD4_T_cell": 10389,
+      "CD8_T_cell": 2042,
+      "NK_cell": 1993,
+      "dendritic_cell": 432,
+      "monocyte": 6984
+    },
+    "role_counts": {
+      "calibration": 4103,
+      "fit": 15777,
+      "sealed_test": 4533
+    },
+    "selected_fit_only_genes": 512
+  }
+}

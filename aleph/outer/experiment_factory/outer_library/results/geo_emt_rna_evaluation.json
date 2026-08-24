@@ -1,0 +1,290 @@
+{
+  "OOD_refusal_validated": false,
+  "aleph_authority": "none",
+  "cross_assay_bridge": {
+    "RNA_direction_agrees_with_independent_IF_and_CyTOF_protein_direction": true,
+    "RNA_protein_absolute_scale_transfer_permitted": false
+  },
+  "design_audit": {
+    "biological_replicates_not_expression_features": true,
+    "cross_platform_absolute_scale_pooling_forbidden": true,
+    "independent_lab_groups": 5,
+    "observations": 144,
+    "outer_holdout_unit": "study_and_lab_group",
+    "samples": 72,
+    "samples_by_study": {
+      "GSE125369": 4,
+      "GSE17708": 26,
+      "GSE42373": 8,
+      "GSE49644": 18,
+      "GSE69667": 16
+    },
+    "studies": 5
+  },
+  "directional_pre_sweep_filter_eligible": true,
+  "endpoint_contrasts": [
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 3,
+      "control_condition": "untreated",
+      "control_mean": 3.9413068103333337,
+      "direction": "decrease",
+      "gene": "CDH1",
+      "study": "GSE17708",
+      "treated_biological_n": 3,
+      "treated_condition": "TGFB1_72h",
+      "treated_mean": 2.659501605333334,
+      "treated_minus_control": -1.281805205
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 3,
+      "control_condition": "untreated",
+      "control_mean": 4.201547025333333,
+      "direction": "increase",
+      "gene": "VIM",
+      "study": "GSE17708",
+      "treated_biological_n": 3,
+      "treated_condition": "TGFB1_72h",
+      "treated_mean": 4.466044850333334,
+      "treated_minus_control": 0.2644978250000003
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 2,
+      "control_condition": "3d_control",
+      "control_mean": 12.760740535,
+      "direction": "decrease",
+      "gene": "CDH1",
+      "study": "GSE42373",
+      "treated_biological_n": 2,
+      "treated_condition": "3d_treated",
+      "treated_mean": 11.848253060000001,
+      "treated_minus_control": -0.9124874749999989
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 2,
+      "control_condition": "3d_control",
+      "control_mean": 14.77092759,
+      "direction": "increase",
+      "gene": "VIM",
+      "study": "GSE42373",
+      "treated_biological_n": 2,
+      "treated_condition": "3d_treated",
+      "treated_mean": 15.08713143,
+      "treated_minus_control": 0.31620384
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 2,
+      "control_condition": "control",
+      "control_mean": 25.20746193860445,
+      "direction": "decrease",
+      "gene": "CDH1",
+      "study": "GSE125369",
+      "treated_biological_n": 2,
+      "treated_condition": "TGFB3_21d",
+      "treated_mean": 0.7451481203228356,
+      "treated_minus_control": -24.462313818281615
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 2,
+      "control_condition": "control",
+      "control_mean": 1015.9806945696946,
+      "direction": "increase",
+      "gene": "VIM",
+      "study": "GSE125369",
+      "treated_biological_n": 2,
+      "treated_condition": "TGFB3_21d",
+      "treated_mean": 1710.55618789027,
+      "treated_minus_control": 694.5754933205753
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 2,
+      "control_condition": "untreated",
+      "control_mean": 21.035,
+      "direction": "decrease",
+      "gene": "CDH1",
+      "study": "GSE69667",
+      "treated_biological_n": 2,
+      "treated_condition": "TGFB1_96h",
+      "treated_mean": 1.84,
+      "treated_minus_control": -19.195
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 2,
+      "control_condition": "untreated",
+      "control_mean": 524.1949999999999,
+      "direction": "increase",
+      "gene": "VIM",
+      "study": "GSE69667",
+      "treated_biological_n": 2,
+      "treated_condition": "TGFB1_96h",
+      "treated_mean": 895.515,
+      "treated_minus_control": 371.32000000000005
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 3,
+      "control_condition": "A549_parental",
+      "control_mean": 9.324775695666666,
+      "direction": "decrease",
+      "gene": "CDH1",
+      "study": "GSE49644",
+      "treated_biological_n": 3,
+      "treated_condition": "A549_TGFB_EMT_3week",
+      "treated_mean": 3.5127403736666665,
+      "treated_minus_control": -5.812035322
+    },
+    {
+      "absolute_scale_transfer_permitted": false,
+      "all_between_group_pairwise_differences_have_expected_sign": true,
+      "control_biological_n": 3,
+      "control_condition": "A549_parental",
+      "control_mean": 5.582270622333333,
+      "direction": "increase",
+      "gene": "VIM",
+      "study": "GSE49644",
+      "treated_biological_n": 3,
+      "treated_condition": "A549_TGFB_EMT_3week",
+      "treated_mean": 6.371497472333334,
+      "treated_minus_control": 0.7892268500000013
+    }
+  ],
+  "independent_study_direction_holdout": true,
+  "limitations": [
+    "five retrospective study-level EMT signatures give nominal one-sided p=0.03125, but literature-based study selection prevents confirmatory inference",
+    "RNA expression constrains marker direction but is not interchangeable with protein abundance",
+    "GSE42373 combines TGF-beta and TNF-alpha and contributes the only sealed OOD context, so general OOD validation remains unproven",
+    "the data can compress a future sweep but cannot issue a numeric Aleph parameter range"
+  ],
+  "may_select_aleph_parameter": false,
+  "numeric_uncertainty_promotion_passed": false,
+  "pre_sweep_role": {
+    "may_emit_sweep_axis": false,
+    "numeric_range": null,
+    "purpose": "reduce_and_rank_future_Aleph_EMT_sweep_not_replace_it",
+    "remaining_blockers": [
+      "preregistered outcome-blind external EMT study evaluated after protocol freeze",
+      "trained and sealed validation of culture-context semantic OOD refusal",
+      "Aleph CDH1/VIM-compatible observation operators",
+      "monotonic Aleph forward sensitivity linking candidate axes to the observables"
+    ],
+    "supported_action": "reject EMT candidates with CDH1-up or VIM-down endpoint response across compatible A549 TGFB contexts"
+  },
+  "replicated_direction": {
+    "all_ten_between_group_ranges_completely_separated": true,
+    "all_ten_study_gene_directions_expected": true,
+    "confirmatory_direction_threshold_0_05_passed": false,
+    "confirmatory_failure_reason": "GSE69667 and GSE49644 were selected from literature reporting successful EMT, so the nominal sign test is subject to study-selection and publication bias",
+    "independent_labs": 5,
+    "independent_studies": 5,
+    "nominal_exact_one_sided_sign_test_p_for_five_retrospective_study_signatures": 0.03125,
+    "retrospective_direction_replication_passed": true,
+    "study_gene_contrasts": 10,
+    "study_level_signature_successes": 5,
+    "study_selection_was_outcome_blind": false
+  },
+  "representation_training_eligible": true,
+  "sample_identity_count": 72,
+  "schema": "aleph.outer_library.geo_emt_rna_evaluation.v1",
+  "semantic_OOD_challenge": {
+    "OOD_refusal_model_validated": false,
+    "at_least_one_marker_direction_changes_by_culture_context": true,
+    "challenge_defined": true,
+    "dataset": "GSE42373",
+    "diagnostic_passed": true,
+    "held_context": "2d_TGFB_TNFA",
+    "reference_context": "3d_TGFB_TNFA",
+    "rows": {
+      "CDH1": {
+        "2d_treated_minus_control": 0.04167947000000005,
+        "direction": "increase",
+        "expected_3d_EMT_direction": "decrease"
+      },
+      "VIM": {
+        "2d_treated_minus_control": 0.07885004000000073,
+        "direction": "increase",
+        "expected_3d_EMT_direction": "increase"
+      }
+    },
+    "sealed_direction_hamming_diagnostic": {
+      "held_2d_context_refused": true,
+      "held_2d_context_score": 1,
+      "held_OOD_context_count": 1,
+      "threshold_max_training_ID_score": 0,
+      "training_ID_study_scores": {
+        "GSE125369": 0,
+        "GSE17708": 0,
+        "GSE42373": 0,
+        "GSE49644": 0,
+        "GSE69667": 0
+      }
+    }
+  },
+  "study_level_direction_inference_passed": false,
+  "task": "replicated_multi_study_RNA_EMT_direction_constraint_before_Aleph_sweep",
+  "within_GSE49644_cross_cell_line_transfer": {
+    "all_four_marker_directions_agree": true,
+    "counts_as_additional_independent_study_or_lab": false,
+    "rows": [
+      {
+        "cell_line": "HCC827",
+        "control_biological_n": 3,
+        "direction": "decrease",
+        "direction_agrees": true,
+        "expected_direction": "decrease",
+        "gene": "CDH1",
+        "independent_study_or_lab": false,
+        "treated_biological_n": 3,
+        "treated_minus_control": -2.9470933306666662
+      },
+      {
+        "cell_line": "HCC827",
+        "control_biological_n": 3,
+        "direction": "increase",
+        "direction_agrees": true,
+        "expected_direction": "increase",
+        "gene": "VIM",
+        "independent_study_or_lab": false,
+        "treated_biological_n": 3,
+        "treated_minus_control": 2.025506973666667
+      },
+      {
+        "cell_line": "NCI-H358",
+        "control_biological_n": 3,
+        "direction": "decrease",
+        "direction_agrees": true,
+        "expected_direction": "decrease",
+        "gene": "CDH1",
+        "independent_study_or_lab": false,
+        "treated_biological_n": 3,
+        "treated_minus_control": -3.941110611000001
+      },
+      {
+        "cell_line": "NCI-H358",
+        "control_biological_n": 3,
+        "direction": "increase",
+        "direction_agrees": true,
+        "expected_direction": "increase",
+        "gene": "VIM",
+        "independent_study_or_lab": false,
+        "treated_biological_n": 3,
+        "treated_minus_control": 2.3074330489999997
+      }
+    ]
+  }
+}

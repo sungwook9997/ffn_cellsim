@@ -1,0 +1,156 @@
+# Resting osmotic turgor Π₀ — PARAMETER GATE (PI decision 2026-07-25)
+# ============================================================================
+# Format mirrors `ac/motor/params_i0b3.yaml` EXACTLY (claim ID · evidence status · owner ·
+# expiry_trigger · demonstrated_by). Loader/enforcer: `aleph/laws/turgor_pi0.py`.
+#
+# GOVERNING RULE (CLAUDE.md "no empirical magic numbers" + the physiological-baseline HARD rule):
+# any value whose literature grounding is NOT closed is
+#     value: null  +  evidence_status: "GAP — PI"
+# and is surfaced to PI. This file makes Π₀ a REQUIRED, no-silent-default parameter: `value: null`
+# means the loader has NOTHING to hand out, so every caller must pass Π₀ explicitly and the value it
+# passes is recorded WITH its provenance class in the run artifact.
+#
+# WHY Π₀ AND NOT THE OTHER CONVENIENCE DEFAULTS (PI 2026-07-25): Π₀ sets the ENTIRE resting cortical
+# tension through Young-Laplace γ = ΔP·R/2, so an unphysical Π₀ makes every resting-baseline
+# comparison meaningless (the exact failure the physiological-baseline rule names). The other three
+# worst-offenders from PARAM_PROVENANCE_AUDIT_2026-07-24.md (cortex seg_um, length_um,
+# density_per_fil) are LABELED here as CONVENIENCE and deliberately NOT gated — PI's call this
+# session. Labeling is not absolution; see `convenience_labels:` below.
+#
+# ⚠ THIS GATE DOES NOT MAKE ANY Π₀ CORRECT. It only forbids a SILENT one. Passing 40.0 still runs,
+# and still records `provenance: CONVENIENCE`.
+# ============================================================================
+
+meta:
+  gate: PI0-TURGOR
+  track: resting-baseline
+  drafted_on: "2026-07-25"
+  drafted_by: "claim-hygiene pass (audit R1 / R-convenience-default follow-up)"
+  decided_by: PI
+  audit: docs/v2_audit/PARAM_PROVENANCE_AUDIT_2026-07-24.md
+  pi_decision_2026_07_25:
+    action: "GATE Π₀ now (required, no silent default). LABEL seg_um / length_um / density_per_fil without gating."
+    rationale: >
+      Π₀ is row 1 of PARAM_PROVENANCE_AUDIT_2026-07-24.md — "the worst convenience default" — because
+      it is the single most load-bearing resting quantity (γ = ΔP·R/2) and NONE of the three in-tree
+      values is an MCF7 measurement. Gating it converts a silent 40 Pa into an explicit, recorded,
+      provenance-classified choice; it does not choose a value.
+    not_done_here: "No Π₀ value is selected, changed, or recommended by this gate. Selection is PI's."
+
+parameters:
+
+  PI_0:
+    title: "resting net osmotic turgor (excess internal pressure over the medium) at the physiological baseline"
+    symbol: "Π₀ (a.k.a. ΔP₀, TURGOR_DP0, PI_0_PA, turgor_dP0)"
+    value: null
+    unit: "Pa"                                   # engine units: 1 Pa == 1 pN/µm²
+    evidence_status: "GAP — PI (⚠ THREE competing in-tree values, NONE an MCF7 measurement)"
+    owner: PI
+    expiry_trigger: >
+      PI selects Π₀ for the MCF7 first baseline by naming the assay + cell line, OR a SourceEvidence row
+      with an MCF7 (or explicitly-accepted proxy) resting-turgor measurement is registered and audited OK.
+    demonstrated_by: >
+      aleph/laws/turgor_pi0.py::resolve_pi0_pa — a call with no value raises TurgorPi0Unspecified naming
+      all three competing values; tests/ac/test_turgor_pi0_gate.py holds the negative + positive control.
+    drives:
+      - "γ_passive = Π₀·R/2 (Young-Laplace) — the ENTIRE resting cortical pre-tension"
+      - "ff/gamma_floor.turgor_pressure / external_force / measure_gamma (γ-floor passive channel)"
+      - "ac/cell/assemble build_cell resting pressure field + membrane osmotic BC"
+      - "dcm turgor kernels (dP_cell = dP0 + K_vol·(V0−V)/V0)"
+    claim_hela_proxy_40pa:
+      value: 40.0
+      provenance_class: CONVENIENCE
+      source: "Fischer-Friedrich 2014 Sci Rep 4:6213 — HeLa interphase ΔP = 40 ± 30 Pa"
+      sites: ["aleph/laws/gamma_floor.py::TURGOR_DP0", "aleph/components/incumbent/assemble.py::PI_0_PA", "CLAUDE.md"]
+      note: >
+        MEASURED, but on the WRONG CELL LINE. PARAM_PROVENANCE_AUDIT_2026-07-24.md row 1 calls this
+        "the worst convenience default": ~45% below the MCF7-geometry central estimate and BELOW the
+        Hosseini IQR. "Sourced" for HeLa is not sourced for MCF7.
+    claim_band_implied_133pa:
+      value: 133.0
+      provenance_class: "PI_RATIFIED_BAND_IMPLIED (circular)"
+      source: "B3 PI-RATIFIED 2026-06-06 — Young-Laplace inversion Π₀ = 2γ/R with band-centre γ = 0.50 mN/m at R = 7.5 µm"
+      band: [93.0, 173.0]                        # from the cortical-tension band [0.35, 0.65] mN/m
+      sites: ["aleph/configs/mcf7_baseline.yaml:81", "aleph/archive/production_policy.py::DEFAULT_MCF7_TURGOR_PA",
+              "aleph/dcm/geometry.py::ResolvedDCM.turgor_dP0", "aleph/dcm/nondim.py::turgor_dP0"]
+      note: >
+        CIRCULAR by construction — Π₀ was inverted FROM the cortical-tension band, so "γ = Π₀·R/2 lands
+        in the band" is not evidence (gamma_floor.gamma_passive_young_laplace already carries this
+        caveat verbatim). ff/gamma_floor.py:77 records that 133 Pa was retired there in favour of 40 Pa;
+        configs/mcf7_baseline.yaml:81 still reads as CURRENT with no supersession marker.
+    claim_mcf7_geometry_72pa:
+      value: 72.0
+      range: [48.0, 107.0]
+      provenance_class: "DERIVED_ESTIMATE (not a measurement)"
+      source: "PARAM_PROVENANCE_AUDIT_2026-07-24.md — MCF7-geometry central estimate"
+      sites: []                                  # NOT wired anywhere in the tree
+      note: "Recommended by the audit as the direction to source, NOT a measured MCF7 datum. Zero call sites."
+    conflict: >
+      THREE positions, none an MCF7 resting-turgor measurement: 40 Pa (HeLa proxy, measured-wrong-cell),
+      133 Pa (band-implied ⇒ circular), ~72 Pa (48–107, geometry-derived estimate, unwired). They span
+      3.3× — i.e. the resting cortical pre-tension is undetermined by a factor of ~3 before any physics runs.
+    policy: >
+      NEVER select a Π₀ because it makes a gate pass, lifts the γ-floor, or lands γ in the MCF7 band
+      (the 133 Pa row is exactly that failure, recorded). Callers pass Π₀ explicitly and the run artifact
+      records the value AND its provenance_class. A run whose artifact says CONVENIENCE is a run whose
+      resting baseline is not sourced — report it, do not launder it.
+
+# ============================================================================
+# CONVENIENCE LABELS — PI 2026-07-25: LABEL, do NOT gate, do NOT change the value.
+# These are rows 2/3/4 of PARAM_PROVENANCE_AUDIT_2026-07-24.md. They stay at their current values;
+# this block is the machine-readable provenance record so no future reader mistakes them for sourced.
+# ============================================================================
+
+convenience_labels:
+
+  cortex_seg_um:
+    value: 0.5
+    unit: "µm"
+    provenance_class: CONVENIENCE
+    subclass: coarse
+    sourced_value: 0.075                         # midpoint of the sourced 50–100 nm cortical mesh
+    sourced_range: [0.05, 0.10]
+    sourced_from: "Morone 2006 · Bovellan 2014 · Chugh & Paluch 2018 — cortical mesh / crosslink spacing 50–100 nm"
+    deviation_factor: "5–10× TOO COARSE (0.5 µm vs 0.05–0.10 µm)"
+    kb_rows: 0
+    sites: ["aleph/laws/architecture_spec.py::CORTEX.filament.seg_um", "aleph/components/incumbent/assemble.py::CellConfig.cortex_seg_um"]
+    gated: false
+    owner: PI
+    expiry_trigger: "PI sources the cortical mesh/segment length (CORTEX_MESH_FIDELITY §7 derived fine config exists)"
+    note: "Caps mesh/pore at ~500 nm. The DEEPER cause of the mesh-fidelity gap; density_per_fil is downstream of it."
+
+  cortex_length_um:
+    value: 3.0
+    unit: "µm"
+    provenance_class: CONVENIENCE
+    subclass: coarse
+    sourced_value: null                          # two populations, not one representative length
+    sourced_range: [0.1, 1.0]
+    sourced_from: "Bovellan 2014 (KB-3.18) — ~1 µm formin-nucleated + ~0.1 µm Arp2/3-nucleated (cortex ≈ ⅓ Arp2/3 by mass)"
+    deviation_factor: "3–30× TOO LONG, and `nucleator=formin` only ⇒ the Arp2/3 short-filament population is ABSENT"
+    kb_rows: 0
+    sites: ["aleph/laws/architecture_spec.py::CORTEX.filament.length_um", "aleph/components/incumbent/assemble.py::CellConfig.cortex_length_um"]
+    gated: false
+    owner: PI
+    expiry_trigger: "PI ratifies the two-population cortex (formin + Arp2/3) with sourced lengths and the mass split"
+    note: "A MISSING ARCHITECTURE, not only a wrong number — labeling it does not create the Arp2/3 population."
+
+  cortex_density_per_fil:
+    value: 20.0
+    unit: "crosslinks per filament"
+    provenance_class: CONVENIENCE
+    subclass: percolation
+    sourced_value: null
+    sourced_from: "none — the docstring claims DERIVED L/δ_filamin = 3.0 µm / 150 nm; the operational note says it 'keeps the network single-spanning'"
+    deviation_factor: "n/a (no sourced value to deviate from) — chosen as a spanning threshold"
+    kb_rows: 0
+    sites: ["aleph/laws/architecture_spec.py::CORTEX.crosslinker.density_per_fil", "aleph/components/incumbent/assemble.py::CellConfig.cortex_density_per_fil"]
+    gated: false
+    owner: PI
+    expiry_trigger: "PI closes cortex_seg_um first — the sourced mesh determines this number, which is downstream"
+    note: >
+      ⚠ SELF-INCONSISTENT JUSTIFICATION on the record: the "DERIVED L/δ_filamin" story and the
+      "chosen so the network is single-spanning" story are different justifications for the same 20.0.
+      Both are in-tree. Also: the fix commit bc5ff3b0 that set this claims "both weave and gamma_floor
+      read the same spec" — FALSE for ff/gamma_floor.build_crosslinked_cortex, which never reads
+      architecture_spec at all (see docs/v2_audit/AUDIT_WHOLE_REPO_2026-07-25.md R1).

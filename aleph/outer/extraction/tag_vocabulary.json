@@ -1,0 +1,57 @@
+{
+  "schema": "aleph.external_training.extraction_tag_vocabulary.v1",
+  "authority_status": "proposed",
+  "normalization": "case-insensitive lexical match over normalized section text; tags are non-authoritative retrieval aids",
+  "dimensions": {
+    "cell_type_state": {
+      "epithelial": ["epithelial", "keratinocyte"],
+      "fibroblast": ["fibroblast"],
+      "immune": ["macrophage", "neutrophil", "lymphocyte", "t cell", "b cell", "dendritic cell"],
+      "muscle": ["myocyte", "smooth muscle", "cardiomyocyte"],
+      "neural": ["neuron", "glial", "astrocyte", "microglia"],
+      "stem_progenitor": ["stem cell", "progenitor"],
+      "cancer_tumor": ["cancer cell", "tumor cell", "tumour cell", "carcinoma", "sarcoma"],
+      "mitotic": ["mitotic", "mitosis", "cell division"],
+      "migrating": ["cell migration", "migrating cell", "motility"],
+      "apoptotic": ["apoptosis", "apoptotic"],
+      "differentiating": ["differentiation", "differentiating"]
+    },
+    "measurement_modality": {
+      "afm": ["atomic force microscopy", "afm"],
+      "traction_force_microscopy": ["traction force microscopy", "tfm"],
+      "micropipette_aspiration": ["micropipette aspiration"],
+      "optical_tweezers": ["optical tweezers", "optical trap"],
+      "magnetic_tweezers": ["magnetic tweezers"],
+      "piv": ["particle image velocimetry", "piv"],
+      "live_cell_imaging": ["live-cell imaging", "live cell imaging", "time-lapse microscopy"],
+      "immunofluorescence": ["immunofluorescence", "immunofluorescent"],
+      "western_blot": ["western blot", "immunoblot"],
+      "pcr": ["polymerase chain reaction", "qpcr", "rt-pcr"],
+      "flow_cytometry": ["flow cytometry", "facs"],
+      "single_cell_sequencing": ["single-cell rna", "single cell rna", "scrna-seq", "single-cell sequencing"]
+    },
+    "mechanics_observable": {
+      "cortical_tension": ["cortical tension", "cortex tension"],
+      "membrane_tension": ["membrane tension", "surface tension"],
+      "traction_force": ["traction force", "traction stress"],
+      "stiffness_modulus": ["young's modulus", "elastic modulus", "cell stiffness"],
+      "viscosity_viscoelasticity": ["viscosity", "viscoelastic"],
+      "pressure": ["intracellular pressure", "hydrostatic pressure", "cell pressure"],
+      "cell_volume": ["cell volume", "volume regulation"],
+      "strain_deformation": ["strain", "deformation"],
+      "adhesion_force": ["adhesion force", "detachment force"],
+      "migration_speed": ["migration speed", "migration velocity", "cell speed"]
+    },
+    "perturbation": {
+      "drug": ["treated with", "drug treatment", "inhibitor", "agonist", "antagonist"],
+      "genetic": ["knockdown", "knockout", "overexpression", "crispr", "sirna", "shrna"],
+      "substrate_stiffness": ["substrate stiffness", "matrix stiffness"],
+      "confinement": ["confinement", "confined migration"],
+      "shear_flow": ["shear stress", "fluid flow"],
+      "stretch_compression": ["mechanical stretch", "cyclic stretch", "compression"],
+      "osmotic": ["osmotic shock", "hyperosmotic", "hypoosmotic", "osmolarity"],
+      "laser_ablation": ["laser ablation"],
+      "temperature": ["temperature shift", "heat shock", "cold shock"]
+    }
+  }
+}

@@ -1,0 +1,618 @@
+{
+  "aleph_authority": "none",
+  "architecture": {
+    "base_channels": 16,
+    "embedding_dimension": 64,
+    "family": "conditional_two_level_residual_UNet",
+    "parameter_count": 244001,
+    "selected_epoch": 16
+  },
+  "checkpoint_sha256": "150c4a5884b4b4dabc1a412f0bc8b9bd43d3d339f9c4e46d12beb665a04ac383",
+  "confirmation_open_condition_passed": true,
+  "confirmation_pairs_seen": 0,
+  "embedding_reference": {
+    "calibration_score_mean": 5.409465312957764,
+    "dimension": 64,
+    "fit_pair_count": 3744,
+    "score": "diagonal_Mahalanobis_squared"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "fit_loss_components": {
+        "L1": 0.2610472177083676,
+        "SSIM_loss": 0.9670832646198761,
+        "correlation_loss": 0.9206392352397625,
+        "gradient_L1": 0.060042155476716846,
+        "total": 0.7359799513450036
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 0.5914248061134764,
+          "global_SSIM": 0.32335605904530706,
+          "relative_MAE_improvement": 1.9961391957555012
+        },
+        "minimum_endpoint_ratio": 0.32335605904530706,
+        "values": {
+          "Pearson": 0.2069986821397167,
+          "global_SSIM": 0.08083901476132677,
+          "relative_MAE_improvement": 0.19961391957555014
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "fit_loss_components": {
+        "L1": 0.12400109148942508,
+        "SSIM_loss": 0.909864733616511,
+        "correlation_loss": 0.8519993286866409,
+        "gradient_L1": 0.06227082195572364,
+        "total": 0.5675806464293064
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 0.34768905963317304,
+          "global_SSIM": 0.2478251438426024,
+          "relative_MAE_improvement": 1.2149271987156594
+        },
+        "minimum_endpoint_ratio": 0.2478251438426024,
+        "values": {
+          "Pearson": 0.12169117087161055,
+          "global_SSIM": 0.0619562859606506,
+          "relative_MAE_improvement": 0.12149271987156594
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "fit_loss_components": {
+        "L1": 0.12158220347303611,
+        "SSIM_loss": 0.90130280989867,
+        "correlation_loss": 0.8150686094394097,
+        "gradient_L1": 0.061487563336506866,
+        "total": 0.5537494344589038
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 0.15973577257945482,
+          "global_SSIM": 0.13085519272414334,
+          "relative_MAE_improvement": 0.8365977653671081
+        },
+        "minimum_endpoint_ratio": 0.13085519272414334,
+        "values": {
+          "Pearson": 0.05590752040280918,
+          "global_SSIM": 0.032713798181035834,
+          "relative_MAE_improvement": 0.0836597765367108
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "fit_loss_components": {
+        "L1": 0.12002322249687634,
+        "SSIM_loss": 0.9034766593040564,
+        "correlation_loss": 0.7975307267445785,
+        "gradient_L1": 0.0597053242321962,
+        "total": 0.5482603342105181
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 0.2490723099610247,
+          "global_SSIM": 0.1523273813346976,
+          "relative_MAE_improvement": 1.1383682324005173
+        },
+        "minimum_endpoint_ratio": 0.1523273813346976,
+        "values": {
+          "Pearson": 0.08717530848635864,
+          "global_SSIM": 0.0380818453336744,
+          "relative_MAE_improvement": 0.11383682324005175
+        }
+      }
+    },
+    {
+      "epoch": 5,
+      "fit_loss_components": {
+        "L1": 0.11917021326147594,
+        "SSIM_loss": 0.8920789429774652,
+        "correlation_loss": 0.7684563062129877,
+        "gradient_L1": 0.05892187342620813,
+        "total": 0.5372501199062054
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 0.4243281859814836,
+          "global_SSIM": 0.3076133651877994,
+          "relative_MAE_improvement": 0.49087099997425593
+        },
+        "minimum_endpoint_ratio": 0.3076133651877994,
+        "values": {
+          "Pearson": 0.14851486509351924,
+          "global_SSIM": 0.07690334129694985,
+          "relative_MAE_improvement": 0.049087099997425596
+        }
+      }
+    },
+    {
+      "epoch": 6,
+      "fit_loss_components": {
+        "L1": 0.12225555504361789,
+        "SSIM_loss": 0.871278125506181,
+        "correlation_loss": 0.7146606323046562,
+        "gradient_L1": 0.05840296326921536,
+        "total": 0.5216603905726702
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 1.038102247117775,
+          "global_SSIM": 0.886943372792178,
+          "relative_MAE_improvement": 2.251581367081419
+        },
+        "minimum_endpoint_ratio": 0.886943372792178,
+        "values": {
+          "Pearson": 0.3633357864912212,
+          "global_SSIM": 0.2217358431980445,
+          "relative_MAE_improvement": 0.2251581367081419
+        }
+      }
+    },
+    {
+      "epoch": 7,
+      "fit_loss_components": {
+        "L1": 0.12258321228317726,
+        "SSIM_loss": 0.7838932199355884,
+        "correlation_loss": 0.6693304746578901,
+        "gradient_L1": 0.06074500585404726,
+        "total": 0.4889263850756181
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 1.2741160782324603,
+          "global_SSIM": 1.117537314491385,
+          "relative_MAE_improvement": 0.9027549550158002
+        },
+        "minimum_endpoint_ratio": 0.9027549550158002,
+        "values": {
+          "Pearson": 0.4459406273813611,
+          "global_SSIM": 0.27938432862284623,
+          "relative_MAE_improvement": 0.09027549550158002
+        }
+      }
+    },
+    {
+      "epoch": 8,
+      "fit_loss_components": {
+        "L1": 0.11871409530823047,
+        "SSIM_loss": 0.6966010828812917,
+        "correlation_loss": 0.6157233302409832,
+        "gradient_L1": 0.0615859756198449,
+        "total": 0.4498744969948744
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.426704819489526,
+          "global_SSIM": 1.6634784055629677,
+          "relative_MAE_improvement": 1.7015497061866407
+        },
+        "minimum_endpoint_ratio": 1.426704819489526,
+        "values": {
+          "Pearson": 0.4993466868213341,
+          "global_SSIM": 0.4158696013907419,
+          "relative_MAE_improvement": 0.17015497061866408
+        }
+      }
+    },
+    {
+      "epoch": 9,
+      "fit_loss_components": {
+        "L1": 0.1181963471074899,
+        "SSIM_loss": 0.6820045235829476,
+        "correlation_loss": 0.6041010686984429,
+        "gradient_L1": 0.06075554866439257,
+        "total": 0.44276052484145534
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3087917892801624,
+          "global_SSIM": 1.3203395561873068,
+          "relative_MAE_improvement": 2.378379017044971
+        },
+        "minimum_endpoint_ratio": 1.3087917892801624,
+        "values": {
+          "Pearson": 0.4580771262480568,
+          "global_SSIM": 0.3300848890468267,
+          "relative_MAE_improvement": 0.23783790170449712
+        }
+      }
+    },
+    {
+      "epoch": 10,
+      "fit_loss_components": {
+        "L1": 0.11681128656252837,
+        "SSIM_loss": 0.6720847624998826,
+        "correlation_loss": 0.5946300396552453,
+        "gradient_L1": 0.0615046701561182,
+        "total": 0.43656522112014967
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3455851910427372,
+          "global_SSIM": 1.233461738768412,
+          "relative_MAE_improvement": 2.530801944398389
+        },
+        "minimum_endpoint_ratio": 1.233461738768412,
+        "values": {
+          "Pearson": 0.470954816864958,
+          "global_SSIM": 0.308365434692103,
+          "relative_MAE_improvement": 0.2530801944398389
+        }
+      }
+    },
+    {
+      "epoch": 11,
+      "fit_loss_components": {
+        "L1": 0.11668828110664319,
+        "SSIM_loss": 0.6653598906138004,
+        "correlation_loss": 0.5861975978582333,
+        "gradient_L1": 0.061074891342566565,
+        "total": 0.4326313974765631
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.5312955695446675,
+          "global_SSIM": 1.7650916278937223,
+          "relative_MAE_improvement": 3.1076449431906648
+        },
+        "minimum_endpoint_ratio": 1.5312955695446675,
+        "values": {
+          "Pearson": 0.5359534493406336,
+          "global_SSIM": 0.4412729069734306,
+          "relative_MAE_improvement": 0.3107644943190665
+        }
+      }
+    },
+    {
+      "epoch": 12,
+      "fit_loss_components": {
+        "L1": 0.11360429513912934,
+        "SSIM_loss": 0.6473894822291839,
+        "correlation_loss": 0.5700380343657273,
+        "gradient_L1": 0.06007847242439405,
+        "total": 0.4209650957431549
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.5168281170486593,
+          "global_SSIM": 1.7934811250138618,
+          "relative_MAE_improvement": 2.347918437937098
+        },
+        "minimum_endpoint_ratio": 1.5168281170486593,
+        "values": {
+          "Pearson": 0.5308898409670307,
+          "global_SSIM": 0.44837028125346545,
+          "relative_MAE_improvement": 0.23479184379370982
+        }
+      }
+    },
+    {
+      "epoch": 13,
+      "fit_loss_components": {
+        "L1": 0.11571470275521278,
+        "SSIM_loss": 0.6454547895834997,
+        "correlation_loss": 0.5648310406085773,
+        "gradient_L1": 0.06120374483557848,
+        "total": 0.42134634844767743
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.5158192008547777,
+          "global_SSIM": 1.6173730572008278,
+          "relative_MAE_improvement": 2.8762510074440795
+        },
+        "minimum_endpoint_ratio": 1.5158192008547777,
+        "values": {
+          "Pearson": 0.5305367202991722,
+          "global_SSIM": 0.40434326430020695,
+          "relative_MAE_improvement": 0.28762510074440795
+        }
+      }
+    },
+    {
+      "epoch": 14,
+      "fit_loss_components": {
+        "L1": 0.11348861952622731,
+        "SSIM_loss": 0.6388348463254098,
+        "correlation_loss": 0.5628466682556348,
+        "gradient_L1": 0.060254973192245535,
+        "total": 0.41692174397982085
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.586504573829271,
+          "global_SSIM": 1.774202055623121,
+          "relative_MAE_improvement": 3.356830790148547
+        },
+        "minimum_endpoint_ratio": 1.586504573829271,
+        "values": {
+          "Pearson": 0.5552766008402448,
+          "global_SSIM": 0.44355051390578026,
+          "relative_MAE_improvement": 0.3356830790148547
+        }
+      }
+    },
+    {
+      "epoch": 15,
+      "fit_loss_components": {
+        "L1": 0.11432308340683961,
+        "SSIM_loss": 0.6383987626968286,
+        "correlation_loss": 0.5567462302935429,
+        "gradient_L1": 0.06142076639792858,
+        "total": 0.416180371091916
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.550960704704065,
+          "global_SSIM": 1.7519986158489256,
+          "relative_MAE_improvement": 3.100783466349013
+        },
+        "minimum_endpoint_ratio": 1.550960704704065,
+        "values": {
+          "Pearson": 0.5428362466464227,
+          "global_SSIM": 0.4379996539622314,
+          "relative_MAE_improvement": 0.3100783466349013
+        }
+      }
+    },
+    {
+      "epoch": 16,
+      "fit_loss_components": {
+        "L1": 0.11308728626523262,
+        "SSIM_loss": 0.621012453849499,
+        "correlation_loss": 0.5440396517515182,
+        "gradient_L1": 0.061393715584507354,
+        "total": 0.4074199937092952
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.5943005442335259,
+          "global_SSIM": 1.9018522237718358,
+          "relative_MAE_improvement": 3.0090364736140094
+        },
+        "minimum_endpoint_ratio": 1.5943005442335259,
+        "values": {
+          "Pearson": 0.558005190481734,
+          "global_SSIM": 0.47546305594295896,
+          "relative_MAE_improvement": 0.30090364736140096
+        }
+      }
+    }
+  ],
+  "may_emit_numeric_sweep_range": false,
+  "observable_evidence_eligible": false,
+  "production_eligible": false,
+  "protocol_sha256": "dcdcddb0f6515b1d34437b28798bfe119bfd542cc92d611ccf51db653ca24a05",
+  "schema": "aleph.outer_library.lightmycells_model_training.v2",
+  "selection_baseline_comparison": {
+    "Actin": {
+      "fit_mean_map_macro_study_MAE": 0.17993971705436707,
+      "model_macro_study_MAE": 0.1190667673945427,
+      "per_study_fit_mean_map_MAE": {
+        "Study_3": 0.17993971705436707
+      },
+      "per_study_model_MAE": {
+        "Study_3": 0.1190667673945427
+      },
+      "relative_MAE_improvement": 0.3382963508908497
+    },
+    "Mitochondria": {
+      "fit_mean_map_macro_study_MAE": 0.1294429451227188,
+      "model_macro_study_MAE": 0.08955974318087101,
+      "per_study_fit_mean_map_MAE": {
+        "Study_11": 0.12979723513126373,
+        "Study_15": 0.11771246790885925,
+        "Study_28": 0.119744211435318,
+        "Study_3": 0.15051786601543427
+      },
+      "per_study_model_MAE": {
+        "Study_11": 0.07438743114471436,
+        "Study_15": 0.09299340844154358,
+        "Study_28": 0.06857135146856308,
+        "Study_3": 0.12228678166866302
+      },
+      "relative_MAE_improvement": 0.308114141748215
+    },
+    "Nucleus": {
+      "fit_mean_map_macro_study_MAE": 0.14546799287199974,
+      "model_macro_study_MAE": 0.1027450393885374,
+      "per_study_fit_mean_map_MAE": {
+        "Study_11": 0.14341139793395996,
+        "Study_15": 0.14345772564411163,
+        "Study_28": 0.13403093814849854,
+        "Study_3": 0.16097190976142883
+      },
+      "per_study_model_MAE": {
+        "Study_11": 0.07777465134859085,
+        "Study_15": 0.11452575773000717,
+        "Study_28": 0.08821851760149002,
+        "Study_3": 0.13046123087406158
+      },
+      "relative_MAE_improvement": 0.29369315297458687
+    }
+  },
+  "selection_endpoints": {
+    "all_selection_endpoints_passed": true,
+    "endpoint_ratios": {
+      "Pearson": 1.5943005442335259,
+      "global_SSIM": 1.9018522237718358,
+      "relative_MAE_improvement": 3.0090364736140094
+    },
+    "minimum_endpoint_ratio": 1.5943005442335259,
+    "values": {
+      "Pearson": 0.558005190481734,
+      "global_SSIM": 0.47546305594295896,
+      "relative_MAE_improvement": 0.30090364736140096
+    }
+  },
+  "selection_metrics": {
+    "per_study_target": [
+      {
+        "MAE": 0.07438743114471436,
+        "MSE": 0.01563948765397072,
+        "mean_global_SSIM": 0.6889530264604907,
+        "mean_image_Pearson": 0.7387168406501163,
+        "pair_count": 4,
+        "study_id": "Study_11",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.07777465134859085,
+        "MSE": 0.017432931810617447,
+        "mean_global_SSIM": 0.6803871489778271,
+        "mean_image_Pearson": 0.7375943930417489,
+        "pair_count": 4,
+        "study_id": "Study_11",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.09299340844154358,
+        "MSE": 0.021218232810497284,
+        "mean_global_SSIM": 0.43368525223945514,
+        "mean_image_Pearson": 0.48818249430996463,
+        "pair_count": 4,
+        "study_id": "Study_15",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.11452575773000717,
+        "MSE": 0.04233069717884064,
+        "mean_global_SSIM": 0.3222363954889456,
+        "mean_image_Pearson": 0.48548078472407596,
+        "pair_count": 4,
+        "study_id": "Study_15",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.06857135146856308,
+        "MSE": 0.013565406203269958,
+        "mean_global_SSIM": 0.7201647488845424,
+        "mean_image_Pearson": 0.7697121123824642,
+        "pair_count": 16,
+        "study_id": "Study_28",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.08821851760149002,
+        "MSE": 0.029386984184384346,
+        "mean_global_SSIM": 0.4253809226779321,
+        "mean_image_Pearson": 0.5476005957030227,
+        "pair_count": 7,
+        "study_id": "Study_28",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.1190667673945427,
+        "MSE": 0.02933121658861637,
+        "mean_global_SSIM": 0.2699821953200359,
+        "mean_image_Pearson": 0.3522013780872955,
+        "pair_count": 7,
+        "study_id": "Study_3",
+        "target_channel": "Actin"
+      },
+      {
+        "MAE": 0.12228678166866302,
+        "MSE": 0.03464740142226219,
+        "mean_global_SSIM": 0.30203873138191867,
+        "mean_image_Pearson": 0.4153288053419186,
+        "pair_count": 7,
+        "study_id": "Study_3",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.13046123087406158,
+        "MSE": 0.03951184079051018,
+        "mean_global_SSIM": 0.23085822143255955,
+        "mean_image_Pearson": 0.28142549770056097,
+        "pair_count": 8,
+        "study_id": "Study_3",
+        "target_channel": "Nucleus"
+      }
+    ],
+    "per_target": {
+      "Actin": {
+        "macro_study_MAE": 0.1190667673945427,
+        "macro_study_Pearson": 0.3522013780872955,
+        "macro_study_global_SSIM": 0.2699821953200359,
+        "pair_count": 7,
+        "study_count": 1
+      },
+      "Mitochondria": {
+        "macro_study_MAE": 0.08955974318087101,
+        "macro_study_Pearson": 0.602985063171116,
+        "macro_study_global_SSIM": 0.5362104397416018,
+        "pair_count": 31,
+        "study_count": 4
+      },
+      "Nucleus": {
+        "macro_study_MAE": 0.1027450393885374,
+        "macro_study_Pearson": 0.513025317792352,
+        "macro_study_global_SSIM": 0.41471567214431615,
+        "pair_count": 23,
+        "study_count": 4
+      }
+    }
+  },
+  "status": "checkpoint_frozen_selection_ready_confirmation_pending",
+  "tensor_sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0",
+  "uncertainty_authority": false,
+  "uncertainty_calibration": {
+    "Actin": {
+      "status": "unsupported",
+      "study_count": 0
+    },
+    "Mitochondria": {
+      "normalized_interval_width": 0.49155157804489136,
+      "pair_count": 253,
+      "pixel_coverage": 0.941014467020751,
+      "status": "calibrated_same_source_studies",
+      "study_90th_residual_quantiles": {
+        "Study_16": 0.36509478092193604,
+        "Study_18": 0.3587346374988556,
+        "Study_27": 0.2905352711677551
+      },
+      "study_count": 3,
+      "threshold": 0.36509478092193604
+    },
+    "Nucleus": {
+      "normalized_interval_width": 0.514367401599884,
+      "pair_count": 268,
+      "pixel_coverage": 0.9438239709654851,
+      "status": "calibrated_same_source_studies",
+      "study_90th_residual_quantiles": {
+        "Study_18": 0.40513384342193604,
+        "Study_27": 0.30052047967910767,
+        "Study_29": 0.3543005883693695
+      },
+      "study_count": 3,
+      "threshold": 0.40513384342193604
+    },
+    "Tubulin": {
+      "status": "unsupported",
+      "study_count": 1
+    }
+  }
+}

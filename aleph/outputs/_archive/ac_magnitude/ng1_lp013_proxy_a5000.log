@@ -1,0 +1,15 @@
+Warp 1.14.0 initialized on cuda:0: NVIDIA RTX A5000 Laptop GPU
+NG-1 two-filament sarcomere isometric-stall gate
+diagnostic proxy only: lp_um=0.13; ticks=600; actin_nodes=452; heads=20; seed=20260717
+production topology fixture: n_bb=14; N_side=10; L_bb=0.301 um; head offset=0.2 um
+measured clamp reactions: A=-1.7447 pN; B=+1.6017 pN; mean magnitude=1.6732 pN
+analytic F_side=4.9627 pN; emergent bound fraction=0.9925 in analytic reference
+transmission ratio |B|/|A|=0.9180
+stall v/v0=0.0831; reported mean head load=-0.2490 pN; simulated bound fraction=0.7000
+PASS transmission
+FAIL reaction_A approximately F_side
+FAIL reaction_B approximately F_side
+PASS reactions opposite
+PASS stalled velocity
+PASS emergent bound fraction
+NG-1 OVERALL: FAIL (4/6 checks)

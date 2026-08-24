@@ -1,0 +1,127 @@
+{
+  "aleph_authority": "none",
+  "all_qc_labels": [
+    "NO morphological changes",
+    "apoptosis",
+    "autophagy inducer",
+    "ferroptosis inducer",
+    "immunogenic cell death",
+    "large flat nucleoli",
+    "necroptosis inducer",
+    "pyroptosis inducer"
+  ],
+  "article_id": 28202864,
+  "author_split_summary": {
+    "split_CellProfiler_moa": {
+      "role_counts": {
+        "test": 202,
+        "training": 518,
+        "valid": 167
+      },
+      "rows": 887,
+      "unique_plate_wells": 887
+    },
+    "split_DINO_moa": {
+      "role_counts": {
+        "test": 179,
+        "training": 530,
+        "valid": 185
+      },
+      "rows": 894,
+      "unique_plate_wells": 894
+    },
+    "split_DeepProfiler_moa": {
+      "role_counts": {
+        "test": 185,
+        "training": 548,
+        "valid": 180
+      },
+      "rows": 913,
+      "unique_plate_wells": 913
+    }
+  },
+  "cell_line": "MCF7",
+  "doi": "10.17044/scilifelab.28202864.v2",
+  "feature_archive_ready_for_training": true,
+  "independent_from_biad2515_provider": true,
+  "intended_role": "programmed_cell_death_mechanism_head_and_cross_assay_apoptosis_evidence",
+  "large_file_inventory": {
+    "classification_splits.tar.gz": {
+      "id": 54975083,
+      "locally_acquired": false,
+      "md5": "cde9d65431677bd142bba879549e226c",
+      "size": 1848046769,
+      "url": "https://ndownloader.figshare.com/files/54975083"
+    },
+    "embeddings.tar.gz": {
+      "id": 54975200,
+      "locally_acquired": false,
+      "md5": "913aacc8b31df22c9bc60936e0ba3c2f",
+      "size": 4318114942,
+      "url": "https://ndownloader.figshare.com/files/54975200"
+    },
+    "features.tar.gz": {
+      "id": 54975104,
+      "locally_acquired": true,
+      "md5": "680c12ebc351f260f56ef722ffc7c2aa",
+      "size": 2451859048,
+      "url": "https://ndownloader.figshare.com/files/54975104"
+    }
+  },
+  "license_id": "CC-BY-4.0",
+  "may_select_aleph_parameter": false,
+  "metadata_site_rows": 21271,
+  "plate_count": 8,
+  "programmed_cell_death_labels": [
+    "apoptosis",
+    "autophagy inducer",
+    "ferroptosis inducer",
+    "immunogenic cell death",
+    "necroptosis inducer",
+    "pyroptosis inducer"
+  ],
+  "publication_preprint_doi": "10.1101/2025.01.15.633042",
+  "published_date": "2025-06-04",
+  "qc_site_rows": 15430,
+  "retrieved_at": "2026-08-06",
+  "same_endpoint_as_biad2515_annexin_v": false,
+  "schema": "aleph.outer_library.figshare_cell_death_acquisition.v1",
+  "treatment_hours": 48,
+  "verified_local_files": {
+    "README.txt": {
+      "locally_acquired": true,
+      "md5": "b0173f7a856fed5a8ecb6a638b83b57a",
+      "sha256": "04604fed1b9870420688ed4f185b2b5e1948e77d5644983550195fbd305e7982",
+      "size": 4293,
+      "url": "https://ndownloader.figshare.com/files/51791030"
+    },
+    "features.tar.gz": {
+      "locally_acquired": true,
+      "md5": "680c12ebc351f260f56ef722ffc7c2aa",
+      "sha256": "8c5e337cc5029e453785c572ca8622e62c881b1c078649ef158fe1200e3f1a99",
+      "size": 2451859048,
+      "url": "https://ndownloader.figshare.com/files/54975104"
+    },
+    "metadata_celldeath_paper.csv": {
+      "locally_acquired": true,
+      "md5": "a92d4fddf20e6ca76473e5cc74c25a8a",
+      "sha256": "e40c968af545947bb45427037ef046ba128133bddb6670b3242005638d32d9a0",
+      "size": 1890409,
+      "url": "https://ndownloader.figshare.com/files/51672443"
+    },
+    "qc_df.csv": {
+      "locally_acquired": true,
+      "md5": "99e6cf3ea0e8fb59c8fa9b7ad5e01465",
+      "sha256": "fc44402f50fe6d79be6ae28effe6c99a9e98c50719c05ef9fad1ace928a752b1",
+      "size": 1642736,
+      "url": "https://ndownloader.figshare.com/files/54974975"
+    },
+    "splits.tar.gz": {
+      "locally_acquired": true,
+      "md5": "68a67b79854a2657ce4a90126deebd28",
+      "sha256": "91adadc4cdebfb9c50ee917ccf4d26e972d5f43b7f495d54c0fe84e7a78f7f76",
+      "size": 35301,
+      "url": "https://ndownloader.figshare.com/files/54974987"
+    }
+  }
+}

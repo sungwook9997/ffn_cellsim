@@ -1,0 +1,67 @@
+{
+  "cell_count": 32266,
+  "channel_order": [
+    "Ch3",
+    "Ch4",
+    "Ch6"
+  ],
+  "compact_shape": [
+    16,
+    16
+  ],
+  "decoded_source_shape": [
+    66,
+    66
+  ],
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "may_select_aleph_parameter": false,
+  "schema": "aleph.outer_library.bbbc048_image_tensor.v1",
+  "split_class_counts": {
+    "calibration": {
+      "0": 1,
+      "1": 6,
+      "2": 60,
+      "3": 2,
+      "4": 1433,
+      "5": 860,
+      "6": 861
+    },
+    "selection": {
+      "0": 1,
+      "1": 6,
+      "2": 60,
+      "3": 2,
+      "4": 1433,
+      "5": 860,
+      "6": 861
+    },
+    "test": {
+      "0": 4,
+      "1": 12,
+      "2": 93,
+      "3": 6,
+      "4": 2151,
+      "5": 1291,
+      "6": 1294
+    },
+    "train": {
+      "0": 9,
+      "1": 44,
+      "2": 393,
+      "3": 17,
+      "4": 9316,
+      "5": 5590,
+      "6": 5600
+    }
+  },
+  "split_group_overlap": 0,
+  "tensor_dtype": "uint8",
+  "tensor_shape": [
+    32266,
+    3,
+    16,
+    16
+  ],
+  "training_role": "same_provider_cell_cycle_supervision"
+}

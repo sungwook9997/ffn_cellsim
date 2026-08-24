@@ -1,0 +1,17 @@
+{
+  "schema": "aleph.outer_library.multiprovider_if_allencell_metadata_amendment.v1",
+  "base_protocol_sha256": "41dc73848e0208dd1b4c7295e2740dd18accb07e26d0f9e2cc1155e59684f77a",
+  "frozen_before_allencell_metadata_csv_header_or_pixel_access": true,
+  "purpose": "pin normalized header aliases without mutating the already-used OpenCell development protocol",
+  "normalized_header_aliases": {
+    "cell_id": ["cellid", "cellidentifier", "cell_id"],
+    "tagged_structure": ["structure", "structurename", "taggedstructure", "tagged_structure"],
+    "tagged_gene_or_protein": ["gene", "genename", "taggedgene", "protein", "proteinname", "taggedprotein"],
+    "image_object_path": ["cropraw", "crop_raw", "rawimagepath", "raw_image_path", "imagepath", "image_object_path"]
+  },
+  "posthoc_alias_additions_forbidden": true,
+  "Allen_image_objects_downloaded_before_freeze": 0,
+  "Allen_pixels_accessed_before_freeze": 0,
+  "model_predictions_made_before_freeze": 0,
+  "aleph_authority": "none"
+}

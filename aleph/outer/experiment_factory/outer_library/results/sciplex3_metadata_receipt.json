@@ -1,0 +1,71 @@
+{
+  "accession": "GSM4150378",
+  "aleph_authority": "none",
+  "design_dimensions": {
+    "cell_types": [
+      "A549",
+      "K562",
+      "MCF7"
+    ],
+    "condition_rows": 4992,
+    "dose_levels": [
+      0.0,
+      10.0,
+      100.0,
+      1000.0,
+      10000.0
+    ],
+    "replicates": [
+      "rep1",
+      "rep2"
+    ],
+    "time_points_hours": [
+      24,
+      72
+    ],
+    "treatment_count_including_vehicle": 189
+  },
+  "external_lab_holdout": false,
+  "files": [
+    {
+      "file": "GSM4150378_sciPlex3_A549_MCF7_K562_screen_cell.annotations.txt.gz",
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4150nnn/GSM4150378/suppl/GSM4150378_sciPlex3_A549_MCF7_K562_screen_cell.annotations.txt.gz",
+      "sha256": "5db11591747a49f07ceb90a070971d60816591911f1022171adba7d8d032f379",
+      "size_bytes": 2770264
+    },
+    {
+      "file": "GSM4150378_sciPlex3_A549_MCF7_K562_screen_gene.annotations.txt.gz",
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4150nnn/GSM4150378/suppl/GSM4150378_sciPlex3_A549_MCF7_K562_screen_gene.annotations.txt.gz",
+      "sha256": "fbe43028cfb75dc5ebf383cbbbb100da6b51e7be8e2e74f6354f7c59b9fda7c2",
+      "size_bytes": 806168
+    },
+    {
+      "file": "GSM4150378_sciPlex3_A549_MCF7_K562_hashTable_metadata.txt.gz",
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4150nnn/GSM4150378/suppl/GSM4150378_sciPlex3_A549_MCF7_K562_hashTable_metadata.txt.gz",
+      "sha256": "98a65191d343d149c5742cf6e7b734d403e853d165da800fa2daea41b978a2ff",
+      "size_bytes": 64715
+    },
+    {
+      "file": "GSM4150378_sciPlex3_hashSampleSheet.txt.gz",
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4150nnn/GSM4150378/suppl/GSM4150378_sciPlex3_hashSampleSheet.txt.gz",
+      "sha256": "ac66d0dfdcc3c170af9beafe2843d0250a10f753f7bf99968aafe7a2e7279084",
+      "size_bytes": 6441
+    },
+    {
+      "file": "GSM4150378_sciPlex3_pData.txt.gz",
+      "gzip_stream_verified": true,
+      "official_url": "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4150nnn/GSM4150378/suppl/GSM4150378_sciPlex3_pData.txt.gz",
+      "sha256": "860ba5c21846e2cfe97c39c805895982ef9db4b108cdf8b841a4a91be65024c2",
+      "size_bytes": 84673357
+    }
+  ],
+  "license_status": "no_explicit_reuse_license_on_GEO_record",
+  "retrieved_at": "2026-08-06",
+  "schema": "aleph.outer_library.sciplex3_metadata_receipt.v1",
+  "split_warning": "cells sharing replicate-treatment-dose-time context must not cross splits",
+  "total_bytes": 88320945
+}

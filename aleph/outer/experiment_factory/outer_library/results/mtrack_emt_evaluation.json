@@ -1,0 +1,117 @@
+{
+  "OOD_refusal_validated": false,
+  "aleph_authority": "none",
+  "cross_lab_vimentin_direction_context": {
+    "MTRACK_live_VIM_RFP_late_vs_early_direction": "decrease",
+    "directions_agree": false,
+    "fixed_IF_TGF_beta1_vs_control_vimentin_direction": "increase",
+    "inferential_cross_assay_equivalence_claimed": false,
+    "source": "figshare-26500210-exif-a549-emt-4plex"
+  },
+  "design_audit": {
+    "biological_replicates_released": false,
+    "frames_are_repeated_technical_measurements": true,
+    "frames_permitted_as_train_test_units": false,
+    "paper_reports_10_minute_TRITC_interval": true,
+    "timepoints": 10,
+    "trajectory_split_groups": 1,
+    "untreated_control_released": false
+  },
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "limitations": [
+    "the public GUI example contains one xy01 trajectory and no untreated control",
+    "ten timepoints are correlated technical measurements, not ten independent samples",
+    "late-versus-early changes cannot be attributed uniquely to EMT without a control trajectory",
+    "live endogenous VIM-RFP intensity is not assumed numerically equivalent to fixed-antibody IF",
+    "the released image-data license is not stated",
+    "no numeric Aleph parameter range is identified"
+  ],
+  "may_select_aleph_parameter": false,
+  "observable_evidence_eligible": false,
+  "pre_sweep_role": {
+    "candidate_mechanism_families": [
+      "intermediate_filament_remodelling",
+      "cell_shape_remodelling",
+      "cell_cell_adhesion",
+      "actomyosin_contractility"
+    ],
+    "may_emit_sweep_axis": false,
+    "numeric_range": null,
+    "required_before_promotion": [
+      "untreated and treated biological-replicate-complete trajectories",
+      "independent-lab common-task temporal validation",
+      "calibrated uncertainty and OOD refusal",
+      "Aleph live-image observation operator and forward sensitivity"
+    ],
+    "role": "future_temporal_state_conditioning_and_sweep_space_reduction"
+  },
+  "representation_training_eligible": true,
+  "schema": "aleph.outer_library.mtrack_emt_temporal_evaluation.v1",
+  "source": {
+    "dataset_id": "github-mtrack-a549-tgfb4ng-xy01",
+    "lab_group": "Xing_Lab_University_of_Pittsburgh_with_ATCC_Cell_Systems",
+    "paper_doi": "10.1126/sciadv.aba9319"
+  },
+  "state_axis": "EMT_epithelial_mesenchymal_state",
+  "task": "live_VIM_RFP_EMT_temporal_representation_diagnostic",
+  "temporal_descriptive_trends": [
+    {
+      "early_three_median": 34768.0,
+      "feature": "mask_area_pixels",
+      "late_minus_early": 28399.0,
+      "late_three_median": 63167.0,
+      "spearman_time_correlation": 0.9515151515151514
+    },
+    {
+      "early_three_median": 1900.0,
+      "feature": "mask_boundary_pixels",
+      "late_minus_early": 1861.0,
+      "late_three_median": 3761.0,
+      "spearman_time_correlation": 0.9272727272727272
+    },
+    {
+      "early_three_median": 1.0031397174254317,
+      "feature": "mask_bbox_aspect_ratio",
+      "late_minus_early": 0.10911099482528042,
+      "late_three_median": 1.1122507122507121,
+      "spearman_time_correlation": 0.5393939393939393
+    },
+    {
+      "early_three_median": 486.60035089737687,
+      "feature": "VIM_RFP_masked_mean",
+      "late_minus_early": -15.12301304691698,
+      "late_three_median": 471.4773378504599,
+      "spearman_time_correlation": -0.9151515151515152
+    },
+    {
+      "early_three_median": 81.14099365984153,
+      "feature": "VIM_RFP_masked_std",
+      "late_minus_early": -23.85179379194463,
+      "late_three_median": 57.2891998678969,
+      "spearman_time_correlation": -0.8060606060606059
+    },
+    {
+      "early_three_median": 69.05181659655176,
+      "feature": "VIM_RFP_foreground_background_difference",
+      "late_minus_early": -18.206115913347844,
+      "late_three_median": 50.845700683203916,
+      "spearman_time_correlation": -0.9151515151515152
+    },
+    {
+      "early_three_median": 9.434386253356934,
+      "feature": "VIM_RFP_foreground_horizontal_gradient",
+      "late_minus_early": -1.0592994689941406,
+      "late_three_median": 8.375086784362793,
+      "spearman_time_correlation": -0.9272727272727272
+    },
+    {
+      "early_three_median": 9.542623519897461,
+      "feature": "VIM_RFP_foreground_vertical_gradient",
+      "late_minus_early": -1.1742963790893555,
+      "late_three_median": 8.368327140808105,
+      "spearman_time_correlation": -0.9515151515151514
+    }
+  ],
+  "uncertainty_holdout_passed": false
+}

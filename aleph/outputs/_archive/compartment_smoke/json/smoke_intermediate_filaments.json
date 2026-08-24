@@ -1,0 +1,46 @@
+{
+  "compartment": "intermediate_filaments",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 3000,
+  "dt_s": 6.98e-07,
+  "params": {
+    "n_filaments": 60,
+    "beads_per_fil": 8,
+    "l_seg_m": 5e-07,
+    "E_if_Pa": 6000000.0,
+    "Lp_m": 5e-07,
+    "d_if_m": 1e-08,
+    "k_bb_Npm": 0.0009424777960769379,
+    "k_xl_Npm": 9.42477796076938e-05,
+    "ratio_xl": 0.1,
+    "max_stretch_ratio": 3.0,
+    "R_cage_inner_m": 3e-06,
+    "R_cage_outer_m": 5.2500000000000006e-06,
+    "gamma_if_Nspm": 6.210928676147022e-06
+  },
+  "topology": {
+    "n_host_stub": 12,
+    "n_if_beads": 480,
+    "n_backbone_bonds": 420,
+    "n_crosslink_bonds": 60,
+    "n_crosslink_bin_types": 13
+  },
+  "observables": {
+    "backbone_len_mean_m": 5.000004191620126e-07,
+    "backbone_rel_dev_rms": 0.0034029605994107654,
+    "construction_bond_energy_kT": 53.744482378053874,
+    "construction_force_free": true,
+    "post_run_bond_energy_kT": 191.08713530793435,
+    "cage_r_min_m": 3.0138691176939344e-06,
+    "cage_r_max_m": 5.523162182296463e-06,
+    "max_particle_disp_m": 6.22295966366036e-09,
+    "all_finite": true
+  },
+  "constants_smoke_only": [
+    "n_filaments=60 (layout)",
+    "beads_per_fil=8 (layout)",
+    "E_if=6e6 (ORDER_ESTIMATE module default)"
+  ],
+  "note": "PLUMBING smoke: linear small-strain IF path only (nonlinear law is PI-pending / NotImplementedError). Confirms shared-bond registration of if_backbone + per-r0-bin if_crosslink_b{i}, force-free construction (r0=0 pre-tension audit fix), and BAOAB stepping. NOT the delta-gamma activation gate."
+}

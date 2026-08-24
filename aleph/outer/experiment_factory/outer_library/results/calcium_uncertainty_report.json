@@ -1,0 +1,73 @@
+{
+  "aleph_authority": "none",
+  "aleph_parameter_proposal_eligible": false,
+  "conformal": {
+    "alpha": 0.1,
+    "calibration_count": 30,
+    "class_conditional_external_coverage": {
+      "0": 0.9807692307692307,
+      "1": 0.9111969111969112
+    },
+    "class_thresholds": {
+      "0": 0.9073048161240074,
+      "1": 0.998711001738413
+    },
+    "empty_set_fraction": 0.0,
+    "external_count": 311,
+    "external_coverage": 0.9228295819935691,
+    "mean_prediction_set_size": 1.4855305466237942,
+    "method": "Mondrian_class_conditional_split_conformal_classification_set",
+    "nonconformity": "1_minus_probability_of_true_class",
+    "pooled_diagnostic": {
+      "external_coverage": 0.6655948553054662,
+      "mean_prediction_set_size": 1.0385852090032155,
+      "target_coverage_met": false,
+      "threshold": 0.5800454947259045
+    },
+    "singleton_accuracy": 0.85,
+    "singleton_fraction": 0.5144694533762058,
+    "target_coverage_met": true
+  },
+  "dataset_shift": {
+    "calibration_95pct_threshold": 1.2303316325587583,
+    "external_ood_rate": 0.37942122186495175,
+    "external_vs_calibration_auroc": 0.732368703108253,
+    "score": "nearest_training_class_centroid_standardized_distance",
+    "shift_detected": false
+  },
+  "external_conditions": [
+    "CaPINS (+GsMTx4)",
+    "CaPINS (+Mag)",
+    "LooPINS (+GsMTx4)",
+    "LooPINS (+Mag)"
+  ],
+  "external_dataset": "zenodo-19890985 EA.hy926",
+  "limitations": [
+    "split-conformal coverage is not guaranteed under the detected cross-lab shift",
+    "the result applies to batches containing both active nanoswitch treatment arms",
+    "biological replicate identities are unavailable for external cells"
+  ],
+  "sample_overlap_count": 0,
+  "selected_penalty": 10.0,
+  "selection_protocol": "penalty and temperature use HeLa train/validation only; the disjoint HeLa calibration split sets the conformal threshold; no EA.hy926 label tunes anything",
+  "split": {
+    "calibration": 30,
+    "train": 50,
+    "validation": 20
+  },
+  "task": "Piezo1_external_lab_training_only_uncertainty_audit",
+  "temperature": 0.10494555535009945,
+  "training_dataset": "zenodo-18495219 HeLa",
+  "uncertainty_holdout_passed": true,
+  "validation_metrics": {
+    "accuracy": 0.95,
+    "auroc": 0.98,
+    "balanced_accuracy": 0.95,
+    "class_counts": {
+      "0": 10,
+      "1": 10
+    },
+    "macro_f1": 0.949874686716792,
+    "sample_count": 20
+  }
+}

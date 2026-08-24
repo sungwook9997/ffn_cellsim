@@ -1,0 +1,70 @@
+{
+  "rows": [
+    {
+      "n_fibers": 8,
+      "n_nodes": 40,
+      "wca_edges": 7,
+      "xlink_edges": 6,
+      "residual_norm_pN": 8181537.752176639,
+      "loaded_fiber": 3,
+      "star_fiber_coverage": 0.75,
+      "pair_reduction": 0.8831029133100173,
+      "pair_blocks_spd": true,
+      "rigid_reduction": 0.8829418841012803,
+      "rigid_blocks_spd": true,
+      "star_reduction": 0.9747891938156581,
+      "star_blocks_spd": true,
+      "dominance": {
+        "full": 265893150.31713638,
+        "without_regularizer": 1.0124282358363411e+18,
+        "without_wca": 66533641.68244436,
+        "without_xlink": 257243499.08609885,
+        "without_bend": 265793458.83943766
+      }
+    },
+    {
+      "n_fibers": 12,
+      "n_nodes": 60,
+      "wca_edges": 11,
+      "xlink_edges": 10,
+      "residual_norm_pN": 8553465.037022935,
+      "loaded_fiber": 5,
+      "star_fiber_coverage": 0.5,
+      "pair_reduction": 0.8791435144917988,
+      "pair_blocks_spd": true,
+      "rigid_reduction": 0.8790499943405808,
+      "rigid_blocks_spd": true,
+      "star_reduction": 0.9643931299395746,
+      "star_blocks_spd": true,
+      "dominance": {
+        "full": 273457014.0135536,
+        "without_regularizer": 6.418441885188123e+18,
+        "without_wca": 72718112.99043672,
+        "without_xlink": 264738811.5821494,
+        "without_bend": 273357341.2227633
+      }
+    },
+    {
+      "n_fibers": 16,
+      "n_nodes": 80,
+      "wca_edges": 15,
+      "xlink_edges": 14,
+      "residual_norm_pN": 8463372.703162188,
+      "loaded_fiber": 7,
+      "star_fiber_coverage": 0.375,
+      "pair_reduction": 0.8776733261768769,
+      "pair_blocks_spd": true,
+      "rigid_reduction": 0.8772869835356152,
+      "rigid_blocks_spd": true,
+      "star_reduction": 0.9643563955137001,
+      "star_blocks_spd": true,
+      "dominance": {
+        "full": 274187142.1759395,
+        "without_regularizer": 3.5207165935139697e+18,
+        "without_wca": 74969561.99818878,
+        "without_xlink": 266719028.48551336,
+        "without_bend": 274087474.33728075
+      }
+    }
+  ]
+}

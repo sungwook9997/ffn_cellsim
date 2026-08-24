@@ -1,0 +1,41 @@
+{
+  "aleph_authority": "none",
+  "biological_replicates_reported": false,
+  "compact_tensor_shape": [
+    48,
+    5,
+    64,
+    64
+  ],
+  "counts": {
+    "conditions": 3,
+    "field_samples": 48,
+    "marker_panels": 8,
+    "raw_channel_files": 240,
+    "well_split_groups": 48
+  },
+  "feature_tensor_shape": [
+    48,
+    60
+  ],
+  "field_ids": [
+    "0000"
+  ],
+  "independent_dataset_holdout": false,
+  "independent_lab_holdout": false,
+  "manifest_sha256": "8924f2419b6143bf635efc92b5a45e1c460b06930e1a9dcb5aaf7c1bcac81a9a",
+  "may_select_aleph_parameter": false,
+  "schema": "aleph.outer_library.figshare_exif_emt_raw_if.v1",
+  "source": {
+    "dataset_doi": "10.6084/m9.figshare.26500210.v1",
+    "dataset_id": "figshare-26500210-exif-a549-emt-4plex",
+    "license_id": "cc-by-4.0",
+    "paper_doi": "10.1038/s41467-025-59592-7"
+  },
+  "source_image_shape": [
+    1024,
+    1024
+  ],
+  "tensor_sha256": "2113c42560deda11a9193b0fd638a589f85ea8720653efdc8719823687eec8c7",
+  "training_status": "raw_IF_EMT_condition_training_only"
+}

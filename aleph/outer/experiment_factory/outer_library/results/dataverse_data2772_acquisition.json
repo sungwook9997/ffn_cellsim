@@ -1,0 +1,60 @@
+{
+  "accession": "10.34810/DATA2772",
+  "aleph_authority": "none",
+  "metadata": {
+    "dataset_version": "1.1",
+    "last_update_time": "2026-04-17T10:11:06Z",
+    "license": "cc0-1.0",
+    "publication_date": "2026-02-10",
+    "selected_remote_files": {
+      "00_Readme.txt": {
+        "id": 418560,
+        "md5": "ac8f064f24963d645cd80fc560105da2",
+        "restricted": false,
+        "size": 11950
+      },
+      "Fig1G_PIVdata.rar": {
+        "id": 402394,
+        "md5": "c26da53148c2b12ee040d451367cb972",
+        "restricted": false,
+        "size": 17036899
+      },
+      "FigS09.rar": {
+        "id": 417938,
+        "md5": "4dbe7f6bd1187c1c6d82f4cf608d2473",
+        "restricted": false,
+        "size": 488983295
+      }
+    }
+  },
+  "paper_doi": "10.1126/science.adz9174",
+  "paper_repository": "UPCommons",
+  "provider": "CORA Research Data Repository Dataverse",
+  "schema": "aleph.outer_library.dataverse_data2772_acquisition.v1",
+  "sources": {
+    "00_Readme.txt": {
+      "md5": "ac8f064f24963d645cd80fc560105da2",
+      "role": "dataset_documentation",
+      "sha256": "5d17c5ec192e85d72b28e8aa7baf841cf77884cfedd7b65dde9f2e1baad9a62c",
+      "size_bytes": 11950
+    },
+    "Fig1G_PIVdata.rar": {
+      "md5": "c26da53148c2b12ee040d451367cb972",
+      "role": "unconfined_nematic_PIV_tables",
+      "sha256": "d036631d56037a7197047967a1e94d3a755cf806561715e275b3b7bff1b2d71e",
+      "size_bytes": 17036899
+    },
+    "FigS09.rar": {
+      "md5": "4dbe7f6bd1187c1c6d82f4cf608d2473",
+      "role": "paired_pre_post_blebbistatin_TFM_MSM_tables",
+      "sha256": "a84948fd9438222aa231196552cf4aa04c9a02244fd12ddeb19b933e3b824ca0",
+      "size_bytes": 488983295
+    },
+    "Guillamat_etal_2026.pdf": {
+      "md5": "4464fb5d1d9faaf1ccdb8bc2290eb547",
+      "role": "open_access_article_and_supplementary_methods",
+      "sha256": "655967d41a418968b86e60ce38b5a2d88a54d3fdb0787c0e188bca71fa478d75",
+      "size_bytes": 68920331
+    }
+  }
+}

@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 1 item
+
+ffn_sim/tests/test_persistence_length.py F
+
+=================================== FAILURES ===================================
+______________________ TestLMvsEM.test_lm_em_lp_agreement ______________________
+
+self = <ffn_sim.tests.test_persistence_length.TestLMvsEM object at 0x103b54cd0>
+
+>   ???
+E   AssertionError: L-M vs E-M L_p disagreement = 0.743 > 10 % (lm=2.790e-05 m, em=1.085e-04 m). BAOAB §Open #2 order-separation closed only if the two integrators agree on the same physical L_p.
+E   assert 0.7428482826841587 <= 0.1
+
+ffn_sim/tests/test_persistence_length.py:359: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/test_persistence_length.py::TestLMvsEM::test_lm_em_lp_agreement
+======================== 1 failed in 2521.54s (0:42:01) ========================

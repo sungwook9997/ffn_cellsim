@@ -1,0 +1,41 @@
+{
+  "gate": "H.SF ventral_stress_fibers activation (passive)",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "n_SF": 20,
+    "n_beads_per_SF": 24,
+    "N_filaments": 20,
+    "mu_SF_N": 8.6e-07,
+    "EA_single_N": 4.3e-08
+  },
+  "controls": {
+    "bundles_assembled": true,
+    "n_stress_fibers": 20,
+    "n_particle_delta": 1120,
+    "n_bond_delta": 1460,
+    "aligned": {
+      "ok": true,
+      "mean_abs_cos_long_axis": 0.9285950501207774,
+      "bundle_len_um_min": 0.46768716767107676,
+      "bundle_len_um_mean": 8.185430919205759,
+      "bundle_len_um_max": 13.719336433840551
+    },
+    "force_free_construction": {
+      "ok": true,
+      "max_strain": 1.5620824506364035e-14
+    },
+    "no_contamination": {
+      "mask_excludes_all_sf": true,
+      "gamma_soft_off_N_per_m": 5.141050220221626e-10,
+      "gamma_soft_on_N_per_m": 5.141050220221626e-10,
+      "gamma_identical": true
+    },
+    "off_identity": true
+  },
+  "deferred": {
+    "active_nmii_kumar_tension": "Kumar 2006 10-30 nN single-SF band \u2014 needs NMII via the sf_myosin_* prefix split (cortex/myosin.py) + the equilibration prelude. DEFERRED (passive backbone only here).",
+    "N_filaments_ratification": "N_filaments=20 (Cramer 1997 candidate) \u2014 PI-pending."
+  },
+  "note": "REAL build-time activation gate on the FA-adhered baseline. PASSIVE FA\u2192FA bundles, LONG-AXIS-ALIGNED basal pairing (PI 2026-06-09), per-bundle EXACT-r0 (force-free). KEY control is no-contamination: cortical \u03b3_soft identical OFF vs ON (sf_ registry-denylisted). The Kumar tension band is the deferred active gate."
+}

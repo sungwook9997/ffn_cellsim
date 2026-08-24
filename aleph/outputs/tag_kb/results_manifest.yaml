@@ -1,0 +1,499 @@
+claims:
+- id: C2-compartment-speedup
+  desc: Full GPU-main stack 5.86x vs cupy (native integrator + compartment forces)
+  artifact: aleph/outputs/_archive/h7/production/h7_compartment_gpu_port.json
+  metric: n/a
+  expect:
+    field: speedups_vs_cupy_cpucomp.native_gpucomp
+    value: 5.864
+    tol: 0.01
+  repro: gpu
+  declared: gpu-unreproduced
+- id: C3-fullcell-speedup
+  desc: Native full-cell 2.43x vs cupy at the real op point (201 steps/s = 11.5d/2e8)
+  artifact: aleph/outputs/_archive/h7/production/h7_native_fullcell_go.json
+  metric: n/a
+  expect:
+    field: end_to_end_speedup_native_over_cupy
+    value: 2.4325
+    tol: 0.01
+  repro: gpu
+  declared: gpu-unreproduced
+- id: C12-dcm-compaction
+  desc: DCM full mechanistic spheroid COMPACTS top-down (A/A0->0.597) — confirmed manually, but evidence pkl is gitignored;
+    needs a committed top-down summary JSON
+  artifact: aleph/outputs/_archive/h_dcm_two_stage/two_stage_n400_topdown_summary.json
+  metric: top-down-silhouette
+  declared: needs-regen
+- id: L0-run1-void-criterion
+  desc: L0 run 1 (job 69, 4090-1, full native) — the DECLARED criterion read `residual_end`, which is
+    restored bit-exactly by the outer rollback on a rejected step, so it could not have shown descent.
+    Its verdict string NO_DESCENT_ANYWHERE is VOID and quotable as nothing. The REPORT carries run
+    metadata and a post-hoc `residual_candidate` observation, both explicitly NOT results.
+  artifact: aleph/outputs/ac/l0_balance_exists/run1_vacuous_criterion/REPORT.md
+  metric: n/a
+  declared: retract
+- id: C14-dcm-footprint-report
+  desc: DCM REPORT 'spreading footprint' headline — RETRACTED (basal-footprint is forbidden)
+  artifact: aleph/outputs/_archive/h_dcm_two_stage/REPORT.md
+  metric: basal-contact-hull
+  declared: retract
+- id: C13-cleanball-187
+  desc: clean-ball A/A0 1.0->1.87 'breakthrough' — no committed pkl (PNG title only)
+  artifact: aleph/outputs/_archive/h_dcm_two_stage/cleanball_n12.pkl
+  metric: top-down-silhouette
+  declared: needs-regen
+- id: C17-aa0-fit
+  desc: A/A0=a+b/R+c/R^2 fit r^2=0.96 — underlying cleanball data absent (PNG legend only)
+  artifact: aleph/outputs/_archive/h_dcm_two_stage/cleanball_aa0_fit.json
+  metric: top-down-silhouette
+  declared: needs-regen
+- id: observe-gershgorin-vs-true-lambda-max
+  desc: Gershgorin bound / true lambda_max = 1.871x -- RETRACTED (graph-dependent; measured at 0.18% of native)
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  declared: retract
+- id: observe-timescale-separation
+  desc: 11.31 decades of time-scale separation -- RETRACTED (lambda_min is a GLOBAL mode, so a small system UNDERSTATES it;
+    the implicit-solver argument survives, the number does not)
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  declared: retract
+- id: observe-floppy-mode-count
+  desc: 439 of 2712 DOF floppy beyond the rigid-body bound -- RETRACTED as a FRACTION (its denominator is the slice's own
+    composition). SUPERSEDED 2026-07-28 by observe-minifilament-internal-zero-modes, which is the same finding in the per-object
+    form that transfers
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  declared: retract
+- id: observe-minifilament-internal-zero-modes
+  desc: A built bipolar minifilament has 19 INTERNAL zero-stiffness directions beyond its 6 rigid-body modes (102 DOF, 20
+    heads), with 95.6% of that subspace on the heads
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  expect:
+    field: measurements.minifilament_internal_floppiness.internal_zero_modes_per_minifilament
+    value: 19
+    tol: 0
+  repro: gpu
+  declared: gpu-unreproduced
+- id: sf-motor-balance-gate-is-the-acceptance-predicate
+  desc: 'The nmii_sf_motor lane accepts on the device force-balance flag, not accepted_d=ones: 20/20 steps admitted with |reaction+traction|
+    3e-16..3.6e-15 pN against an on-device D8 tolerance of 3.5e-12..1.0e-11 pN'
+  artifact: aleph/outputs/ac/gate_b_sf_motor/sf_motor_native_gate.json
+  metric: n/a
+  expect:
+    field: measurements.acceptance.balance_gate.gamma_n
+    value: 1.0025e-13
+    tol: 1.0e-16
+  repro: gpu
+  declared: gpu-unreproduced
+  covers:
+  - aleph/outputs/ac/gate_b_sf_motor/REPORT.md
+- id: sf-motor-balance-gate-positive-control
+  desc: 'The same gate REJECTS a deliberately broken adjoint pair: one head''s stall force injected one-sidedly gives balance_ok=0
+    with |reaction+traction| = 0.49999999999999883 pN against the injected 0.5, and the step bit-restores'
+  artifact: aleph/outputs/ac/gate_b_sf_motor/sf_motor_native_gate.json
+  metric: n/a
+  expect:
+    field: measurements.acceptance.positive_control.balance_residual_pN
+    value: 0.5
+    tol: 1.0e-12
+  repro: gpu
+  declared: gpu-unreproduced
+- id: sf-motor-energy-balance-residual-is-the-integrator
+  desc: The lane's energy balance closes to 3.5e-4..4.4e-4 of its largest term with NO energy function, and halving the mobility
+    halves the residual (exponent 1.0025) -- first-order integrator consistency, not a leak
+  artifact: aleph/outputs/ac/gate_b_sf_motor/sf_motor_native_gate.json
+  metric: n/a
+  expect:
+    field: measurements.energy_ledger.mobility_scaling.convergence.residual_exponent
+    value: 1.0025
+    tol: 0.01
+  repro: gpu
+  declared: gpu-unreproduced
+- id: observe-crossbridge-is-non-conservative
+  desc: 'The nmii_sf_motor force field has a genuine circulation attributed to the crossbridge by a same-configuration heads-detached
+    control (bound: a^2 and segment-independent; detached: a^3/N^-2 quadrature)'
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  expect:
+    field: measurements.loop_work_bound.convergence.amplitude_exponent
+    value: 1.9548
+    tol: 0.01
+  repro: gpu
+  declared: gpu-unreproduced
+  covers:
+  - aleph/outputs/ac/observe/REPORT.md
+- id: observe-fisher-effective-dimension
+  desc: Effective dimension 5.42/8, sloppiness 2.72 decades, alpha-actinin least identifiable -- RETRACTED (identifiability
+    is a function of what is IN the system; the alpha-actinin ranking may be an artifact of this slice carrying only 4 dorsal-arc
+    joints)
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  declared: retract
+- id: observe-tangent-multilinearity
+  desc: 'The tangent is exactly multilinear in its stiffness families: ||K - sum_j K_j|| / ||K|| = 9.35e-17, which is what
+    licenses the analytic (Hellmann-Feynman) gradient'
+  artifact: aleph/outputs/ac/observe/sf_operator_observables.json
+  metric: n/a
+  expect:
+    field: measurements.operator_bound.multilinearity.relative_residual
+    value: 0.0
+    tol: 1.0e-15
+  repro: gpu
+  declared: gpu-unreproduced
+- id: AC-native-cortex-spectrum-stability
+  desc: 'Native cortex tangent: production explicit step stable (dt_mu*lambda_max=0.2946, 6.79x headroom); kmax is NOT a bound
+    (lambda_max/kmax=2.9459); cortex tangent exactly multilinear (1.016e-16). lambda_min NOT resolved, so no condition number.'
+  artifact: aleph/outputs/ac/observe/native_cortex_spectrum/record.json
+  metric: n/a
+  expect:
+    field: measurements.native_spectrum.explicit_step_verdict.stability_product_base
+    value: 0.294586
+    tol: 1.0e-05
+  repro: gpu
+  declared: gpu-unreproduced
+  covers:
+  - aleph/outputs/ac/observe/native_cortex_spectrum/REPORT.md
+- id: AC-stationarity-kxb1000-timescale-separation
+  desc: 'Stage 0.5, FULL NATIVE (70,686 filaments / 674,314 nodes / 8,840 heads), 1,500 steps = 15.0 s physical = 10.3 bound-head
+    lifetimes: all four observables STATIONARY under a contract declared before the run (window >= 5x driving tau, |drift|
+    < 1 sigma; drift came out 0.24 sigma). gamma_total settles at 4.3256 +/- 0.00047 (sem from INDEPENDENT samples). The finding
+    is the timescale separation: tau_int(gamma) is at the estimator floor sample_dt/2, i.e. the series is already uncorrelated
+    at one 0.05 s sample, so it is an UPPER BOUND and gamma decorrelates >=54x FASTER than the 1.456 s driving bound-head
+    lifetime — refuting the assumption written into observe/stationarity.py that collective relaxation is slower than its
+    driver. MAGNITUDES ARE NOT QUOTABLE: every NMII parameter is a PI-GAP, QuantitativeClaim is BLOCKED, every step is force-accepted
+    (accepted_d = ones) so this is the stationarity of a force-accepted trajectory and not of a mechanically balanced cortex,
+    and the STATIONARY verdicts are recorded rather than scored because the gate amendment is unratified.'
+  artifact: aleph/outputs/ac/stationarity/kxb1000_tau/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers:
+  - aleph/outputs/ac/stationarity/kxb1000_tau/REPORT.md
+- id: AC-bleb-settled-kxb-1000
+  desc: 'Blebbistatin sweep point k_xb=1000 pN/um, FULL NATIVE (70,686 filaments / 674,314 nodes / 8,840 heads), run to STATIONARITY
+    rather than to a step count under a contract declared before the run (window >= 5x the driving bound-head lifetime, |drift|
+    < 1 sigma). Verdict STATIONARY; gamma_total settles at 4.3256 +/- 0.00060 (sem from INDEPENDENT samples, not sqrt(N)).
+    MAGNITUDES ARE NOT QUOTABLE: every NMII parameter is a PI-GAP, QuantitativeClaim is BLOCKED, and every step is force-accepted,
+    so this is the stationarity of a force-accepted trajectory and not of a mechanically balanced cortex. The RATIO across
+    the sweep is the object of interest and is not computed until every point has settled.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_1000/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-settled-kxb-100
+  desc: 'Blebbistatin sweep point k_xb=100 pN/um, FULL NATIVE (70,686 filaments / 674,314 nodes / 8,840 heads), run to STATIONARITY
+    rather than to a step count under a contract declared before the run (window >= 5x the driving bound-head lifetime, |drift|
+    < 1 sigma). Verdict STATIONARY; gamma_total settles at 3.4807 +/- 0.00172 (sem from INDEPENDENT samples, not sqrt(N)).
+    MAGNITUDES ARE NOT QUOTABLE: every NMII parameter is a PI-GAP, QuantitativeClaim is BLOCKED, and every step is force-accepted,
+    so this is the stationarity of a force-accepted trajectory and not of a mechanically balanced cortex. The RATIO across
+    the sweep is the object of interest and is not computed until every point has settled.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_100/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-settled-kxb-10
+  desc: 'Blebbistatin sweep point k_xb=10 pN/um, FULL NATIVE (70,686 filaments / 494,802 actin nodes / 8,840 heads, membrane
+    subdiv 7), run to STATIONARITY under the same contract as the two stiffer points (window >= 5x the driving bound-head
+    lifetime 1.456 s, |drift| < 1 sigma), declared before the run. Verdict STATIONARY at 1,400 steps / 67.2 min; gamma_total
+    settles at 2.8839 +/- 0.00312 (sem = sigma*sqrt(2*tau_int/T), the error on a CORRELATED mean). TWO DISCLOSURES: the pass
+    is MARGINAL (0.98 sigma against a 1.0 threshold, n_eff 21), and the gamma_source component did NOT settle (1.18 sigma,
+    no mean returned) — R is a gamma_total ratio so neither blocks it, but the point is not "settled" without qualification.
+    The transient grew 0.40 -> 3.90 s versus the stiffer points, which is the correct physics (a softer crossbridge relaxes
+    more slowly) and is why a fixed step count was the wrong protocol. MAGNITUDES ARE NOT QUOTABLE: every NMII parameter is
+    a PI-GAP, QuantitativeClaim is BLOCKED, and every step is force-accepted.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_10/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-settled-report
+  desc: 'Sweep-level REPORT for the blebbistatin dose response run to stationarity. Three points at FULL NATIVE (70,686
+    cortical filaments / 494,802 actin nodes / 8,840 heads, membrane subdiv 7, A5000) spanning exactly 2 decades of k_xb:
+    4.3256 / 3.4807 / 2.8839 pN/um at k_xb 1000 / 100 / 10. Bound fraction is FLAT at 98.2-98.3% across the sweep — the
+    negative control passes, so the gamma change is force transmission and not a kinetic side effect. NO RATIO IS COMPUTED:
+    the analyser refuses on provenance (three build commits, no closure digest), not on physics; a cross-build parity run is
+    queued to settle it by measurement. Two further points (k_xb 1 and 0.1) were dropped by ARITHMETIC — the transient grows
+    ~1/k_xb, putting them at ~4,600+ steps against a 2,500-step cap and a 75-minute wall, so neither could return a verdict
+    at any affordable setting. When R is computed it will be an upper-bounded ratio at a stated softest k_xb, NOT a k_xb->0
+    limit.'
+  artifact: aleph/outputs/ac/bleb_settled/REPORT.md
+  metric: n/a
+  expect:
+    field: n/a
+    value: n/a
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-cortex-ownership-T2-double-count-control
+  desc: 'T2 cortex array ownership at FULL NATIVE (70,686 filaments / 494,802 actin nodes / 1,413,720 crosslinks /
+    353,430 bending triples, A5000, cuda:0). GATE VERDICT PASS. The arm this run exists for is the DEVICE-SIDE
+    DOUBLE-COUNT CONTROL, which could not be run at all before PI decision COMPARTMENT_VALIDATION_TRACKS §6 D2
+    (2026-07-29) added _accumulate_all(omit=): with the mask OFF while the engine owner also accumulates the same
+    channels onto the same array, parity must fail by an EXACT factor of two, and it does — factor_median 2.0,
+    max deviation from two 7.727e-14 over all 494,802 nodes. That is what turns the parity number (max_abs_delta
+    9.965e-18 pN, relative 2.796e-16 against a declared 1e-12) into evidence of EXCLUSIVITY rather than evidence
+    of a coincidence: without a control that can fail, "they agree" and "the comparison cannot fail" are the same
+    artifact. Also verified: private device allocations with distinct pointers, engine array length exactly
+    n_actin, detector control recovers an injected 0.3564 pN exactly, and the accept/reject transaction restores
+    and keeps bit-exactly. rung CUDA_UNIT, QuantitativeClaim BLOCKED. Channels deliberately NOT bound are named
+    in the record (axial inextensibility = an NF2007 solver constraint, steric WCA = whole-cell, Biot pressure =
+    cytosol-owned).'
+  artifact: aleph/outputs/ac/cortex_ownership/native_record_t2.json
+  metric: n/a
+  expect:
+    field: measurements.omit_mask_double_count_control.fails_by_exactly_two
+    value: true
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-cross-build-parity
+  desc: 'Cross-build parity control for the blebbistatin sweep: k_xb=1000 re-measured at FULL NATIVE on build
+    8941bcb5 against the original run on 6a5ef829. The declared criterion (before the run) was agreement within 3
+    combined sems; the measured agreement is BIT-IDENTICAL on all four observables to 15 significant figures
+    (gamma_total 4.32563718547168, gamma_network 4.303042713651803, gamma_source 0.022581453932423, bound
+    fraction 0.9823069852941175), i.e. the two builds produced the same float64 trajectory rather than merely a
+    compatible mean. This lifts the sweep analyser refusal that three build commits and no closure digest made
+    it impossible to establish whether the code differed. LIMIT OF THE EVIDENCE, printed by the analyser every
+    time it lifts the block: the pair covers 6a5ef829 and 8941bcb5, while builds efe74e52 and 8dda13a4 carry the
+    k_xb=100 and k_xb=10 points and were NOT re-run — their equivalence is INFERRED from one pair spanning the
+    range, not measured.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_1000_rebuild/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-engine-cortex-AB-native
+  desc: 'engine-cortex A/B at FULL NATIVE (70,686 cortical filaments / 494,802 actin nodes / 674,314 total /
+    8,840 heads, membrane subdiv 7, k_xb 1000, catch-slip, seed 0, 30 steps, A5000). Criterion declared before the
+    run: with the flag ON, ac/engine computes the cortex channels and the incumbent omits them via
+    _accumulate_all(omit=); ON and OFF must agree node-by-node or the swap moved force instead of relocating it.
+    VERDICT PASS — every observable agrees at float64 atomic-arrival order (gamma_total max relative 2.05e-16,
+    gamma_network 1.14e-16, max_pf 3.79e-16; gamma_source, n_bound and max_f_cortex_pn bit-identical). So
+    ac/engine fires production kernels on the full native population and the composed answer is unchanged. THIS
+    GATE FAILED FIRST: the initial ON arm disagreed by a CONSTANT 0.41526 pN/um with bit-identical dynamics,
+    because _measure_gamma assembled force WITHOUT the solve omit mask and the engine cortex arrives through the
+    non-omittable cell.myosin hook — double-counting in the estimator only. Fixed and pinned by a static AST
+    invariant. WHAT IT DOES NOT ESTABLISH: co-location is NOT ended (the arrays are still shared; a private force
+    array needs SOLVE_COUPLED, still empty), and no gamma magnitude is quotable (every NMII parameter is a
+    PI-GAP, every step force-accepted).'
+  artifact: aleph/outputs/ac/engine_cortex_ab/on_refixed/record.json
+  metric: n/a
+  expect:
+    field: config.engine_cortex
+    value: true
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-engine-cortex-AB-report
+  desc: 'REPORT for the engine-cortex A/B. Headline: at FULL NATIVE (70,686 cortical filaments / 494,802 actin
+    nodes / 674,314 total / 8,840 heads, membrane subdiv 7, A5000) the ON and OFF arms agree to round-off —
+    gamma_total 3.916381 / 4.287321 / 4.321879 / 4.321579 / 4.324925 / 4.320347 pN/um at steps 4-29 on BOTH arms,
+    max relative difference 2.05e-16. The report also carries the two failures on the way there, which are the
+    more useful half: (1) the first ON arm disagreed by a constant 0.41526 pN/um because the measurement path
+    assembled force without the solve mask — invisible to every runtime check, since the trajectory was
+    bit-identical and positively argued the swap was clean; (2) re-run #1 was queued from memory, dropped three
+    flags, burned a device slot, exited 0 and wrote nothing while the run index recorded an artifact that did not
+    exist. Both are now guarded (a static AST invariant, and a post-run artifact probe in ffn_gpu.py run).'
+  artifact: aleph/outputs/ac/engine_cortex_ab/REPORT.md
+  metric: n/a
+  expect:
+    field: n/a
+    value: n/a
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-settled-kxb-3
+  desc: 'Blebbistatin sweep point k_xb=3 pN/um at FULL NATIVE (70,686 filaments / 494,802 actin nodes / 8,840
+    heads, membrane subdiv 7), run to STATIONARITY under the contract declared before the run. Verdict STATIONARY
+    at 2,000 steps / 96.0 min; gamma_total 12.2425 +/- 0.0674. THIS RUN WAS QUEUED TO FALSIFY A CLAIM IN THIS
+    REPO AND DID SO: the sweep REPORT justified dropping three doses with "transient grows ~1/k_xb", predicting
+    ~13 s here; the measured transient is 0.75 s, so the drop was unjustified and k_xb=1 was re-queued. It also
+    makes the dose response NON-MONOTONIC — 4.25x the value at k_xb=10 — which removes the premise R needs (a
+    limit approached from above), so no ratio may be quoted across the turning point. The residual explanation
+    is DISFAVOURED and was checked first because it is what retired (c) 3: max|PF| is flat-to-falling across the
+    sweep (0.573 -> 0.491) while gamma rises 4.25x, and at k_xb=3 signal sits 24.9x above residual, the best
+    separation in the sweep. What does move is load distribution — maxF_cortex more than halves (5.22 -> 2.39)
+    while network tension quadruples. Stated as a candidate mechanism, not a conclusion. MAGNITUDES NOT
+    QUOTABLE: every NMII parameter is a PI-GAP and every step is force-accepted; the pass is also MARGINAL
+    (0.97 sigma against a 1.0 threshold).'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_3/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-settled-kxb-1
+  desc: 'Blebbistatin sweep point k_xb=1 pN/um at FULL NATIVE (70,686 filaments / 494,802 actin nodes / 8,840
+    heads, membrane subdiv 7). STATIONARY at 1,160 steps / 55.5 min; gamma_total 49.8001 +/- 0.0132 — another
+    4.07x rise, so the non-monotonicity found at k_xb=3 is a RUNAWAY, not a turning point. Fitting gamma ~
+    k_xb^-n between adjacent doses gives n = -0.09, -0.08 across 1000->100->10 and then +1.20, +1.28 across
+    10->3->1, while EVERY force falls monotonically (max|PF| 0.573->0.370, maxF_cortex 6.52->1.91). CAUSE, and it
+    was already written down: ac/motor/minifilament_topology.working_stroke_strain calls itself "the k_xb
+    MASTER-knob arbiter" and states that k_xb=1 pN/um gives a strain larger than the whole minifilament so the
+    stall geometry collapses. At f_stall=0.5 pN/head the swept doses imply working strokes of 0.5 / 5.0 / 50 /
+    167 / 500 nm against a physiological 5-20 nm — only k_xb=100 is inside, the exponent flips exactly where the
+    stroke leaves the window, and at k_xb=1 the strain (500 nm) exceeds the head offset itself (200 nm). The
+    two-regime shape is therefore a property of running the model OUTSIDE its declared domain, not a prediction.
+    NO R MAY BE QUOTED FROM THIS SWEEP, for two reasons that are not statistical: only one dose is inside the
+    validity window, and k_xb is the wrong knob for blebbistatin anyway (bound fraction is 98.2-98.3% at every
+    dose, whereas blebbistatin lowers duty ratio and stall force). k_xb is also a COMPOUND knob — backbone_warp
+    ties the lever-arm stiffness k_theta_arm = k_xb * r0_head^2.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_1/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-engine-cortex-AB-settled
+  desc: 'engine-cortex A/B re-run to STATIONARITY at FULL NATIVE (70,686 filaments / 494,802 actin nodes /
+    674,314 total / 8,840 heads, subdiv 7, k_xb 1000, catch-slip, seed 0). The original A/B PASSED at 30 steps =
+    0.3 s, which is 21% of one bound-head lifetime and the same duration class as two conclusions this repo has
+    already retired, so it could not say whether round-off differences AMPLIFY over a settled trajectory. They do
+    not. The ON arm settles at 800 steps / 8.0 s at gamma_total 4.32563718547168 — the same 15 digits as the
+    incumbent k_xb=1000 point — and step-by-step over all 160 samples the agreement is unchanged from the short
+    run: gamma_total 2.06e-16 (was 2.05e-16), gamma_network 2.07e-16, max_pf 1.40e-15, with gamma_source and
+    n_bound bit-identical. Everything stays at float64 atomic-arrival order. The comparison spans THREE builds
+    (8615b917 ON, 6a5ef829 incumbent, 8941bcb5 cross-build rebuild) all settling at the same 15 digits, so the
+    relocation claim holds UNQUALIFIED rather than transient-only — the first of the two branches declared in the
+    REPORT before the run. The paired OFF arm was refused (duplicate build/config) because an earlier diagnostic
+    probe of mine had consumed that slot and written nothing; the incumbent point serves as the OFF arm and the
+    run was NOT re-forced.'
+  artifact: aleph/outputs/ac/engine_cortex_ab/settled_on/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-dt-independence-refuted
+  desc: 'dt-INDEPENDENCE TEST at the one physiological dose (k_xb=100, 5.0 nm working stroke), FULL NATIVE
+    (70,686 filaments / 494,802 actin nodes / 8,840 heads, subdiv 7). PREDICTION DECLARED AND COMMITTED BEFORE
+    THE RUN: gamma(dt=0.005) equals 3.4807 within 3 combined sems. REFUTED — gamma(dt=0.005) = 3.1998 +/-
+    0.0011 against 3.4807 +/- 0.0017, a 137 sigma / 8.07% difference, both STATIONARY over comparable physical
+    time (8.8 s vs 8.0 s) so not a duration artifact. dt = 0.01 IS NOT TIME-CONVERGED. The shift is NOT in the
+    kinetics: gamma_network moves 8.13% while bound_fraction moves 0.25% and gamma_source 1.16%, so the entire
+    dt dependence sits in the mechanical relaxation term. CONSEQUENCE: every gamma measured in this sweep
+    carries an ~8% dt error at the dose where it has been measured, and this is NOT covered by the "R is a
+    ratio so it survives the PI-GAPs" argument — a ratio only survives an error that CANCELS, and nothing
+    shows the dt error is equal at two different k_xb. The lane cannot quote gamma RATIOS either until dt
+    convergence is established. NOT AFFECTED: the engine-cortex A/B and the cross-build parity are comparisons
+    at the SAME dt and stand as reported. Also moves ROADMAP stage 2 further away, since stage 2 asks for dt to
+    be RAISED and dt cannot be raised from an unconverged point.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_100_dt0005/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-dt-cause-is-outer-integrator
+  desc: 'SEPARATING run for the dt non-convergence, FULL NATIVE (70,686 filaments / 494,802 actin nodes, subdiv
+    7, k_xb=100). Two readings of the 8.07% dt shift were possible and were declared before the run: (A)
+    relaxation depth — halving dt doubles inner iterations per physical second, so the reported tension would
+    contain unrelaxed residual; (B) outer integrator order. This run holds dt=0.01 and doubles --outer 40 -> 80,
+    matching (A) relaxation budget WITHOUT changing dt. RESULT: (B). Doubling the budget moved gamma_total by
+    6.0e-08 RELATIVE (3.4807438591 -> 3.4807439934) while halving dt moved it 8.07%. The flag is plumbed and the
+    work was done — inner iterations 32,000 -> 64,000, wall x1.59 — and max|PF| DID improve 0.5291 -> 0.4998
+    (5.5%), so the residual falls with more iterations while gamma does not move. bound_fraction and n_bound are
+    bit-identical. TWO CONSEQUENCES: (1) gamma is NOT reading unrelaxed residual, which is direct evidence for a
+    conclusion previously argued only from max|PF| staying flat — a weak argument that happened to reach the
+    right answer; (2) the dt dependence lives in the OUTER physical-time integration, not the inner mechanical
+    solve, which matters because this lane convergence work has all been inner-solver conditioning (multigrid,
+    preconditioners, IMEX step scale) and none of it addresses this. Convergence ORDER is still unknown — two dt
+    points cannot give one — and a third point at dt=0.0025 is queued with both predictions declared (first
+    order 3.0594, second order 3.1296, ~47 sigma apart).'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_100_outer80/record.json
+  metric: n/a
+  expect:
+    field: measurements.stationarity.gamma_total_pn_per_um.verdict
+    value: STATIONARY
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: AC-bleb-dt-order-undefined
+  desc: 'THIRD dt point (dt=0.0025) at the one physiological dose k_xb=100, FULL NATIVE. Both predictions were
+    committed BEFORE the run — first order 3.0594, second order 3.1296, ~47 sigma apart — and BOTH ARE
+    REFUTED: measured 3.4148. The run also exposed a DETECTOR DEFECT that had to be fixed before the number
+    could be read: equilibration_point maximises n_eff = T/(2*tau_int) and chose start=0 on a series that rose
+    0.8 -> 3.4 in 0.5 s then sat flat for 7 s, so the steady-state mean was taken ACROSS the rise (3.373, std
+    0.2538) instead of over the plateau (3.415, std 0.0106). It self-reinforced: the drift verdict is
+    |drift| < sigma*std, so inflating std with the transient makes the test EASIER to pass, and the run was
+    certified STATIONARY at 0.94 sigma. Guard added (window_opens_on_a_transient): leading tenth vs trailing
+    tenth of the retained window, normalised by the TRAILING tenth so it cannot inherit the same loop; reads
+    0.0 / 0.8 / 33.5 on the three runs. Re-measured on an identical t>=2.0 s window (each run had auto-selected
+    a different transient — 0.40 / 1.30 / 0.00 s — so the comparison had not been like-for-like) the sequence
+    is 3.4813 -> 3.2003 -> 3.4148: NOT MONOTONE. No convergence order fits and Richardson extrapolation does
+    not apply, so the earlier "the dt=0.01 values are 10-19% high" is RETRACTED — the true dt->0 value is
+    unknown, which strengthens (c) 17 rather than weakening it: an error of unknown size and sign cannot be
+    corrected for.'
+  artifact: aleph/outputs/ac/bleb_settled/kxb_100_dt00025/record.json
+  metric: n/a
+  expect:
+    field: config.dt_phys
+    value: 0.0025
+  repro: gpu
+  declared: gpu-unreproduced
+  covers: []
+- id: inner-budget-down-sweep
+  desc: 'n_inner DOWNWARD sensitivity at full native (70,686 filaments, 5 budgets x 3 seeds, 30 accepted steps,
+    dt=0.01, RTX 4090-1). PRE-REGISTERED before the run (outputs/ac/inner_budget/PREREGISTRATION.md, a3abe347).
+    Declared verdict: lowest INSENSITIVE budget = 40, i.e. cut nothing. The up-control (--outer 80) came back
+    SENSITIVE TOO, so the rule failed its own control — the across-seed scatter at the reference is 1.09e-4 pN =
+    0.014% of the value, two orders tighter than the 1.95% gamma scatter STATE.md''s MEASUREMENT RULE was written
+    from. The rule was NOT re-thresholded after seeing the data; that an across-seed band is the wrong band for
+    this observable is recorded as one of the run''s outputs. The MAGNITUDES (the declared primary observable)
+    show a knee: relative to --outer 40, 80 is -0.59%, 20 is +0.32%, 10 is +5.37%, 5 is +15.00% — flat from 80
+    down to 20, steep below. This REFUTES the working hypothesis that 40 -> 5 was nearly free and worth 4-8x;
+    what survives is 40 -> 20 at +0.32%. COST is not from this sweep and cannot be (telemetry at the default
+    --gamma-every 1 dominates the wall-clock: 6.7% for a 16x budget change); from the committed telemetry-light
+    profile instead — inner work is 84.2% of the outer step — halving the budget is ~1.7x. NOT a convergence
+    claim (nothing converges, (c) 4), NOT a speed number (every record is timing.comparable false), NOT a new
+    production default (a PI call), and NO gamma in magnitude or ratio form ((c) 17). Provenance: the records
+    carry no build commit (the driver has no --commit flag and the host is not a checkout); 120/120 closure files
+    were hash-matched before launch, and a file in that closure was re-synced after run 6 of 15 — no executed
+    code differs, since both changed hunks sit in functions this driver never calls.'
+  artifact: aleph/outputs/ac/inner_budget/native_record.json
+  metric: n/a
+  expect:
+    field: result.lowest_insensitive_outer
+    value: 40
+  repro: gpu
+  declared: gpu-unreproduced
+- id: inner-budget-down-sweep-report
+  desc: 'REPORT.md for the pre-registered n_inner DOWNWARD sweep. Its headline numbers are the same ones declared
+    under inner-budget-down-sweep, whose expect block checks them against the record on disk; this entry exists so
+    the REPORT itself is covered rather than sitting in the ratchet debt. Headlines: lowest INSENSITIVE budget 40
+    (the declared rule says cut nothing, and its up-control failed too); the observable knee -0.59% / +0.32% /
+    +5.37% / +15.00% at --outer 80 / 20 / 10 / 5 against 40; and the ~1.7x cost figure, which comes from the
+    committed telemetry-light profile and NOT from this sweep. No convergence claim, no engine speed number, no
+    production default, and no gamma in any form.'
+  artifact: aleph/outputs/ac/inner_budget/REPORT.md
+  metric: n/a
+  repro: gpu
+  declared: gpu-unreproduced

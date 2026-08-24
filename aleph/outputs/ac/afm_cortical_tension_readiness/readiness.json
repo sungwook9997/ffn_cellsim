@@ -1,0 +1,204 @@
+{
+  "schema": "afm-cortical-tension-readiness@1",
+  "kind": "diagnostic",
+  "verdict": "APPARATUS_PATH_WIRED_QUANTITATIVE_SWEEP_BLOCKED",
+  "quantitative_claim": "BLOCKED",
+  "worktree_commit": "f7550895",
+  "population": {
+    "actin_filaments": 70686,
+    "actin_nodes": 494802,
+    "total_nodes": 1150806,
+    "membrane_vertices": 655362,
+    "nucleus_vertices": 642,
+    "native_population": true,
+    "all_compartments_present": true
+  },
+  "device": {
+    "host": "DESKTOP-EEUU4RQ",
+    "card": "3090",
+    "slurm_token": "rtx3090",
+    "visible_device": "cuda:0",
+    "citation": "docs/gpu/CITATION-2026-08-10-AFM-12H.md"
+  },
+  "c2_diagnostics": [
+    {
+      "solver": "explicit",
+      "inner_iteration_budget": 40,
+      "residual_start_pn": 1.280225652360435,
+      "residual_candidate_pn": 1.2274093342292909,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_explicit40.json"
+    },
+    {
+      "solver": "explicit",
+      "inner_iteration_budget": 4000,
+      "residual_start_pn": 1.280225652360435,
+      "residual_candidate_pn": 4.895869459384973,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_explicit4000.json"
+    },
+    {
+      "solver": "fire",
+      "inner_iteration_budget": 4000,
+      "residual_start_pn": 1.280225652360435,
+      "residual_candidate_pn": 1.2324181781817551,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_fire4000.json"
+    },
+    {
+      "solver": "erm_gauss_seidel",
+      "inner_iteration_budget": 400,
+      "projected_force_start_pn": 0.7922425209270495,
+      "projected_force_candidate_pn": 0.7295234314503557,
+      "projected_force_tolerance_pn": 0.21066859316597425,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_erm_gs400_seed0.json"
+    },
+    {
+      "solver": "erm_gauss_seidel_tournament",
+      "inner_iteration_budget": 400,
+      "projected_force_start_pn": 0.7547345206905547,
+      "projected_force_candidate_pn": 0.4439279119684536,
+      "projected_force_tolerance_pn": 0.21066859316597425,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_erm_gs_tournament400_seed0.json"
+    },
+    {
+      "solver": "erm_gauss_seidel_tournament",
+      "line_search_objective": "max_force",
+      "inner_iteration_budget": 1200,
+      "plateau_iteration": 540,
+      "projected_force_candidate_pn": 0.4247705332470919,
+      "projected_force_tolerance_pn": 0.21066859316597425,
+      "stationary_choices": 661,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_erm_gs_tournament1200_seed0.json"
+    },
+    {
+      "solver": "erm_gauss_seidel_tournament",
+      "line_search_objective": "l2_squared_candidate_selection_only",
+      "inner_iteration_budget": 1200,
+      "projected_force_candidate_pn": 0.4288324087681949,
+      "projected_force_tolerance_pn": 0.21066859316597425,
+      "stationary_choices": 0,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_erm_gs_tournament_l2_1200_seed0.json"
+    },
+    {
+      "solver": "erm_gauss_seidel_tournament",
+      "numerical_variant": "12_geometry_derived_global_coarse_modes",
+      "inner_iteration_budget": 200,
+      "projected_force_candidate_pn": 0.5354942810928895,
+      "matched_no_coarse_projected_force_pn": 0.5216144071986728,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_erm_gs_tournament_coarse12_200_seed0.json"
+    },
+    {
+      "solver": "analytic_implicit",
+      "inner_iteration_budget": 40,
+      "accelerated_choices": 0,
+      "explicit_fallback_choices": 40,
+      "projected_force_candidate_pn": 0.7902487517841555,
+      "inner_converged": false,
+      "outer_accepted": false,
+      "committed_time_s": 0.0,
+      "source": "raw/c2_analytic_implicit40_seed0.json"
+    }
+  ],
+  "c2_accepted_ensemble": {
+    "status": "ACCEPTED_3_SEEDS",
+    "membrane_subdivisions": 8,
+    "solver": "explicit",
+    "iteration_budget": 400,
+    "accepted_seeds": [0, 1, 2],
+    "max_projected_force_pn": [
+      0.20926850127767316,
+      0.20555489284010847,
+      0.20865114826980793
+    ],
+    "projected_force_mean_pn": 0.20782484746252985,
+    "projected_force_sample_sd_pn": 0.0019899250425504003,
+    "accepted_physical_steps_per_seed": 1,
+    "committed_time_s_per_seed": 0.01,
+    "source": "c2_accepted_ensemble.json"
+  },
+  "c2_force_audit": {
+    "dominant_path": "membrane_compartment_force transferred to cortex through ERM",
+    "projected_max_node": 469721,
+    "projected_force_pn": 0.800025,
+    "membrane_compartment_force_pn": 0.775965,
+    "crosslink_force_at_initial_state_pn": 4.343554789822003e-11,
+    "uniform_global_virial_prestrain_test": "REJECTED_WORSENED_LOCAL_RESIDUAL",
+    "source": "raw/c2_force_audit_fd65733f.json",
+    "plateau_candidate": {
+      "projected_max_owner": "membrane",
+      "projected_max_node": 510353,
+      "projected_force_pn": 0.42477053322416347,
+      "membrane_compartment_force_pn": 0.44324217872662447,
+      "membrane_pressure_traction_pn": 0.8209032939077743,
+      "assembly_relative_error": 6.011294279088244e-15,
+      "source": "raw/c2_candidate_plateau_force_audit_d7fc9490.json"
+    }
+  },
+  "indenter_cuda_gate": {
+    "verdict": "PASS",
+    "scope": "contact sign, reaction channel, adjoint balance, accepted/rejected apparatus transaction",
+    "calibrates_physical_parameters": false,
+    "source": "raw/afm_indenter_force_hook_cuda_gate.json",
+    "slurm_job": 56,
+    "global_candidate_membrane_block_only": true
+  },
+  "accepted_step_guard": {
+    "slurm_jobs": [51, 53, 54],
+    "requested_steps_per_seed": 1,
+    "inner_iteration_budget": 400,
+    "accepted": true,
+    "rolled_back": false,
+    "biological_clock_advanced": true,
+    "printed_done": true,
+    "sources": [
+      "raw/slurm-51-rtx3090.out",
+      "raw/slurm-53-rtx3090.out",
+      "raw/slurm-54-rtx3090.out"
+    ]
+  },
+  "remaining_pi_gates": [
+    "Chugh 2017 fixes the rounded-HeLa state and a flat-cantilever oracle, but a spherical apparatus still needs its own source or a separate flat-cantilever implementation.",
+    "Supply target-cell-line Pi0, or explicitly classify the HeLa 40 Pa proxy as mechanism-demo-only.",
+    "Source and approve indenter-membrane contact rest_um and stiffness.",
+        "Supply and approve exterior-medium viscosity for the chosen spherical protocol.",
+        "Implement and accept a post-induction, equilibrated, dt-converged active-cortex state handoff; STATE (c) 3/17 remain binding."
+  ],
+  "sweep_policy": {
+    "force_indentation_sweep_launched": false,
+        "reason": "C-2 and the exact-trial apparatus hook are accepted, but Pi0, spherical apparatus/contact calibration, exterior viscosity and an accepted active-cortex state handoff remain open.",
+        "fail_closed_preflight": "aleph/scripts/ac_afm_sweep_preflight.py",
+        "accepted_path_runner": "aleph/scripts/ac_gate_b_interior_column_native.py",
+        "seed_aggregator": "aleph/scripts/ac_afm_sweep_aggregate.py",
+        "accepted_ensemble_visualizer": "aleph/scripts/ac_afm_sweep_vis.py",
+    "minimum_distinct_seeds_when_unblocked": 3,
+    "material_visualization_generated": false,
+    "solver_diagnostic_visualizations": [
+      "c2_accepted_ensemble.png",
+      "c2_solver_plateau.png",
+      "c2_objective_comparison.png"
+    ],
+    "visualization_reason": "Only numerical C-2 acceptance/rejection diagnostics are plotted; no F-delta curve exists."
+  }
+}

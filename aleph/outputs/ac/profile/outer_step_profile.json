@@ -1,0 +1,524 @@
+{
+  "schema": "ac.profile/inner-loop@1",
+  "census": {
+    "n_filaments": 70686,
+    "n_actin": 494802,
+    "n_total": 551434,
+    "n_crosslinks": 1413720,
+    "fraction_of_native": 1.0
+  },
+  "device": "cuda:0",
+  "build_seconds": 12.948445357382298,
+  "iterations": 1,
+  "inner_solver": "explicit",
+  "uninstrumented_ms_per_iteration": 1513.7574225664139,
+  "instrumented_ms_per_iteration": 1474.1049323244952,
+  "instrumentation_overhead_factor": 0.9738052546261394,
+  "note": "kernel timing serialises the stream, so per-kernel SHARES are the transferable quantity and the absolute totals are inflated; the uninstrumented figure above is the one to compare against production wall-clock",
+  "kernels": [
+    {
+      "name": "forward kernel _interp_grad_force_kernel_fd8db48a",
+      "ms_per_iteration": 367.8751029968262,
+      "share": 0.24955828783282688,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 8.555234953414562
+    },
+    {
+      "name": "forward kernel classify_live_membrane_kernel_01948284",
+      "ms_per_iteration": 277.4712371826172,
+      "share": 0.1882303159688074,
+      "launches_per_iteration": 3,
+      "ms_per_launch": 92.49041239420573
+    },
+    {
+      "name": "forward kernel wca_steric_kernel_698b46be",
+      "ms_per_iteration": 229.0956482887268,
+      "share": 0.1554133924017669,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 5.327805774156437
+    },
+    {
+      "name": "forward kernel membrane_pressure_traction_kernel_e5fe9bc1",
+      "ms_per_iteration": 208.44768142700195,
+      "share": 0.14140627092150337,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 4.847620498302371
+    },
+    {
+      "name": "forward kernel link_spring_kernel_3ad5a815",
+      "ms_per_iteration": 161.4919674396515,
+      "share": 0.10955255891111977,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 3.755627149759337
+    },
+    {
+      "name": "forward kernel live_triangle_membrane_flux_kernel_0bd00e68",
+      "ms_per_iteration": 102.75328016281128,
+      "share": 0.06970553989042089,
+      "launches_per_iteration": 14,
+      "ms_per_launch": 7.339520011629377
+    },
+    {
+      "name": "forward kernel project_constraint_forces_kernel_4acf9c08",
+      "ms_per_iteration": 44.61465525627136,
+      "share": 0.030265589835534398,
+      "launches_per_iteration": 42,
+      "ms_per_launch": 1.0622536965778895
+    },
+    {
+      "name": "forward kernel _pressure_gradient_masked_kernel_7314fb13",
+      "ms_per_iteration": 16.201727986335754,
+      "share": 0.010990891917570264,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.3767843717752501
+    },
+    {
+      "name": "forward kernel spread_vs_kernel_e5900c0d",
+      "ms_per_iteration": 16.17305564880371,
+      "share": 0.01097144124150012,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 16.17305564880371
+    },
+    {
+      "name": "forward kernel cytosim_bending_kernel_0313e47d",
+      "ms_per_iteration": 10.33216007053852,
+      "share": 0.007009107590628494,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.24028279233810512
+    },
+    {
+      "name": "forward kernel helfrich_bending_kernel_3c068e36",
+      "ms_per_iteration": 8.859871909022331,
+      "share": 0.006010340047537407,
+      "launches_per_iteration": 86,
+      "ms_per_launch": 0.1030217663839806
+    },
+    {
+      "name": "forward kernel classify_live_nucleus_kernel_3c2799f1",
+      "ms_per_iteration": 7.609344005584717,
+      "share": 0.005162009731278526,
+      "launches_per_iteration": 3,
+      "ms_per_launch": 2.5364480018615723
+    },
+    {
+      "name": "forward kernel point_to_segment_query_hashgrid_kernel_1245b640",
+      "ms_per_iteration": 6.1532158851623535,
+      "share": 0.004174204800644303,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 6.1532158851623535
+    },
+    {
+      "name": "forward kernel membrane_area_kernel_a4db845d",
+      "ms_per_iteration": 2.5968640483915806,
+      "share": 0.0017616548126574833,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.060392187171897226
+    },
+    {
+      "name": "forward kernel pos_to_f32_09b43d88",
+      "ms_per_iteration": 2.468160033226013,
+      "share": 0.0016743448713206642,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.05739907054013984
+    },
+    {
+      "name": "forward kernel _zero_7bfb88b0",
+      "ms_per_iteration": 1.6561919748783112,
+      "share": 0.0011235237998062225,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.038516092439030494
+    },
+    {
+      "name": "forward kernel erm_tether_force_kernel_25eedcaf",
+      "ms_per_iteration": 1.407007995992899,
+      "share": 0.0009544829307193267,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.03272111618588137
+    },
+    {
+      "name": "forward kernel harmonic_bond_kernel_3c1d3deb",
+      "ms_per_iteration": 0.914687991142273,
+      "share": 0.000620503989291939,
+      "launches_per_iteration": 86,
+      "ms_per_launch": 0.01063590687374736
+    },
+    {
+      "name": "forward kernel angle_harmonic_kernel_9b3157ca",
+      "ms_per_iteration": 0.8857599794864655,
+      "share": 0.0006008798695827732,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.020599069290382917
+    },
+    {
+      "name": "forward kernel nucleoplasm_volume_force_arr_kernel_1b54e99b",
+      "ms_per_iteration": 0.7448640111833811,
+      "share": 0.0005052991784030025,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.017322418864729794
+    },
+    {
+      "name": "forward kernel lamina_areal_tension_kernel_9f0809d1",
+      "ms_per_iteration": 0.734208008274436,
+      "share": 0.0004980703830335021,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.017074604843591534
+    },
+    {
+      "name": "forward kernel _accumulate_grid_conservation_kernel_0edc76df",
+      "ms_per_iteration": 0.5867519900202751,
+      "share": 0.0003980394998713112,
+      "launches_per_iteration": 14,
+      "ms_per_launch": 0.04191085643001965
+    },
+    {
+      "name": "forward kernel crossbridge_segment_kernel_6981fba4",
+      "ms_per_iteration": 0.5677440036088228,
+      "share": 0.0003851449046531276,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.013203348921135415
+    },
+    {
+      "name": "forward kernel _refresh_bound_walk_dir_kernel_5583134b",
+      "ms_per_iteration": 0.48703999910503626,
+      "share": 0.00033039710296405413,
+      "launches_per_iteration": 44,
+      "ms_per_launch": 0.011069090888750825
+    },
+    {
+      "name": "forward kernel linc_tether_kernel_d3afa59a",
+      "ms_per_iteration": 0.48080000281333923,
+      "share": 0.0003261640282657304,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.011181395414263703
+    },
+    {
+      "name": "forward kernel nucleoplasm_volume_reduce_kernel_13da5931",
+      "ms_per_iteration": 0.35248000221326947,
+      "share": 0.00023911459386914116,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.008197209353796964
+    },
+    {
+      "name": "forward kernel max_force_kernel_23889bf4",
+      "ms_per_iteration": 0.33792000263929367,
+      "share": 0.00022923741399225386,
+      "launches_per_iteration": 3,
+      "ms_per_launch": 0.11264000087976456
+    },
+    {
+      "name": "forward kernel finite_vec3_kernel_b06cd58e",
+      "ms_per_iteration": 0.304127998650074,
+      "share": 0.0002063136700658744,
+      "launches_per_iteration": 7,
+      "ms_per_launch": 0.04344685695001057
+    },
+    {
+      "name": "forward kernel conditional_rollback_vec3_kernel_4893179c",
+      "ms_per_iteration": 0.2969600111246109,
+      "share": 0.00020145106675434487,
+      "launches_per_iteration": 4,
+      "ms_per_launch": 0.07424000278115273
+    },
+    {
+      "name": "forward kernel conditional_axpy_kernel_3c880174",
+      "ms_per_iteration": 0.2887680036947131,
+      "share": 0.00019589379111523557,
+      "launches_per_iteration": 40,
+      "ms_per_launch": 0.007219200092367828
+    },
+    {
+      "name": "forward kernel biot_pmass_update_kernel_e95be4c5",
+      "ms_per_iteration": 0.2836479917168617,
+      "share": 0.00019242048886545764,
+      "launches_per_iteration": 14,
+      "ms_per_launch": 0.020260570836918696
+    },
+    {
+      "name": "forward kernel max_constraint_error_kernel_5fb0182e",
+      "ms_per_iteration": 0.2519040107727051,
+      "share": 0.00017088607822204435,
+      "launches_per_iteration": 2,
+      "ms_per_launch": 0.12595200538635254
+    },
+    {
+      "name": "forward kernel max_displacement_kernel_4d802961",
+      "ms_per_iteration": 0.16281599551439285,
+      "share": 0.00011045075010884783,
+      "launches_per_iteration": 2,
+      "ms_per_launch": 0.08140799775719643
+    },
+    {
+      "name": "forward kernel _nucleoplasm_pressure_kernel_2609ea59",
+      "ms_per_iteration": 0.16089600115083158,
+      "share": 0.00010914826863588127,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.0037417674686239903
+    },
+    {
+      "name": "forward kernel _zero_scalar_kernel_5958721e",
+      "ms_per_iteration": 0.15497600170783699,
+      "share": 0.00010513227268255424,
+      "launches_per_iteration": 43,
+      "ms_per_launch": 0.0036040930629729533
+    },
+    {
+      "name": "forward kernel refresh_segment_barbed_kernel_f322eaba",
+      "ms_per_iteration": 0.13926400244235992,
+      "share": 9.44736018369849e-05,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.13926400244235992
+    },
+    {
+      "name": "forward kernel _finite_f64_3d_kernel_b9926715",
+      "ms_per_iteration": 0.13619200233370066,
+      "share": 9.23896252887109e-05,
+      "launches_per_iteration": 21,
+      "ms_per_launch": 0.006485333444461936
+    },
+    {
+      "name": "forward kernel _compose_water_sources_kernel_59b7b14e",
+      "ms_per_iteration": 0.10361600108444691,
+      "share": 7.029079057557748e-05,
+      "launches_per_iteration": 14,
+      "ms_per_launch": 0.007401142934603351
+    },
+    {
+      "name": "forward kernel _segment_midpoints_f32_kernel_f2cc1f20",
+      "ms_per_iteration": 0.062463998794555664,
+      "share": 4.2374187498346586e-05,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.062463998794555664
+    },
+    {
+      "name": "forward kernel _accumulate_scalar_rate_kernel_512eb656",
+      "ms_per_iteration": 0.05641599977388978,
+      "share": 3.827135947841121e-05,
+      "launches_per_iteration": 14,
+      "ms_per_launch": 0.004029714269563556
+    },
+    {
+      "name": "forward kernel _total_content_reduce_kernel_21b98775",
+      "ms_per_iteration": 0.053248001262545586,
+      "share": 3.612225974889017e-05,
+      "launches_per_iteration": 2,
+      "ms_per_launch": 0.026624000631272793
+    },
+    {
+      "name": "forward kernel displacement_rate_kernel_abb78e0d",
+      "ms_per_iteration": 0.03788800165057182,
+      "share": 2.5702377639308736e-05,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.03788800165057182
+    },
+    {
+      "name": "forward kernel _conditional_restore_f64_3d_kernel_a785cc3e",
+      "ms_per_iteration": 0.03584000049158931,
+      "share": 2.43130592033728e-05,
+      "launches_per_iteration": 5,
+      "ms_per_launch": 0.0071680000983178616
+    },
+    {
+      "name": "forward kernel _invalidate_if_counter_nonzero_kernel_9d76ff40",
+      "ms_per_iteration": 0.03276799991726875,
+      "share": 2.222908233920455e-05,
+      "launches_per_iteration": 8,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel copy_live_mesh_points_kernel_bc85c8f9",
+      "ms_per_iteration": 0.031744000501930714,
+      "share": 2.1534423910972233e-05,
+      "launches_per_iteration": 6,
+      "ms_per_launch": 0.005290666750321786
+    },
+    {
+      "name": "forward kernel normalize_vs_kernel_34828db3",
+      "ms_per_iteration": 0.030719999223947525,
+      "share": 2.0839764219162875e-05,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.030719999223947525
+    },
+    {
+      "name": "forward kernel _zero_if_rejected_kernel_72700f12",
+      "ms_per_iteration": 0.019456000067293644,
+      "share": 1.3198517717876266e-05,
+      "launches_per_iteration": 5,
+      "ms_per_launch": 0.003891200013458729
+    },
+    {
+      "name": "forward kernel reset_active_reduction_kernel_3c16f71c",
+      "ms_per_iteration": 0.013312000315636396,
+      "share": 9.030564937222543e-06,
+      "launches_per_iteration": 4,
+      "ms_per_launch": 0.003328000078909099
+    },
+    {
+      "name": "forward kernel max_abs_pressure_kernel_5b34850d",
+      "ms_per_iteration": 0.01228800043463707,
+      "share": 8.335906193095967e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.01228800043463707
+    },
+    {
+      "name": "forward kernel divergence_kernel_207339b3",
+      "ms_per_iteration": 0.011264000087976456,
+      "share": 7.64124713307513e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.011264000087976456
+    },
+    {
+      "name": "forward kernel conditional_reshape_kernel_f9e50252",
+      "ms_per_iteration": 0.010239999741315842,
+      "share": 6.946588073054291e-06,
+      "launches_per_iteration": 2,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel compute_head_loads_segment_kernel_03903006",
+      "ms_per_iteration": 0.009216000325977802,
+      "share": 6.251929644821975e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.009216000325977802
+    },
+    {
+      "name": "forward kernel update_convergence_kernel_bb45f854",
+      "ms_per_iteration": 0.009215999860316515,
+      "share": 6.251929328927714e-06,
+      "launches_per_iteration": 2,
+      "ms_per_launch": 0.0046079999301582575
+    },
+    {
+      "name": "forward kernel _invalidate_if_zero_kernel_a5445f18",
+      "ms_per_iteration": 0.008191999979317188,
+      "share": 5.5572705848011375e-06,
+      "launches_per_iteration": 2,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel _conditional_restore_i32_3d_kernel_e511286b",
+      "ms_per_iteration": 0.008191999979317188,
+      "share": 5.5572705848011375e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.008191999979317188
+    },
+    {
+      "name": "forward kernel _remap_transport_kernel_9a8f8583",
+      "ms_per_iteration": 0.0071680000983178616,
+      "share": 4.8626118406745605e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.0071680000983178616
+    },
+    {
+      "name": "forward kernel inner_state_init_kernel_6c92d3ba",
+      "ms_per_iteration": 0.006144000217318535,
+      "share": 4.1679530965479836e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.006144000217318535
+    },
+    {
+      "name": "forward kernel _gather_head_pos_kernel_b5da83a9",
+      "ms_per_iteration": 0.005119999870657921,
+      "share": 3.4732940365271457e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel _head_pos_f32_kernel_163ee1e5",
+      "ms_per_iteration": 0.005119999870657921,
+      "share": 3.4732940365271457e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel attach_segment_gated_kernel_7790b521",
+      "ms_per_iteration": 0.005119999870657921,
+      "share": 3.4732940365271457e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel step_detach_segment_gated_kernel_d9aa1d43",
+      "ms_per_iteration": 0.005119999870657921,
+      "share": 3.4732940365271457e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel conditional_rupture_update_kernel_3fee3c3a",
+      "ms_per_iteration": 0.005119999870657921,
+      "share": 3.4732940365271457e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel _finalize_conservation_kernel_952b6e8e",
+      "ms_per_iteration": 0.005119999870657921,
+      "share": 3.4732940365271457e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.005119999870657921
+    },
+    {
+      "name": "forward kernel compute_descent_step_kernel_71a1ffc9",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel begin_inner_attempt_kernel_aabc5d1c",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel _initialize_outer_acceptance_kernel_110226d2",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel _write_rejection_kernel_5567e937",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel _advance_time_if_accepted_kernel_f6c9c88a",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel _deactivate_run_if_rejected_kernel_2721a23a",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel _increment_epoch_if_accepted_kernel_40927cb0",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel erm_tether_rupture_kernel_9ccd4268",
+      "ms_per_iteration": 0.004095999989658594,
+      "share": 2.7786352924005687e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.004095999989658594
+    },
+    {
+      "name": "forward kernel invalidate_convergence_kernel_5a71b1fa",
+      "ms_per_iteration": 0.0030720001086592674,
+      "share": 2.0839765482739918e-06,
+      "launches_per_iteration": 1,
+      "ms_per_launch": 0.0030720001086592674
+    }
+  ]
+}

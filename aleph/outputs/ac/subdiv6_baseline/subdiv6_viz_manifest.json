@@ -1,0 +1,56 @@
+{
+  "stage": {
+    "name": "GATE-B dynamic cortex-motor (N=494,802)",
+    "evidence": "CONNECTED",
+    "quantitative_claim_status": "BLOCKED",
+    "evidence_basis": "nmii_cortex_motor dispatched; 8,745/8,840 heads bound from k_on events over 200 steps at dt_phys=0.01",
+    "bound_pct": 98.92533936651584,
+    "n_bound_heads": 8745,
+    "n_heads": 8840,
+    "gamma_total_pn_per_um": 4.423107045477206,
+    "gamma_source_pn_per_um": 0.027334686802568384,
+    "gamma_network_pn_per_um": 4.395772358674638,
+    "detach": "SLIP (Bell, provisional-sourced)",
+    "steps": 200,
+    "dt_phys": 0.01,
+    "k_xb": 100.0
+  },
+  "report": {
+    "name": "GATE-B dynamic cortex-motor (N=494,802)",
+    "evidence": "CONNECTED",
+    "quantitative_claim_status": "BLOCKED",
+    "evidence_basis": "nmii_cortex_motor dispatched; 8,745/8,840 heads bound from k_on events over 200 steps at dt_phys=0.01",
+    "bound_pct": 98.92533936651584,
+    "n_bound_heads": 8745,
+    "n_heads": 8840,
+    "gamma_total_pn_per_um": 4.423107045477206,
+    "gamma_source_pn_per_um": 0.027334686802568384,
+    "gamma_network_pn_per_um": 4.395772358674638,
+    "detach": "SLIP (Bell, provisional-sourced)",
+    "steps": 200,
+    "dt_phys": 0.01,
+    "k_xb": 100.0
+  },
+  "components": [
+    {
+      "key": "cortex",
+      "kind": "filaments",
+      "order": 0,
+      "n_actors": 70686
+    },
+    {
+      "key": "nmii",
+      "kind": "lines_raw",
+      "order": 1,
+      "n_actors": 442
+    }
+  ],
+  "connectors": [
+    {
+      "key": "nmii_cortex_motor",
+      "family": "MOTOR",
+      "a_component": "nmii",
+      "b_component": "cortex"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "schema": "aleph.outer_library.idr0072_if_external_holdout_protocol.v1",
+  "frozen_before_idr0072_annotation_or_image_content_access": true,
+  "objective": "evaluate the frozen HPA two-channel raw-IF CNN once on an independent-provider, optically validated organelle-landmark confocal collection",
+  "current_program_objective": "independent_external_biophysical_inference_network",
+  "future_aleph_adapter_required_for_completion": false,
+  "source_contract": {
+    "provider": "Image Data Resource / University of Dundee",
+    "study": "idr0072-schormann-subcellref",
+    "screens": [2951, 2952, 2953],
+    "data_doi": "10.17867/10000160",
+    "publication_doi": "10.1083/jcb.201904090",
+    "license": "CC BY 4.0",
+    "official_landing_page": "https://idr.openmicroscopy.org/study/idr0072/",
+    "api_base": "https://idr.openmicroscopy.org",
+    "landing_page_claim": "789011 murine and 523319 human optically validated confocal micrographs covering 17 and 20 EGFP landmark proteins",
+    "role": "single_use_independent_provider_raw_IF_holdout"
+  },
+  "frozen_model": {
+    "checkpoint": "results/hpa_raw_if_cnn_checkpoint.pt",
+    "checkpoint_sha256": "a0b9c18516d5997ec5cf64c97a7027ab6911fc21c7b46e5f7a6c0566dc15027e",
+    "training_report": "results/hpa_raw_if_cnn_training_report.json",
+    "commit": "e755bd9",
+    "weights_thresholds_temperature_and_conformal_values_may_change": false
+  },
+  "annotation_contract": {
+    "allowed_sources": ["screen map annotation", "plate map annotation", "well bulk annotation", "image map annotation"],
+    "key_normalization": "Unicode casefold and remove non-alphanumeric characters",
+    "localization_key_aliases": ["localization", "localisation", "subcellularlocalization", "subcellularlocalisation", "organelle", "cellularcomponent", "phenotype", "phenotypetermname"],
+    "cell_line_key_aliases": ["cellline", "celllinename", "organism", "species"],
+    "protein_key_aliases": ["genesymbol", "protein", "proteinname", "marker", "landmarkprotein"],
+    "manual_key_or_value_choice_after_access": "forbidden",
+    "missing_or_ambiguous_localization": "refuse image",
+    "author_or_provider_labels_only": true
+  },
+  "fixed_localization_mapping": {
+    "nuclear_interior": ["nucleus", "nuclear", "nucleoplasm", "nucleolus", "nucleoli"],
+    "nuclear_envelope": ["nuclear envelope", "nuclear membrane"],
+    "endoplasmic_reticulum": ["endoplasmic reticulum", "er"],
+    "golgi": ["golgi", "golgi apparatus"],
+    "mitochondria": ["mitochondria", "mitochondrion", "mitochondrial"],
+    "plasma_membrane_or_junction": ["plasma membrane", "cell membrane", "cell-cell junction", "tight junction"],
+    "cytoskeleton_or_adhesion": ["actin", "actin cytoskeleton", "microtubule", "microtubules", "cytoskeleton", "focal adhesion"],
+    "vesicular_organelle": ["vesicle", "vesicles", "endosome", "endosomes", "lysosome", "lysosomes", "late secretory pathway"]
+  },
+  "sampling_contract": {
+    "salt": "aleph-idr0072-if-v1-20260807",
+    "selection": "salted SHA-256 order within screen, plate, well, landmark protein, and canonical class",
+    "maximum_images_per_landmark_protein": 32,
+    "minimum_images_per_landmark_protein": 12,
+    "minimum_primary_classes": 6,
+    "minimum_landmark_proteins": 10,
+    "minimum_total_images": 240,
+    "split_or_metric_unit": "landmark protein and plate, never individual image alone",
+    "cell_images_are_not_independent_biological_replicates": true
+  },
+  "image_contract": {
+    "input_channels": ["nucleus", "target_protein"],
+    "channel_name_normalization": "Unicode casefold and remove non-alphanumeric characters",
+    "nucleus_channel_tokens": ["dna", "hoechst", "dapi", "nucleus", "405"],
+    "target_channel_tokens": ["egfp", "gfp", "target", "protein", "488"],
+    "channel_resolution": "exactly one nucleus and one target channel must match their token sets; ambiguity or absence refuses the image",
+    "z_projection": "maximum intensity projection per selected channel",
+    "per_channel_scaling": "finite p1/p99 clipping to [0,1] with all-zero output when p99 is not above p1",
+    "geometry": "center-crop to square then area-resize to 128x128",
+    "input_shape": [2, 128, 128],
+    "segmentation_or_server_composite_used": false,
+    "absolute_intensity_claim": false
+  },
+  "evaluation_contract": {
+    "primary_classes": ["nuclear_interior", "nuclear_envelope", "endoplasmic_reticulum", "golgi", "mitochondria", "plasma_membrane_or_junction", "cytoskeleton_or_adhesion", "vesicular_organelle"],
+    "model_output_class_not_in_primary_source": ["cytosol"],
+    "thresholds_temperature_and_conformal": "use frozen HPA checkpoint values unchanged",
+    "prediction_aggregation": "report image-level diagnostics and arithmetic-mean logits per landmark protein and plate",
+    "external_labels_may_select_or_change_nothing": true
+  },
+  "frozen_endpoints": {
+    "image_level_macro_average_precision_minimum": 0.45,
+    "image_level_macro_F1_minimum": 0.45,
+    "multilabel_ECE_maximum": 0.20,
+    "positive_label_conformal_coverage_minimum": 0.85,
+    "mean_prediction_set_size_maximum": 4.0,
+    "all_applicable_endpoints_must_pass": true
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_validated_if_endpoints_pass": true,
+    "uncertainty_authority": false,
+    "reason_uncertainty_authority_false": "many cell images from a landmark construct are technical observations rather than independent biological replicates",
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_delete_sweep_axis": false,
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  },
+  "failure_policy": {
+    "annotation_schema_or_channel_mismatch": "refuse before model prediction",
+    "endpoint_failure": "retain as independent-provider diagnostic only and permanently consume selected images",
+    "endpoint_success": "promote raw-IF localization representation to independent-provider domain-shift validated while retaining uncertainty and Aleph authority blocks"
+  }
+}

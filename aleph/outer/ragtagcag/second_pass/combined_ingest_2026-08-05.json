@@ -1,0 +1,49 @@
+{
+  "schema": "aleph.external_training.ragtagcag_combined.v1",
+  "authority_status": "proposed",
+  "families": {
+    "initial_unique": 7213,
+    "second_pass_candidate_unique": 3000,
+    "overlap": 5,
+    "new_unique": 2995,
+    "combined_unique": 10208
+  },
+  "receipts": {
+    "first_pass_sha256": "a3348a0d505c5761b670e527109665814885fd71e196c68f553639ade34005cd",
+    "second_pass_sha256": "399e1db43925f0c6cab7a007c884b228de0abf5823f79ffd9c320f0aadfc9b7a",
+    "records": 5713,
+    "success": 5675,
+    "failed": 38,
+    "successful_bytes": 850654786
+  },
+  "first": {
+    "events_appended": 10208,
+    "ledger_events": 10208,
+    "tag_entities": 10208,
+    "objects": 21596,
+    "payloads_present_and_verified": 5675,
+    "receipt_objects": 5713,
+    "retracted_entities": 21,
+    "missing_objects": 0,
+    "corrupt_objects": 0,
+    "cag_lint_violations": 0,
+    "chain_verified": true,
+    "ledger_head_hash": "662cea6bcf553d441b622de5a9c3d34745453f3586b8b187b7878728ea9e146d",
+    "snapshot_id": "snap-20260804T172413-external-training-corpus-proposed-head-10208",
+    "snapshot_manifest_hash": "f2de469010ce8de4bd234767d08fcbfb7c3c9676c1cbabfda28f2a65c9e9f203",
+    "projection_hash": "15ff31f6719ed3df70a71556eb00a695eedb94d654f84dc326a178162aca963a"
+  },
+  "second": {
+    "events_appended": 0,
+    "ledger_events": 10208,
+    "objects": 21596,
+    "missing_objects": 0,
+    "cag_lint_violations": 0,
+    "chain_verified": true,
+    "ledger_head_hash": "662cea6bcf553d441b622de5a9c3d34745453f3586b8b187b7878728ea9e146d",
+    "snapshot_manifest_hash": "f2de469010ce8de4bd234767d08fcbfb7c3c9676c1cbabfda28f2a65c9e9f203",
+    "projection_hash": "15ff31f6719ed3df70a71556eb00a695eedb94d654f84dc326a178162aca963a"
+  },
+  "idempotent": true,
+  "committed_payloads": false
+}

@@ -1,0 +1,52 @@
+{
+  "ambiguous_observations_promoted_to_labels": 0,
+  "authority_status": "proposed",
+  "frozen_300_evaluation_cohort_sources": 300,
+  "input_sha256": {
+    "article_index": "bbc4bc81ee18a7b8d8fecdeed1f11dfb683131ac5bd6f6e6fb7c93a90ae9dc02",
+    "asset_receipts": "54bda2c3c825556a88f76eb08a9881339155ec4eb08322a740cfe7653b2f1115",
+    "dataset_manifests": "d982dcb2f369533f04a5e19fa231e57935fd8ae7896fa687d1653461de818025",
+    "dataset_registry": "c326a9c2c2cbfa2da0f14d20c3ee901c7571dc1221ca77c03793f32891bfe62c",
+    "gold_candidates": "f4be334ea3fce6659a7395e77a2107a3b6a3dfdb5547f8b163e535946ff83226",
+    "visual_descriptors": "52e25fe8d7ea7e9d7c36b0b5986022e5c16ef153e85742204bcae7fc6de1f6cd",
+    "visual_index": "f392a75df87a79b624aeee620072ffbd80988a0957be789590d087cdb3233324",
+    "visual_links": "8db2ee945e74206ab8a71cbdc164836a0a0a63d485b5a2c18da3c3699a2081bd"
+  },
+  "leakage_group_stats": {
+    "duplicate_payload_sha_groups": 0,
+    "largest_group_sources": 69,
+    "multi_source_accession_components": 123,
+    "multi_source_groups": 30
+  },
+  "leakage_groups": 5560,
+  "leakage_split_violations": 0,
+  "missing_optional_inputs": [],
+  "projection_sha256": "929adbbbd5b5ee7c59cabd5612c3961bd8e4a93edcdaafeb3e3eb654a7f42421",
+  "raw_text_or_pixels_copied": false,
+  "schema": "aleph.external_training.learning_projection_summary.v1",
+  "sources": 5675,
+  "split_source_counts": {
+    "test": 831,
+    "train": 4004,
+    "validation": 840
+  },
+  "version": "1",
+  "view_coverage": {
+    "dataset_manifest": 885,
+    "numeric": 4876,
+    "text_metadata": 5675,
+    "visual_asset_receipt": 116,
+    "visual_descriptor": 116,
+    "visual_metadata": 5635
+  },
+  "view_totals": {
+    "dataset_accession_bindings": 1982,
+    "numeric_ambiguous_or_context_masked": 199145,
+    "numeric_candidate_targets_unmasked": 39344,
+    "numeric_observations": 238489,
+    "visual_available_assets": 627,
+    "visual_descriptors": 627,
+    "visual_figures": 38316,
+    "visual_linked_figures": 14302
+  }
+}

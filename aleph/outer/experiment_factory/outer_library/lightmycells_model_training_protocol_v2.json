@@ -1,0 +1,80 @@
+{
+  "schema": "aleph.outer_library.lightmycells_model_training_protocol.v2",
+  "frozen_before_v2_training_or_confirmation_access": true,
+  "v1_protocol_sha256": "158805d3501f9da0472633924f083b951fb18ca9ac62ae61994a61692b0ff269",
+  "v1_diagnostic": {
+    "report_path": "results/lightmycells_model_training_report.json",
+    "report_sha256": "2e8385c0753e672f150592db5a147193b585c76808d00b3469d9696db20e58a9",
+    "checkpoint_sha256": "66e70773f0c4e0a01af93cb7a483ab67de49d73fd2c6ec730179d43cfffff05d",
+    "selection_Pearson": 0.1984269026248633,
+    "selection_global_SSIM": 0.06992865289630623,
+    "selection_relative_MAE_improvement": 0.08585809524324471,
+    "confirmation_pairs_seen": 0
+  },
+  "training_tensor": {
+    "path": "results/lightmycells_spatial_tensor.npz",
+    "sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0",
+    "fit_pairs": 3744,
+    "selection_pairs": 61,
+    "calibration_pairs": 569,
+    "confirmation_pairs": 0
+  },
+  "model": {
+    "family": "conditional_two_level_residual_UNet",
+    "base_channels": 16,
+    "downsampling_levels": 2,
+    "residual_blocks_per_level": 1,
+    "condition_channels": [
+      "target_Nucleus", "target_Mitochondria", "target_Tubulin", "target_Actin",
+      "modality_BF", "modality_PC", "modality_DIC"
+    ],
+    "study_identifier_as_feature": false,
+    "alignment_method_as_feature": false,
+    "output_activation": "sigmoid",
+    "embedding": "global_average_pooled_deepest_bottleneck"
+  },
+  "optimization": {
+    "seed": 20260807,
+    "device": "CPU",
+    "maximum_epochs": 16,
+    "batch_size": 48,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "fit_sampling": "inverse_sqrt_target_frequency",
+    "data_augmentation": "deterministic_joint_horizontal_and_vertical_flips",
+    "loss_components": {
+      "pixel_L1": 1.0,
+      "one_minus_centered_cosine": 0.25,
+      "one_minus_global_SSIM": 0.25,
+      "first_difference_L1": 0.05
+    },
+    "selection_or_calibration_rows_used_for_gradient_updates": false
+  },
+  "selection": {
+    "inference_unit": "study",
+    "required_targets": ["Nucleus", "Mitochondria"],
+    "metrics": ["macro_study_Pearson", "macro_study_global_SSIM", "macro_study_relative_MAE_improvement_over_fit_mean"],
+    "endpoint_denominators": {
+      "Pearson": 0.35,
+      "global_SSIM": 0.25,
+      "relative_MAE_improvement": 0.10
+    },
+    "epoch_score": "minimum of the three metric-to-endpoint ratios",
+    "tie_break": "earlier_epoch",
+    "checkpoint_policy": "retain exact selected epoch; never retrain on selection or calibration",
+    "confirmation_open_condition": "all three selection metrics meet their endpoint denominators"
+  },
+  "uncertainty_and_ood": {
+    "calibration": "same study-cluster maximum 90th residual quantile as v1",
+    "embedding_OOD": "fit-reference diagonal Mahalanobis with variance floor 1e-6",
+    "confirmation_used_for_calibration_or_threshold_selection": false
+  },
+  "authority_contract": {
+    "v2_success_before_confirmation": "checkpoint candidate only",
+    "external_confirmation_authority": false,
+    "general_cell_state_production_authority": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false
+  }
+}

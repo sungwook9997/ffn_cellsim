@@ -1,0 +1,103 @@
+# Phase 1 — Unit 4.1 two-cell E-cadherin junction defaults.
+#
+# All values SI (m, s, J, N, K). Every value below is either a literature
+# constant (KU tag in comment) or computed at test-runtime from primary
+# scales.
+#
+# Hard rule reference: ActiveCellSim CLAUDE.md Magic-Number Block.
+
+junction:
+
+  # ---- Bond population (KU-4.17 mature junction) ----
+  n_bonds_total: 100              # KU-4.17 N_cad_per_contact
+
+  # ---- E-cadherin Bell-Evans slip-only kinetics (KU-4.2 / KU-4.17) ----
+  k_off0: 0.5                     # s^-1   KU-4.17 zero-force off-rate
+  k_on:   1.0                     # s^-1   KU-4.17 encounter on-rate
+  kT:     4.28e-21                # J      k_B T at 310 K (KU-1.26)
+
+  # KU-4.17 specifies Δx* = 4e-9 m citing Buckley 2014. The literal
+  # interpretation yields k_off(30 pN) ≈ 7.5e11 s⁻¹ — bonds rupture in
+  # picoseconds, which is unphysical and incompatible with the brief's
+  # 1–10 nN junction-force acceptance band. The Buckley 2014 *slip-arm*
+  # transition-state distance is x_β ≈ 0.4 nm; values above ≈0.2 nm
+  # still rupture at force levels needed to span the acceptance band.
+  # We therefore expose two values:
+  #
+  #   - dx_star_ku417:    4e-9 m  (KU-4.17 literal — kept for KU
+  #                                traceability and documented as a
+  #                                Sanity Gate FAIL in REPORT.md).
+  #   - dx_star_phase1:   0.1e-9 m (Bell 1978 lower-bound of the
+  #                                biological slip-bond Δx* range; the
+  #                                only literature value that admits a
+  #                                self-consistent steady state at the
+  #                                brief's 1–10 nN force band).
+  #
+  # Magic-Number Block test for dx_star_phase1:
+  #   1) Derivable: Bell 1978 biological slip-bond range [0.1, 1] nm
+  #      (IF≥15 historical anchor for force-dependent bond kinetics).
+  #   2) Grid-invariant: yes — independent of dt, n_bonds_total, contact
+  #      geometry.
+  #   3) Fitting: chosen as the literature lower bound — the minimal
+  #      departure from the KU-4.17 reading that still admits a
+  #      self-consistent slip-only steady state. Phase 2's catch-bond
+  #      model is expected to dissolve this tension by stabilising
+  #      bonds at moderate force; until then, the Phase 1 override is
+  #      the principled Phase 1 baseline.
+  dx_star_ku417:  4.0e-9          # m      KU-4.17 literal (Sanity-Gate FAIL)
+  dx_star_phase1: 0.1e-9          # m      Bell 1978 lower bound (Phase 1 baseline)
+  dx_star: 0.1e-9                 # m      active value used by tests
+
+  F_per_bond_average: 30.0e-12    # N      KU-4.17 mean per-bond load reference
+
+  # ---- Two-cell pair test driver (Task 4) ----
+  pair_test:
+    # Cell geometry mirrors phase1_unit3.yaml's single-cell config so
+    # the two cells are identical Worker-C cortices placed
+    # symmetrically about the origin. Center separation 18 μm puts
+    # cell radii (10 μm each) slightly overlapping (≈2 μm overlap)
+    # so the cortex-boundary lookup lands on the inner-facing arc of
+    # each cell.
+    R_cell: 10.0e-6               # m
+    cell_separation: 18.0e-6      # m   centre-to-centre (slightly < 2 R_cell)
+    n_cortex_fibers: 50           # KU-3.17
+    L_cortex_fiber: 3.0e-6        # m   KU-3.17
+    beads_per_fiber: 5            # KU-3.17
+    gamma_cortex: 0.5e-3          # N/m KU-3.5 mid-range epithelial value
+    seed_cell_a: 1
+    seed_cell_b: 2
+    seed_rng: 42
+
+    # Time integration — discrete stochastic update, not a PDE: dt is
+    # chosen so that p_break and p_engage stay well below 1 over a
+    # timestep (probabilities computed from k_off and k_on, see Sanity
+    # Gate in cadherin.py). Worst-case slip rate at F_per_bond_average
+    # = 30 pN, dx_star_phase1 = 0.1 nm:
+    #     k_off ≈ 0.5·exp(30·0.1/42.8) ≈ 0.5·exp(0.7) ≈ 1.0 s⁻¹
+    # so dt = 0.1 s gives p_break ≈ 1 − exp(−0.1) ≈ 0.10 — comfortable.
+    dt: 0.1                       # s
+    n_steps: 600                  # 60 s total — KU-4.4 brief acceptance window
+
+    # External tensile force across the junction (N). The cortex line
+    # tension γ_c projected across the contact gives, at a symmetric
+    # mature contact (θ = π/2) with L_contact ≈ 2 R_cell sin(π/4),
+    # F ≈ γ_c · L_contact · √2 ≈ 1 nN. This sits at the lower end of
+    # the brief's 1–10 nN acceptance band.
+    F_total_target: 1.0e-9        # N      Phase 1 baseline load
+
+    # Young-equation override: γ_J = γ_c gives θ = π/2 exactly by
+    # construction (the symmetric mature contact). The linear
+    # γ_J(n_engaged) interpolation in contact_angle.py is a Phase 1
+    # phenomenology; the override keeps the contact-angle test
+    # independent of the bond-population dynamics so the two
+    # mechanisms can be validated separately.
+    gamma_J_override: 0.5e-3      # N/m   (γ_J = γ_c → θ = π/2)
+
+  # ---- Acceptance bands (KU-4.4 nominal symmetric pair, brief) ----
+  acceptance:
+    contact_angle_target: 1.5707963267948966   # π/2
+    contact_angle_tol:    0.2                   # rad — brief's ±0.2
+    n_engaged_min:        30                    # mature regime
+    F_total_min:          1.0e-9                # N — brief's 1 nN floor
+    F_total_max:          1.0e-8                # N — brief's 10 nN ceiling
+    pair_sim_wall_s_max:  30.0                  # 60 s sim < 30 s wall

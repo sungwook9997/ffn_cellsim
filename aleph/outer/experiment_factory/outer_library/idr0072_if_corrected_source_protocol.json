@@ -1,0 +1,45 @@
+{
+  "schema": "aleph.outer_library.idr0072_if_corrected_source_protocol.v5",
+  "frozen_after_source_path_collision_detection_but_before_corrected_acquisition_or_prediction": true,
+  "scientific_role": "schema-optics-and-path-informed independent-provider domain-shift diagnostic; not a pristine source-selection holdout",
+  "current_program_objective": "independent_external_biophysical_inference_network",
+  "future_aleph_adapter_required_for_completion": false,
+  "base_optical_protocol": {
+    "path": "idr0072_if_final_optical_protocol.json",
+    "sha256": "595ffae8fe9d75e3b5222178d9c5df304b136bedbe14014d05bdfcdb92821428",
+    "model_optics_preprocessing_endpoints_and_authority_inherited_unchanged": true
+  },
+  "corrected_source_contract": {
+    "flex_manifest": "results/idr0072_if_flex_manifest_v2.jsonl",
+    "flex_manifest_sha256": "cd6b0c8c910419e90574624eebcbbd85b775b41999ca3c4169a4202ddcd1c308",
+    "resolution_report": "results/idr0072_if_flex_resolution_v2.json",
+    "resolved_rows": 2594,
+    "unique_image_ids": 2594,
+    "unique_source_urls": 2594,
+    "unique_local_paths": 2594,
+    "source_total_bytes_sum": 160286874035,
+    "filename_rule": {
+      "screen_2952": "three-digit row + three-digit column + 001.flex because each FLEX contains one field",
+      "screen_2953": "three-digit row + three-digit column + 000.flex because each FLEX contains multiple sublayouts; select the frozen image Field number"
+    }
+  },
+  "collision_disclosure": {
+    "invalid_manifest_commit": "7cdb399",
+    "invalid_image_rows": 2594,
+    "invalid_unique_source_urls": 81,
+    "incorrect_unique_files_downloaded_before_detection": 81,
+    "model_predictions_made": 0,
+    "external_labels_used_for_model_selection": false,
+    "report": "results/idr0072_if_flex_resolution_collision.json",
+    "incorrect_files_must_be_removed_before_corrected_acquisition": true
+  },
+  "authority_contract": {
+    "independent_provider_domain_shift_diagnostic_if_endpoints_pass": true,
+    "pristine_holdout_authority": false,
+    "uncertainty_authority": false,
+    "observable_evidence_eligible": false,
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false
+  }
+}

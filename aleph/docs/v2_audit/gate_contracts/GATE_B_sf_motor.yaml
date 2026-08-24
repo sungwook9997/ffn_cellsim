@@ -1,0 +1,301 @@
+# GATE-B (SF slice) — nmii_sf_motor: SF active tension emerges from myosin binding events
+#
+# TRANSCRIBED, NOT DERIVED (2026-07-25). Every threshold, observable definition, and
+# configuration value below is copied from what is already on disk:
+#   driver   aleph/scripts/ac_gate_b_sf_motor_native.py  (the inline literals in its
+#            `mechanism` / `quantitative` verdict dicts are the thresholds)
+#   record   aleph/outputs/ac/gate_b_sf_motor/sf_motor_native_gate.json
+#   closeout aleph/outputs/ac/gate_b_sf_motor/REPORT.md
+#   roadmap  aleph/docs/v2_audit/cell_engine/ROLLING_ROADMAP.md (2026-07-25 status)
+# Nothing here is normalised, improved, or re-derived. Where a threshold has no
+# derivation on disk it is transcribed and flagged `derivation: NONE_ON_DISK`.
+#
+# This is the honest gate to wire first: it self-declares
+# `quantitative_claim_status: BLOCKED`, i.e. it already reports a FAIL of its own
+# quantitative claim set while the mechanism claim set passes.
+
+contract_version: 1
+gate_id: GATE-B.sf_motor
+title: "GATE-B native: nmii_sf_motor — SF active tension emerges from myosin binding events"
+status: MECHANISM_PASS_QUANTITATIVE_BLOCKED
+authored: 2026-07-25
+authored_by: "audit remediation (M2) — transcription pass, no PI ratification claimed"
+enforcement: BLOCKING          # a stamped artifact exists, so drift here must block
+contract_hash_declared: "gcv1:66ce3533e3a4fc26"
+
+provenance:
+  driver: aleph/scripts/ac_gate_b_sf_motor_native.py
+  record: aleph/outputs/ac/gate_b_sf_motor/sf_motor_native_gate.json
+  closeout: aleph/outputs/ac/gate_b_sf_motor/REPORT.md
+  commit: fd482920
+  withdrawn_prior_claim: >-
+    An earlier run of this gate reported "T 0 -> 1.92 pN, VERDICT PASS". REPORT.md §4
+    withdraws it as an unconverged transient. The withdrawal is recorded here because a
+    withdrawn PASS is exactly the kind of history the M2 supersession check needs.
+
+# ----------------------------------------------------------------------------------
+# CONFIGURATION — hashed. The half that moved in M2 instance 4 (GATE A dropped the
+# myosin seed). Values transcribed from the committed run record.
+# ----------------------------------------------------------------------------------
+configuration_fixed:
+  runtime: warp_cuda_gpu          # I0-A: Warp CUDA is the only simulation runtime
+  component_graph:
+    participants: [sf_arc, nmii, nmii_sf_motor]
+    transaction: CellTransaction
+    n_participants: 3
+    sf_arc_role: real_state_owner  # NOT a bind-target port (unlike the cortex slice)
+    ownership: split_device_arrays
+  population:
+    scope: SLICE
+    scope_note: >-
+      This is a SLICE, not the full physiological SF population. CLAUDE.md's
+      validate-at-full-native rule is NOT satisfied by this configuration and the
+      contract records that rather than implying otherwise.
+    N_bundles: 20
+    N_unique_sf_fibers: 40
+    N_by_class: {ventral: 16, dorsal: 8, transverse_arc: 8, perinuclear_cap: 8}
+    n_sf_nodes: 360
+    n_sf_links: 320
+    n_minifilaments: 16
+    n_heads: 320
+    N_fa_sites: 20
+    N_linc_sites: 8
+    N_cortex_sites: 280
+    motor_stations: 16
+    motor_stations_ready_by_class: {ventral: 8, dorsal: 4, transverse_arc: 4}
+    motor_stations_excluded_by_class: {perinuclear_cap: 4}
+    exclusion_reason: >-
+      curved sarcomere (mid is an arch apex, not the chord midpoint): the two filaments
+      are not collinear over the shared span, so a rigid bipolar minifilament cannot
+      straddle them
+  sarcomere_geometry_derived:
+    sarcomere_lateral_um: 0.4      # = 2 * head_offset
+    sarcomere_overlap_um: 0.301    # = backbone contour
+  params_pi_gap:
+    status: ALL_UNRESOLVED_PI_GAP  # cards N1-N9, S1 — reported, never tuned
+    k_axial: 1000.0
+    k_xb: 1000.0
+    k_backbone: 1000.0
+    k_head_arm: 100.0
+    backbone_lp: 1.0
+    k_on: 50.0
+    f_stall: 0.5
+    v0: 0.12
+    kappa: 0.5
+    capture: 0.21
+    detach: CATCH_SLIP_PROXY
+  cfl:
+    courant_target: 0.5
+    courant_target_derivation: "stability-derived (hard limit C < 2, >=2x margin); driver docstring"
+
+# ----------------------------------------------------------------------------------
+# CONFIGURATION — recorded per run, NOT hashed, but DIFFED between a FAIL and its
+# superseding PASS. A run-knob that moves at the moment a FAIL becomes a PASS is
+# reported as CONFIG_MOVED_AT_PASS and needs a disclosed ledger row.
+# ----------------------------------------------------------------------------------
+configuration_recorded:
+  - field: device
+    artifact_path: device
+  - field: accepted_steps
+    artifact_path: clock.steps
+  - field: solver_mode
+    artifact_path: solver.mode
+  - field: explicit_relax_iterations
+    artifact_path: solver.explicit_relax_iterations
+    note: >-
+      LOAD-BEARING for the quantitative claim: REPORT.md §4 measures a 10x longer relax
+      moving T_max by 3.4x at an identical bound population. The committed artifact does
+      NOT record it (the solver block postdates the run) — the verifier reports that as
+      CONFIG_UNRECORDED rather than assuming a value.
+  - field: dt_phys_s
+    artifact_path: solver.dt_phys_s
+    note: "not recorded by the current driver either — the run's physical time is not reconstructible"
+  - field: seed
+    artifact_path: run.seed
+    note: "not recorded by the current driver"
+
+# ----------------------------------------------------------------------------------
+# CLAIMS — each carries THE OBSERVABLE (exact metric definition) and its threshold.
+# `measure` lets the verifier re-derive PASS/FAIL from the artifact's own numbers and
+# cross-check it against the boolean the driver wrote at `verdict_path`.
+# ----------------------------------------------------------------------------------
+claims:
+  - claim_id: mechanism.heads_unbound_at_t0
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.heads_unbound_at_t0
+    observable:
+      id: rest_bound_head_count
+      definition: "number of myosin heads bound at t0, before any accepted step"
+      units: heads
+      reduction: count
+    threshold: {comparator: "==", value: 0, derivation: STRUCTURAL}
+    measure: {kind: scalar, path: rest.n_bound}
+
+  - claim_id: mechanism.rest_force_free
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.rest_force_free
+    observable:
+      id: rest_max_force_and_tension
+      definition: >-
+        max|F| over SF nodes AND max|T| over SF links at rest (heads unbound, SF at
+        force-free rest length). Demonstrates there is no lumped k_SF bundle spring and
+        no prestress seed.
+      units: pN
+      reduction: max
+    threshold:
+      comparator: "<"
+      value: 1.0e-6
+      units: pN
+      derivation: NONE_ON_DISK
+      derivation_note: >-
+        A round-number float-noise floor, inline in the driver. Measured values are
+        ~5.7e-14, i.e. ~8 orders under the threshold, so the threshold is not what makes
+        this claim pass — but it has no written derivation. FLAGGED.
+    measure: {kind: all_of, paths: [rest.sf_maxF_pN, rest.T_abs_max_pN]}
+
+  - claim_id: mechanism.heads_bound_by_events
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.heads_bound_by_events
+    observable:
+      id: max_bound_heads_over_trace
+      definition: "max over accepted steps of the k_on-Poisson-bound head count"
+      units: heads
+      reduction: max_over_steps
+    threshold: {comparator: ">", value: 0, derivation: STRUCTURAL}
+    measure: {kind: series_max, series: "trace[].n_bound"}
+
+  - claim_id: mechanism.tension_zero_while_no_head_is_bound
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.tension_zero_while_no_head_is_bound
+    observable:
+      id: tension_on_unbound_steps
+      definition: >-
+        max|T| over SF links, restricted to accepted steps whose bound-head count is
+        zero. Nothing else in the slice can make tension, so a nonzero value here would
+        mean the tension is not motor-produced.
+      units: pN
+      reduction: max
+    threshold:
+      comparator: "<"
+      value: 1.0e-9
+      units: pN
+      derivation: NONE_ON_DISK
+      derivation_note: "inline driver literal; no derivation on disk. FLAGGED."
+    measure:
+      kind: series_conditional
+      series: "trace[].T_abs_max_pN"
+      where_series: "trace[].n_bound"
+      where_comparator: "=="
+      where_value: 0
+      note: >-
+        In the committed record NO trace row has n_bound == 0 (step 1 already has 113),
+        so this claim is VACUOUSLY true there. The verifier flags it VACUOUS. A claim
+        with zero applicable samples is not evidence.
+
+  - claim_id: mechanism.tension_exceeds_single_head_load
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.tension_exceeds_single_head_load
+    observable:
+      id: tension_vs_max_head_load
+      definition: >-
+        final-step max|T| over SF links vs final-step max per-head crossbridge load.
+        Tension above any single head's load means the load was transmitted and
+        accumulated along the fiber.
+      units: pN
+      reduction: max_at_final_step
+    threshold: {comparator: ">", value: 0.0, units: pN, derivation: STRUCTURAL}
+    measure: {kind: ordered_gt, paths: [final.T_abs_max_pN, final.head_load_max_pN]}
+
+  - claim_id: mechanism.fa_traction_is_inward
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.fa_traction_is_inward
+    observable:
+      id: fa_inward_fraction
+      definition: >-
+        fraction of FA anchor reactions whose radial component points inward (toward the
+        population centroid) at the final accepted step — contractile, not sign-flipped
+      units: fraction
+      reduction: fraction_of_sites
+    threshold:
+      comparator: ">"
+      value: 0.5
+      derivation: NONE_ON_DISK
+      derivation_note: >-
+        "majority" — inline driver literal. The measured value is 1.0 (100% of anchors),
+        so the claim does not lean on the 0.5, but 0.5 itself is undrived. FLAGGED.
+    measure: {kind: scalar, path: final.fa_inward_fraction}
+
+  - claim_id: mechanism.clock_advanced_once_per_accepted_step
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.clock_advanced_once_per_accepted_step
+    observable:
+      id: accepted_step_clock_delta
+      definition: "device accepted-step clock after minus before, vs the requested step count"
+      units: steps
+      reduction: difference
+    threshold: {comparator: "==", value: "clock.steps", derivation: STRUCTURAL}
+    measure:
+      kind: difference_equals
+      minuend: clock.after
+      subtrahend: clock.before
+      reference: clock.steps
+
+  - claim_id: mechanism.rejected_step_changed_nothing
+    claim_set: mechanism
+    verdict_path: verdict_mechanism.rejected_step_changed_nothing
+    observable:
+      id: rollback_bit_restoration
+      definition: >-
+        every rollback_detail predicate: binding SoA restored, SF positions bit-restored,
+        NMII positions bit-restored, clock did not advance
+      units: boolean
+      reduction: all
+    threshold: {comparator: "==", value: 1, derivation: STRUCTURAL}
+    measure: {kind: all_true, path: rollback_detail}
+
+  - claim_id: quantitative.inner_solve_converged_relative_to_tension
+    claim_set: quantitative
+    verdict_path: verdict_quantitative.inner_solve_converged_relative_to_tension
+    observable:
+      id: residual_over_tension
+      definition: >-
+        free-node residual of the inner overdamped relax divided by the SF tension being
+        reported, at the final accepted step. Above this ratio the reported tension is a
+        relaxation TRANSIENT rather than a force the fiber holds.
+      units: dimensionless
+      reduction: final_step_ratio
+      substitution_watch: >-
+        M2 instance 3/4 shape: swapping this denominator (e.g. to max head load, or to
+        an absolute pN residual bound) would turn the same BLOCKED run into a PASS
+        without any physics changing. Any edit to this definition changes the contract
+        hash and needs a PI-signed row.
+    threshold:
+      comparator: "<"
+      value: 0.01
+      units: dimensionless
+      derivation: NONE_ON_DISK
+      derivation_note: >-
+        "the verdict REQUIRES that ratio below 1%" (driver docstring). 1% is an inline
+        literal with no written derivation. FLAGGED — transcribed as-is, not re-derived.
+    measure: {kind: scalar, path: final.residual_over_tension}
+    current_status: >-
+      FAIL on the committed record: 0.1553 (15.5%). The driver self-reports
+      quantitative_claim_status: BLOCKED and REPORT.md §4 says the magnitudes must not be
+      quoted. Fix on record = an implicit/CG inner solve, NOT a longer explicit relax and
+      NOT a looser ratio.
+
+evidence:
+  artifacts:
+    - path: aleph/outputs/ac/gate_b_sf_motor/sf_motor_native_gate.json
+      role: native_run_record
+      order: 1
+      stamp: sidecar        # stamped retroactively; the run predates this contract
+  closeout: aleph/outputs/ac/gate_b_sf_motor/REPORT.md
+  figures:
+    - aleph/outputs/ac/sf_arc/figs/shot_nmii_sf_motor_one_sarcomere_x15.png
+    - aleph/outputs/ac/sf_arc/figs/shot_nmii_sf_motor_bipolar_straddle.png
+
+open_to_pi:
+  - "Four thresholds (1.0e-6, 1.0e-9, 0.5, 0.01) have no derivation on disk."
+  - "explicit_relax_iterations / dt_phys / seed are not recorded in the run artifact."
+  - "The population is a SLICE; CLAUDE.md's full-native rule is not satisfied."

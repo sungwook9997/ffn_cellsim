@@ -1,0 +1,802 @@
+{
+  "aleph_authority": "none",
+  "architecture": {
+    "family": "conditional_instance_normalized_residual_UNet_with_study_adversary",
+    "fit_study_adversary_classes": 16,
+    "parameter_count": 173937,
+    "selected_epoch": 19
+  },
+  "checkpoint_sha256": "79a9e635d7e8fb396497d399cf6c2d2b05b5116235b9bd120d4d2aa5d8b50629",
+  "consumed_confirmation_access": {
+    "images_read": 0,
+    "may_be_re_evaluated": false,
+    "metrics_used_for_selection": 0,
+    "pairs_read": 0
+  },
+  "device": "cpu",
+  "history": [
+    {
+      "epoch": 1,
+      "fit": {
+        "L1": 0.22599323093891144,
+        "SSIM_loss": 0.732934934206498,
+        "correlation_loss": 0.6160348225862552,
+        "gradient_L1": 0.07842971308109088,
+        "study_adversary_cross_entropy": 1.8777755223787749,
+        "style_consistency_L1": 0.016178351683685414,
+        "supervised": 0.5672012697427701,
+        "total": 0.7190411381232433
+      },
+      "selection": {
+        "all_selection_endpoints_passed": false,
+        "endpoint_ratios": {
+          "Pearson": 1.3345880553814236,
+          "global_SSIM": 1.4579170178235805,
+          "relative_MAE_improvement": -1.41030366620052
+        },
+        "minimum_endpoint_ratio": -1.41030366620052,
+        "values": {
+          "Pearson": 0.4671058193834982,
+          "global_SSIM": 0.36447925445589513,
+          "relative_MAE_improvement": -0.141030366620052
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "fit": {
+        "L1": 0.12944315507625923,
+        "SSIM_loss": 0.5970106728565998,
+        "correlation_loss": 0.525261490772932,
+        "gradient_L1": 0.06482824176931992,
+        "study_adversary_cross_entropy": 1.355129436804698,
+        "style_consistency_L1": 0.01797857900890402,
+        "supervised": 0.41324036167218137,
+        "total": 0.5234485704165238
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.2288536166603403,
+          "global_SSIM": 1.5652552555402153,
+          "relative_MAE_improvement": 1.630908593153706
+        },
+        "minimum_endpoint_ratio": 1.2288536166603403,
+        "values": {
+          "Pearson": 0.43009876583111906,
+          "global_SSIM": 0.3913138138850538,
+          "relative_MAE_improvement": 0.1630908593153706
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "fit": {
+        "L1": 0.11225917629706554,
+        "SSIM_loss": 0.551313898502252,
+        "correlation_loss": 0.49460479349662095,
+        "gradient_L1": 0.06425862811887875,
+        "study_adversary_cross_entropy": 1.1095582430179303,
+        "style_consistency_L1": 0.018782679301997025,
+        "supervised": 0.3776396081233636,
+        "total": 0.4682825329976204
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3050263015168615,
+          "global_SSIM": 1.6688676054261524,
+          "relative_MAE_improvement": 2.383967103461744
+        },
+        "minimum_endpoint_ratio": 1.3050263015168615,
+        "values": {
+          "Pearson": 0.4567592055309015,
+          "global_SSIM": 0.4172169013565381,
+          "relative_MAE_improvement": 0.2383967103461744
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "fit": {
+        "L1": 0.10625643416857108,
+        "SSIM_loss": 0.527693428672277,
+        "correlation_loss": 0.4759895744232031,
+        "gradient_L1": 0.06334225222086295,
+        "study_adversary_cross_entropy": 1.0020224222770104,
+        "style_consistency_L1": 0.020415963258785315,
+        "supervised": 0.360405662885079,
+        "total": 0.44260905033502823
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3033468076833834,
+          "global_SSIM": 1.6566991085153013,
+          "relative_MAE_improvement": 2.706299586284129
+        },
+        "minimum_endpoint_ratio": 1.3033468076833834,
+        "values": {
+          "Pearson": 0.45617138268918417,
+          "global_SSIM": 0.41417477712882533,
+          "relative_MAE_improvement": 0.2706299586284129
+        }
+      }
+    },
+    {
+      "epoch": 5,
+      "fit": {
+        "L1": 0.10420063214424329,
+        "SSIM_loss": 0.5090262526885058,
+        "correlation_loss": 0.4632188731279129,
+        "gradient_L1": 0.06404909954812282,
+        "study_adversary_cross_entropy": 0.8989506967556782,
+        "style_consistency_L1": 0.02010472536755678,
+        "supervised": 0.35030744129266495,
+        "total": 0.42423396844130296
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3056799756520783,
+          "global_SSIM": 1.6816921171720662,
+          "relative_MAE_improvement": 2.684125326733444
+        },
+        "minimum_endpoint_ratio": 1.3056799756520783,
+        "values": {
+          "Pearson": 0.45698799147822733,
+          "global_SSIM": 0.42042302929301656,
+          "relative_MAE_improvement": 0.2684125326733444
+        }
+      }
+    },
+    {
+      "epoch": 6,
+      "fit": {
+        "L1": 0.10064859736042145,
+        "SSIM_loss": 0.49529753663601017,
+        "correlation_loss": 0.4485801909214411,
+        "gradient_L1": 0.06229864538480074,
+        "study_adversary_cross_entropy": 0.8449178674282172,
+        "style_consistency_L1": 0.020130851198560916,
+        "supervised": 0.3393979955178041,
+        "total": 0.40900450830276197
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.1989976275626018,
+          "global_SSIM": 1.508193051179601,
+          "relative_MAE_improvement": 2.8932392370113447
+        },
+        "minimum_endpoint_ratio": 1.1989976275626018,
+        "values": {
+          "Pearson": 0.4196491696469106,
+          "global_SSIM": 0.3770482627949002,
+          "relative_MAE_improvement": 0.28932392370113447
+        }
+      }
+    },
+    {
+      "epoch": 7,
+      "fit": {
+        "L1": 0.09912581206896366,
+        "SSIM_loss": 0.4821731069913277,
+        "correlation_loss": 0.4378142326306074,
+        "gradient_L1": 0.06226011819373339,
+        "study_adversary_cross_entropy": 0.8324648699699304,
+        "style_consistency_L1": 0.020788012729145777,
+        "supervised": 0.33239903014439803,
+        "total": 0.4010750192862291
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3270657625720932,
+          "global_SSIM": 1.7220193394885812,
+          "relative_MAE_improvement": 2.5878103920266615
+        },
+        "minimum_endpoint_ratio": 1.3270657625720932,
+        "values": {
+          "Pearson": 0.46447301690023257,
+          "global_SSIM": 0.4305048348721453,
+          "relative_MAE_improvement": 0.25878103920266615
+        }
+      }
+    },
+    {
+      "epoch": 8,
+      "fit": {
+        "L1": 0.09699661676318218,
+        "SSIM_loss": 0.4680207616243607,
+        "correlation_loss": 0.42564208270647585,
+        "gradient_L1": 0.0623460191851243,
+        "study_adversary_cross_entropy": 0.7737601567537357,
+        "style_consistency_L1": 0.020443728539901666,
+        "supervised": 0.32359767227600783,
+        "total": 0.3875428575735826
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3611783076980957,
+          "global_SSIM": 1.785912783550235,
+          "relative_MAE_improvement": 2.741423462296834
+        },
+        "minimum_endpoint_ratio": 1.3611783076980957,
+        "values": {
+          "Pearson": 0.47641240769433346,
+          "global_SSIM": 0.44647819588755877,
+          "relative_MAE_improvement": 0.2741423462296834
+        }
+      }
+    },
+    {
+      "epoch": 9,
+      "fit": {
+        "L1": 0.09532173455525668,
+        "SSIM_loss": 0.46559354815727627,
+        "correlation_loss": 0.4233529369036357,
+        "gradient_L1": 0.06214072158894478,
+        "study_adversary_cross_entropy": 0.7767751457599493,
+        "style_consistency_L1": 0.020978975563477248,
+        "supervised": 0.3209566137729547,
+        "total": 0.3851965226424046
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.271804879358602,
+          "global_SSIM": 1.6632109692858263,
+          "relative_MAE_improvement": 2.7783714652039517
+        },
+        "minimum_endpoint_ratio": 1.271804879358602,
+        "values": {
+          "Pearson": 0.4451317077755107,
+          "global_SSIM": 0.4158027423214566,
+          "relative_MAE_improvement": 0.2778371465203952
+        }
+      }
+    },
+    {
+      "epoch": 10,
+      "fit": {
+        "L1": 0.09456966454401994,
+        "SSIM_loss": 0.4580989617567796,
+        "correlation_loss": 0.41784271865318984,
+        "gradient_L1": 0.0617500361150656,
+        "study_adversary_cross_entropy": 0.7350284132437829,
+        "style_consistency_L1": 0.020280795028576486,
+        "supervised": 0.3163324445486069,
+        "total": 0.3771627980929155
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.2851759679369599,
+          "global_SSIM": 1.6671854462478972,
+          "relative_MAE_improvement": 3.006709228882707
+        },
+        "minimum_endpoint_ratio": 1.2851759679369599,
+        "values": {
+          "Pearson": 0.4498115887779359,
+          "global_SSIM": 0.4167963615619743,
+          "relative_MAE_improvement": 0.3006709228882707
+        }
+      }
+    },
+    {
+      "epoch": 11,
+      "fit": {
+        "L1": 0.09517078674756564,
+        "SSIM_loss": 0.4514037087941781,
+        "correlation_loss": 0.41074602726178294,
+        "gradient_L1": 0.061656405385106035,
+        "study_adversary_cross_entropy": 0.7277279221094571,
+        "style_consistency_L1": 0.021455059389177807,
+        "supervised": 0.31368688474863005,
+        "total": 0.3740506248596387
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.2920697912623464,
+          "global_SSIM": 1.668414513293429,
+          "relative_MAE_improvement": 2.880019759466861
+        },
+        "minimum_endpoint_ratio": 1.2920697912623464,
+        "values": {
+          "Pearson": 0.4522244269418212,
+          "global_SSIM": 0.41710362832335723,
+          "relative_MAE_improvement": 0.2880019759466861
+        }
+      }
+    },
+    {
+      "epoch": 12,
+      "fit": {
+        "L1": 0.09224455488415864,
+        "SSIM_loss": 0.4469434710649344,
+        "correlation_loss": 0.41018002919661695,
+        "gradient_L1": 0.062657178642276,
+        "study_adversary_cross_entropy": 0.7285866435521688,
+        "style_consistency_L1": 0.020921247378469277,
+        "supervised": 0.3097314169773689,
+        "total": 0.3701104728075174
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.2823933971911152,
+          "global_SSIM": 1.6708709381393756,
+          "relative_MAE_improvement": 2.818569056748894
+        },
+        "minimum_endpoint_ratio": 1.2823933971911152,
+        "values": {
+          "Pearson": 0.4488376890168903,
+          "global_SSIM": 0.4177177345348439,
+          "relative_MAE_improvement": 0.2818569056748894
+        }
+      }
+    },
+    {
+      "epoch": 13,
+      "fit": {
+        "L1": 0.09147502166720536,
+        "SSIM_loss": 0.4389115189894652,
+        "correlation_loss": 0.40084733871313244,
+        "gradient_L1": 0.062303502255907424,
+        "study_adversary_cross_entropy": 0.7103755546685977,
+        "style_consistency_L1": 0.021267113060905382,
+        "supervised": 0.3046157963764973,
+        "total": 0.3635725501256111
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.2856314494810441,
+          "global_SSIM": 1.6887557888400986,
+          "relative_MAE_improvement": 2.698671418377857
+        },
+        "minimum_endpoint_ratio": 1.2856314494810441,
+        "values": {
+          "Pearson": 0.4499710073183654,
+          "global_SSIM": 0.42218894721002465,
+          "relative_MAE_improvement": 0.2698671418377857
+        }
+      }
+    },
+    {
+      "epoch": 14,
+      "fit": {
+        "L1": 0.09123460967571308,
+        "SSIM_loss": 0.4382716871989079,
+        "correlation_loss": 0.40078117450078327,
+        "gradient_L1": 0.062278956174850464,
+        "study_adversary_cross_entropy": 0.7114222955245239,
+        "style_consistency_L1": 0.022249198518693447,
+        "supervised": 0.3039593761548018,
+        "total": 0.3630980795774704
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3435479553503213,
+          "global_SSIM": 1.7705949869433724,
+          "relative_MAE_improvement": 2.6016847818558997
+        },
+        "minimum_endpoint_ratio": 1.3435479553503213,
+        "values": {
+          "Pearson": 0.47024178437261244,
+          "global_SSIM": 0.4426487467358431,
+          "relative_MAE_improvement": 0.26016847818558997
+        }
+      }
+    },
+    {
+      "epoch": 15,
+      "fit": {
+        "L1": 0.08997047281800172,
+        "SSIM_loss": 0.4302438730612779,
+        "correlation_loss": 0.3939932237068812,
+        "gradient_L1": 0.06210973156759372,
+        "study_adversary_cross_entropy": 0.7096512439923409,
+        "style_consistency_L1": 0.02220825242021909,
+        "supervised": 0.29953928406421954,
+        "total": 0.3585322067523614
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.2950346174475413,
+          "global_SSIM": 1.6625125990800989,
+          "relative_MAE_improvement": 2.926489823154963
+        },
+        "minimum_endpoint_ratio": 1.2950346174475413,
+        "values": {
+          "Pearson": 0.45326211610663947,
+          "global_SSIM": 0.4156281497700247,
+          "relative_MAE_improvement": 0.2926489823154963
+        }
+      }
+    },
+    {
+      "epoch": 16,
+      "fit": {
+        "L1": 0.08849325164770469,
+        "SSIM_loss": 0.42068025851861024,
+        "correlation_loss": 0.38344139892321366,
+        "gradient_L1": 0.06130915240217478,
+        "study_adversary_cross_entropy": 0.6995200889232831,
+        "style_consistency_L1": 0.021837115813142214,
+        "supervised": 0.292304264047207,
+        "total": 0.35044958003056353
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3410017971166444,
+          "global_SSIM": 1.7601609212637586,
+          "relative_MAE_improvement": 2.917713765876007
+        },
+        "minimum_endpoint_ratio": 1.3410017971166444,
+        "values": {
+          "Pearson": 0.46935062899082547,
+          "global_SSIM": 0.44004023031593964,
+          "relative_MAE_improvement": 0.2917713765876007
+        }
+      }
+    },
+    {
+      "epoch": 17,
+      "fit": {
+        "L1": 0.08864395826672897,
+        "SSIM_loss": 0.41627891782002574,
+        "correlation_loss": 0.3794054343150212,
+        "gradient_L1": 0.06147931072001274,
+        "study_adversary_cross_entropy": 0.7017256308060426,
+        "style_consistency_L1": 0.021717405340705927,
+        "supervised": 0.2908494953925793,
+        "total": 0.3491592850440588
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.274019041648753,
+          "global_SSIM": 1.617991723203321,
+          "relative_MAE_improvement": 3.031377714707464
+        },
+        "minimum_endpoint_ratio": 1.274019041648753,
+        "values": {
+          "Pearson": 0.44590666457706346,
+          "global_SSIM": 0.40449793080083024,
+          "relative_MAE_improvement": 0.3031377714707464
+        }
+      }
+    },
+    {
+      "epoch": 18,
+      "fit": {
+        "L1": 0.08744327189066471,
+        "SSIM_loss": 0.411896750330925,
+        "correlation_loss": 0.3759568345088225,
+        "gradient_L1": 0.061166925116991386,
+        "study_adversary_cross_entropy": 0.6808711936076483,
+        "style_consistency_L1": 0.021366483269211572,
+        "supervised": 0.28790751347939175,
+        "total": 0.34451385415517366
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3550380060323926,
+          "global_SSIM": 1.8072259109710807,
+          "relative_MAE_improvement": 2.667754571189836
+        },
+        "minimum_endpoint_ratio": 1.3550380060323926,
+        "values": {
+          "Pearson": 0.4742633021113374,
+          "global_SSIM": 0.45180647774277016,
+          "relative_MAE_improvement": 0.2667754571189836
+        }
+      }
+    },
+    {
+      "epoch": 19,
+      "fit": {
+        "L1": 0.08714386629752624,
+        "SSIM_loss": 0.4125349349700488,
+        "correlation_loss": 0.37824683158825606,
+        "gradient_L1": 0.06124591464415575,
+        "study_adversary_cross_entropy": 0.6907478177394623,
+        "style_consistency_L1": 0.022579425265296146,
+        "supervised": 0.2882005587602273,
+        "total": 0.34571832571274197
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.447514955779825,
+          "global_SSIM": 1.8908820010648117,
+          "relative_MAE_improvement": 3.123212339406906
+        },
+        "minimum_endpoint_ratio": 1.447514955779825,
+        "values": {
+          "Pearson": 0.5066302345229388,
+          "global_SSIM": 0.47272050026620294,
+          "relative_MAE_improvement": 0.3123212339406906
+        }
+      }
+    },
+    {
+      "epoch": 20,
+      "fit": {
+        "L1": 0.08698908659892204,
+        "SSIM_loss": 0.4076650849519632,
+        "correlation_loss": 0.37110472413209766,
+        "gradient_L1": 0.061026030052930884,
+        "study_adversary_cross_entropy": 0.7053803534079821,
+        "style_consistency_L1": 0.021655711357314616,
+        "supervised": 0.284786609120858,
+        "total": 0.3433826065216309
+      },
+      "selection": {
+        "all_selection_endpoints_passed": true,
+        "endpoint_ratios": {
+          "Pearson": 1.3631403819484706,
+          "global_SSIM": 1.7673490425607397,
+          "relative_MAE_improvement": 3.114230819737521
+        },
+        "minimum_endpoint_ratio": 1.3631403819484706,
+        "values": {
+          "Pearson": 0.47709913368196466,
+          "global_SSIM": 0.4418372606401849,
+          "relative_MAE_improvement": 0.3114230819737521
+        }
+      }
+    }
+  ],
+  "internal_unseen_study_OOD": {
+    "authority": "post_selection_internal_shift_diagnostic_only",
+    "calibration_study_scores": {
+      "Study_16": 0.8258402275316643,
+      "Study_18": 0.4638038737618405,
+      "Study_27": 1.2321832539315152,
+      "Study_29": 1.2518289561072986
+    },
+    "fit_scoring": "own_study_centroid_excluded",
+    "fit_study_scores": {
+      "Study_10": 0.9518482536077499,
+      "Study_13": 1.2948132194578648,
+      "Study_14": 1.0024901442229748,
+      "Study_17": 1.0226121217739292,
+      "Study_19": 0.931149290955585,
+      "Study_21": 0.8734933364650478,
+      "Study_22": 0.5706162368473799,
+      "Study_23": 0.9728959669237551,
+      "Study_24": 0.6217843389165574,
+      "Study_25": 1.1369560641584628,
+      "Study_26": 1.1667161232568133,
+      "Study_30": 1.5803188582261403,
+      "Study_4": 1.8885174130880704,
+      "Study_6": 1.3246931374073028,
+      "Study_7": 0.7398861065506935,
+      "Study_8": 1.0530011430382729
+    },
+    "score": "shrinkage_whitened_nearest_fit_study_centroid_distance",
+    "study_macro_AUROC": 0.421875
+  },
+  "may_emit_numeric_sweep_range": false,
+  "observable_evidence_eligible": false,
+  "production_eligible": false,
+  "protocol_sha256": "4e9709e7a814d1fb422bc59dce895b0d14091a4dc5e71e7156a36bda3f71bc9f",
+  "schema": "aleph.outer_library.lightmycells_model_training.v3",
+  "selection_baseline_comparison": {
+    "Actin": {
+      "fit_mean_map_macro_study_MAE": 0.17993971705436707,
+      "model_macro_study_MAE": 0.12294474989175797,
+      "per_study_fit_mean_map_MAE": {
+        "Study_3": 0.17993971705436707
+      },
+      "per_study_model_MAE": {
+        "Study_3": 0.12294474989175797
+      },
+      "relative_MAE_improvement": 0.3167447859517786
+    },
+    "Mitochondria": {
+      "fit_mean_map_macro_study_MAE": 0.1294429451227188,
+      "model_macro_study_MAE": 0.09311371110379696,
+      "per_study_fit_mean_map_MAE": {
+        "Study_11": 0.12979723513126373,
+        "Study_15": 0.11771246790885925,
+        "Study_28": 0.119744211435318,
+        "Study_3": 0.15051786601543427
+      },
+      "per_study_model_MAE": {
+        "Study_11": 0.07034897804260254,
+        "Study_15": 0.1033429279923439,
+        "Study_28": 0.07328225672245026,
+        "Study_3": 0.12548068165779114
+      },
+      "relative_MAE_improvement": 0.28065827754830364
+    },
+    "Nucleus": {
+      "fit_mean_map_macro_study_MAE": 0.14546799287199974,
+      "model_macro_study_MAE": 0.095429303124547,
+      "per_study_fit_mean_map_MAE": {
+        "Study_11": 0.14341139793395996,
+        "Study_15": 0.14345772564411163,
+        "Study_28": 0.13403093814849854,
+        "Study_3": 0.16097190976142883
+      },
+      "per_study_model_MAE": {
+        "Study_11": 0.06453803181648254,
+        "Study_15": 0.11228430271148682,
+        "Study_28": 0.08252738416194916,
+        "Study_3": 0.1223674938082695
+      },
+      "relative_MAE_improvement": 0.3439841903330776
+    }
+  },
+  "selection_endpoints": {
+    "all_selection_endpoints_passed": true,
+    "endpoint_ratios": {
+      "Pearson": 1.447514955779825,
+      "global_SSIM": 1.8908820010648117,
+      "relative_MAE_improvement": 3.123212339406906
+    },
+    "minimum_endpoint_ratio": 1.447514955779825,
+    "values": {
+      "Pearson": 0.5066302345229388,
+      "global_SSIM": 0.47272050026620294,
+      "relative_MAE_improvement": 0.3123212339406906
+    }
+  },
+  "selection_metrics": {
+    "per_study_target": [
+      {
+        "MAE": 0.07034897804260254,
+        "MSE": 0.01737108826637268,
+        "mean_global_SSIM": 0.6671890720650983,
+        "mean_image_Pearson": 0.6969247584102864,
+        "pair_count": 4,
+        "study_id": "Study_11",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.06453803181648254,
+        "MSE": 0.01321330014616251,
+        "mean_global_SSIM": 0.7404243050095998,
+        "mean_image_Pearson": 0.7720146989134699,
+        "pair_count": 4,
+        "study_id": "Study_11",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.1033429279923439,
+        "MSE": 0.023890022188425064,
+        "mean_global_SSIM": 0.43763128060330425,
+        "mean_image_Pearson": 0.4378868885448612,
+        "pair_count": 4,
+        "study_id": "Study_15",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.11228430271148682,
+        "MSE": 0.03856535255908966,
+        "mean_global_SSIM": 0.3526954099861624,
+        "mean_image_Pearson": 0.39589195359156193,
+        "pair_count": 4,
+        "study_id": "Study_15",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.07328225672245026,
+        "MSE": 0.01656171679496765,
+        "mean_global_SSIM": 0.6365408072777112,
+        "mean_image_Pearson": 0.6632468003943469,
+        "pair_count": 16,
+        "study_id": "Study_28",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.08252738416194916,
+        "MSE": 0.023401644080877304,
+        "mean_global_SSIM": 0.4133317893735701,
+        "mean_image_Pearson": 0.46340559727110453,
+        "pair_count": 7,
+        "study_id": "Study_28",
+        "target_channel": "Nucleus"
+      },
+      {
+        "MAE": 0.12294474989175797,
+        "MSE": 0.03278440237045288,
+        "mean_global_SSIM": 0.28262089846682004,
+        "mean_image_Pearson": 0.36010379697609757,
+        "pair_count": 7,
+        "study_id": "Study_3",
+        "target_channel": "Actin"
+      },
+      {
+        "MAE": 0.12548068165779114,
+        "MSE": 0.038060419261455536,
+        "mean_global_SSIM": 0.3108475382870019,
+        "mean_image_Pearson": 0.3667272138399661,
+        "pair_count": 7,
+        "study_id": "Study_3",
+        "target_channel": "Mitochondria"
+      },
+      {
+        "MAE": 0.1223674938082695,
+        "MSE": 0.04140043258666992,
+        "mean_global_SSIM": 0.2231037995271756,
+        "mean_image_Pearson": 0.25694396521791363,
+        "pair_count": 8,
+        "study_id": "Study_3",
+        "target_channel": "Nucleus"
+      }
+    ],
+    "per_target": {
+      "Actin": {
+        "macro_study_MAE": 0.12294474989175797,
+        "macro_study_Pearson": 0.36010379697609757,
+        "macro_study_global_SSIM": 0.28262089846682004,
+        "pair_count": 7,
+        "study_count": 1
+      },
+      "Mitochondria": {
+        "macro_study_MAE": 0.09311371110379696,
+        "macro_study_Pearson": 0.5411964152973652,
+        "macro_study_global_SSIM": 0.5130521745582789,
+        "pair_count": 31,
+        "study_count": 4
+      },
+      "Nucleus": {
+        "macro_study_MAE": 0.095429303124547,
+        "macro_study_Pearson": 0.47206405374851246,
+        "macro_study_global_SSIM": 0.432388825974127,
+        "pair_count": 23,
+        "study_count": 4
+      }
+    }
+  },
+  "status": "training_only_new_external_confirmation_required",
+  "tensor_sha256": "a51d0741e773bb475ee7542be7cbcb52355cb75b488ae4b449f92266306b0df0",
+  "uncertainty_authority": false,
+  "uncertainty_calibration": {
+    "Actin": {
+      "status": "unsupported",
+      "study_count": 0
+    },
+    "Mitochondria": {
+      "normalized_interval_width": 0.49643662571907043,
+      "pair_count": 253,
+      "pixel_coverage": 0.9365437021368577,
+      "status": "calibrated_internal_studies",
+      "study_90th_residual_quantiles": {
+        "Study_16": 0.36250415444374084,
+        "Study_18": 0.33082324266433716,
+        "Study_27": 0.2885807752609253
+      },
+      "study_count": 3,
+      "threshold": 0.36250415444374084
+    },
+    "Nucleus": {
+      "normalized_interval_width": 0.471689373254776,
+      "pair_count": 268,
+      "pixel_coverage": 0.9315723020638993,
+      "status": "calibrated_internal_studies",
+      "study_90th_residual_quantiles": {
+        "Study_18": 0.3624238967895508,
+        "Study_27": 0.2967158854007721,
+        "Study_29": 0.23900927603244781
+      },
+      "study_count": 3,
+      "threshold": 0.3624238967895508
+    },
+    "Tubulin": {
+      "status": "unsupported",
+      "study_count": 1
+    }
+  }
+}

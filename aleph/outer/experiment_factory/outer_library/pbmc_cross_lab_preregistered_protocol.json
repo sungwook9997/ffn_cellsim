@@ -1,0 +1,93 @@
+{
+  "schema": "aleph.outer_library.pbmc_cross_lab_protocol.v1",
+  "frozen_before_expression_or_cell_annotation_access": true,
+  "objective": "train a donor-aware PBMC cell-type and IFN-state representation and test cell-type transfer on a distinct laboratory and dataset without cell-level split leakage",
+  "sources": {
+    "training_and_donor_holdout": {
+      "accession": "GSE96583",
+      "lab_group": "UCSF_IHG_Kang_demuxlet",
+      "expected_design": "eight donors with paired control and six-hour IFN-beta PBMC single-cell RNA-seq",
+      "official_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE96583"
+    },
+    "pristine_external_lab_cell_type_holdout": {
+      "accession": "GSE132044",
+      "lab_group": "Broad_Klarman_Cell_Observatory_Ding_scRNA_benchmark",
+      "expected_design": "PBMC1 and PBMC2 experiments measured by multiple scRNA-seq methods",
+      "official_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132044"
+    },
+    "independent_IFN_direction_confirmation": {
+      "accession": "GSE72502",
+      "lab_group": "Genentech_Behrens_Hung",
+      "expected_design": "three donor-paired unstimulated versus six-hour IFN-alpha monocyte samples",
+      "official_record": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72502"
+    }
+  },
+  "allowed_label_authority": [
+    "author-released cell annotation",
+    "author-released purified-cell identity"
+  ],
+  "forbidden_label_authority": [
+    "labels predicted by the model being evaluated",
+    "clusters created after inspecting external expression",
+    "manual relabeling chosen to improve external accuracy"
+  ],
+  "coarse_cell_type_mapping_in_order": [
+    {"canonical": "B_cell", "case_insensitive_patterns": ["(^|[^a-z])b([^a-z]|$)", "b cell", "b-cell", "cd19", "cd20"]},
+    {"canonical": "CD4_T_cell", "case_insensitive_patterns": ["cd4", "helper t", "regulatory t", "treg"]},
+    {"canonical": "CD8_T_cell", "case_insensitive_patterns": ["cd8", "cytotoxic t"]},
+    {"canonical": "NK_cell", "case_insensitive_patterns": ["(^|[^a-z])nk([^a-z]|$)", "natural killer"]},
+    {"canonical": "monocyte", "case_insensitive_patterns": ["mono", "cd14", "cd16"]},
+    {"canonical": "dendritic_cell", "case_insensitive_patterns": ["dendritic", "(^|[^a-z])dc([^a-z]|$)"]}
+  ],
+  "ambiguous_or_unmapped_label_policy": "exclude before feature loading and report every excluded label and count",
+  "gse96583_split": {
+    "fit_donors": ["1015", "1016", "1039", "1244", "1256", "1488"],
+    "calibration_donor": "1493",
+    "sealed_internal_test_donor": "101"
+  },
+  "fallback_if_released_donor_ids_differ": "sort the eight author donor identifiers lexically; first six fit, seventh calibration, eighth sealed test; record that fallback before model fitting",
+  "feature_contract": {
+    "normalization": "per-cell library size to 10000 followed by log1p",
+    "gene_alignment": "exact case-sensitive HGNC symbol intersection only",
+    "feature_selection": "fit-donor variance only; top 512 genes after excluding mitochondrial and ribosomal-prefix genes",
+    "external_expression_may_not_select_features": true,
+    "minimum_common_features": 256
+  },
+  "model_contract": {
+    "family": "multinomial linear classifier with L2 penalty",
+    "penalties": [0.01, 0.1, 1.0, 10.0],
+    "selection": "macro-F1 on fit-donor grouped leave-one-donor-out predictions only",
+    "calibration": "single temperature selected on calibration donor; class-conditional split conformal sets at alpha 0.1",
+    "random_seed": 20260807,
+    "cell_rows_are_not_independent_biological_replicates": true
+  },
+  "frozen_primary_cell_type_endpoints": {
+    "sealed_internal_donor_macro_f1_minimum": 0.7,
+    "external_lab_macro_f1_minimum": 0.7,
+    "external_lab_ece_maximum": 0.15,
+    "external_lab_conformal_marginal_coverage_minimum": 0.9,
+    "required_external_experiment_or_method_groups": 2,
+    "all_metrics_reported_by_experiment_and_method": true
+  },
+  "IFN_state_contract": {
+    "labels": ["control", "IFN_stimulated"],
+    "classification_is_evaluated_only_within_GSE96583_donor_holdout": true,
+    "independent_GSE72502_role": "direction-only cross-lab confirmation, not a single-cell classifier holdout",
+    "frozen_signature_genes": ["IFI6", "IFI27", "IFI44", "IFI44L", "IFIT1", "IFIT2", "IFIT3", "ISG15", "MX1", "OAS1", "OAS2", "OAS3", "RSAD2", "STAT1"],
+    "GSE72502_primary_test": "all three paired donor mean signature differences IFN-alpha minus control are positive",
+    "numeric_scale_transfer_permitted": false
+  },
+  "OOD_contract": {
+    "primary_semantic_OOD": "author external labels not admitted by the frozen six-class ontology",
+    "score": "one minus maximum calibrated class probability",
+    "minimum_positive_and_negative_cells": 100,
+    "AUROC_minimum": 0.7,
+    "if_external_annotations_have_no_unmapped_classes": "report semantic OOD unavailable; do not substitute random noise or a post-hoc class"
+  },
+  "authority": {
+    "aleph_parameter_authority": "none",
+    "may_emit_numeric_sweep_range": false,
+    "may_select_aleph_parameter": false,
+    "eventual_role": "cell-type and IFN-context conditioning before an Aleph sweep, subject to an independently validated observation operator"
+  }
+}

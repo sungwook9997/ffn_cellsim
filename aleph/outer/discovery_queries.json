@@ -1,0 +1,17 @@
+{
+  "snapshot_date": "2026-08-05",
+  "minimum_year": 2010,
+  "provider": "Europe PMC REST API",
+  "provider_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+  "target_total": 1200,
+  "domains": [
+    {"domain": "cortex_membrane_pressure", "target": 150, "query": "TITLE_ABS:(\"cortical tension\" OR \"membrane tension\" OR \"cell surface tension\" OR \"bleb pressure\" OR \"cell cortex mechanics\")"},
+    {"domain": "adhesion_traction", "target": 150, "query": "TITLE_ABS:(\"traction force microscopy\" OR \"cell traction force\" OR \"focal adhesion mechanics\" OR \"motor clutch\" OR \"cell adhesion force\")"},
+    {"domain": "nucleus_chromatin", "target": 130, "query": "TITLE_ABS:(\"nuclear mechanics\" OR \"nuclear stiffness\" OR \"nuclear deformation\" OR \"chromatin mechanics\" OR \"lamin mechanics\")"},
+    {"domain": "osmotic_poroelastic_volume", "target": 100, "query": "TITLE_ABS:(\"cell volume regulation\" OR \"cellular pressure\" OR \"mechano-osmotic\" OR \"cell poroelasticity\" OR \"osmotic cell mechanics\")"},
+    {"domain": "protrusion_migration", "target": 150, "query": "TITLE_ABS:((\"cell migration\" OR lamellipodia OR filopodia OR \"cell protrusion\" OR \"collective cell migration\") AND (mechanics OR force OR cytoskeleton OR dynamics))"},
+    {"domain": "ecm_invasion", "target": 130, "query": "TITLE_ABS:((\"extracellular matrix\" OR collagen OR \"matrix stiffness\" OR \"3D matrix\") AND (mechanics OR traction OR invasion OR \"cell migration\" OR mechanobiology))"},
+    {"domain": "molecular_state", "target": 180, "query": "TITLE_ABS:((immunofluorescence OR \"western blot\" OR qPCR OR transcriptomics OR proteomics) AND (mechanobiology OR \"cell mechanics\" OR \"cell migration\"))"},
+    {"domain": "observation_inference_methods", "target": 210, "query": "TITLE_ABS:(\"simulation-based inference\" OR \"traction force microscopy\" OR \"particle image velocimetry\" OR \"cell painting\" OR \"image-based profiling\" OR (\"graph neural network\" AND cells) OR (segmentation AND microscopy))"}
+  ]
+}

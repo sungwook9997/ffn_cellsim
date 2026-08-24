@@ -1,0 +1,100 @@
+{
+  "gate": "H.11 osmotic_regulation activation",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "Lp_mspa": 1e-12,
+    "delta_c_molm3": -100.0,
+    "batch_steps": 200,
+    "dP_target_Pa": -257740.05809727,
+    "Pi_osm_Pa": 773619.17429181,
+    "K_vol_Pa": 1333.3333333333335
+  },
+  "PRIMARY_tau": {
+    "tau_RVD_s": 3.2315641637095687,
+    "tau_Kvol_s": 1875.0,
+    "band_s": [
+      3.0,
+      600.0
+    ],
+    "in_band": true
+  },
+  "controls": {
+    "off_identity_updaters": {
+      "off": 3,
+      "on": 4,
+      "updater_attached": true
+    },
+    "no_contamination_inventory": {
+      "off": {
+        "N": 19000,
+        "n_bonds": 13900,
+        "bond_types": [
+          "cortex-bond",
+          "cortex_myosin_attach_b0",
+          "cortex_myosin_attach_b1",
+          "cortex_myosin_attach_b2",
+          "cortex_myosin_attach_b3",
+          "cortex_myosin_attach_b4",
+          "cortex_myosin_attach_b5",
+          "cortex_myosin_attach_b6",
+          "cortex_myosin_attach_b7",
+          "cortex_myosin_attach_b8",
+          "cortex_myosin_attach_b9",
+          "cortex_myosin_backbone",
+          "cortex_myosin_head_backbone",
+          "xlink_attach_b0",
+          "xlink_attach_b1",
+          "xlink_attach_b2",
+          "xlink_attach_b3",
+          "xlink_attach_b4",
+          "xlink_attach_b5",
+          "xlink_attach_b6",
+          "xlink_attach_b7",
+          "xlink_attach_b8",
+          "xlink_attach_b9",
+          "xlink_intra"
+        ],
+        "n_particle_types": 5
+      },
+      "on": {
+        "N": 19000,
+        "n_bonds": 13900,
+        "bond_types": [
+          "cortex-bond",
+          "cortex_myosin_attach_b0",
+          "cortex_myosin_attach_b1",
+          "cortex_myosin_attach_b2",
+          "cortex_myosin_attach_b3",
+          "cortex_myosin_attach_b4",
+          "cortex_myosin_attach_b5",
+          "cortex_myosin_attach_b6",
+          "cortex_myosin_attach_b7",
+          "cortex_myosin_attach_b8",
+          "cortex_myosin_attach_b9",
+          "cortex_myosin_backbone",
+          "cortex_myosin_head_backbone",
+          "xlink_attach_b0",
+          "xlink_attach_b1",
+          "xlink_attach_b2",
+          "xlink_attach_b3",
+          "xlink_attach_b4",
+          "xlink_attach_b5",
+          "xlink_attach_b6",
+          "xlink_attach_b7",
+          "xlink_attach_b8",
+          "xlink_attach_b9",
+          "xlink_intra"
+        ],
+        "n_particle_types": 5
+      },
+      "identical": true
+    },
+    "rvd_sign_V0_down": true,
+    "V0_ref_m3": 1.7671458676442587e-15,
+    "V0_final_m3": 1.7668913784980504e-15,
+    "V0_frac_change": -0.00014401139762589997,
+    "all_finite": true
+  },
+  "note": "REAL activation gate: the full physiological baseline cell (nucleus ON) is BUILT both ways; OFF/ON build-time controls (updater attached, identical bond inventory = no contamination, off-identity) are exact. tau_RVD is analytic + in-band. V0(t) is the EXACT updater law (water_flux_volume_step) iterated at the resting operating pressure \u2014 rigorous + avoids the raw-full-cell BAOAB guard (a stable coupled HOOMD V0(t) trajectory needs the equilibration prelude; the dP_mech(V) tracking is the tau_Kvol correction). Sign = RVD (V0 down)."
+}

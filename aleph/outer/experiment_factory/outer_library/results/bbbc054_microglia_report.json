@@ -1,0 +1,155 @@
+{
+  "aleph_authority": "none",
+  "annotated_cells": 58186,
+  "author_labels": [
+    "amoeboid",
+    "ramified",
+    "round"
+  ],
+  "author_webpage_label_conflict": {
+    "downloaded_CSV_contains": [
+      "amoeboid",
+      "ramified",
+      "round"
+    ],
+    "resolution": "downloaded author CSV labels retained verbatim; no stratified-to-ramified rewrite",
+    "webpage_says": [
+      "round",
+      "amoeboid",
+      "stratified"
+    ]
+  },
+  "dataset_id": "bbbc054-v1-LPS-microglia-timecourse",
+  "descriptive_LPS_timecourse": {
+    "amoeboid": {
+      "early_fields_0_to_9_mean_fraction": 0.0900378707047738,
+      "field_bootstrap_ci95": [
+        -0.052826767357406455,
+        0.022599026232203195
+      ],
+      "late_fields_50_to_59_mean_fraction": 0.0793524088696663,
+      "late_minus_early_fraction": -0.010685461835107504,
+      "spearman_fraction_vs_author_FOV_index": 0.36499027507641013
+    },
+    "ramified": {
+      "early_fields_0_to_9_mean_fraction": 0.3498422036495489,
+      "field_bootstrap_ci95": [
+        -0.261527767042716,
+        -0.16564559269943874
+      ],
+      "late_fields_50_to_59_mean_fraction": 0.13563581991013843,
+      "late_minus_early_fraction": -0.21420638373941045,
+      "spearman_fraction_vs_author_FOV_index": -0.7584328980272299
+    },
+    "round": {
+      "early_fields_0_to_9_mean_fraction": 0.5601199256456774,
+      "field_bootstrap_ci95": [
+        0.1754729440767972,
+        0.27184220253375985
+      ],
+      "late_fields_50_to_59_mean_fraction": 0.7850117712201953,
+      "late_minus_early_fraction": 0.2248918455745179,
+      "spearman_fraction_vs_author_FOV_index": 0.4677410391775495
+    }
+  },
+  "image_fields": 60,
+  "independent_biological_replicate_holdout": false,
+  "independent_lab_holdout": false,
+  "limitations": [
+    "only replicate 1 has author cell phenotype annotations; replicates 2 and 3 cannot be labelled by inheritance",
+    "field-grouped test prevents cell leakage but remains one time series from one biological replicate",
+    "no matched unstimulated time-course control is provided",
+    "the FOV-to-clock offset is not encoded in the downloaded annotation",
+    "morphophenotype labels are not direct molecular immune-state measurements"
+  ],
+  "may_select_aleph_parameter": false,
+  "model": "12_feature_brightfield_patch_shrinkage_LDA_equal_class_prior",
+  "schema": "aleph.outer_library.bbbc054_microglia_evaluation.v1",
+  "sealed_field_test_metrics": {
+    "accuracy": 0.49768875192604006,
+    "balanced_accuracy": 0.5023887282935148,
+    "cell_count": 5841,
+    "macro_f1": 0.4021598362440641,
+    "multiclass_brier": 0.6114527356643964
+  },
+  "selected_shrinkage": 0.05,
+  "selection_candidates": [
+    {
+      "shrinkage": 0.05,
+      "validation_metrics": {
+        "accuracy": 0.4808785529715762,
+        "balanced_accuracy": 0.4652367642588493,
+        "cell_count": 11610,
+        "macro_f1": 0.3766683362696837,
+        "multiclass_brier": 0.6134506539055432
+      }
+    },
+    {
+      "shrinkage": 0.2,
+      "validation_metrics": {
+        "accuracy": 0.45977605512489234,
+        "balanced_accuracy": 0.45915059227541305,
+        "cell_count": 11610,
+        "macro_f1": 0.3655552210154696,
+        "multiclass_brier": 0.6262323075526386
+      }
+    },
+    {
+      "shrinkage": 0.5,
+      "validation_metrics": {
+        "accuracy": 0.44659776055124895,
+        "balanced_accuracy": 0.44897187444000347,
+        "cell_count": 11610,
+        "macro_f1": 0.3559610822421262,
+        "multiclass_brier": 0.640206355267579
+      }
+    },
+    {
+      "shrinkage": 0.8,
+      "validation_metrics": {
+        "accuracy": 0.44771748492678726,
+        "balanced_accuracy": 0.4387075522194415,
+        "cell_count": 11610,
+        "macro_f1": 0.3526407003682311,
+        "multiclass_brier": 0.6578730897094721
+      }
+    }
+  ],
+  "split": {
+    "cell_counts": {
+      "calibration": 6208,
+      "test": 5841,
+      "train": 34527,
+      "validation": 11610
+    },
+    "field_counts": {
+      "calibration": 6,
+      "test": 6,
+      "train": 36,
+      "validation": 12
+    },
+    "field_overlap_count": 0,
+    "pristine_confirmation": false,
+    "pristine_reason": "an earlier hash split was opened and found to contain only two test fields; this balanced field-count revision is retrospective",
+    "rule": "field_index_modulo_10:0-5 train,6-7 validation,8 calibration,9 test",
+    "test_labels_used_for_model_or_shrinkage_selection": false,
+    "unit": "whole_image_field"
+  },
+  "split_conformal_diagnostic": {
+    "alpha": 0.1,
+    "coverage": 0.9054956343091937,
+    "eligible_for_uncertainty_authority": false,
+    "empty_prediction_set_fraction": 0.0,
+    "mean_prediction_set_size": 2.451292586885807
+  },
+  "status": "training_only_single_annotated_replicate",
+  "task": "LPS_microglia_brightfield_morphophenotype_representation",
+  "time_coordinate": "ordered 30-minute FOV series; absolute half-hour offset is not explicit in downloaded metadata",
+  "validation_metrics": {
+    "accuracy": 0.4808785529715762,
+    "balanced_accuracy": 0.4652367642588493,
+    "cell_count": 11610,
+    "macro_f1": 0.3766683362696837,
+    "multiclass_brier": 0.6134506539055432
+  }
+}
