@@ -79,7 +79,17 @@ jobs:
       # Dependency set MEASURED, not guessed: on 2026-07-25 the in-scope suite was
       # run locally with hoomd / freud / gsd / duckdb / requests / matplotlib / h5py
       # made un-importable, and it still ran to completion — so they are not CI
-      # dependencies. HOOMD is absent on purpose, and the root conftest.py also
+      # dependencies.
+      #
+      # ⚠ **THAT MEASUREMENT WAS SCOPE-SPECIFIC AND WIDENING THE SCOPE VOIDED IT.** Run 32718255089
+      # (2026-08-24, the first CI in five weeks) died at `exit 2, Interrupted: 4 errors during
+      # collection`. Re-measured by blocking each candidate and collecting: **matplotlib and duckdb
+      # are now required**, pulled in TRANSITIVELY — the tests do not import them, they import
+      # `aleph.scripts.*` modules that do. An AST scan of `aleph/tests/**` alone shows neither, which
+      # is how the first attempt at this change missed them: it scanned the wrong closure.
+      #   matplotlib -> tests/scripts/test_ac_afm_sweep_aggregate, test_ac_c2_{convergence,ensemble}_vis
+      #   duckdb     -> tests/test_supersession
+      # hoomd stays absent on purpose and freud / gsd / h5py / requests are still not needed. HOOMD is absent on purpose, and the root conftest.py also
       # blocks `import hoomd` in-process, so the ban is enforced rather than
       # incidental. Python is pinned to 3.13 to match pyproject `requires-python`
       # and environment-gpu.yml; the old file drifted onto py3.12 only because
@@ -105,8 +115,12 @@ jobs:
       # the ffn_sim which resolves is THIS working tree (no stale-editable shadow).
       # warp-lang is the runtime under test; the pin matches requirements.txt /
       # environment-gpu.yml. CPU backend on the runner (GPU verdict = gbook/A5000).
-      - name: Install warp-lang (the only simulation runtime; CPU backend here)
-        run: pip install warp-lang==1.14.0
+      - name: Install warp-lang (the only simulation runtime; CPU backend here) + the two measured deps
+        # ⚠ matplotlib and duckdb go through PIP, not conda create-args, because their PyPI names are
+        # unambiguous and their conda-forge names are not — `duckdb` on conda-forge is the CLI and the
+        # Python bindings are `python-duckdb`, which is exactly the kind of guess that produces a
+        # second red run. Both are pip-installed in the dev env too, so this matches it.
+        run: pip install warp-lang==1.14.0 matplotlib duckdb
 
       - name: Assert HOOMD is genuinely absent from the CI environment
         run: |
@@ -124,7 +138,19 @@ jobs:
       # not a guard, it is a permanent red light that stops meaning anything.
       - name: Default-scope invariant (bare `pytest` resolves to the declared testpaths)
         run: |
-          python -m pytest --collect-only -q -p no:cacheprovider > "${RUNNER_TEMP:-.}/default_scope.txt"
+          # ⚠ `set +e` and PRINT THE TAIL. Until 2026-08-24 this line redirected stdout to a file
+          # and let `bash -el`'s -e kill the step, so a collection failure produced "Process completed
+          # with exit code 2" and NOTHING ELSE — the diagnosis sat in a file nobody printed. The very
+          # next step already had this pattern, for the same reason, and it was never carried back.
+          set +e
+          python -m pytest --collect-only -q -p no:cacheprovider > "${RUNNER_TEMP:-.}/default_scope.txt" 2>&1
+          collect_rc=$?
+          set -e
+          if [ "$collect_rc" -ne 0 ]; then
+            echo "bare pytest --collect-only exited $collect_rc — last 40 lines:"
+            tail -40 "${RUNNER_TEMP:-.}/default_scope.txt"
+            exit "$collect_rc"
+          fi
           python - <<'PY'
           import os, pathlib, re, sys
           text = (pathlib.Path(os.environ.get("RUNNER_TEMP", ".")) / "default_scope.txt").read_text()
