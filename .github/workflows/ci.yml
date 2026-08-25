@@ -120,7 +120,7 @@ jobs:
         # unambiguous and their conda-forge names are not — `duckdb` on conda-forge is the CLI and the
         # Python bindings are `python-duckdb`, which is exactly the kind of guess that produces a
         # second red run. Both are pip-installed in the dev env too, so this matches it.
-        run: pip install warp-lang==1.14.0 matplotlib duckdb
+        run: pip install warp-lang==1.14.0 matplotlib duckdb pyflakes
 
       - name: Assert HOOMD is genuinely absent from the CI environment
         run: |

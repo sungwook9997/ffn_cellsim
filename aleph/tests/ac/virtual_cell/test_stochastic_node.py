@@ -195,17 +195,50 @@ def test_affine_law_gap_is_exactly_zero_not_merely_small() -> None:
         assert measurement.closure_report.relative_gap < 1e-14
 
 
+def _cancellation_scale(law: AnalyticForceLaw, x: float) -> float:
+    """The magnitude of the TERMS SUMMED at ``x`` — the textbook bound on cancellation error.
+
+    ⚠ **NOT ``|F(x)|``, and the difference is the whole point.** A Morse bond evaluated at its own
+    equilibrium has ``F = 0`` analytically, so ``|F|`` is the WORST possible scale there: the two
+    exponential terms are ``+48.0`` and ``-48.0`` at ``MU`` and cancel to nothing, and the rounding
+    residue is set by the 48, not by the 0. Scaling by ``|F|`` (floored at 1.0) understates it 48-fold.
+    """
+    total = sum(abs(c) * abs(x) ** k for k, c in enumerate(law.polynomial_coefficients))
+    total += sum(abs(a) * float(np.exp(b * x)) for a, b in law.exponential_terms)
+    return max(total, 1.0)
+
+
 def test_zero_width_gap_vanishes_for_every_law() -> None:
     """A degenerate distribution is a point, so the gap must vanish for every law.
 
-    Four of the five return exactly ``0.0``; the quartic returns one ulp of its own force magnitude
-    because the closed form multiplies out the moment recursion while ``F(mu)`` uses ``pow``.  The
-    exact-zero claim is therefore made only for the affine control, where it holds at any width.
+    ⚠ **THIS TEST WAS PLATFORM-DEPENDENT AND CI FOUND IT — the first CI run to reach the test step
+    since 2026-07-13.** It passed on arm64 macOS and failed on x86_64 Linux with
+    ``7.105427357601002e-15 <= 8 * eps * 1.0``, off by four. The failing law was the MORSE bond and
+    the assertion did not say so: it looped over five laws and reported only a number.
+
+    The tolerance was ``8 * eps * max(|F(mu)|, 1.0)``. For a Morse bond at its own equilibrium
+    position — which is how ``_morse()`` is built — ``F(mu)`` is analytically ZERO, so that scale
+    collapses to the 1.0 floor while the arithmetic actually cancels two terms of magnitude 48.0. The
+    bound was 48x too tight for exactly one of the five, and which one depended on the summation order
+    the platform chose.
+
+    ⚠ **Widened by DERIVATION, not by fitting the failure.** The bound is now ``eps`` times the sum of
+    the magnitudes of the terms being added, which is the standard cancellation bound; for the Morse
+    that is 96 and gives 2.13e-14 against the observed 7.11e-15, a 3x margin that was not chosen.
+    Raising ``8`` to ``32`` until the run went green would have been a threshold moved after seeing
+    the data, which the charter forbids.
     """
-    for law in (_linear(), _cubic(), _quartic(), _exponential(), _morse()):
+    eps = float(np.finfo(np.float64).eps)
+    for name, law in (("linear", _linear()), ("cubic", _cubic()), ("quartic", _quartic()),
+                      ("exponential", _exponential()), ("morse", _morse())):
         gap = law.exact_gap(MU, 0.0)
-        scale = max(abs(law.force_at_mean(MU)), 1.0)
-        assert abs(gap) <= 8.0 * np.finfo(np.float64).eps * scale
+        bound = eps * _cancellation_scale(law, MU)
+        assert abs(gap) <= bound, (
+            f"{name}: |gap| = {abs(gap):.6e} exceeds eps * (summed term magnitude) = {bound:.6e}. "
+            f"The law names itself so a platform-dependent failure does not arrive as a bare number.")
+
+    # ⚠ The EXACT-zero claim survives, for the affine control only, where it holds at any width.
+    assert _linear().exact_gap(MU, 0.0) == 0.0
 
 
 def test_cubic_gap_matches_the_hand_derived_gaussian_moment() -> None:
